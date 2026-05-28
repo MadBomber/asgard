@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "asgard"
+
+task_files = Asgard.find_task_files
+
+unless task_files
+  warn "asgard: no .loki or *.loki task file found in #{Dir.pwd} or any parent directory"
+  exit 1
+end
+
+task_files.each { |f| load f }
+
+klass = Asgard::Base.subclasses.last
+
+unless klass
+  warn "asgard: no class inheriting Asgard::Base found in #{task_files.join(', ')}"
+  exit 1
+end
+
+klass.validate_deps!
+klass.start(ARGV)

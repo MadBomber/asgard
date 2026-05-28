@@ -1,0 +1,34 @@
+# default task filename for the asgard task runner
+
+class Tasks < Asgard::Base
+  var :gem_name, "asgard"
+  var :version,  -> { Asgard::VERSION }
+
+  desc "test", "Run the test suite"
+  def test
+    sh "bundle exec rake test"
+  end
+
+  depends_on :test
+  desc "quality", "Run tests then flog"
+  def quality
+    sh "flog lib/"
+  end
+
+  desc "build", "Build the gem package"
+  def build
+    sh "bundle exec rake build"
+  end
+
+  depends_on :test
+  desc "install", "Build and install gem locally"
+  def install
+    sh "bundle exec rake install"
+  end
+
+  depends_on :quality
+  desc "release", "Release to RubyGems"
+  def release
+    sh "bundle exec rake release"
+  end
+end

@@ -20,4 +20,5 @@ unless klass
 end
 
 klass.validate_deps!
+klass._reset_ran!
 klass.start(ARGV)

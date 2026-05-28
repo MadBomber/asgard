@@ -113,15 +113,17 @@ class TestAsgardDependsOn < Minitest::Test
     end
   end
 
+  def test_deps_stored_as_stages
+    assert_equal [[:build]], @klass._deps[:test]
+  end
+
   def test_dep_runs_before_method
-    instance = @klass.new([], {}, {})
-    instance.invoke(:test)
+    @klass.new([], {}, {}).invoke(:test)
     assert_equal [:build, :test], @log
   end
 
   def test_transitive_deps_run_in_order
-    instance = @klass.new([], {}, {})
-    instance.invoke(:release)
+    @klass.new([], {}, {}).invoke(:release)
     assert_equal [:build, :test, :release], @log
   end
 
@@ -141,6 +143,69 @@ class TestAsgardDependsOn < Minitest::Test
   end
 end
 
+class TestAsgardParallelDeps < Minitest::Test
+  def test_parallel_deps_both_run_before_target
+    log   = []
+    mutex = Mutex.new
+
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) { mutex.synchronize { log << :build } }
+
+      desc "lint", "lint"
+      define_method(:lint)  { mutex.synchronize { log << :lint } }
+
+      depends_on [:build, :lint]
+      desc "test", "test"
+      define_method(:test)  { mutex.synchronize { log << :test } }
+    end
+
+    klass.new([], {}, {}).invoke(:test)
+
+    assert_includes log[0..1], :build
+    assert_includes log[0..1], :lint
+    assert_equal    :test,     log.last
+  end
+
+  def test_mixed_sequential_and_parallel
+    log   = []
+    mutex = Mutex.new
+
+    klass = Class.new(Asgard::Base) do
+      desc "setup",  "setup";  define_method(:setup)  { mutex.synchronize { log << :setup } }
+      desc "build",  "build";  define_method(:build)  { mutex.synchronize { log << :build } }
+      desc "lint",   "lint";   define_method(:lint)   { mutex.synchronize { log << :lint } }
+      desc "deploy", "deploy"; define_method(:deploy) { mutex.synchronize { log << :deploy } }
+
+      depends_on :setup, [:build, :lint], :deploy
+      desc "ci", "ci"
+      define_method(:ci) { mutex.synchronize { log << :ci } }
+    end
+
+    klass.new([], {}, {}).invoke(:ci)
+
+    assert_equal :setup,  log.first
+    assert_includes log[1..2], :build
+    assert_includes log[1..2], :lint
+    assert_equal :deploy, log[3]
+    assert_equal :ci,     log.last
+  end
+
+  def test_stages_stored_correctly
+    klass = Class.new(Asgard::Base) do
+      desc "a", "a"; define_method(:a) {}
+      desc "b", "b"; define_method(:b) {}
+      desc "c", "c"; define_method(:c) {}
+      desc "d", "d"; define_method(:d) {}
+
+      depends_on :a, [:b, :c], :d
+      desc "target", "target"; define_method(:target) {}
+    end
+
+    assert_equal [[:a], [:b, :c], [:d]], klass._deps[:target]
+  end
+end
+
 class TestAsgardSubclasses < Minitest::Test
   def test_subclass_is_registered
     before = Asgard::Base.subclasses.dup
@@ -156,8 +221,8 @@ class TestAsgardCircularDep < Minitest::Test
       desc "b", "b"; define_method(:b) {}
     end
 
-    klass._deps[:a] = [:b]
-    klass._deps[:b] = [:a]
+    klass._deps[:a] = [[:b]]
+    klass._deps[:b] = [[:a]]
 
     assert_raises(Asgard::CircularDependencyError) { klass.validate_deps! }
   end
@@ -168,12 +233,29 @@ class TestAsgardCircularDep < Minitest::Test
       depends_on :a
       desc "b", "b"; define_method(:b) {}
     end
-    klass.validate_deps! # must not raise
+    klass.validate_deps!
   end
 
   def test_no_error_when_no_deps
     klass = Class.new(Asgard::Base)
-    klass.validate_deps! # must not raise
+    klass.validate_deps!
+  end
+end
+
+class TestAsgardResetRan < Minitest::Test
+  def test_reset_ran_clears_execution_tracking
+    log   = []
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) { log << :build }
+    end
+
+    klass.new([], {}, {}).invoke(:build)
+    assert_equal 1, log.size
+
+    klass._reset_ran!
+    klass.new([], {}, {}).invoke(:build)
+    assert_equal 2, log.size
   end
 end
 
@@ -208,7 +290,7 @@ class TestAsgardDotenv < Minitest::Test
 
   def test_dotenv_silently_skips_missing_file
     klass = Class.new(Asgard::Base)
-    klass.dotenv("/nonexistent/path/.env") # must not raise
+    klass.dotenv("/nonexistent/path/.env")
   end
 end
 
@@ -261,8 +343,6 @@ class TestAsgardShell < Minitest::Test
   end
 
   def test_shebang_uses_tmp_extension_for_unknown_interpreter
-    # Uses :ruby as a known-good interpreter but verifies the extension
-    # fallback path by checking a custom interpreter isn't in the table.
     assert_raises(SystemExit) do
       shebang :nonexistent_interpreter_xyz, "echo hi", silent: true
     end

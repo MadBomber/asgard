@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "thor"
+require "set"
 require "simple_flow"
 
 module Asgard
@@ -15,9 +16,11 @@ module Asgard
       def inherited(subclass)
         super
         Asgard::Base.subclasses << subclass
-        subclass.instance_variable_set(:@_deps, {})
-        subclass.instance_variable_set(:@_vars, {})
+        subclass.instance_variable_set(:@_deps,         {})
+        subclass.instance_variable_set(:@_vars,         {})
         subclass.instance_variable_set(:@_pending_deps, [])
+        subclass.instance_variable_set(:@_ran_tasks,    Set.new)
+        subclass.instance_variable_set(:@_ran_mutex,    Mutex.new)
       end
 
       def _deps
@@ -28,23 +31,46 @@ module Asgard
         @_vars ||= {}
       end
 
-      # Declare that the next defined method depends on these recipes.
-      #
-      #   depends_on :build
-      #   depends_on :lint, :typecheck
-      def depends_on(*recipes)
-        @_pending_deps = Array(recipes).flatten.map(&:to_sym)
+      def _ran_tasks
+        @_ran_tasks ||= Set.new
       end
 
-      # Declare a variable available to all recipes as an instance method.
-      # Value may be a literal or a callable for lazy evaluation.
+      def _ran_mutex
+        @_ran_mutex ||= Mutex.new
+      end
+
+      # Reset execution tracking for a fresh asgard invocation.
+      def _reset_ran!
+        _ran_mutex.synchronize { @_ran_tasks = Set.new }
+      end
+
+      # Translate stages into a DependencyGraph-compatible hash.
       #
-      #   var :app,     "myapp"
-      #   var :version, -> { `git describe --tags`.strip }
+      #   stages: [[:one], [:two, :three], [:four]]
+      #   → { one: [], two: [:one], three: [:one], four: [:two, :three] }
+      def _build_dep_graph(stages)
+        graph = {}
+        stages.each_with_index do |stage, i|
+          prev_stage = i > 0 ? stages[i - 1] : []
+          stage.each { |task| graph[task] = prev_stage.dup }
+        end
+        graph
+      end
+
+      # Declare dependencies for the next recipe.
+      # Bare symbols run sequentially; arrays within the splat run in parallel.
+      #
+      #   depends_on :build                          # sequential
+      #   depends_on :build, :lint                   # both sequential
+      #   depends_on [:build, :lint]                 # build and lint in parallel
+      #   depends_on :setup, [:build, :lint], :test  # setup, then build+lint, then test
+      def depends_on(*recipes)
+        @_pending_deps = recipes
+      end
+
       def var(name, value = nil, &block)
         value = block if block_given?
         _vars[name.to_sym] = value
-        # no_commands prevents Thor from treating these accessors as CLI commands.
         no_commands do
           define_method(name) do
             v = self.class._vars[name.to_sym]
@@ -53,25 +79,22 @@ module Asgard
         end
       end
 
-      # Flat-import another task module. The module's +included+ hook registers
-      # tasks into this class via +base.desc+ and +base.define_method+.
       def import(mod)
         include mod
       end
 
-      # Load a .env file (default: ".env" in CWD).
       def dotenv(path = ".env")
         require "dotenv"
         Dotenv.load(path) if File.exist?(path)
       end
 
-      # Validate the dep graph for cycles. Raises Asgard::CircularDependencyError.
+      # Validate the full dep graph for cycles using SimpleFlow::DependencyGraph.
       def validate_deps!
         return if _deps.empty?
 
         all_tasks  = all_commands.keys.map(&:to_sym)
         full_graph = all_tasks.each_with_object({}) do |task, hash|
-          hash[task] = _deps.fetch(task, [])
+          hash[task] = _deps.fetch(task, []).flatten
         end
 
         SimpleFlow::DependencyGraph.new(full_graph).order
@@ -86,19 +109,47 @@ module Asgard
         return super if pending.empty?
         return super if method_name.to_s.start_with?("_")
 
-        _deps[method_name.to_sym] = pending
+        # Each element is a Symbol (sequential) or Array (parallel group).
+        _deps[method_name.to_sym] = pending.map { |d| Array(d).map(&:to_sym) }
         super
       end
     end
 
     no_commands do
-      # Run deps before every command dispatch. Thor's invoke is idempotent —
-      # each dep runs at most once per invocation, regardless of how many recipes
-      # declare it.
+      # Dispatch hook: resolves and runs all deps (in parallel where declared)
+      # before executing the target command. Thread-safe deduplication via
+      # the class-level _ran_tasks set ensures each recipe runs at most once.
       def invoke_command(command, *args)
         target = command.name.to_sym
-        (self.class._deps[target] || []).each { |dep| invoke dep }
-        super
+
+        should_run = self.class._ran_mutex.synchronize do
+          next false if self.class._ran_tasks.include?(target)
+          self.class._ran_tasks.add(target)
+          true
+        end
+        return unless should_run
+
+        stages = self.class._deps[target]
+        if stages&.any?
+          graph  = self.class._build_dep_graph(stages)
+          groups = SimpleFlow::DependencyGraph.new(graph).parallel_order
+
+          groups.each do |group|
+            if group.size > 1
+              threads = group.map { |task| Thread.new { _run_dep(task) } }
+              threads.each(&:join)
+            else
+              _run_dep(group.first)
+            end
+          end
+        end
+
+        command.run(self, *args)
+      end
+
+      def _run_dep(task)
+        command = self.class.all_commands[task.to_s]
+        invoke_command(command) if command
       end
     end
   end

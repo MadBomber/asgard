@@ -53,6 +53,60 @@ class TestAsgardRun < Minitest::Test
     end
   end
 
+  def test_run_catches_circular_dep_in_non_tasks_subclass
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class SubGroup < Asgard::Base
+          depends_on :sub_b
+          desc "sub_a", "a"; def sub_a = nil
+          depends_on :sub_a
+          desc "sub_b", "b"; def sub_b = nil
+        end
+      RUBY
+      _, err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
+      end
+      assert_match "circular dependency", err
+    end
+  ensure
+    Object.send(:remove_const, :SubGroup) if Object.const_defined?(:SubGroup)
+    Tasks._reset_ran!
+  end
+
+  def test_run_catches_undefined_dep_in_non_tasks_subclass
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class SubGroup2 < Asgard::Base
+          depends_on :ghost
+          desc "sub_a", "a"; def sub_a = nil
+        end
+      RUBY
+      _, err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
+      end
+      assert_match "undefined task", err
+    end
+  ensure
+    Object.send(:remove_const, :SubGroup2) if Object.const_defined?(:SubGroup2)
+    Tasks._reset_ran!
+  end
+
+  def test_run_detects_orphaned_depends_on
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "class Tasks\n  depends_on :build\nend\n")
+      _, err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
+      end
+      assert_match "depends_on", err
+    end
+  ensure
+    Tasks.instance_variable_set(:@_pending_deps, [])
+    Tasks._reset_ran!
+  end
+
   def test_run_exits_on_circular_dependency
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
@@ -326,6 +380,25 @@ class TestAsgardParallelDeps < Minitest::Test
 
     assert_equal [[:a], [:b, :c], [:d]], klass._deps[:target]
   end
+
+  def test_all_parallel_dep_threads_joined_before_exception_propagates
+    completed = []
+    mu        = Mutex.new
+    klass     = Class.new(Asgard::Base) do
+      desc "raiser", "raiser"
+      define_method(:raiser) { raise RuntimeError, "boom" }
+
+      desc "slow", "slow"
+      define_method(:slow) { sleep 0.05; mu.synchronize { completed << :slow } }
+
+      depends_on [:raiser, :slow]
+      desc "target", "target"
+      define_method(:target) {}
+    end
+
+    assert_raises(RuntimeError) { klass.new([], {}, {}).invoke(:target) }
+    assert_includes completed, :slow
+  end
 end
 
 class TestAsgardSubclasses < Minitest::Test
@@ -382,6 +455,25 @@ class TestAsgardCircularDep < Minitest::Test
     err = assert_raises(Asgard::Error) { klass.validate_deps! }
     assert_match "ghost_a", err.message
     assert_match "ghost_b", err.message
+  end
+
+  def test_validate_deps_raises_for_dep_with_required_argument
+    klass = Class.new(Asgard::Base) do
+      desc "build NAME", "build something"
+      def build(name) = nil
+      depends_on :build
+      desc "test", "test"
+      define_method(:test) {}
+    end
+    err = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "build", err.message
+  end
+
+  def test_validate_deps_raises_for_orphaned_pending_dep
+    klass = Class.new(Asgard::Base)
+    klass.instance_variable_set(:@_pending_deps, [:build])
+    err = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "build", err.message
   end
 end
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (round 2)
+
+- **Subcommand deps not validated at startup** — `run!` only called `Tasks.validate_deps!`, so circular dependencies and undefined dep names in subcommand groups (classes that inherit from `Asgard::Base` or `Tasks`) were silently ignored. `run!` now snapshots `Asgard::Base.subclasses` before loading task files and validates every newly defined subclass alongside `Tasks`.
+- **Parallel dep thread orphaned on exception** — when a parallel dep group contained one fast-failing task and one slow task, `threads.each(&:join)` re-raised the first thread's exception and abandoned the remaining threads. The slow thread continued running unsupervised after the caller saw the exception. The join loop now collects all thread exceptions before re-raising the first, ensuring every thread completes before execution exits the group.
+- **Dep with required arguments gave a cryptic runtime error** — `depends_on :build` where `build(name)` has required parameters caused `Thor::InvocationError` at task invocation time with no indication of where the problem was. `validate_deps!` now checks the arity of every dep task via `instance_method.parameters` and raises `Asgard::Error` at startup with the task name and required argument count.
+- **Orphaned `depends_on` silently discarded** — a `depends_on` declaration at the end of a class body (or `.loki` file) with no following `desc`/`def` left `@_pending_deps` non-empty but was ignored by `validate_deps!` due to an early `return if _deps.empty?` guard. `validate_deps!` now checks `@_pending_deps` before that guard and raises `Asgard::Error` naming the orphaned dependencies.
+
 ### Fixed
 
 - **Parallel dep race condition** — when two parallel tasks shared a common dependency, the second thread could start before the shared dep finished executing. `_ran_tasks` (a single Set) has been replaced with `_running` / `_done` Sets and a per-task `ConditionVariable`. Threads that arrive at an already-running dep now wait for its completion rather than skipping it; the `ensure` block broadcasts completion whether the task succeeds or raises.

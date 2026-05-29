@@ -108,6 +108,12 @@ module Asgard
 
       # Validate the full dep graph for cycles using Dagwood::DependencyGraph.
       def validate_deps!
+        pending = Array(@_pending_deps)
+        if pending.any?
+          raise Asgard::Error,
+            "depends_on(#{pending.join(', ')}) declared without a following task definition"
+        end
+
         return if _deps.empty?
 
         all_task_names = all_commands.keys.map(&:to_sym)
@@ -118,6 +124,18 @@ module Asgard
         undefined = _deps.values.flatten.uniq - all_task_names
         if undefined.any?
           raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
+        end
+
+        _deps.each do |_task, stages|
+          stages.flatten.each do |dep|
+            meth = instance_method(dep.to_s) rescue nil
+            next unless meth
+            required = meth.parameters.count { |type, _| type == :req }
+            if required > 0
+              raise Asgard::Error,
+                "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
+            end
+          end
         end
 
         Dagwood::DependencyGraph.new(full_graph).order
@@ -176,7 +194,9 @@ module Asgard
             groups.each do |group|
               if group.size > 1
                 threads = group.map { |task| Thread.new { _run_dep(task) } }
-                threads.each(&:join)
+                errors  = []
+                threads.each { |t| begin; t.join; rescue => e; errors << e; end }
+                raise errors.first if errors.any?
               else
                 _run_dep(group.first)
               end

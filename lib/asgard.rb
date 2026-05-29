@@ -35,9 +35,11 @@ module Asgard
     auto_load = argv.delete("--auto-load")
     abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
     task_file = find_task_file or abort "asgard: no .loki file found in #{Dir.pwd}"
+    before = Asgard::Base.subclasses.dup
     load_loki(File.dirname(task_file)) if auto_load
     load task_file
-    Tasks.validate_deps!
+    newly_defined = Asgard::Base.subclasses - before
+    (newly_defined + [Tasks]).uniq.each(&:validate_deps!)
     Tasks._reset_ran!
     Tasks.start(argv)
   rescue CircularDependencyError => e

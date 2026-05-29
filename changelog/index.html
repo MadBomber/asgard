@@ -1008,6 +1008,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#020-2026-05-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0 — 2026-05-29
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0 — 2026-05-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#012-2026-05-29" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1042,7 +1070,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1081,7 +1109,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1183,6 +1211,34 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#020-2026-05-29" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.2.0 — 2026-05-29
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.2.0 — 2026-05-29">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#012-2026-05-29" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1217,7 +1273,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1256,7 +1312,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1355,7 +1411,14 @@
 <p>All notable changes to Asgard are documented here.</p>
 <p>The format follows <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>. Asgard adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr />
-<h2 id="unreleased"><a href="https://github.com/MadBomber/asgard/compare/v0.1.2...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="unreleased"><a href="https://github.com/MadBomber/asgard/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h2 id="020-2026-05-29"><a href="https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0">0.2.0</a> — 2026-05-29<a class="headerlink" href="#020-2026-05-29" title="Permanent link">&para;</a></h2>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>*.loki</code> files are no longer auto-loaded by default. Pass <code>--auto-load</code> to <code>asgard</code> to load all <code>*.loki</code> files from the project root alphabetically before <code>.loki</code>. This is a breaking change for projects using the multi-file layout.</li>
+<li>Added <code>--auto-load</code> as a built-in CLI flag in <code>Tasks</code>, visible in <code>asgard help</code></li>
+</ul>
+<hr />
 <h2 id="012-2026-05-29"><a href="https://github.com/MadBomber/asgard/compare/v0.1.1...v0.1.2">0.1.2</a> — 2026-05-29<a class="headerlink" href="#012-2026-05-29" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1375,7 +1438,7 @@
 <ul>
 <li>Replaced <code>warn</code>/<code>exit 1</code> with <code>abort</code> throughout <code>run!</code> — <code>Kernel#warn</code> is silenced when <code>$VERBOSE = nil</code>, which is the default in Ruby 4.0; <code>abort</code> writes to <code>$stderr</code> regardless</li>
 </ul>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>--debug</code> and <code>--verbose</code> promoted from mapped tasks to <code>class_option</code> — they now work as modifiers alongside other commands (e.g. <code>asgard build --debug</code>) rather than as standalone commands</li>
 <li>Removed all references to <code>just</code> task runner and <code>recipe</code> terminology; Asgard uses "task" throughout</li>
@@ -1392,7 +1455,7 @@
 <li><code>Tasks</code> class pre-defined by the gem (<code>class Tasks &lt; Asgard::Base</code>) — task files reopen it without restating the superclass</li>
 <li><code>lib/asgard/tasks.rb</code> — ships the pre-defined <code>Tasks</code> class</li>
 </ul>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Replaced <code>SimpleFlow</code> dependency with <code>Dagwood</code> — purpose-built DAG library with no extra dependencies and no Ruby 4 compatibility issues</li>
 <li><code>bin/asgard</code> simplified to two lines: <code>require "asgard"</code> + <code>Asgard.run!(ARGV)</code></li>

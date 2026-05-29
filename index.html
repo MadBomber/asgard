@@ -1179,7 +1179,7 @@
 <li><strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts</li>
 <li><strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code></li>
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
-<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, auto-loaded alphabetically</li>
+<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code></li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task</li>
 </ul>
 </td>
@@ -1208,7 +1208,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<p>Asgard searches upward from your current directory for a <code>.loki</code> file. That file (and any <code>*.loki</code> siblings) marks the project root and defines your tasks. All task files reopen <code>class Tasks</code>, which is pre-defined by the gem as a subclass of <code>Asgard::Base</code> (itself a Thor subclass).</p>
+<p>Asgard searches upward from your current directory for a <code>.loki</code> file. That file marks the project root. Additional <code>*.loki</code> files in the same directory can be loaded by passing <code>--auto-load</code> to the <code>asgard</code> command. All task files reopen <code>class Tasks</code>, which is pre-defined by the gem as a subclass of <code>Asgard::Base</code> (itself a Thor subclass).</p>
 <p>The full Thor DSL is available: <code>desc</code>, <code>method_option</code>, <code>class_option</code>, <code>long_desc</code>, <code>argument</code>, <code>default_task</code>, <code>map</code>, and <code>subcommand</code> all work exactly as documented in Thor — with Asgard's own <code>depends_on</code>, <code>var</code>, <code>sh</code>, <code>shebang</code>, and <code>dotenv</code> layered on top.</p>
 <hr />
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
@@ -1258,7 +1258,7 @@
 </tr>
 <tr>
 <td><a href="task-files/">Task Files</a></td>
-<td><code>.loki</code> root marker, auto-loading, multi-file layout</td>
+<td><code>.loki</code> root marker, <code>--auto-load</code>, multi-file layout</td>
 </tr>
 <tr>
 <td><a href="api/">API Reference</a></td>

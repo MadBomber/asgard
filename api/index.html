@@ -1346,7 +1346,7 @@
 <tr>
 <td><code>load_loki</code></td>
 <td><code>Asgard.load_loki(dir)</code></td>
-<td>Loads all files matching <code>*.loki</code> in <code>dir</code> in alphabetical order. The <code>.loki</code> entry point is excluded from this glob — it is loaded separately by <code>run!</code>.</td>
+<td>Loads all <code>*.loki</code> files in <code>dir</code> alphabetically, excluding <code>.loki</code> itself. Called by <code>run!</code> only when <code>--auto-load</code> is present in <code>argv</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -1453,6 +1453,11 @@
 <td><code>verbose?</code></td>
 <td>private instance method</td>
 <td>Returns <code>$VERBOSE</code>. Available in all task bodies and subcommand classes that inherit from <code>Tasks</code>.</td>
+</tr>
+<tr>
+<td><code>--auto-load</code></td>
+<td>CLI flag (consumed by <code>run!</code>)</td>
+<td>Triggers loading of all <code>*.loki</code> files before the main <code>.loki</code> and the requested task. Consumed by <code>run!</code> before Thor dispatch.</td>
 </tr>
 </tbody>
 </table>

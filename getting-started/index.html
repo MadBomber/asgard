@@ -1366,7 +1366,7 @@
 </span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  deploy.loki    ← deployment tasks
 </span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  qa.loki        ← test and lint tasks
 </span></code></pre></div>
-<p>Each <code>*.loki</code> file reopens <code>class Tasks</code> and is loaded automatically in alphabetical order before <code>.loki</code> is loaded. See <a href="../task-files/">Task Files</a> for the full details including how task name over-loading is handled.</p>
+<p>Each <code>*.loki</code> file reopens <code>class Tasks</code>. To load them, pass <code>--auto-load</code> to the <code>asgard</code> command — they are loaded alphabetically before <code>.loki</code>. See <a href="../task-files/">Task Files</a> for full details.</p>
 <hr />
 <h2 id="built-in-flags">Built-in Flags<a class="headerlink" href="#built-in-flags" title="Permanent link">&para;</a></h2>
 <p>Every task automatically has three flags available, defined as <code>class_option</code> on <code>Tasks</code>:</p>

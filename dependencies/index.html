@@ -1434,7 +1434,7 @@
 </span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake test&quot;</span>
 </span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Since <code>*.loki</code> files are loaded alphabetically, <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order, use explicit <code>require_relative</code> from <code>.loki</code>.</p>
+<p>When <code>--auto-load</code> is used, <code>*.loki</code> files are loaded alphabetically, so <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order, use explicit <code>require_relative</code> from <code>.loki</code>.</p>
 <hr />
 <h2 id="depends_on-inside-subcommands">depends_on Inside Subcommands<a class="headerlink" href="#depends_on-inside-subcommands" title="Permanent link">&para;</a></h2>
 <p><code>depends_on</code> works within subcommand classes exactly as it does at the top level. Dependency scope is per-class:</p>

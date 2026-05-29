@@ -1416,7 +1416,7 @@
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  server_subcommands.loki  ← defines ServerCommands
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  db_subcommands.loki      ← defines DBCommands
 </span></code></pre></div>
-<p>Since <code>*.loki</code> files are loaded alphabetically before <code>.loki</code>, both <code>DBCommands</code> and <code>ServerCommands</code> are defined by the time <code>.loki</code> runs its <code>subcommand</code> calls.</p>
+<p>When <code>--auto-load</code> is used, <code>*.loki</code> files are loaded alphabetically before <code>.loki</code>, so both <code>DBCommands</code> and <code>ServerCommands</code> are defined by the time <code>.loki</code> runs its <code>subcommand</code> calls.</p>
 <p>See <a href="../examples/#server-subcommands"><code>examples/server_subcommands.loki</code></a> and <a href="../examples/#db-subcommands"><code>examples/db_subcommands.loki</code></a> for complete working examples.</p>
 
 

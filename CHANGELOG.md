@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-29
+
+### Added
+
+- `--version` built-in CLI flag — prints `Asgard::VERSION` and exits; implemented as a `_`-prefixed method in `Tasks` per the gem-owned naming convention
+- `--debug` and `--verbose` built-in `class_option` declarations on `Tasks` — set `$DEBUG`/`$VERBOSE` before any task runs via the `invoke_command` hook in `Asgard::Base`
+- `debug?` and `verbose?` private predicate helpers on `Tasks` — thin wrappers around `$DEBUG` and `$VERBOSE` for use inside task bodies
+- `_` prefix convention for gem-owned methods in `Tasks` — built-in methods use `_` prefix to distinguish them from user-defined tasks
+- `run!` guards against direct invocation of `_`-prefixed commands with a clean error message and exit 1
+- `examples/` directory with working `.loki` files:
+  - `kitchen_sink.loki` — demonstrates the full Thor DSL (all option types, `long_desc`, `class_option`, `default_task`, `map`, `depends_on`, `var`, `no_commands`, `private`)
+  - `server_subcommands.loki` — subcommand group for server management
+  - `db_subcommands.loki` — subcommand group for database management with `depends_on` chaining
+- README sections: Helper methods, Subcommands, Thor wrapper callout
+
+### Fixed
+
+- Replaced `warn`/`exit 1` with `abort` throughout `run!` — `Kernel#warn` is silenced when `$VERBOSE = nil`, which is the default in Ruby 4.0; `abort` writes to `$stderr` regardless
+
+### Changed
+
+- `--debug` and `--verbose` promoted from mapped tasks to `class_option` — they now work as modifiers alongside other commands (e.g. `asgard build --debug`) rather than as standalone commands
+- Removed all references to `just` task runner and `recipe` terminology; Asgard uses "task" throughout
+- `depends_on` parameter renamed from `*recipes` to `*tasks` for consistency
+
 ## [0.1.1] - 2026-05-28
 ### Added
 

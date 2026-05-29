@@ -1,0 +1,58 @@
+# frozen_string_literal: true
+# Demonstrates concurrent task execution via parallel depends_on groups.
+#
+# Each worker prints its letter repeatedly with random delays. Because
+# worker_a, worker_b, and worker_c run in separate threads their output
+# interleaves on stdout, proving real concurrency.
+#
+# Execution order:
+#   start → worker_a + worker_b + worker_c (all three concurrent) → finish
+#
+# Run with:
+#   asgard finish
+#
+# Sample output (character order varies every run):
+#   start
+#   ABCBACBACBABCBACBACB
+#   end
+
+$stdout.sync = true   # flush every print immediately across all threads
+
+CONCURRENT_REPS = 10  # how many times each worker prints its character
+
+class Tasks
+  desc "start", "Print start marker"
+  def start
+    puts "starting demo of concurrent task execution ..."
+  end
+
+  desc "worker_a", "Print 'A' repeatedly with random delays"
+  def worker_a
+    CONCURRENT_REPS.times do
+      print "A"
+      sleep rand(0.05..0.3)
+    end
+  end
+
+  desc "worker_b", "Print 'B' repeatedly with random delays"
+  def worker_b
+    CONCURRENT_REPS.times do
+      print "B"
+      sleep rand(0.05..0.3)
+    end
+  end
+
+  desc "worker_c", "Print 'C' repeatedly with random delays"
+  def worker_c
+    CONCURRENT_REPS.times do
+      print "C"
+      sleep rand(0.05..0.3)
+    end
+  end
+
+  depends_on :start, [:worker_a, :worker_b, :worker_c]
+  desc "finish", "Print end marker after all workers complete"
+  def finish
+    puts "\nfini - the end of concurrent task demo"
+  end
+end

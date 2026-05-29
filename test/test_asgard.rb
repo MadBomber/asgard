@@ -366,6 +366,105 @@ class TestAsgardDotenv < Minitest::Test
   end
 end
 
+class TestAsgardRunSuccess < Minitest::Test
+  def test_run_executes_task_via_start
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class Tasks
+          desc "ks_hello", "test task"
+          def ks_hello = puts "ks_hello_ran"
+        end
+      RUBY
+      out, = capture_io { Dir.chdir(dir) { Asgard.run!(["ks_hello"]) } }
+      assert_match "ks_hello_ran", out
+    end
+  ensure
+    Tasks.class_eval { remove_method(:ks_hello) rescue nil }
+    Tasks._reset_ran!
+  end
+end
+
+class TestAsgardUnderscoreGuard < Minitest::Test
+  def test_run_blocks_underscore_prefixed_commands
+    _, err = capture_io do
+      assert_raises(SystemExit) { Asgard.run!(["_secret"]) }
+    end
+    assert_match "unknown command '_secret'", err
+  end
+
+  def test_run_does_not_block_double_dash_commands
+    # --version starts with '-', not '_', so the guard must not fire
+    out, = capture_io do
+      assert_raises(SystemExit) { Asgard.run!(["--version"]) }
+    end
+    assert_equal Asgard::VERSION, out.chomp
+  end
+end
+
+class TestAsgardBuiltinTasks < Minitest::Test
+  def test_version_task_prints_version_and_exits
+    out, = capture_io do
+      assert_raises(SystemExit) { Tasks.new([], {}, {})._version }
+    end
+    assert_equal Asgard::VERSION, out.chomp
+  end
+
+  def test_tasks_has_debug_class_option
+    assert Tasks.class_options.key?(:debug)
+  end
+
+  def test_tasks_has_verbose_class_option
+    assert Tasks.class_options.key?(:verbose)
+  end
+end
+
+class TestAsgardDebugVerboseOptions < Minitest::Test
+  def setup
+    @orig_debug   = $DEBUG
+    @orig_verbose = $VERBOSE
+  end
+
+  def teardown
+    $DEBUG   = @orig_debug
+    $VERBOSE = @orig_verbose
+  end
+
+  def test_debug_option_sets_global_debug
+    klass = Class.new(Asgard::Base) do
+      desc "noop", "no-op"
+      define_method(:noop) {}
+    end
+    $DEBUG = false
+    klass.new([], { debug: true }, {}).invoke(:noop)
+    assert $DEBUG
+  end
+
+  def test_verbose_option_sets_global_verbose
+    klass = Class.new(Asgard::Base) do
+      desc "noop", "no-op"
+      define_method(:noop) {}
+    end
+    $VERBOSE = false
+    klass.new([], { verbose: true }, {}).invoke(:noop)
+    assert $VERBOSE
+  end
+
+  def test_debug_predicate_reflects_global_debug
+    $DEBUG = true
+    assert Tasks.new([], {}, {}).send(:debug?)
+    $DEBUG = false
+    refute Tasks.new([], {}, {}).send(:debug?)
+  end
+
+  def test_verbose_predicate_reflects_global_verbose
+    $VERBOSE = true
+    assert Tasks.new([], {}, {}).send(:verbose?)
+    $VERBOSE = false
+    refute Tasks.new([], {}, {}).send(:verbose?)
+  end
+end
+
 class TestAsgardShell < Minitest::Test
   include Asgard::Shell
 

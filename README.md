@@ -55,7 +55,7 @@ asgard hello Alice
 
 ### A task with a formal argument declaration
 
-Use `argument` for richer metadata — type checking, enums, and help text:
+Use `argument` for richer metadata — type checking, enums, and help text. **Warning: `argument` is a class-level declaration that applies to every task in the class**, not just the one below it. It is best suited for single-command CLIs or when every task genuinely shares the same positional input. In multi-task files, prefer method signature parameters instead.
 
 ```ruby
 class Tasks

@@ -120,6 +120,8 @@ module Asgard
       # before executing the target command. Thread-safe deduplication via
       # the class-level _ran_tasks set ensures each task runs at most once.
       def invoke_command(command, *args)
+        $DEBUG   = true if options[:debug]
+        $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
 
         should_run = self.class._ran_mutex.synchronize do

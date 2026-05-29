@@ -4,9 +4,15 @@
 # It is pre-defined by the gem so .loki files never need to declare a class.
 # Auxiliary *.loki files define modules which are imported into Tasks.
 class Tasks < Asgard::Base
-  desc "--debug", "Set debug mode"
-  map "--debug" => :_debug
-  def _debug = $DEBUG = true
+  class_option :debug,
+               type:    :boolean,
+               default: false,
+               desc:    "Enable debug mode ($DEBUG = true)"
+
+  class_option :verbose,
+               type:    :boolean,
+               default: false,
+               desc:    "Enable verbose output ($VERBOSE = true)"
 
   desc "--version", "Show asgard version"
   map "--version" => :_version
@@ -15,7 +21,8 @@ class Tasks < Asgard::Base
     exit
   end
 
-  desc "--verbose", "Set verbose output"
-  map "--verbose" => :_verbose
-  def _verbose = $VERBOSE = true
+  private
+
+  def debug?   = $DEBUG
+  def verbose? = $VERBOSE
 end

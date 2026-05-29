@@ -1,0 +1,164 @@
+# frozen_string_literal: true
+# kitchen_sink.loki — demonstrates every Thor DSL feature available in Asgard.
+#
+# Task names deliberately avoid the gem's own .loki tasks (test, build, quality,
+# install, release) so this file can be loaded alongside them without conflict.
+
+class Tasks
+  # ── Asgard: var — static value and lazy lambda ─────────────────────────────
+  var :app_name,  "my_app"
+  var :build_dir, -> { "builds/#{app_name}" }
+
+  # ── Asgard: dotenv — load environment variables ────────────────────────────
+  # Uncomment to activate:
+  # dotenv              # loads .env
+  # dotenv ".env.local" # or a specific file
+
+  # ── Thor: class_option — option present on every task ──────────────────────
+  class_option :dry_run,
+               aliases: "-n",
+               type:    :boolean,
+               default: false,
+               desc:    "Print commands without executing them"
+
+  class_option :env,
+               type:    :string,
+               default: "development",
+               enum:    %w[development staging production],
+               desc:    "Target environment"
+
+  # ── Thor: default_task — runs when no command is given ─────────────────────
+  default_task :greet
+
+  # ── Thor: map — short aliases for tasks ────────────────────────────────────
+  map "g"  => :greet
+  map "ck" => :check
+  map "rp" => :report
+  map "pl" => :pipeline
+
+  # ── Basic task — no parameters ─────────────────────────────────────────────
+  desc "greet", "Say hello (default task when no command is given)"
+  def greet
+    puts "Hello from #{app_name} (#{options[:env]})!"
+  end
+
+  # ── Positional parameter with default ──────────────────────────────────────
+  desc "hello NAME", "Greet NAME; omit NAME to greet the world"
+  def hello(name = "World")
+    puts "Hello, #{name}!"
+  end
+
+  # ── Positional parameter with method_option ────────────────────────────────
+  desc "farewell NAME", "Say goodbye to NAME"
+  option :formal, aliases: "-f", type: :boolean, default: false, desc: "Use formal language"
+  def farewell(name = "friend")
+    msg = options[:formal] ? "Goodbye, #{name}." : "See ya, #{name}!"
+    puts msg
+  end
+
+  # ── argument — formal positional with type metadata ────────────────────────
+  # WARNING: argument is a CLASS-LEVEL declaration that pollutes every task's
+  # usage line. Only use it when every task in the class shares the same input,
+  # or in a single-command CLI. Shown here as a commented-out reference only.
+  #
+  # argument :target,
+  #          type:    :string,
+  #          default: "localhost",
+  #          desc:    "Deployment target host"
+
+  desc "notify RECIPIENT", "Send a notification to RECIPIENT"
+  def notify(recipient = "team")
+    puts "Notifying #{recipient}..."
+  end
+
+  # ── method_option — all five option types ──────────────────────────────────
+  desc "compile", "Compile the project"
+  option :output,  aliases: "-o", type: :string,  default: "dist/",        desc: "Output directory"
+  option :verbose, aliases: "-v", type: :boolean, default: false,           desc: "Enable verbose output"
+  option :jobs,    aliases: "-j", type: :numeric, default: 1,               desc: "Number of parallel jobs"
+  option :tags,                   type: :array,                              desc: "Build tags to apply"
+  option :defines,                type: :hash,                               desc: "Preprocessor defines (KEY:VALUE)"
+  def compile
+    puts "Compiling #{app_name} → #{options[:output]}"
+  end
+
+  # ── required option + enum + banner ────────────────────────────────────────
+  desc "deploy ENV", "Deploy to ENV (default: staging)"
+  option :strategy,
+         type:     :string,
+         required: true,
+         enum:     %w[blue-green rolling canary],
+         desc:     "Deployment strategy"
+  option :timeout,
+         type:    :numeric,
+         default: 300,
+         banner:  "SECONDS",
+         desc:    "Abort deployment after SECONDS"
+  option :branch,
+         type:    :string,
+         default: "main",
+         desc:    "Git branch to deploy"
+  def deploy(env = "staging")
+    puts "Deploying #{app_name}@#{options[:branch]} to #{env}..."
+  end
+
+  # ── long_desc — extended help shown by `asgard help report` ────────────────
+  long_desc <<~LONGDESC
+    Generates a project report covering test coverage, lint results,
+    and a dependency audit.
+
+    Pass --format to control output style. Use --since to scope the
+    report to changes after a given date.
+
+    Examples:\x5
+      asgard report --format html --since 2024-01-01\x5
+      asgard report --format json --output report.json\x5
+      asgard rp --format text
+  LONGDESC
+  desc "report", "Generate a project report"
+  option :format, type: :string, default: "text", enum: %w[text html json], desc: "Output format"
+  option :since,  type: :string,                  banner: "DATE",            desc: "Limit to changes after DATE"
+  option :output, type: :string,                  banner: "FILE",            desc: "Write output to FILE"
+  def report
+    puts "Generating #{options[:format]} report..."
+  end
+
+  # ── Asgard depends_on: sequential — analyze runs before spec ───────────────
+  desc "analyze", "Check code style and complexity"
+  def analyze = puts "Analyzing..."
+
+  depends_on :analyze
+  desc "spec", "Run the test suite (depends on: analyze)"
+  def spec = puts "Running specs..."
+
+  # ── Asgard depends_on: parallel — analyze and typecheck run concurrently ───
+  desc "typecheck", "Run the type checker"
+  def typecheck = puts "Type checking..."
+
+  depends_on [:analyze, :typecheck]
+  desc "check", "Run analyze and typecheck in parallel"
+  def check = puts "All checks passed."
+
+  # ── Asgard depends_on: mixed sequential + parallel ─────────────────────────
+  desc "pack", "Create distribution archive"
+  def pack = puts "Packing..."
+
+  #   check → compile+spec (parallel) → pack → pipeline
+  depends_on :check, [:compile, :spec], :pack
+  desc "pipeline", "Full pipeline: check → compile+spec → pack"
+  def pipeline = puts "Pipeline complete."
+
+  # ── Thor: no_commands — public helper excluded from CLI and --help ──────────
+  no_commands do
+    def current_sha
+      `git rev-parse --short HEAD`.strip
+    end
+  end
+
+  # ── private — also excluded from CLI and --help ────────────────────────────
+  private
+
+  def banner(msg)
+    puts "=== #{msg} ==="
+  end
+end

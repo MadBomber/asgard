@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Asgard documentation — custom styles
+   Material theme handles the heavy lifting; this file adds targeted polish.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   .loki filename display
+   Used whenever the filename ".loki" or "*.loki" appears inline or in code.
+   -------------------------------------------------------------------------- */
+
+/* Give inline code that looks like a .loki filename a subtle Norse-gold tint */
+code:is([class*="language-"]) .token.string:has-text(".loki"),
+.md-typeset code.loki-file {
+  color: var(--md-accent-fg-color);
+  font-weight: 600;
+}
+
+/* Highlight .loki filenames in directory tree code blocks */
+.md-typeset .highlight .filename {
+  background-color: color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+  border-bottom: 2px solid var(--md-accent-fg-color);
+  border-radius: 4px 4px 0 0;
+  color: var(--md-default-fg-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.8rem;
+}
+
+/* --------------------------------------------------------------------------
+   Admonition tweaks — slightly warmer warning border for the "argument"
+   class-level scope warning that appears on the tasks page.
+   -------------------------------------------------------------------------- */
+
+.md-typeset .admonition.warning,
+.md-typeset details.warning {
+  border-left-color: #e6a817;
+}
+
+.md-typeset .admonition.warning > .admonition-title,
+.md-typeset details.warning > summary {
+  background-color: rgba(230, 168, 23, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   Table of Contents — emphasise the current section a touch more
+   -------------------------------------------------------------------------- */
+
+.md-nav__link--active {
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Home page feature table (HTML table in index.md)
+   -------------------------------------------------------------------------- */
+
+.md-typeset table:not([class]) td {
+  vertical-align: top;
+}
+
+/* --------------------------------------------------------------------------
+   Execution diagram in dependencies.md — keep it tight and readable
+   -------------------------------------------------------------------------- */
+
+.md-typeset pre code {
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   Subtle Norse-shield watermark on the hero block (index page only).
+   Relies on the Material "primary: indigo" palette.
+   -------------------------------------------------------------------------- */
+
+.md-header {
+  box-shadow: 0 2px 8px rgba(63, 81, 181, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Code annotations — keep them readable across both light and dark palettes
+   -------------------------------------------------------------------------- */
+
+.md-typeset .md-annotation__index > * {
+  font-size: 0.7rem;
+}
+
+/* --------------------------------------------------------------------------
+   Task-runner specific: distinguish shell prompt lines from output lines
+   in bash code blocks by dimming lines that don't start with '#' or 'asgard'
+   -------------------------------------------------------------------------- */
+
+/* (Future: add targeted styles once MkDocs Material supports per-line
+   highlighting via config; for now this is intentionally minimal.) */

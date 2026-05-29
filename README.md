@@ -1,10 +1,33 @@
 # Asgard
 
-A Ruby task runner built on [Thor](https://github.com/rails/thor) for argument handling and [Dagwood](https://github.com/rewindio/dagwood) for dependency ordering.
+> [!INFO]
+> See the [CHANGELOG](CHANGELOG.md) for the latest changes. The [examples directory](examples/) contains working `.loki` files demonstrating the full feature set.
 
-The name comes from Norse mythology: **Thor** is the CLI framework, **Asgard** is the realm where tasks live, and the task file is named **loki** — because Loki holds all the tricks.
+<br>
+<table>
+<tr>
+<td width="40%" align="center" valign="top">
+<img src="docs/assets/images/asgard.jpg" alt="Asgard"><br>
+<em>"Loki writes the tricks. Asgard runs them."</em>
+</td>
+<td width="60%" valign="top">
+<strong>Key Features</strong><br>
 
-> **Asgard is a wrapper around [Thor](https://github.com/rails/thor).** Anything Thor can do — subcommands, typed options, argument validation, shell completion — is available inside a `.loki` file. Familiarity with Thor's DSL will make you immediately productive with Asgard.
+- <strong>Thor-Powered CLI</strong> — every Thor DSL feature available inside <code>.loki</code> task files<br>
+- <strong>Task Dependencies</strong> — sequential, parallel, and mixed dependency graphs via <code>depends_on</code><br>
+- <strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads<br>
+- <strong>Subcommands</strong> — group related tasks under a named namespace<br>
+- <strong>Variables</strong> — static values and lazy-evaluated lambdas via <code>var</code><br>
+- <strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts<br>
+- <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
+- <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
+- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, auto-loaded alphabetically<br>
+- <strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task<br>
+</td>
+</tr>
+</table>
+
+<p>Asgard is a <a href="https://github.com/rails/thor">Thor</a>-based task runner for Ruby projects. Define tasks in <code>.loki</code> files, declare dependencies between them, and let Asgard handle ordering and concurrent execution. Anything Thor can do — subcommands, typed options, argument validation — is available inside a <code>.loki</code> file.</p>
 
 ## Installation
 

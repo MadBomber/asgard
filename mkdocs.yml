@@ -1,0 +1,164 @@
+# MkDocs Configuration for Asgard Documentation
+site_name: Asgard
+site_description: Thor-based Ruby task runner with dependency graphs and concurrent execution
+site_author: Dewayne VanHoozer
+site_url: https://madbomber.github.io/asgard
+copyright: Copyright &copy; 2026 Dewayne VanHoozer
+
+# Repository information
+repo_name: madbomber/asgard
+repo_url: https://github.com/MadBomber/asgard
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+
+  # Color scheme
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    - scheme: slate
+      primary: indigo
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  # Typography
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  # Logo and icon
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/shield
+
+  # Theme features
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - header.autohide
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+    - content.action.view
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - tags
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: madbomber
+      repo: asgard
+      normalize_issue_symbols: true
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra CSS
+extra_css:
+  - assets/css/custom.css
+
+# Social media and extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/MadBomber/asgard
+      name: Asgard on GitHub
+    - icon: fontawesome/solid/gem
+      link: https://rubygems.org/gems/asgard
+      name: Asgard on RubyGems
+
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: Thanks for your feedback! Help us improve by creating an issue.
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Tasks:
+      - Defining Tasks: tasks.md
+      - Dependencies: dependencies.md
+      - Variables: variables.md
+      - Helper Methods: helpers.md
+  - CLI:
+      - Options & Flags: options.md
+      - Subcommands: subcommands.md
+      - Shell Helpers: shell.md
+      - Environment: environment.md
+  - Task Files: task-files.md
+  - API Reference: api.md
+  - Examples: examples.md
+  - Changelog: changelog.md

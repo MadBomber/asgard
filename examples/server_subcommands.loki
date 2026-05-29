@@ -1,0 +1,56 @@
+# frozen_string_literal: true
+# Demonstrates Thor subcommands registered on the top-level Tasks class.
+#
+# The subcommand class inherits from Tasks so it has access to sh, shebang,
+# var, depends_on, and the built-in --debug/--verbose class options.
+#
+# Usage:
+#   asgard server          # shows subcommand help
+#   asgard server start
+#   asgard server start 4000 --workers 4 --daemon
+#   asgard server stop --force
+#   asgard server status
+#   asgard server restart 4000
+
+class ServerCommands < Tasks
+  desc "start [PORT]", "Start the server on PORT (default: 3000)"
+  option :daemon,  aliases: "-d", type: :boolean, default: false, desc: "Run as a background daemon"
+  option :workers, aliases: "-w", type: :numeric, default: 2,     desc: "Number of worker processes"
+  option :log,                    type: :string,  default: "log/server.log",
+                                  banner: "FILE", desc:    "Write logs to FILE"
+  def start(port = "3000")
+    puts "Starting server on :%s with %d workers%s" % [
+      port,
+      options[:workers],
+      options[:daemon] ? " (daemon)" : ""
+    ]
+  end
+
+  desc "stop", "Stop the running server"
+  option :force, aliases: "-f", type: :boolean, default: false, desc: "Force-kill without draining"
+  option :wait,                  type: :numeric, default: 30,   desc: "Seconds to wait for shutdown"
+  def stop
+    if options[:force]
+      puts "Force-stopping server..."
+    else
+      puts "Gracefully stopping server (timeout: #{options[:wait]}s)..."
+    end
+  end
+
+  desc "status", "Show server status and process info"
+  def status
+    puts "Checking server status..."
+  end
+
+  # depends_on works inside subcommand groups — stop runs before start
+  depends_on :stop, :start
+  desc "restart [PORT]", "Restart the server on PORT (stop, then start)"
+  def restart(port = "3000")
+    puts "Server restarted on port #{port}."
+  end
+end
+
+class Tasks
+  desc "server SUBCOMMAND", "Manage the application server"
+  subcommand "server", ServerCommands
+end

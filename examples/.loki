@@ -1,0 +1,2 @@
+# The .loki file can be empty if there are *.loki files define the tasks
+# they will be auto loaded.

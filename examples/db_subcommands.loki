@@ -1,0 +1,74 @@
+# frozen_string_literal: true
+# Demonstrates Thor subcommands with Asgard's depends_on chaining within
+# the subcommand group. Inherits from Tasks for full Asgard DSL access.
+#
+# Usage:
+#   asgard db               # shows subcommand help
+#   asgard db migrate
+#   asgard db migrate 20240101120000 --dry-run
+#   asgard db rollback
+#   asgard db rollback 3
+#   asgard db seed --file db/seeds/staging.rb
+#   asgard db reset         # runs: rollback → migrate → seed
+#   asgard db console --env staging
+#   asgard db status
+
+class DBCommands < Tasks
+  desc "migrate [VERSION]", "Run pending migrations up to VERSION"
+  option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "Print SQL without executing"
+  option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Show each migration as it runs"
+  def migrate(version = nil)
+    target = version ? "to version #{version}" : "to latest"
+    puts "Migrating #{target}#{options[:dry_run] ? " (dry run)" : ""}..."
+  end
+
+  desc "rollback [STEPS]", "Roll back the last STEPS migrations (default: 1)"
+  option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "Print SQL without executing"
+  def rollback(steps = "1")
+    puts "Rolling back #{steps} migration(s)#{options[:dry_run] ? " (dry run)" : ""}..."
+  end
+
+  desc "seed [FILE]", "Load seed data into the database"
+  option :env, type: :string, default: "development",
+               enum:  %w[development staging production],
+               desc:  "Environment to seed"
+  def seed(file = "db/seeds.rb")
+    puts "Seeding #{options[:env]} from #{file}..."
+  end
+
+  # depends_on chains within the subcommand group:
+  #   rollback → migrate → seed → reset
+  depends_on :rollback, :migrate, :seed
+  desc "reset", "Rollback all migrations, re-migrate, and reseed"
+  def reset
+    puts "Database reset complete."
+  end
+
+  long_desc <<~DESC
+    Opens an interactive SQL console connected to the configured database.
+
+    The console inherits credentials from the current environment's
+    database.yml (Rails) or DATABASE_URL.
+
+    Examples:\x5
+      asgard db console\x5
+      asgard db console --env staging
+  DESC
+  desc "console", "Open an interactive database console"
+  option :env, type: :string, default: "development",
+               enum:  %w[development staging production],
+               desc:  "Environment to connect to"
+  def console
+    puts "Opening #{options[:env]} database console..."
+  end
+
+  desc "status", "Show applied and pending migrations"
+  def status
+    puts "Checking migration status..."
+  end
+end
+
+class Tasks
+  desc "db SUBCOMMAND", "Manage the database"
+  subcommand "db", DBCommands
+end

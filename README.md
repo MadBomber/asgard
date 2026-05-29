@@ -4,6 +4,8 @@ A Ruby task runner built on [Thor](https://github.com/rails/thor) for argument h
 
 The name comes from Norse mythology: **Thor** is the CLI framework, **Asgard** is the realm where tasks live, and the task file is named **loki** — because Loki holds all the tricks.
 
+> **Asgard is a wrapper around [Thor](https://github.com/rails/thor).** Anything Thor can do — subcommands, typed options, argument validation, shell completion — is available inside a `.loki` file. Familiarity with Thor's DSL will make you immediately productive with Asgard.
+
 ## Installation
 
 ```bash
@@ -364,6 +366,64 @@ class Tasks
   def version = puts Asgard::VERSION
 end
 ```
+
+---
+
+## Subcommands
+
+Group related tasks under a common name using Thor's `subcommand` method. Define a subcommand class that inherits from `Tasks`, then register it with a name and description.
+
+```ruby
+class DeployCommands < Tasks
+  desc "staging", "Deploy to staging"
+  def staging = sh "cap staging deploy"
+
+  desc "production", "Deploy to production"
+  def production = sh "cap production deploy"
+end
+
+class Tasks
+  desc "deploy SUBCOMMAND", "Deploy the application"
+  subcommand "deploy", DeployCommands
+end
+```
+
+```bash
+asgard deploy           # shows deploy subcommand help
+asgard deploy staging
+asgard deploy production
+```
+
+Subcommand tasks have all the same access to helper methods like `sh`, `shebang`, `depends_on`, `var`, and the built-in `--debug`/`--verbose` class options as normal tasks.
+
+`depends_on` only works within a subcommand group exactly as it does at the top level:
+
+```ruby
+class DBCommands < Tasks
+  desc "migrate", "Run pending migrations"
+  def migrate = sh "rails db:migrate"
+
+  desc "seed", "Load seed data"
+  def seed = sh "rails db:seed"
+
+  depends_on :migrate, :seed
+  desc "reset", "Migrate then seed"
+  def reset = puts "Done."
+end
+
+class Tasks
+  desc "db SUBCOMMAND", "Manage the database"
+  subcommand "db", DBCommands
+end
+```
+
+```bash
+asgard db reset   # migrate → seed → reset
+```
+
+Each subcommand group can have its own `desc`, `long_desc`, `option`, `class_option`, and `map` declarations, all scoped to that group.
+
+See [`examples/server_subcommands.loki`](examples/server_subcommands.loki) and [`examples/db_subcommands.loki`](examples/db_subcommands.loki) for full working examples.
 
 ---
 

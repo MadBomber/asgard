@@ -1,6 +1,8 @@
-# default task filename for the asgard task runner
+# frozen_string_literal: true
+# Asgard gem's own task file.
+# Task is pre-defined by the gem — just reopen it to add tasks.
 
-class Tasks < Asgard::Base
+class Tasks
   var :gem_name, "asgard"
   var :version,  -> { Asgard::VERSION }
 

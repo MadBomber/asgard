@@ -2,7 +2,7 @@
 
 require "thor"
 require "set"
-require "simple_flow"
+require "dagwood"
 
 module Asgard
   class Base < Thor
@@ -88,7 +88,7 @@ module Asgard
         Dotenv.load(path) if File.exist?(path)
       end
 
-      # Validate the full dep graph for cycles using SimpleFlow::DependencyGraph.
+      # Validate the full dep graph for cycles using Dagwood::DependencyGraph.
       def validate_deps!
         return if _deps.empty?
 
@@ -97,7 +97,7 @@ module Asgard
           hash[task] = _deps.fetch(task, []).flatten
         end
 
-        SimpleFlow::DependencyGraph.new(full_graph).order
+        Dagwood::DependencyGraph.new(full_graph).order
       rescue TSort::Cyclic => e
         raise Asgard::CircularDependencyError, e.message
       end
@@ -132,7 +132,7 @@ module Asgard
         stages = self.class._deps[target]
         if stages&.any?
           graph  = self.class._build_dep_graph(stages)
-          groups = SimpleFlow::DependencyGraph.new(graph).parallel_order
+          groups = Dagwood::DependencyGraph.new(graph).parallel_order
 
           groups.each do |group|
             if group.size > 1

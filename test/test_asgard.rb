@@ -9,10 +9,104 @@ class TestAsgardVersion < Minitest::Test
   end
 end
 
+class TestAsgardLoadLoki < Minitest::Test
+  def test_loads_star_loki_files
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "zebra.loki"),
+        "class Tasks; desc 'zebra', 'z'; def zebra_task = nil; end")
+      File.write(File.join(dir, "alpha.loki"),
+        "class Tasks; desc 'alpha', 'a'; def alpha_task = nil; end")
+      Asgard.load_loki(dir)
+      assert Tasks.method_defined?(:alpha_task)
+      assert Tasks.method_defined?(:zebra_task)
+    end
+  ensure
+    Tasks.class_eval { [:alpha_task, :zebra_task].each { |m| remove_method(m) rescue nil } }
+    Tasks._reset_ran!
+  end
+
+  def test_ignores_dot_loki_file
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"),
+        "class Tasks; no_commands { def dot_loki_sentinel = nil }; end")
+      Asgard.load_loki(dir)
+      refute Tasks.method_defined?(:dot_loki_sentinel)
+    end
+  end
+
+  def test_does_nothing_when_no_star_loki_files_exist
+    Dir.mktmpdir do |dir|
+      Asgard.load_loki(File.realpath(dir))
+    end
+  end
+end
+
+class TestAsgardRun < Minitest::Test
+  def test_run_exits_when_no_loki_file_found
+    Dir.mktmpdir do |dir|
+      _, err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
+      end
+      assert_match "no .loki file found", err
+    end
+  end
+
+  def test_run_exits_on_circular_dependency
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class Tasks
+          depends_on :circ_b
+          desc "circ_a", "a"
+          def circ_a = nil
+
+          depends_on :circ_a
+          desc "circ_b", "b"
+          def circ_b = nil
+        end
+      RUBY
+      _, err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
+      end
+      assert_match "circular dependency", err
+    end
+  ensure
+    Tasks._deps.delete(:circ_a)
+    Tasks._deps.delete(:circ_b)
+    Tasks.class_eval { [:circ_a, :circ_b].each { |m| remove_method(m) rescue nil } }
+    Tasks._reset_ran!
+  end
+end
+
+class TestAsgardTasks < Minitest::Test
+  def test_tasks_is_defined
+    assert defined?(Tasks), "Tasks should be defined by the gem"
+  end
+
+  def test_tasks_inherits_from_base
+    assert Tasks < Asgard::Base
+  end
+
+  def test_tasks_can_be_reopened_with_new_methods
+    log = []
+    Tasks.class_eval do
+      desc "test_reopen", "reopened method"
+      define_method(:test_reopen) { log << :ran }
+    end
+    Tasks.new([], {}, {}).invoke(:test_reopen)
+    assert_includes log, :ran
+  ensure
+    Tasks.class_eval { remove_method(:test_reopen) rescue nil }
+    Tasks._reset_ran!
+  end
+end
+
 class TestAsgardFindFile < Minitest::Test
   def test_returns_nil_when_not_found
     Dir.chdir("/tmp") do
-      assert_nil Asgard.find_task_files
+      assert_nil Asgard.find_task_file
     end
   end
 
@@ -21,8 +115,8 @@ class TestAsgardFindFile < Minitest::Test
       dir  = File.realpath(dir)
       path = File.join(dir, ".loki")
       File.write(path, "")
-      result = Dir.chdir(dir) { Asgard.find_task_files }
-      assert_equal [path], result
+      result = Dir.chdir(dir) { Asgard.find_task_file }
+      assert_equal path, result
     end
   end
 
@@ -33,39 +127,17 @@ class TestAsgardFindFile < Minitest::Test
       subdir = File.join(dir, "sub")
       Dir.mkdir(subdir)
       File.write(path, "")
-      result = Dir.chdir(subdir) { Asgard.find_task_files }
-      assert_equal [path], result
+      result = Dir.chdir(subdir) { Asgard.find_task_file }
+      assert_equal path, result
     end
   end
 
-  def test_dot_loki_takes_priority_over_glob_files
+  def test_ignores_star_loki_files
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
-      File.write(File.join(dir, ".loki"), "")
       File.write(File.join(dir, "tasks.loki"), "")
-      result = Dir.chdir(dir) { Asgard.find_task_files }
-      assert_equal [File.join(dir, ".loki")], result
-    end
-  end
-
-  def test_returns_all_glob_files_sorted_when_no_dot_loki
-    Dir.mktmpdir do |dir|
-      dir = File.realpath(dir)
-      %w[zebra.loki alpha.loki mango.loki].each { |f| File.write(File.join(dir, f), "") }
-      result = Dir.chdir(dir) { Asgard.find_task_files }
-      assert_equal %w[alpha.loki mango.loki zebra.loki].map { |f| File.join(dir, f) }, result
-    end
-  end
-
-  def test_finds_glob_files_in_parent_directory
-    Dir.mktmpdir do |dir|
-      dir    = File.realpath(dir)
-      path   = File.join(dir, "tasks.loki")
-      subdir = File.join(dir, "sub")
-      Dir.mkdir(subdir)
-      File.write(path, "")
-      result = Dir.chdir(subdir) { Asgard.find_task_files }
-      assert_equal [path], result
+      result = Dir.chdir(dir) { Asgard.find_task_file }
+      assert_nil result
     end
   end
 end

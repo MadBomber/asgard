@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Dewayne VanHoozer"]
   spec.email = ["dewayne@vanhoozer.me"]
 
-  spec.summary = "A just-like task runner built on Thor, with recipe dependencies via SimpleFlow."
-  spec.description = "Asgard brings just-style recipes to Ruby: Thor-powered CLI, dep ordering via SimpleFlow::DependencyGraph, var declarations, dotenv, sh/shebang helpers, and importable task modules."
+  spec.summary = "A just-like task runner built on Thor, with recipe dependencies via Dagwood."
+  spec.description = "Asgard brings just-style recipes to Ruby: Thor-powered CLI, dep ordering via Dagwood::DependencyGraph, var declarations, dotenv, sh/shebang helpers, and importable task modules."
   spec.homepage = "https://github.com/madbomber/asgard"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
@@ -36,10 +36,9 @@ Gem::Specification.new do |spec|
   spec.executables = ["asgard"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "logger",      ">= 0"
-  spec.add_dependency "thor",        "~> 1.0"
-  spec.add_dependency "simple_flow", "~> 0.4"
-  spec.add_dependency "dotenv",      "~> 3.0"
+  spec.add_dependency "thor",    "~> 1.0"
+  spec.add_dependency "dagwood", "~> 1.0"
+  spec.add_dependency "dotenv",  "~> 3.0"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://guides.rubygems.org/make-your-own-gem/

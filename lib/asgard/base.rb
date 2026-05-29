@@ -19,8 +19,10 @@ module Asgard
         subclass.instance_variable_set(:@_deps,         {})
         subclass.instance_variable_set(:@_vars,         {})
         subclass.instance_variable_set(:@_pending_deps, [])
-        subclass.instance_variable_set(:@_ran_tasks,    Set.new)
-        subclass.instance_variable_set(:@_ran_mutex,    Mutex.new)
+        subclass.instance_variable_set(:@_running,    Set.new)
+        subclass.instance_variable_set(:@_done,       Set.new)
+        subclass.instance_variable_set(:@_cond,       Hash.new { |h, k| h[k] = ConditionVariable.new })
+        subclass.instance_variable_set(:@_ran_mutex,  Mutex.new)
       end
 
       def _deps
@@ -31,8 +33,16 @@ module Asgard
         @_vars ||= {}
       end
 
-      def _ran_tasks
-        @_ran_tasks ||= Set.new
+      def _running
+        @_running ||= Set.new
+      end
+
+      def _done
+        @_done ||= Set.new
+      end
+
+      def _cond
+        @_cond ||= Hash.new { |h, k| h[k] = ConditionVariable.new }
       end
 
       def _ran_mutex
@@ -41,7 +51,11 @@ module Asgard
 
       # Reset execution tracking for a fresh asgard invocation.
       def _reset_ran!
-        _ran_mutex.synchronize { @_ran_tasks = Set.new }
+        _ran_mutex.synchronize do
+          @_running = Set.new
+          @_done    = Set.new
+          @_cond    = Hash.new { |h, k| h[k] = ConditionVariable.new }
+        end
       end
 
       # Translate stages into a DependencyGraph-compatible hash.
@@ -73,8 +87,12 @@ module Asgard
         _vars[name.to_sym] = value
         no_commands do
           define_method(name) do
-            v = self.class._vars[name.to_sym]
-            v.respond_to?(:call) ? v.call : v
+            ivar = :"@__var_#{name}"
+            unless instance_variable_defined?(ivar)
+              v = self.class._vars[name.to_sym]
+              instance_variable_set(ivar, v.respond_to?(:call) ? v.call : v)
+            end
+            instance_variable_get(ivar)
           end
         end
       end
@@ -92,9 +110,14 @@ module Asgard
       def validate_deps!
         return if _deps.empty?
 
-        all_tasks  = all_commands.keys.map(&:to_sym)
-        full_graph = all_tasks.each_with_object({}) do |task, hash|
+        all_task_names = all_commands.keys.map(&:to_sym)
+        full_graph     = all_task_names.each_with_object({}) do |task, hash|
           hash[task] = _deps.fetch(task, []).flatten
+        end
+
+        undefined = _deps.values.flatten.uniq - all_task_names
+        if undefined.any?
+          raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
         end
 
         Dagwood::DependencyGraph.new(full_graph).order
@@ -103,6 +126,8 @@ module Asgard
       end
 
       def method_added(method_name)
+        return super unless @usage
+
         pending = Array(@_pending_deps).dup
         @_pending_deps = []
 
@@ -117,36 +142,54 @@ module Asgard
 
     no_commands do
       # Dispatch hook: resolves and runs all deps (in parallel where declared)
-      # before executing the target command. Thread-safe deduplication via
-      # the class-level _ran_tasks set ensures each task runs at most once.
+      # before executing the target command.
+      #
+      # Completion-based deduplication: a task is only marked done after its
+      # body finishes. Threads that arrive at an already-running shared dep
+      # wait on its ConditionVariable rather than proceeding immediately,
+      # preventing the race where parallel tasks start before a shared dep
+      # has actually completed.
       def invoke_command(command, *args)
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
 
         should_run = self.class._ran_mutex.synchronize do
-          next false if self.class._ran_tasks.include?(target)
-          self.class._ran_tasks.add(target)
-          true
+          if self.class._done.include?(target)
+            false
+          elsif self.class._running.include?(target)
+            self.class._cond[target].wait(self.class._ran_mutex) until self.class._done.include?(target)
+            false
+          else
+            self.class._running.add(target)
+            true
+          end
         end
         return unless should_run
 
-        stages = self.class._deps[target]
-        if stages&.any?
-          graph  = self.class._build_dep_graph(stages)
-          groups = Dagwood::DependencyGraph.new(graph).parallel_order
+        begin
+          stages = self.class._deps[target]
+          if stages&.any?
+            graph  = self.class._build_dep_graph(stages)
+            groups = Dagwood::DependencyGraph.new(graph).parallel_order
 
-          groups.each do |group|
-            if group.size > 1
-              threads = group.map { |task| Thread.new { _run_dep(task) } }
-              threads.each(&:join)
-            else
-              _run_dep(group.first)
+            groups.each do |group|
+              if group.size > 1
+                threads = group.map { |task| Thread.new { _run_dep(task) } }
+                threads.each(&:join)
+              else
+                _run_dep(group.first)
+              end
             end
           end
-        end
 
-        command.run(self, *args)
+          command.run(self, *args)
+        ensure
+          self.class._ran_mutex.synchronize do
+            self.class._done.add(target)
+            self.class._cond[target].broadcast
+          end
+        end
       end
 
       def _run_dep(task)

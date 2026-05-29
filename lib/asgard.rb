@@ -42,5 +42,7 @@ module Asgard
     Tasks.start(argv)
   rescue CircularDependencyError => e
     abort "asgard: circular dependency — #{e.message}"
+  rescue Error => e
+    abort "asgard: #{e.message}"
   end
 end

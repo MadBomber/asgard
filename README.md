@@ -139,7 +139,7 @@ end
 
 `depends_on` declares what must run before a task. Each dependency runs at most once per `asgard` invocation regardless of how many tasks declare it. Circular dependencies are caught at startup.
 
-`desc` and `depends_on` are independent — either can come first, both must appear before `def`.
+`desc` and `depends_on` are independent — either can come first, both must appear before `def`. `var` declarations between `depends_on` and `def` are safe and do not consume the pending dependency.
 
 ### Sequential dependencies
 
@@ -351,10 +351,14 @@ end
 
 Supported interpreters: `:python3`, `:python`, `:node`, `:ruby`, `:perl`, `:bash`, `:sh`. Any other symbol is passed directly to `system` with a `.tmp` extension.
 
-Pass `silent: true` to suppress the command echo:
+Pass `silent: true` to both `sh` and `shebang` to suppress the script echo:
 
 ```ruby
-def build = sh "rake build", silent: true
+def build   = sh "rake build", silent: true
+def analyze = shebang :python3, <<~PY, silent: true
+  import json
+  print(json.load(open("data.json")))
+PY
 ```
 
 ---
@@ -539,7 +543,7 @@ end
 | `Asgard.find_task_file` | Returns path to `.loki` searching from CWD upward, or nil |
 | `Asgard.load_loki(dir)` | Loads all `*.loki` files in dir alphabetically — called by `run!` only when `--auto-load` is passed |
 
-`run!` handles its own errors — a missing `.loki` or a circular dependency both produce a clean one-line message and exit 1.
+`run!` handles its own errors — a missing `.loki`, a circular dependency, or a `depends_on` that names a task that doesn't exist all produce a clean one-line message and exit 1.
 
 ---
 

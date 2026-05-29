@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Parallel dep race condition** — when two parallel tasks shared a common dependency, the second thread could start before the shared dep finished executing. `_ran_tasks` (a single Set) has been replaced with `_running` / `_done` Sets and a per-task `ConditionVariable`. Threads that arrive at an already-running dep now wait for its completion rather than skipping it; the `ensure` block broadcasts completion whether the task succeeds or raises.
+- **`depends_on` silently dropped before `var` or `no_commands`** — Thor uses an integer counter for `@no_commands` that resets to `0` (truthy in Ruby) after any `no_commands` block. The `method_added` guard now checks `@usage` instead: pending deps are only consumed when a command-defining method is added (one preceded by `desc`), so `var` declarations and `no_commands` helpers placed between `depends_on` and `def` no longer silently steal the dependency.
+- **`shebang` ignored its `silent:` keyword argument** — the parameter was accepted but never referenced; the script body is now echoed to stdout unless `silent: true` is passed, matching the behavior of `sh`.
+- **`var` lambdas re-evaluated on every access** — the accessor method now caches its result in a per-instance variable on first call. Lambdas used for computed values (e.g. `` -> { `git describe --tags`.strip } ``) now run exactly once per instance.
+
+### Changed
+
+- **`validate_deps!` detects undefined dependency names** — `depends_on :nonexistent` previously passed validation silently and produced no error at runtime. `validate_deps!` now raises `Asgard::Error` listing every dep name that does not correspond to a defined task. `run!` catches this alongside `CircularDependencyError` and exits with a clean message.
+
 ## [0.2.0] - 2026-05-29
 
 ### Changed

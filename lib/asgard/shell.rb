@@ -32,7 +32,9 @@ module Asgard
       }
       ext = extensions.fetch(interpreter.to_sym, ".tmp")
 
-      Tempfile.create(["asgard_", ext]) do |f|
+      $stdout.puts script unless silent
+
+    Tempfile.create(["asgard_", ext]) do |f|
         f.write(script)
         f.flush
         system(interpreter.to_s, f.path)

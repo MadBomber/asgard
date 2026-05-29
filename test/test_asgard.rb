@@ -164,6 +164,26 @@ class TestAsgardVar < Minitest::Test
     end
     assert_equal "block_val", klass.new([], {}, {}).computed
   end
+
+  def test_var_lambda_is_memoized
+    call_count = 0
+    klass = Class.new(Asgard::Base) do
+      var :expensive, -> { call_count += 1; "result" }
+    end
+    instance = klass.new([], {}, {})
+    3.times { instance.expensive }
+    assert_equal 1, call_count
+  end
+
+  def test_var_memoization_is_per_instance
+    klass = Class.new(Asgard::Base) do
+      var :counter, -> { Object.new }
+    end
+    a = klass.new([], {}, {})
+    b = klass.new([], {}, {})
+    assert_same a.counter, a.counter
+    refute_same a.counter, b.counter
+  end
 end
 
 class TestAsgardDependsOn < Minitest::Test
@@ -212,6 +232,36 @@ class TestAsgardDependsOn < Minitest::Test
       no_commands { define_method(:_private_helper) {} }
     end
     refute klass._deps.key?(:_private_helper)
+  end
+
+  def test_depends_on_survives_no_commands_block_between_declaration_and_task
+    log   = []
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) { log << :build }
+
+      depends_on :build
+      no_commands { define_method(:helper) {} }
+      desc "test", "run tests"
+      define_method(:test) { log << :test }
+    end
+    klass.new([], {}, {}).invoke(:test)
+    assert_equal [:build, :test], log
+  end
+
+  def test_depends_on_survives_var_declaration_between_declaration_and_task
+    log   = []
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) { log << :build }
+
+      depends_on :build
+      var :gem_name, "asgard"
+      desc "test", "run tests"
+      define_method(:test) { log << :test }
+    end
+    klass.new([], {}, {}).invoke(:test)
+    assert_equal [:build, :test], log
   end
 end
 
@@ -311,6 +361,27 @@ class TestAsgardCircularDep < Minitest::Test
   def test_no_error_when_no_deps
     klass = Class.new(Asgard::Base)
     klass.validate_deps!
+  end
+
+  def test_raises_on_undefined_dependency_name
+    klass = Class.new(Asgard::Base) do
+      desc "test", "test"
+      define_method(:test) {}
+    end
+    klass._deps[:test] = [[:nonexistent_task]]
+    err = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "nonexistent_task", err.message
+  end
+
+  def test_raises_on_multiple_undefined_dependencies
+    klass = Class.new(Asgard::Base) do
+      desc "test", "test"
+      define_method(:test) {}
+    end
+    klass._deps[:test] = [[:ghost_a, :ghost_b]]
+    err = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "ghost_a", err.message
+    assert_match "ghost_b", err.message
   end
 end
 
@@ -535,6 +606,22 @@ class TestAsgardShell < Minitest::Test
     f = Tempfile.new("asgard_shebang_test")
     shebang :ruby, "File.write('#{f.path}', 'from_ruby')", silent: true
     assert_equal "from_ruby", File.read(f.path)
+  ensure
+    f.unlink
+  end
+
+  def test_shebang_silent_suppresses_script_echo
+    f = Tempfile.new("asgard_shebang_silent")
+    out, = capture_io { shebang :ruby, "File.write('#{f.path}', 'x')", silent: true }
+    assert_empty out
+  ensure
+    f.unlink
+  end
+
+  def test_shebang_prints_script_when_not_silent
+    f = Tempfile.new("asgard_shebang_loud")
+    out, = capture_io { shebang :ruby, "File.write('#{f.path}', 'x')" }
+    assert_match "File.write", out
   ensure
     f.unlink
   end

@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Dewayne VanHoozer"]
   spec.email = ["dewayne@vanhoozer.me"]
 
-  spec.summary = "A just-like task runner built on Thor, with recipe dependencies via Dagwood."
-  spec.description = "Asgard brings just-style recipes to Ruby: Thor-powered CLI, dep ordering via Dagwood::DependencyGraph, var declarations, dotenv, sh/shebang helpers, and importable task modules."
+  spec.summary = "A powerful Ruby-based task runner"
+  spec.description = "A powerful Ruby-based task runner for any kind of project with task dependency tracking and concurrent execution of designated tasks. Uses Thor for its rich CLI options, var declarations, dotenv, sh/shebang helpers, and importable task files."
   spec.homepage = "https://github.com/madbomber/asgard"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"

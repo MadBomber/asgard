@@ -39,8 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Asgard::Base` — Thor subclass providing the task DSL
-- `depends_on` — declare recipe dependencies; dependencies run at most once per invocation
-- `var` — declare static or lazy-evaluated variables available to all recipes
+- `depends_on` — declare task dependencies; dependencies run at most once per invocation
+- `var` — declare static or lazy-evaluated variables available to all tasks
 - `import` — flat-merge a task module into the current class
 - `dotenv` — load a `.env` file into the environment
 - `sh` — run a shell command or multiline heredoc script; exits with the command's status on failure

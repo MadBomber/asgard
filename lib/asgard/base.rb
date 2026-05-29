@@ -57,15 +57,15 @@ module Asgard
         graph
       end
 
-      # Declare dependencies for the next recipe.
+      # Declare dependencies for the next task.
       # Bare symbols run sequentially; arrays within the splat run in parallel.
       #
       #   depends_on :build                          # sequential
       #   depends_on :build, :lint                   # both sequential
       #   depends_on [:build, :lint]                 # build and lint in parallel
       #   depends_on :setup, [:build, :lint], :test  # setup, then build+lint, then test
-      def depends_on(*recipes)
-        @_pending_deps = recipes
+      def depends_on(*tasks)
+        @_pending_deps = tasks
       end
 
       def var(name, value = nil, &block)
@@ -118,7 +118,7 @@ module Asgard
     no_commands do
       # Dispatch hook: resolves and runs all deps (in parallel where declared)
       # before executing the target command. Thread-safe deduplication via
-      # the class-level _ran_tasks set ensures each recipe runs at most once.
+      # the class-level _ran_tasks set ensures each task runs at most once.
       def invoke_command(command, *args)
         target = command.name.to_sym
 

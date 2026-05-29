@@ -1,6 +1,6 @@
 # Asgard
 
-A [just](https://just.systems)-like task runner for Ruby. Built on [Thor](https://github.com/rails/thor) for argument handling and [Dagwood](https://github.com/rewindio/dagwood) for dependency ordering.
+A Ruby task runner built on [Thor](https://github.com/rails/thor) for argument handling and [Dagwood](https://github.com/rewindio/dagwood) for dependency ordering.
 
 The name comes from Norse mythology: **Thor** is the CLI framework, **Asgard** is the realm where tasks live, and the task file is named **loki** — because Loki holds all the tricks.
 
@@ -208,6 +208,61 @@ class Tasks
 
   desc "tag", "Create a release tag"
   def tag = sh "git tag #{app}-#{version}"
+end
+```
+
+---
+
+## Helper methods
+
+Private methods are callable from any task in the same class but are never registered as commands — they won't appear in `--help` output and can't be invoked from the CLI.
+
+```ruby
+class Tasks
+  desc "build", "Compile and package"
+  def build
+    compile("src")
+    package(version)
+  end
+
+  desc "release", "Build and publish"
+  def release
+    build
+    sh "gem push pkg/myapp-#{version}.gem"
+  end
+
+  private
+
+  def compile(dir)
+    sh "gcc -O2 -o bin/myapp #{dir}/*.c"
+  end
+
+  def package(ver)
+    sh "tar czf pkg/myapp-#{ver}.tar.gz bin/"
+  end
+end
+```
+
+Helpers can also be shared across multiple `.loki` files by extracting them into a plain Ruby file and loading it explicitly:
+
+```ruby
+# shared/helpers.rb
+module BuildHelpers
+  private
+
+  def compile(dir)
+    sh "gcc -O2 -o bin/myapp #{dir}/*.c"
+  end
+end
+
+# .loki
+require_relative "shared/helpers"
+
+class Tasks
+  include BuildHelpers
+
+  desc "build", "Compile the project"
+  def build = compile("src")
 end
 ```
 

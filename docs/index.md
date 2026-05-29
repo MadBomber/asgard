@@ -17,7 +17,7 @@
 <li><strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts</li>
 <li><strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code></li>
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
-<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, auto-loaded alphabetically</li>
+<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code></li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task</li>
 </ul>
 </td>
@@ -53,7 +53,7 @@ asgard hello
 
 ## How It Works
 
-Asgard searches upward from your current directory for a `.loki` file. That file (and any `*.loki` siblings) marks the project root and defines your tasks. All task files reopen `class Tasks`, which is pre-defined by the gem as a subclass of `Asgard::Base` (itself a Thor subclass).
+Asgard searches upward from your current directory for a `.loki` file. That file marks the project root. Additional `*.loki` files in the same directory can be loaded by passing `--auto-load` to the `asgard` command. All task files reopen `class Tasks`, which is pre-defined by the gem as a subclass of `Asgard::Base` (itself a Thor subclass).
 
 The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_desc`, `argument`, `default_task`, `map`, and `subcommand` all work exactly as documented in Thor — with Asgard's own `depends_on`, `var`, `sh`, `shebang`, and `dotenv` layered on top.
 
@@ -72,7 +72,7 @@ The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_d
 | [Subcommands](subcommands.md) | Grouping tasks under a namespace |
 | [Shell Helpers](shell.md) | `sh`, `shebang`, and supported interpreters |
 | [Environment](environment.md) | Loading `.env` files with `dotenv` |
-| [Task Files](task-files.md) | `.loki` root marker, auto-loading, multi-file layout |
+| [Task Files](task-files.md) | `.loki` root marker, `--auto-load`, multi-file layout |
 | [API Reference](api.md) | Module methods, DSL methods, error classes |
 | [Examples](examples.md) | Working `.loki` files for every feature |
 | [Changelog](changelog.md) | Release history |

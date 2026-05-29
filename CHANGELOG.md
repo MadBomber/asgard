@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-29
+
+### Changed
+
+- `*.loki` files are no longer auto-loaded by default. Pass `--auto-load` to `asgard` to load all `*.loki` files from the project root alphabetically before `.loki`. This is a breaking change for projects using the multi-file layout.
+- Added `--auto-load` as a built-in CLI flag in `Tasks`, visible in `asgard help`
+
 ## [0.1.2] - 2026-05-29
 
 ### Added
@@ -77,5 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
-[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/MadBomber/asgard/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/MadBomber/asgard/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MadBomber/asgard/releases/tag/v0.1.0

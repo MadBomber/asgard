@@ -29,7 +29,7 @@ Single test: `ruby -Ilib:test test/test_asgard.rb`
 
 `bin/asgard` → `Asgard.run!(ARGV)` (`lib/asgard.rb`):
 1. Walk CWD + ancestors for `.loki` (marker only, not a task file)
-2. Glob + sort `*.loki` files from that dir, `load` each alphabetically
+2. If `--auto-load` is in argv: glob + sort `*.loki` files and load each alphabetically
 3. Load `.loki` itself last
 4. `Tasks.validate_deps!` — build full dep graph, raise `CircularDependencyError` if cyclic
 5. `Tasks._reset_ran!` — clear execution tracking
@@ -114,4 +114,4 @@ class Tasks
 end
 ```
 
-Multiple `*.loki` files in the same directory are all loaded (alphabetically). The bare `.loki` file serves only as the project root marker — its content is loaded last.
+By default, only `.loki` is loaded. Pass `--auto-load` to `asgard` to also load all `*.loki` files in the same directory alphabetically before `.loki` is loaded. The bare `.loki` file serves as the project root marker — its content is always loaded last.

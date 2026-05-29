@@ -21,7 +21,7 @@
 - <strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts<br>
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
-- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, auto-loaded alphabetically<br>
+- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code><br>
 - <strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task<br>
 </td>
 </tr>
@@ -466,7 +466,7 @@ Common `method_option` keys: `aliases`, `type`, `default`, `required`, `desc`, `
 
 ## Task files
 
-Asgard searches the current directory and its ancestors for a `.loki` file. That file marks the project root. All `*.loki` files in the same directory are auto-loaded alphabetically before `.loki` is loaded.
+Asgard searches the current directory and its ancestors for a `.loki` file. That file marks the project root. `*.loki` files in the same directory are loaded only when `asgard` is invoked with `--auto-load`.
 
 ### Single file
 
@@ -537,7 +537,7 @@ end
 |---|---|
 | `Asgard.run!(argv)` | Entry point — finds `.loki`, loads task files, starts CLI |
 | `Asgard.find_task_file` | Returns path to `.loki` searching from CWD upward, or nil |
-| `Asgard.load_loki(dir)` | Loads all `*.loki` files in dir alphabetically |
+| `Asgard.load_loki(dir)` | Loads all `*.loki` files in dir alphabetically — called by `run!` only when `--auto-load` is passed |
 
 `run!` handles its own errors — a missing `.loki` or a circular dependency both produce a clean one-line message and exit 1.
 

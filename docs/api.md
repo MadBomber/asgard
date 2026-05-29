@@ -12,7 +12,7 @@ These class methods are defined on the `Asgard` module itself.
 |---|---|---|
 | `run!` | `Asgard.run!(argv)` | Main entry point. Finds `.loki`, loads all task files, validates the dependency graph, and dispatches via Thor. Handles its own errors: missing `.loki` and circular dependencies both produce a clean one-line message and `exit 1`. |
 | `find_task_file` | `Asgard.find_task_file → String, nil` | Searches `Dir.pwd` and each ancestor directory for a `.loki` file. Returns the absolute path string of the first match, or `nil` if none is found. |
-| `load_loki` | `Asgard.load_loki(dir)` | Loads all files matching `*.loki` in `dir` in alphabetical order. The `.loki` entry point is excluded from this glob — it is loaded separately by `run!`. |
+| `load_loki` | `Asgard.load_loki(dir)` | Loads all `*.loki` files in `dir` alphabetically, excluding `.loki` itself. Called by `run!` only when `--auto-load` is present in `argv`. |
 
 ### `run!` Details
 
@@ -67,6 +67,7 @@ depends_on :setup, [:lint, :build], :test  # setup, then lint+build concurrently
 | `_version` | private task method | Implements `--version`. Prints `Asgard::VERSION` and exits. Registered via `map "--version" => :_version`. Uses `_` prefix convention. |
 | `debug?` | private instance method | Returns `$DEBUG`. Available in all task bodies and subcommand classes that inherit from `Tasks`. |
 | `verbose?` | private instance method | Returns `$VERBOSE`. Available in all task bodies and subcommand classes that inherit from `Tasks`. |
+| `--auto-load` | CLI flag (consumed by `run!`) | Triggers loading of all `*.loki` files before the main `.loki` and the requested task. Consumed by `run!` before Thor dispatch. |
 
 ---
 

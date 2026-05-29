@@ -1,6 +1,6 @@
 # Task Files
 
-Asgard uses a convention-based file discovery system. A hidden `.loki` file marks the project root; `*.loki` files in the same directory contain tasks that are auto-loaded alphabetically.
+Asgard uses a convention-based file discovery system. A hidden `.loki` file marks the project root; `*.loki` files in the same directory contain tasks that are loaded on demand via `--auto-load`.
 
 ---
 
@@ -19,15 +19,21 @@ myproject/
 ```
 
 !!! note
-    The `.loki` file can be completely empty. Its presence alone is sufficient to mark the project root.  Of course if its empty you should have other *.loki files in the same directory to define your tasks otherwise asgard will have nothing to do.
+    The `.loki` file can be completely empty. Its presence alone is sufficient to mark the project root. If it is empty and you have `*.loki` files, you must pass `--auto-load` when running `asgard` — otherwise Asgard has nothing to do.
 
 ---
 
-## Auto-Loading `*.loki` Files
+## Loading `*.loki` Files with `--auto-load`
 
-After finding `.loki`, Asgard loads all files matching `*.loki` in the same directory in alphabetical order. Each file typically reopens `class Tasks` to add more tasks. The `*.loki` glob specifically excludes `.loki` (note the leading dot) — the entry point is loaded separately, after the others.
+By default, `asgard` only loads `.loki`. To also load `*.loki` files, pass `--auto-load`:
 
-**Load order:**
+```bash
+asgard --auto-load <task>
+```
+
+When `--auto-load` is active, Asgard loads all files matching `*.loki` in the same directory in alphabetical order before loading `.loki`. Each file typically reopens `class Tasks` to add more tasks. The `*.loki` glob specifically excludes `.loki` (note the leading dot) — the entry point is always loaded last.
+
+**Load order when `--auto-load` is passed:**
 
 1. All `*.loki` files alphabetically (e.g., `build.loki`, `deploy.loki`, `test.loki`)
 2. `.loki` itself (the entry point)
@@ -178,7 +184,7 @@ end
 Load order: `build.loki` → `deploy.loki` → `test.loki` → `.loki`.
 
 !!! tip
-    Because `*.loki` files are sorted alphabetically, `build.loki` loads before `test.loki`, which means `depends_on :build` in `test.loki` correctly references a task that already exists.
+    When `--auto-load` is used, `*.loki` files are sorted alphabetically, so `build.loki` loads before `test.loki`, which means `depends_on :build` in `test.loki` correctly references a task that already exists.
 
 ---
 
@@ -202,13 +208,13 @@ end
 Explicitly required files are loaded before `.loki`'s own class body is evaluated. Files loaded via `require_relative` are **not** re-loaded by the alphabetical glob — Ruby's `require_relative` marks them as loaded in `$LOADED_FEATURES`.
 
 !!! warning
-    If you `require_relative "ci.loki"` from `.loki`, Asgard's glob will also try to load `ci.loki` automatically. To prevent double-loading, either: (a) put explicitly loaded files in a subdirectory outside the alphabetical sweep, or (b) rely solely on alphabetical auto-loading without `require_relative`.
+    If you `require_relative "ci.loki"` from `.loki` and also run `asgard --auto-load`, Asgard's glob will also load `ci.loki`. To prevent double-loading, either: (a) put explicitly loaded files in a subdirectory outside the alphabetical sweep, or (b) rely solely on `--auto-load` without `require_relative`.
 
 ---
 
 ## Subcommands Across Files
 
-Subcommand classes defined in separate `*.loki` files are available in `.loki` because the `*.loki` files load first:
+Subcommand classes defined in separate `*.loki` files are available in `.loki` when `--auto-load` is used, because the `*.loki` files load first:
 
 ```
 myproject/
@@ -244,5 +250,5 @@ end
 | File | When loaded | Purpose |
 |---|---|---|
 | `.loki` | After all `*.loki` | Project root marker; entry point |
-| `*.loki` | Alphabetically, before `.loki` | Task definitions that reopen `class Tasks` |
+| `*.loki` | When `--auto-load` is passed, alphabetically before `.loki` | Task definitions that reopen `class Tasks` |
 | `require_relative` targets | At the point of the `require_relative` call | Shared helpers, explicit task files |

@@ -176,6 +176,6 @@ myproject/
   db_subcommands.loki      ← defines DBCommands
 ```
 
-Since `*.loki` files are loaded alphabetically before `.loki`, both `DBCommands` and `ServerCommands` are defined by the time `.loki` runs its `subcommand` calls.
+When `--auto-load` is used, `*.loki` files are loaded alphabetically before `.loki`, so both `DBCommands` and `ServerCommands` are defined by the time `.loki` runs its `subcommand` calls.
 
 See [`examples/server_subcommands.loki`](examples.md#server-subcommands) and [`examples/db_subcommands.loki`](examples.md#db-subcommands) for complete working examples.

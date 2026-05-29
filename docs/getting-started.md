@@ -139,7 +139,7 @@ myproject/
   qa.loki        ← test and lint tasks
 ```
 
-Each `*.loki` file reopens `class Tasks` and is loaded automatically in alphabetical order before `.loki` is loaded. See [Task Files](task-files.md) for the full details including how task name over-loading is handled.
+Each `*.loki` file reopens `class Tasks`. To load them, pass `--auto-load` to the `asgard` command — they are loaded alphabetically before `.loki`. See [Task Files](task-files.md) for full details.
 
 ---
 

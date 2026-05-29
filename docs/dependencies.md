@@ -187,7 +187,7 @@ class Tasks
 end
 ```
 
-Since `*.loki` files are loaded alphabetically, `build.loki` loads before `test.loki`. If you need to control load order, use explicit `require_relative` from `.loki`.
+When `--auto-load` is used, `*.loki` files are loaded alphabetically, so `build.loki` loads before `test.loki`. If you need to control load order, use explicit `require_relative` from `.loki`.
 
 ---
 

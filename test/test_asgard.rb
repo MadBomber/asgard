@@ -383,6 +383,36 @@ class TestAsgardRunSuccess < Minitest::Test
     Tasks.class_eval { remove_method(:ks_hello) rescue nil }
     Tasks._reset_ran!
   end
+
+  def test_star_loki_files_not_loaded_without_auto_load_flag
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+      File.write(File.join(dir, "extra.loki"),
+        "class Tasks; desc 'extra_task', 'extra'; def extra_task = nil; end")
+      Dir.chdir(dir) { Asgard.run!(["help"]) rescue nil }
+      refute Tasks.method_defined?(:extra_task),
+        "extra.loki should not be loaded without --auto-load"
+    end
+  ensure
+    Tasks.class_eval { remove_method(:extra_task) rescue nil }
+    Tasks._reset_ran!
+  end
+
+  def test_star_loki_files_loaded_with_auto_load_flag
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+      File.write(File.join(dir, "extra2.loki"),
+        "class Tasks; desc 'extra2_task', 'extra2'; def extra2_task = nil; end")
+      Dir.chdir(dir) { Asgard.run!(["--auto-load", "help"]) rescue nil }
+      assert Tasks.method_defined?(:extra2_task),
+        "extra2.loki should be loaded when --auto-load is passed"
+    end
+  ensure
+    Tasks.class_eval { remove_method(:extra2_task) rescue nil }
+    Tasks._reset_ran!
+  end
 end
 
 class TestAsgardUnderscoreGuard < Minitest::Test

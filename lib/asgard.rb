@@ -32,9 +32,10 @@ module Asgard
 
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
+    auto_load = argv.delete("--auto-load")
     abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
     task_file = find_task_file or abort "asgard: no .loki file found in #{Dir.pwd}"
-    load_loki(File.dirname(task_file))
+    load_loki(File.dirname(task_file)) if auto_load
     load task_file
     Tasks.validate_deps!
     Tasks._reset_ran!

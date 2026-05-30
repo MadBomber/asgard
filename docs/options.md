@@ -53,7 +53,7 @@ class Tasks
                enum:    %w[development staging production],
                desc:    "Target environment"
 
-  desc "deploy", "Deploy the application"
+  desc "Deploy the application"
   def deploy
     if options[:dry_run]
       puts "Would deploy to #{options[:env]}"
@@ -62,7 +62,7 @@ class Tasks
     end
   end
 
-  desc "migrate", "Run database migrations"
+  desc "Run database migrations"
   def migrate
     sh "rails db:migrate RAILS_ENV=#{options[:env]}"
   end

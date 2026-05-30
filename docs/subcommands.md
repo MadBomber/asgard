@@ -10,10 +10,10 @@ Define a subcommand class that inherits from `Tasks`, then register it on the to
 
 ```ruby
 class DeployCommands < Tasks
-  desc "staging", "Deploy to staging"
+  desc "Deploy to staging"
   def staging = sh "cap staging deploy"
 
-  desc "production", "Deploy to production"
+  desc "Deploy to production"
   def production = sh "cap production deploy"
 end
 
@@ -54,14 +54,14 @@ Inheriting from `Tasks` (rather than `Asgard::Base` or `Thor`) gives the subcomm
 
 ```ruby
 class DBCommands < Tasks
-  desc "migrate", "Run pending migrations"
+  desc "Run pending migrations"
   def migrate = sh "rails db:migrate"
 
-  desc "seed", "Load seed data"
+  desc "Load seed data"
   def seed = sh "rails db:seed"
 
   depends_on :migrate, :seed
-  desc "reset", "Migrate then seed"
+  desc "Migrate then seed"
   def reset = puts "Done."
 end
 
@@ -94,13 +94,13 @@ class ServerCommands < Tasks
     sh "puma -p #{port} #{flags.join(' ')}"
   end
 
-  desc "stop", "Stop the running server"
+  desc "Stop the running server"
   option :force, aliases: "-f", type: :boolean, default: false, desc: "Force-kill without draining"
   def stop
     options[:force] ? sh "pkill -9 puma" : sh "pumactl stop"
   end
 
-  desc "status", "Show server status"
+  desc "Show server status"
   def status = sh "pumactl stats"
 
   depends_on :stop, :start

@@ -40,7 +40,7 @@ touch .loki
 # Add your first task
 cat >> .loki << 'EOF'
 class Tasks
-  desc "hello", "Say hello"
+  desc "Say hello"
   def hello = sh 'echo "Hello from Asgard!"'
 end
 EOF

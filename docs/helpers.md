@@ -10,13 +10,13 @@ Methods declared after `private` are callable from any task in the same class bu
 
 ```ruby
 class Tasks
-  desc "build", "Compile and package"
+  desc "Compile and package"
   def build
     compile("src")
     package(app_version)
   end
 
-  desc "release", "Build and publish to RubyGems"
+  desc "Build and publish to RubyGems"
   def release
     build
     sh "gem push pkg/myapp-#{app_version}.gem"
@@ -49,13 +49,13 @@ Thor's `no_commands` block marks public methods as excluded from CLI discovery. 
 
 ```ruby
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build
     puts "Revision: #{current_sha}"
     sh "rake build"
   end
 
-  desc "deploy", "Deploy to production"
+  desc "Deploy to production"
   def deploy
     puts "Deploying revision #{current_sha}..."
     sh "cap production deploy"
@@ -117,10 +117,10 @@ require_relative "shared/helpers"
 class Tasks
   include BuildHelpers
 
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = compile("src")
 
-  desc "package", "Create distribution archive"
+  desc "Create distribution archive"
   def package = sh "tar czf #{dist_path(app_version)} bin/"
 end
 ```
@@ -138,10 +138,10 @@ Subcommand classes that inherit from `Tasks` also inherit all private helpers an
 
 ```ruby
 class DeployCommands < Tasks
-  desc "staging", "Deploy to staging"
+  desc "Deploy to staging"
   def staging = deploy_to("staging")
 
-  desc "production", "Deploy to production"
+  desc "Deploy to production"
   def production = deploy_to("production")
 
   private

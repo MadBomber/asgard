@@ -26,7 +26,7 @@ class ServerCommands < Tasks
     ]
   end
 
-  desc "stop", "Stop the running server"
+  desc "Stop the running server"
   option :force, aliases: "-f", type: :boolean, default: false, desc: "Force-kill without draining"
   option :wait,                  type: :numeric, default: 30,   desc: "Seconds to wait for shutdown"
   def stop
@@ -37,7 +37,7 @@ class ServerCommands < Tasks
     end
   end
 
-  desc "status", "Show server status and process info"
+  desc "Show server status and process info"
   def status
     puts "Checking server status..."
   end

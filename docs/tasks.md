@@ -10,12 +10,12 @@ A task with no parameters and no options:
 
 ```ruby
 class Tasks
-  desc "hello", "Say hello"
+  desc "Say hello"
   def hello = sh 'echo "Hello, World!"'
 end
 ```
 
-`desc` takes two arguments: the usage string and the one-line description shown in `asgard help`.
+`desc` accepts either one or two strings. With one argument, the description is shown in `asgard help` and the usage string defaults to the method name. Pass two arguments when the usage string needs to document parameters — `desc "greet NAME", "Greet NAME by name"`.
 
 ```bash
 asgard hello
@@ -51,7 +51,7 @@ Use `method_option` (alias: `option`) for named flags. Access them inside the me
 
 ```ruby
 class Tasks
-  desc "compile", "Compile the project"
+  desc "Compile the project"
   option :output,  aliases: "-o", type: :string,  default: "dist/",  desc: "Output directory"
   option :verbose, aliases: "-v", type: :boolean, default: false,    desc: "Enable verbose output"
   option :jobs,    aliases: "-j", type: :numeric, default: 1,        desc: "Number of parallel jobs"
@@ -117,7 +117,7 @@ asgard deploy production --strategy blue-green
 
 ```ruby
 class Tasks
-  desc "build", "Build the project"
+  desc "Build the project"
   option :env,
          type:    :string,
          default: "development",
@@ -139,7 +139,7 @@ Thor validates the value against the enum and shows a helpful error if it doesn'
 
 ```ruby
 class Tasks
-  desc "wait", "Wait for a service to become available"
+  desc "Wait for a service to become available"
   option :timeout, type: :numeric, default: 30, banner: "SECONDS", desc: "Give up after SECONDS"
   def wait
     sh "wait-for-it --timeout #{options[:timeout]}"
@@ -169,7 +169,7 @@ class Tasks
       asgard report --format json --output report.json\x5
       asgard report --format text
   DESC
-  desc "report", "Generate a project report"
+  desc "Generate a project report"
   option :format, type: :string, default: "text", enum: %w[text html json], desc: "Output format"
   option :since,  type: :string, banner: "DATE",                            desc: "Limit to changes after DATE"
   def report
@@ -191,7 +191,7 @@ end
 class Tasks
   default_task :greet
 
-  desc "greet", "Say hello (runs by default)"
+  desc "Say hello (runs by default)"
   def greet
     puts "Hello from Asgard!"
   end
@@ -215,13 +215,13 @@ class Tasks
   map "t"   => "test"
   map "b"   => "build"
 
-  desc "version", "Print the version"
+  desc "Print the version"
   def version = puts Asgard::VERSION
 
-  desc "test", "Run tests"
+  desc "Run tests"
   def test = sh "bundle exec rake test"
 
-  desc "build", "Build the gem"
+  desc "Build the gem"
   def build = sh "bundle exec rake build"
 end
 ```
@@ -267,7 +267,7 @@ def hello(name = "World") = sh "echo 'Hello, #{name}!'"
 
 ```ruby
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build
     puts "Revision: #{current_sha}"
     sh "rake build"

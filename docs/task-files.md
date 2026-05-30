@@ -62,7 +62,7 @@ Three things are overwritten when a task name is reused:
 ```ruby
 # build.loki  (loaded first)
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build
     sh "rake build"
   end
@@ -75,7 +75,7 @@ class Tasks
   # Preserve the original under a private name before overwriting it.
   no_commands { alias_method :_build_original, :build }
 
-  desc "build", "Compile the project and copy assets"
+  desc "Compile the project and copy assets"
   def build
     _build_original          # runs the original sh "rake build"
     sh "cp -r dist/ public/" # adds post-build step
@@ -96,14 +96,14 @@ end
     ```ruby
     # build.loki
     class Tasks
-      desc "build", "Compile the project"
+      desc "Compile the project"
       def build = sh "rake build"
 
-      desc "copy_assets", "Copy build output to public/"
+      desc "Copy build output to public/"
       def copy_assets = sh "cp -r dist/ public/"
 
       depends_on :build, :copy_assets
-      desc "build_all", "Compile and copy assets"
+      desc "Compile and copy assets"
       def build_all; end
     end
     ```
@@ -126,13 +126,13 @@ myproject/
 class Tasks
   var :app, "myapp"
 
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "rake test"
 
-  desc "release", "Build and push the gem"
+  desc "Build and push the gem"
   def release = sh "gem push pkg/#{app}-*.gem"
 end
 ```
@@ -154,7 +154,7 @@ myproject/
 ```ruby
 # build.loki
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 end
 ```
@@ -163,7 +163,7 @@ end
 # test.loki
 class Tasks
   depends_on :build
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "bundle exec rake test"
 end
 ```
@@ -172,7 +172,7 @@ end
 # deploy.loki
 class Tasks
   depends_on :test
-  desc "deploy", "Deploy to production"
+  desc "Deploy to production"
   def deploy = sh "cap production deploy"
 end
 ```
@@ -226,13 +226,13 @@ myproject/
 ```ruby
 # db_subcommands.loki
 class DBCommands < Tasks
-  desc "migrate", "Run migrations"
+  desc "Run migrations"
   def migrate = sh "rails db:migrate"
 end
 
 # server_subcommands.loki
 class ServerCommands < Tasks
-  desc "start", "Start the server"
+  desc "Start the server"
   def start = sh "rails server"
 end
 

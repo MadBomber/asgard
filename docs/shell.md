@@ -14,10 +14,10 @@ Pass a single-line string to run it via `system`:
 
 ```ruby
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 
-  desc "clean", "Remove build artifacts"
+  desc "Remove build artifacts"
   def clean = sh "rm -rf dist/ tmp/"
 end
 ```
@@ -34,7 +34,7 @@ Pass a multiline string (e.g., a heredoc) to run it as a single `bash -c` script
 
 ```ruby
 class Tasks
-  desc "setup", "Bootstrap the development environment"
+  desc "Bootstrap the development environment"
   def setup
     sh <<~SHELL
       brew install redis postgresql
@@ -54,10 +54,10 @@ Pass `silent: true` to suppress the command echo. The command still runs and sti
 
 ```ruby
 class Tasks
-  desc "build", "Compile (quiet)"
+  desc "Compile (quiet)"
   def build = sh "rake build", silent: true
 
-  desc "info", "Print environment info without noise"
+  desc "Print environment info without noise"
   def info
     sh "printenv | grep APP_", silent: true
   end
@@ -71,7 +71,7 @@ end
 ```ruby
 class Tasks
   depends_on :test
-  desc "release", "Test then release"
+  desc "Test then release"
   def release
     sh "bundle exec rake release"
     # Never reached if rake release fails
@@ -90,7 +90,7 @@ end
 
 ```ruby
 class Tasks
-  desc "analyze", "Run Python data analysis"
+  desc "Run Python data analysis"
   def analyze
     shebang :python3, <<~PYTHON
       import json
@@ -105,7 +105,7 @@ end
 
 ```ruby
 class Tasks
-  desc "bundle_assets", "Build frontend assets with esbuild"
+  desc "Build frontend assets with esbuild"
   def bundle_assets
     shebang :node, <<~JS
       const esbuild = require("esbuild")
@@ -123,7 +123,7 @@ end
 
 ```ruby
 class Tasks
-  desc "transform", "Transform data with Ruby"
+  desc "Transform data with Ruby"
   def transform
     shebang :ruby, <<~RUBY
       require "json"
@@ -138,7 +138,7 @@ end
 
 ```ruby
 class Tasks
-  desc "provision", "Run a bash provisioning script"
+  desc "Run a bash provisioning script"
   def provision
     shebang :bash, <<~BASH
       set -euo pipefail
@@ -192,7 +192,7 @@ You can mix both in the same task:
 
 ```ruby
 class Tasks
-  desc "pipeline", "Run a mixed shell + Python pipeline"
+  desc "Run a mixed shell + Python pipeline"
   def pipeline
     sh "bundle exec rake build"
 

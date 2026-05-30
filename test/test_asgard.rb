@@ -658,6 +658,72 @@ class TestAsgardDebugVerboseOptions < Minitest::Test
   end
 end
 
+class TestAsgardDescShorthand < Minitest::Test
+  def test_single_arg_desc_uses_method_name_as_usage
+    klass = Class.new(Asgard::Base) do
+      desc "Run the tests"
+      define_method(:test_task) {}
+    end
+    cmd = klass.all_commands["test_task"]
+    assert_equal "test_task",      cmd.usage
+    assert_equal "Run the tests",  cmd.description
+  end
+
+  def test_single_arg_desc_with_depends_on
+    log = []
+    klass = Class.new(Asgard::Base) do
+      desc "Build step"
+      define_method(:build) { log << :build }
+
+      depends_on :build
+      desc "Run tests"
+      define_method(:test) { log << :test }
+    end
+    klass.new([], {}, {}).invoke(:test)
+    assert_equal [:build, :test], log
+  end
+
+  def test_two_arg_desc_still_works
+    klass = Class.new(Asgard::Base) do
+      desc "custom_usage NAME", "explicit description"
+      define_method(:my_task) {}
+    end
+    cmd = klass.all_commands["my_task"]
+    assert_equal "custom_usage NAME",    cmd.usage
+    assert_equal "explicit description", cmd.description
+  end
+
+  def test_single_arg_desc_survives_var_between_desc_and_method
+    klass = Class.new(Asgard::Base) do
+      desc "Run tests"
+      var :gem_name, "asgard"
+      define_method(:test) {}
+    end
+    cmd = klass.all_commands["test"]
+    assert_equal "test",       cmd.usage
+    assert_equal "Run tests",  cmd.description
+  end
+
+  def test_single_arg_desc_survives_no_commands_block_between_desc_and_method
+    klass = Class.new(Asgard::Base) do
+      desc "Run tests"
+      no_commands { define_method(:helper) {} }
+      define_method(:test) {}
+    end
+    cmd = klass.all_commands["test"]
+    assert_equal "test",       cmd.usage
+    assert_equal "Run tests",  cmd.description
+  end
+
+  def test_single_arg_desc_preserves_options
+    klass = Class.new(Asgard::Base) do
+      desc "Hidden task", hide: true
+      define_method(:secret) {}
+    end
+    assert klass.all_commands["secret"].hidden?
+  end
+end
+
 class TestAsgardShell < Minitest::Test
   include Asgard::Shell
 

@@ -7,12 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Single-argument `desc` shorthand** — `desc` now accepts one string (the description) with the usage string omitted. The usage defaults to the method name, eliminating the redundant first argument for the common case:
+  ```ruby
+  desc "Run the test suite"   # usage defaults to "test"
+  def test = sh "bundle exec rake test"
+  ```
+  The two-argument form (`desc "usage", "description"`) still works unchanged and is still required when the usage string differs from the method name (e.g. `desc "build NAME", "Build an artifact"`).
+
 ### Fixed (round 2)
 
 - **Subcommand deps not validated at startup** — `run!` only called `Tasks.validate_deps!`, so circular dependencies and undefined dep names in subcommand groups (classes that inherit from `Asgard::Base` or `Tasks`) were silently ignored. `run!` now snapshots `Asgard::Base.subclasses` before loading task files and validates every newly defined subclass alongside `Tasks`.
 - **Parallel dep thread orphaned on exception** — when a parallel dep group contained one fast-failing task and one slow task, `threads.each(&:join)` re-raised the first thread's exception and abandoned the remaining threads. The slow thread continued running unsupervised after the caller saw the exception. The join loop now collects all thread exceptions before re-raising the first, ensuring every thread completes before execution exits the group.
 - **Dep with required arguments gave a cryptic runtime error** — `depends_on :build` where `build(name)` has required parameters caused `Thor::InvocationError` at task invocation time with no indication of where the problem was. `validate_deps!` now checks the arity of every dep task via `instance_method.parameters` and raises `Asgard::Error` at startup with the task name and required argument count.
 - **Orphaned `depends_on` silently discarded** — a `depends_on` declaration at the end of a class body (or `.loki` file) with no following `desc`/`def` left `@_pending_deps` non-empty but was ignored by `validate_deps!` due to an early `return if _deps.empty?` guard. `validate_deps!` now checks `@_pending_deps` before that guard and raises `Asgard::Error` naming the orphaned dependencies.
+- **Single-arg `desc` options silently dropped** — when `desc "description", hide: true` was used, Ruby routed the options hash to the `description` positional parameter rather than `options`. The override now detects a `Hash` in the description position and treats it as options, and caches options alongside the pending description so they are forwarded when `method_added` resolves the usage string.
+- **Single-arg `desc` stolen by `var` and `no_commands` blocks** — if a `var` declaration or `no_commands` block appeared between a single-arg `desc` and its method, `method_added` consumed `@_pending_single_desc` for the interstitial helper method and set the wrong `@usage` value. Because Thor's `method_added` returns early for `no_commands?` without clearing `@usage`, that stale value then leaked onto the next real command. The fix mirrors two-arg `desc` behavior: `@_pending_single_desc` is only consumed when `no_commands?` is false.
 
 ### Fixed
 

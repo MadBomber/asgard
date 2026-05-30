@@ -50,7 +50,7 @@ Open `.loki` in your editor and add a task:
 
 ```ruby
 class Tasks
-  desc "hello", "Say hello to the world"
+  desc "Say hello to the world"
   def hello = sh 'echo "Hello, World!"'
 end
 ```

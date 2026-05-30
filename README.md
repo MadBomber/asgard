@@ -51,7 +51,7 @@ Every `.loki` file defines tasks as methods inside `class Tasks`. The `Tasks` cl
 
 ```ruby
 class Tasks
-  desc "hello", "Say hello"
+  desc "Say hello"
   def hello = sh 'echo "Hello, World!"'
 end
 ```
@@ -147,15 +147,15 @@ Bare symbols run one after another in the order declared:
 
 ```ruby
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 
   depends_on :build
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "rake test"
 
   depends_on :test
-  desc "release", "Publish the gem"
+  desc "Publish the gem"
   def release = sh "bundle exec rake release"
 end
 ```
@@ -170,15 +170,15 @@ Wrap symbols in an array to declare they can run concurrently. Asgard waits for 
 
 ```ruby
 class Tasks
-  desc "lint", "Check code style"
+  desc "Check code style"
   def lint = sh "bundle exec rubocop"
 
-  desc "typecheck", "Run type checks"
+  desc "Run type checks"
   def typecheck = sh "bundle exec srb tc"
 
   # lint and typecheck run in parallel, test waits for both
   depends_on [:lint, :typecheck]
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "bundle exec rake test"
 end
 ```
@@ -193,15 +193,15 @@ Mix bare symbols (sequential) and arrays (parallel) in a single `depends_on` cal
 
 ```ruby
 class Tasks
-  desc "setup",  "Install dependencies"; def setup  = sh "bundle install"
-  desc "lint",   "Check code style";     def lint   = sh "bundle exec rubocop"
-  desc "build",  "Compile assets";       def build  = sh "rake assets:precompile"
-  desc "test",   "Run tests";            def test   = sh "bundle exec rake test"
-  desc "notify", "Post to Slack";        def notify = sh "curl $SLACK_WEBHOOK -d '{\"text\":\"done\"}'"
+  desc "Install dependencies"; def setup  = sh "bundle install"
+  desc "Check code style";     def lint   = sh "bundle exec rubocop"
+  desc "Compile assets";       def build  = sh "rake assets:precompile"
+  desc "Run tests";            def test   = sh "bundle exec rake test"
+  desc "Post to Slack";        def notify = sh "curl $SLACK_WEBHOOK -d '{\"text\":\"done\"}'"
 
   # setup first, then lint+build in parallel, then test, then notify
   depends_on :setup, [:lint, :build], :test, :notify
-  desc "ci", "Full CI pipeline"
+  desc "Full CI pipeline"
   def ci = sh "echo 'CI complete'"
 end
 ```
@@ -231,7 +231,7 @@ class Tasks
   var :app,     "myapp"
   var :version, -> { `git describe --tags`.strip }
 
-  desc "tag", "Create a release tag"
+  desc "Create a release tag"
   def tag = sh "git tag #{app}-#{version}"
 end
 ```
@@ -244,13 +244,13 @@ Private methods are callable from any task in the same class but are never regis
 
 ```ruby
 class Tasks
-  desc "build", "Compile and package"
+  desc "Compile and package"
   def build
     compile("src")
     package(version)
   end
 
-  desc "release", "Build and publish"
+  desc "Build and publish"
   def release
     build
     sh "gem push pkg/myapp-#{version}.gem"
@@ -286,7 +286,7 @@ require_relative "shared/helpers"
 class Tasks
   include BuildHelpers
 
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = compile("src")
 end
 ```
@@ -320,7 +320,7 @@ end
 
 ```ruby
 class Tasks
-  desc "setup", "Bootstrap the development environment"
+  desc "Bootstrap the development environment"
   def setup
     sh <<~SHELL
       brew install redis postgresql
@@ -330,7 +330,7 @@ class Tasks
     SHELL
   end
 
-  desc "analyze", "Run Python data analysis"
+  desc "Run Python data analysis"
   def analyze
     shebang :python3, <<~PYTHON
       import json
@@ -339,7 +339,7 @@ class Tasks
     PYTHON
   end
 
-  desc "bundle_assets", "Build frontend assets with esbuild"
+  desc "Build frontend assets with esbuild"
   def bundle_assets
     shebang :node, <<~JS
       const esbuild = require("esbuild")
@@ -372,7 +372,7 @@ class Tasks
   dotenv              # loads .env
   dotenv ".env.local" # or a specific file
 
-  desc "check", "Print the app name from .env"
+  desc "Print the app name from .env"
   def check = sh "echo $APP_NAME"
 end
 ```
@@ -389,7 +389,7 @@ class Tasks
   map "--v" => "version"
   map "t"   => "test"
 
-  desc "version", "Print the version"
+  desc "Print the version"
   def version = puts Asgard::VERSION
 end
 ```
@@ -402,10 +402,10 @@ Group related tasks under a common name using Thor's `subcommand` method. Define
 
 ```ruby
 class DeployCommands < Tasks
-  desc "staging", "Deploy to staging"
+  desc "Deploy to staging"
   def staging = sh "cap staging deploy"
 
-  desc "production", "Deploy to production"
+  desc "Deploy to production"
   def production = sh "cap production deploy"
 end
 
@@ -427,14 +427,14 @@ Subcommand tasks have all the same access to helper methods like `sh`, `shebang`
 
 ```ruby
 class DBCommands < Tasks
-  desc "migrate", "Run pending migrations"
+  desc "Run pending migrations"
   def migrate = sh "rails db:migrate"
 
-  desc "seed", "Load seed data"
+  desc "Load seed data"
   def seed = sh "rails db:seed"
 
   depends_on :migrate, :seed
-  desc "reset", "Migrate then seed"
+  desc "Migrate then seed"
   def reset = puts "Done."
 end
 
@@ -494,7 +494,7 @@ myproject/
 ```ruby
 # build.loki
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 end
 ```
@@ -503,7 +503,7 @@ end
 # test.loki
 class Tasks
   depends_on :build
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "bundle exec rake test"
 end
 ```
@@ -512,7 +512,7 @@ end
 # deploy.loki
 class Tasks
   depends_on :test
-  desc "deploy", "Deploy to production"
+  desc "Deploy to production"
   def deploy = sh "cap production deploy"
 end
 ```

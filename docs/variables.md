@@ -14,7 +14,7 @@ class Tasks
   var :env,  "production"
   var :port, 3000
 
-  desc "info", "Print app info"
+  desc "Print app info"
   def info
     puts "#{app} running on port #{port} in #{env}"
   end
@@ -32,10 +32,10 @@ class Tasks
   var :version, -> { `git describe --tags`.strip }
   var :sha,     -> { `git rev-parse --short HEAD`.strip }
 
-  desc "tag", "Create a release tag"
+  desc "Create a release tag"
   def tag = sh "git tag v#{version}"
 
-  desc "info", "Show version info"
+  desc "Show version info"
   def info = puts "#{version} (#{sha})"
 end
 ```
@@ -54,7 +54,7 @@ class Tasks
   var(:build_dir) { "builds/#{app}" }
   var(:app)       { "myapp" }
 
-  desc "build", "Compile into build_dir"
+  desc "Compile into build_dir"
   def build = sh "rake build OUTDIR=#{build_dir}"
 end
 ```
@@ -74,10 +74,10 @@ class Tasks
   var :version, -> { `git describe --tags`.strip }
   var :pkg,     -> { "pkg/#{app}-#{version}.gem" }
 
-  desc "build", "Build the gem"
+  desc "Build the gem"
   def build = sh "gem build #{app}.gemspec"
 
-  desc "push", "Push the gem to RubyGems"
+  desc "Push the gem to RubyGems"
   def push = sh "gem push #{pkg}"
 end
 ```
@@ -99,7 +99,7 @@ end
 
 # deploy.loki
 class Tasks
-  desc "deploy", "Deploy the app"
+  desc "Deploy the app"
   def deploy = sh "cap deploy APP=#{app} PORT=#{port}"
 end
 ```

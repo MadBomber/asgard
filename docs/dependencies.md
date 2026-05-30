@@ -26,15 +26,15 @@ Bare symbols run one after another in the order declared:
 
 ```ruby
 class Tasks
-  desc "build", "Compile the project"
+  desc "Compile the project"
   def build = sh "rake build"
 
   depends_on :build
-  desc "test", "Run the test suite"
+  desc "Run the test suite"
   def test = sh "rake test"
 
   depends_on :test
-  desc "release", "Publish the gem"
+  desc "Publish the gem"
   def release = sh "bundle exec rake release"
 end
 ```
@@ -47,7 +47,7 @@ Multiple sequential dependencies in a single `depends_on` call run left to right
 
 ```ruby
 depends_on :clean, :build, :test
-desc "package", "Clean, build, and test"
+desc "Clean, build, and test"
 def package = sh "rake package"
 ```
 
@@ -59,14 +59,14 @@ Wrap symbols in an array to declare they can run concurrently. Asgard waits for 
 
 ```ruby
 class Tasks
-  desc "lint", "Check code style"
+  desc "Check code style"
   def lint = sh "bundle exec rubocop"
 
-  desc "typecheck", "Run type checks"
+  desc "Run type checks"
   def typecheck = sh "bundle exec srb tc"
 
   depends_on [:lint, :typecheck]
-  desc "test", "Run tests (after lint and typecheck)"
+  desc "Run tests (after lint and typecheck)"
   def test = sh "bundle exec rake test"
 end
 ```
@@ -85,15 +85,15 @@ Mix bare symbols and arrays in a single `depends_on` call. Execution proceeds st
 
 ```ruby
 class Tasks
-  desc "setup",  "Install dependencies"; def setup  = sh "bundle install"
-  desc "lint",   "Check code style";     def lint   = sh "bundle exec rubocop"
-  desc "build",  "Compile assets";       def build  = sh "rake assets:precompile"
-  desc "test",   "Run tests";            def test   = sh "bundle exec rake test"
-  desc "notify", "Post to Slack";        def notify = sh "curl $SLACK_WEBHOOK -d '{\"text\":\"done\"}'"
+  desc "Install dependencies"; def setup  = sh "bundle install"
+  desc "Check code style";     def lint   = sh "bundle exec rubocop"
+  desc "Compile assets";       def build  = sh "rake assets:precompile"
+  desc "Run tests";            def test   = sh "bundle exec rake test"
+  desc "Post to Slack";        def notify = sh "curl $SLACK_WEBHOOK -d '{\"text\":\"done\"}'"
 
   # setup first, then lint+build in parallel, then test, then notify
   depends_on :setup, [:lint, :build], :test, :notify
-  desc "ci", "Full CI pipeline"
+  desc "Full CI pipeline"
   def ci = sh "echo 'CI complete'"
 end
 ```
@@ -124,19 +124,19 @@ Each task runs at most once per `asgard` invocation. If multiple tasks declare t
 
 ```ruby
 class Tasks
-  desc "setup", "Install gems"
+  desc "Install gems"
   def setup = sh "bundle install"
 
   depends_on :setup
-  desc "test", "Run tests"
+  desc "Run tests"
   def test = sh "rake test"
 
   depends_on :setup
-  desc "lint", "Check style"
+  desc "Check style"
   def lint = sh "rubocop"
 
   depends_on [:test, :lint]
-  desc "ci", "Test and lint (setup runs once)"
+  desc "Test and lint (setup runs once)"
   def ci = puts "done"
 end
 ```
@@ -152,10 +152,10 @@ Asgard validates the full dependency graph using [Dagwood](https://rubygems.org/
 ```ruby
 class Tasks
   depends_on :b
-  desc "a", "Task A"; def a = puts "a"
+  desc "Task A"; def a = puts "a"
 
   depends_on :a
-  desc "b", "Task B"; def b = puts "b"
+  desc "Task B"; def b = puts "b"
 end
 ```
 
@@ -175,14 +175,14 @@ No backtrace is shown — just a single diagnostic line.
 ```ruby
 # build.loki
 class Tasks
-  desc "build", "Compile"
+  desc "Compile"
   def build = sh "rake build"
 end
 
 # test.loki
 class Tasks
   depends_on :build           # build.loki must be loaded first
-  desc "test", "Test"
+  desc "Test"
   def test = sh "rake test"
 end
 ```
@@ -197,14 +197,14 @@ When `--auto-load` is used, `*.loki` files are loaded alphabetically, so `build.
 
 ```ruby
 class DBCommands < Tasks
-  desc "migrate", "Run migrations"
+  desc "Run migrations"
   def migrate = sh "rails db:migrate"
 
-  desc "seed", "Load seed data"
+  desc "Load seed data"
   def seed = sh "rails db:seed"
 
   depends_on :migrate, :seed
-  desc "reset", "Migrate then seed"
+  desc "Migrate then seed"
   def reset = puts "Done."
 end
 

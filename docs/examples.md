@@ -56,7 +56,7 @@ asgard pipeline
 
 ---
 
-## `server_subcommands.loki`
+## Server Subcommands
 
 **Path:** `examples/server_subcommands.loki`
 
@@ -80,7 +80,7 @@ The `ServerCommands` class inherits from `Tasks`, giving it access to `sh`, `dep
 
 ---
 
-## `db_subcommands.loki`
+## DB Subcommands
 
 **Path:** `examples/db_subcommands.loki`
 

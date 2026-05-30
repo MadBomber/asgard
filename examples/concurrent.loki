@@ -21,12 +21,12 @@ $stdout.sync = true   # flush every print immediately across all threads
 CONCURRENT_REPS = 10  # how many times each worker prints its character
 
 class Tasks
-  desc "start", "Print start marker"
+  desc "Print start marker"
   def start
     puts "starting demo of concurrent task execution ..."
   end
 
-  desc "worker_a", "Print 'A' repeatedly with random delays"
+  desc "Print 'A' repeatedly with random delays"
   def worker_a
     CONCURRENT_REPS.times do
       print "A"
@@ -34,7 +34,7 @@ class Tasks
     end
   end
 
-  desc "worker_b", "Print 'B' repeatedly with random delays"
+  desc "Print 'B' repeatedly with random delays"
   def worker_b
     CONCURRENT_REPS.times do
       print "B"
@@ -42,7 +42,7 @@ class Tasks
     end
   end
 
-  desc "worker_c", "Print 'C' repeatedly with random delays"
+  desc "Print 'C' repeatedly with random delays"
   def worker_c
     CONCURRENT_REPS.times do
       print "C"
@@ -51,7 +51,7 @@ class Tasks
   end
 
   depends_on :start, [:worker_a, :worker_b, :worker_c]
-  desc "finish", "Print end marker after all workers complete"
+  desc "Print end marker after all workers complete"
   def finish
     puts "\nfini - the end of concurrent task demo"
   end

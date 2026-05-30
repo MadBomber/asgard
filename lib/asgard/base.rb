@@ -16,9 +16,11 @@ module Asgard
       def inherited(subclass)
         super
         Asgard::Base.subclasses << subclass
-        subclass.instance_variable_set(:@_deps,         {})
-        subclass.instance_variable_set(:@_vars,         {})
-        subclass.instance_variable_set(:@_pending_deps, [])
+        subclass.instance_variable_set(:@_deps,              {})
+        subclass.instance_variable_set(:@_vars,              {})
+        subclass.instance_variable_set(:@_pending_deps,      [])
+        subclass.instance_variable_set(:@_pending_single_desc,      nil)
+        subclass.instance_variable_set(:@_pending_single_desc_opts, nil)
         subclass.instance_variable_set(:@_running,    Set.new)
         subclass.instance_variable_set(:@_done,       Set.new)
         subclass.instance_variable_set(:@_cond,       Hash.new { |h, k| h[k] = ConditionVariable.new })
@@ -97,6 +99,20 @@ module Asgard
         end
       end
 
+      # Allow single-argument desc: desc "Run the tests"
+      # The usage string defaults to the method name when the description is the only arg.
+      def desc(usage_or_desc, description = nil, options = {})
+        if description.nil? || description.is_a?(Hash)
+          options = description if description.is_a?(Hash)
+          @_pending_single_desc      = usage_or_desc
+          @_pending_single_desc_opts = options
+        else
+          @_pending_single_desc      = nil
+          @_pending_single_desc_opts = nil
+          super(usage_or_desc, description, options)
+        end
+      end
+
       def import(mod)
         include mod
       end
@@ -144,6 +160,14 @@ module Asgard
       end
 
       def method_added(method_name)
+        if @_pending_single_desc && !no_commands?
+          pending_desc = @_pending_single_desc
+          pending_opts = @_pending_single_desc_opts || {}
+          @_pending_single_desc      = nil
+          @_pending_single_desc_opts = nil
+          desc(method_name.to_s, pending_desc, pending_opts)
+        end
+
         return super unless @usage
 
         pending = Array(@_pending_deps).dup

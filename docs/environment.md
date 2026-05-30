@@ -12,7 +12,7 @@ Call `dotenv` inside the class body (not inside a task method) to load the defau
 class Tasks
   dotenv   # loads .env from the current working directory
 
-  desc "check", "Print the app name from .env"
+  desc "Print the app name from .env"
   def check = sh "echo $APP_NAME"
 end
 ```
@@ -55,7 +55,7 @@ class Tasks
 
   var :database_url, -> { ENV.fetch("DATABASE_URL") }
 
-  desc "migrate", "Run migrations"
+  desc "Run migrations"
   def migrate = sh "DATABASE_URL=#{database_url} rails db:migrate"
 end
 ```
@@ -91,7 +91,7 @@ class Tasks
   var :app_name, -> { ENV.fetch("APP_NAME", "myapp") }
   var :port,     -> { ENV.fetch("PORT", "3000").to_i }
 
-  desc "start", "Start the server"
+  desc "Start the server"
   def start = sh "puma -p #{port}"
 end
 ```

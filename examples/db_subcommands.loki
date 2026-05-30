@@ -39,7 +39,7 @@ class DBCommands < Tasks
   # depends_on chains within the subcommand group:
   #   rollback → migrate → seed → reset
   depends_on :rollback, :migrate, :seed
-  desc "reset", "Rollback all migrations, re-migrate, and reseed"
+  desc "Rollback all migrations, re-migrate, and reseed"
   def reset
     puts "Database reset complete."
   end
@@ -54,7 +54,7 @@ class DBCommands < Tasks
       asgard db console\x5
       asgard db console --env staging
   DESC
-  desc "console", "Open an interactive database console"
+  desc "Open an interactive database console"
   option :env, type: :string, default: "development",
                enum:  %w[development staging production],
                desc:  "Environment to connect to"
@@ -62,7 +62,7 @@ class DBCommands < Tasks
     puts "Opening #{options[:env]} database console..."
   end
 
-  desc "status", "Show applied and pending migrations"
+  desc "Show applied and pending migrations"
   def status
     puts "Checking migration status..."
   end

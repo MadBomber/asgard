@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactored
+
+- **`validate_deps!` decomposed into focused private helpers** — the method was performing four unrelated validations in one body (orphaned `depends_on` check, undefined dep name check, dep arity check, cycle detection). Each concern is now a dedicated `_`-prefixed private method (`_check_orphaned_deps!`, `_check_undefined_deps!`, `_check_dep_arities!`, `_build_and_sort_graph`). `validate_deps!` is now a sequencer of ~8 lines. Flog score dropped from 87.3 to 24.4. The inline `rescue nil` on `instance_method` was also removed — by the time arity is checked, undefined deps have already been rejected, so the rescue was dead code.
+- **`invoke_command` decomposed into focused private helpers** — the dispatch hook was handling deduplication gating, dependency graph resolution, parallel/sequential group execution, and completion signalling all in one 38-line method. Each concern is now extracted: `_acquire_run_token` (mutex check/wait/claim), `_run_deps_for` (graph build and group iteration), `_run_dep_group` (parallel thread fan-out vs inline), `_signal_done` (mutex mark-done and broadcast). `invoke_command` is now 10 lines. Flog score dropped from 109.8 to below the warning threshold. The `rubocop:disable` comments on the method are removed.
+
 ### Added
 
 - **RuboCop lint gate** — RuboCop is now a first-class quality gate alongside tests and Flog. Added `rubocop` to the Gemfile, a `.rubocop.yml` tuned for this codebase (Ruby 3.2 target, relaxed `Metrics` thresholds consistent with Flog as the primary complexity gate, `examples/` excluded), and `rake rubocop` / `rake rubocop_fix` tasks backed by a `tmp/rubocop_cache` directory for fast re-runs.

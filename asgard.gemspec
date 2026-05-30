@@ -9,13 +9,18 @@ Gem::Specification.new do |spec|
   spec.email = ["dewayne@vanhoozer.me"]
 
   spec.summary = "A powerful Ruby-based task runner"
-  spec.description = "A powerful Ruby-based task runner for any kind of project with task dependency tracking and concurrent execution of designated tasks. Uses Thor for its rich CLI options, var declarations, dotenv, sh/shebang helpers, and importable task files."
+  spec.description = <<~DESC
+    A powerful Ruby-based task runner for any kind of project with task dependency tracking
+    and concurrent execution of designated tasks. Uses Thor for its rich CLI options, var
+    declarations, dotenv, sh/shebang helpers, and importable task files.
+  DESC
   spec.homepage = "https://github.com/madbomber/asgard"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/master/CHANGELOG.md"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Uncomment the line below to require MFA for gem pushes.
   # This helps protect your gem from supply chain attacks by ensuring

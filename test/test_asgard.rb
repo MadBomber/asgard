@@ -14,15 +14,15 @@ class TestAsgardLoadLoki < Minitest::Test
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
       File.write(File.join(dir, "zebra.loki"),
-        "class Tasks; desc 'zebra', 'z'; def zebra_task = nil; end")
+                 "class Tasks; desc 'zebra', 'z'; def zebra_task = nil; end")
       File.write(File.join(dir, "alpha.loki"),
-        "class Tasks; desc 'alpha', 'a'; def alpha_task = nil; end")
+                 "class Tasks; desc 'alpha', 'a'; def alpha_task = nil; end")
       Asgard.load_loki(dir)
       assert Tasks.method_defined?(:alpha_task)
       assert Tasks.method_defined?(:zebra_task)
     end
   ensure
-    Tasks.class_eval { [:alpha_task, :zebra_task].each { |m| remove_method(m) rescue nil } }
+    Tasks.class_eval { %i[alpha_task zebra_task].each { |m| remove_method(m) rescue nil } }
     Tasks._reset_ran!
   end
 
@@ -30,7 +30,7 @@ class TestAsgardLoadLoki < Minitest::Test
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
       File.write(File.join(dir, ".loki"),
-        "class Tasks; no_commands { def dot_loki_sentinel = nil }; end")
+                 "class Tasks; no_commands { def dot_loki_sentinel = nil }; end")
       Asgard.load_loki(dir)
       refute Tasks.method_defined?(:dot_loki_sentinel)
     end
@@ -129,7 +129,7 @@ class TestAsgardRun < Minitest::Test
   ensure
     Tasks._deps.delete(:circ_a)
     Tasks._deps.delete(:circ_b)
-    Tasks.class_eval { [:circ_a, :circ_b].each { |m| remove_method(m) rescue nil } }
+    Tasks.class_eval { %i[circ_a circ_b].each { |m| remove_method(m) rescue nil } }
     Tasks._reset_ran!
   end
 end
@@ -200,7 +200,7 @@ class TestAsgardVar < Minitest::Test
   def setup
     @klass = Class.new(Asgard::Base) do
       var :greeting, "hello"
-      var :dynamic,  -> { "dyn_#{42}" }
+      var :dynamic,  -> { "dyn_42" }
     end
   end
 
@@ -222,7 +222,10 @@ class TestAsgardVar < Minitest::Test
   def test_var_lambda_is_memoized
     call_count = 0
     klass = Class.new(Asgard::Base) do
-      var :expensive, -> { call_count += 1; "result" }
+      var :expensive, lambda {
+        call_count += 1
+        "result"
+      }
     end
     instance = klass.new([], {}, {})
     3.times { instance.expensive }
@@ -265,19 +268,19 @@ class TestAsgardDependsOn < Minitest::Test
 
   def test_dep_runs_before_method
     @klass.new([], {}, {}).invoke(:test)
-    assert_equal [:build, :test], @log
+    assert_equal %i[build test], @log
   end
 
   def test_transitive_deps_run_in_order
     @klass.new([], {}, {}).invoke(:release)
-    assert_equal [:build, :test, :release], @log
+    assert_equal %i[build test release], @log
   end
 
   def test_dep_runs_only_once
     instance = @klass.new([], {}, {})
     instance.invoke(:build)
     instance.invoke(:test)
-    assert_equal [:build, :test], @log, "build should not run a second time"
+    assert_equal %i[build test], @log, "build should not run a second time"
   end
 
   def test_method_added_ignores_underscore_prefix
@@ -300,7 +303,7 @@ class TestAsgardDependsOn < Minitest::Test
       define_method(:test) { log << :test }
     end
     klass.new([], {}, {}).invoke(:test)
-    assert_equal [:build, :test], log
+    assert_equal %i[build test], log
   end
 
   def test_depends_on_survives_var_declaration_between_declaration_and_task
@@ -315,7 +318,7 @@ class TestAsgardDependsOn < Minitest::Test
       define_method(:test) { log << :test }
     end
     klass.new([], {}, {}).invoke(:test)
-    assert_equal [:build, :test], log
+    assert_equal %i[build test], log
   end
 end
 
@@ -331,7 +334,7 @@ class TestAsgardParallelDeps < Minitest::Test
       desc "lint", "lint"
       define_method(:lint)  { mutex.synchronize { log << :lint } }
 
-      depends_on [:build, :lint]
+      depends_on %i[build lint]
       desc "test", "test"
       define_method(:test)  { mutex.synchronize { log << :test } }
     end
@@ -348,12 +351,16 @@ class TestAsgardParallelDeps < Minitest::Test
     mutex = Mutex.new
 
     klass = Class.new(Asgard::Base) do
-      desc "setup",  "setup";  define_method(:setup)  { mutex.synchronize { log << :setup } }
-      desc "build",  "build";  define_method(:build)  { mutex.synchronize { log << :build } }
-      desc "lint",   "lint";   define_method(:lint)   { mutex.synchronize { log << :lint } }
-      desc "deploy", "deploy"; define_method(:deploy) { mutex.synchronize { log << :deploy } }
+      desc "setup",  "setup"
+      define_method(:setup)  { mutex.synchronize { log << :setup } }
+      desc "build",  "build"
+      define_method(:build)  { mutex.synchronize { log << :build } }
+      desc "lint",   "lint"
+      define_method(:lint)   { mutex.synchronize { log << :lint } }
+      desc "deploy", "deploy"
+      define_method(:deploy) { mutex.synchronize { log << :deploy } }
 
-      depends_on :setup, [:build, :lint], :deploy
+      depends_on :setup, %i[build lint], :deploy
       desc "ci", "ci"
       define_method(:ci) { mutex.synchronize { log << :ci } }
     end
@@ -369,16 +376,21 @@ class TestAsgardParallelDeps < Minitest::Test
 
   def test_stages_stored_correctly
     klass = Class.new(Asgard::Base) do
-      desc "a", "a"; define_method(:a) {}
-      desc "b", "b"; define_method(:b) {}
-      desc "c", "c"; define_method(:c) {}
-      desc "d", "d"; define_method(:d) {}
+      desc "a", "a"
+      define_method(:a) {}
+      desc "b", "b"
+      define_method(:b) {}
+      desc "c", "c"
+      define_method(:c) {}
+      desc "d", "d"
+      define_method(:d) {}
 
-      depends_on :a, [:b, :c], :d
-      desc "target", "target"; define_method(:target) {}
+      depends_on :a, %i[b c], :d
+      desc "target", "target"
+      define_method(:target) {}
     end
 
-    assert_equal [[:a], [:b, :c], [:d]], klass._deps[:target]
+    assert_equal [[:a], %i[b c], [:d]], klass._deps[:target]
   end
 
   def test_all_parallel_dep_threads_joined_before_exception_propagates
@@ -386,12 +398,15 @@ class TestAsgardParallelDeps < Minitest::Test
     mu        = Mutex.new
     klass     = Class.new(Asgard::Base) do
       desc "raiser", "raiser"
-      define_method(:raiser) { raise RuntimeError, "boom" }
+      define_method(:raiser) { raise "boom" }
 
       desc "slow", "slow"
-      define_method(:slow) { sleep 0.05; mu.synchronize { completed << :slow } }
+      define_method(:slow) do
+        sleep 0.05
+        mu.synchronize { completed << :slow }
+      end
 
-      depends_on [:raiser, :slow]
+      depends_on %i[raiser slow]
       desc "target", "target"
       define_method(:target) {}
     end
@@ -412,8 +427,10 @@ end
 class TestAsgardCircularDep < Minitest::Test
   def test_raises_on_circular_dependency
     klass = Class.new(Asgard::Base) do
-      desc "a", "a"; define_method(:a) {}
-      desc "b", "b"; define_method(:b) {}
+      desc "a", "a"
+      define_method(:a) {}
+      desc "b", "b"
+      define_method(:b) {}
     end
 
     klass._deps[:a] = [[:b]]
@@ -424,9 +441,11 @@ class TestAsgardCircularDep < Minitest::Test
 
   def test_no_error_when_deps_are_valid
     klass = Class.new(Asgard::Base) do
-      desc "a", "a"; define_method(:a) {}
+      desc "a", "a"
+      define_method(:a) {}
       depends_on :a
-      desc "b", "b"; define_method(:b) {}
+      desc "b", "b"
+      define_method(:b) {}
     end
     klass.validate_deps!
   end
@@ -451,7 +470,7 @@ class TestAsgardCircularDep < Minitest::Test
       desc "test", "test"
       define_method(:test) {}
     end
-    klass._deps[:test] = [[:ghost_a, :ghost_b]]
+    klass._deps[:test] = [%i[ghost_a ghost_b]]
     err = assert_raises(Asgard::Error) { klass.validate_deps! }
     assert_match "ghost_a", err.message
     assert_match "ghost_b", err.message
@@ -517,7 +536,7 @@ class TestAsgardDotenv < Minitest::Test
       File.write(File.join(dir, ".env"), "ASGARD_TEST_VAR=loaded\n")
       klass = Class.new(Asgard::Base)
       Dir.chdir(dir) { klass.dotenv }
-      assert_equal "loaded", ENV["ASGARD_TEST_VAR"]
+      assert_equal "loaded", ENV.fetch("ASGARD_TEST_VAR", nil)
     end
   ensure
     ENV.delete("ASGARD_TEST_VAR")
@@ -552,10 +571,10 @@ class TestAsgardRunSuccess < Minitest::Test
       dir = File.realpath(dir)
       File.write(File.join(dir, ".loki"), "")
       File.write(File.join(dir, "extra.loki"),
-        "class Tasks; desc 'extra_task', 'extra'; def extra_task = nil; end")
+                 "class Tasks; desc 'extra_task', 'extra'; def extra_task = nil; end")
       Dir.chdir(dir) { Asgard.run!(["help"]) rescue nil }
       refute Tasks.method_defined?(:extra_task),
-        "extra.loki should not be loaded without --auto-load"
+             "extra.loki should not be loaded without --auto-load"
     end
   ensure
     Tasks.class_eval { remove_method(:extra_task) rescue nil }
@@ -567,10 +586,10 @@ class TestAsgardRunSuccess < Minitest::Test
       dir = File.realpath(dir)
       File.write(File.join(dir, ".loki"), "")
       File.write(File.join(dir, "extra2.loki"),
-        "class Tasks; desc 'extra2_task', 'extra2'; def extra2_task = nil; end")
+                 "class Tasks; desc 'extra2_task', 'extra2'; def extra2_task = nil; end")
       Dir.chdir(dir) { Asgard.run!(["--auto-load", "help"]) rescue nil }
       assert Tasks.method_defined?(:extra2_task),
-        "extra2.loki should be loaded when --auto-load is passed"
+             "extra2.loki should be loaded when --auto-load is passed"
     end
   ensure
     Tasks.class_eval { remove_method(:extra2_task) rescue nil }
@@ -680,7 +699,7 @@ class TestAsgardDescShorthand < Minitest::Test
       define_method(:test) { log << :test }
     end
     klass.new([], {}, {}).invoke(:test)
-    assert_equal [:build, :test], log
+    assert_equal %i[build test], log
   end
 
   def test_two_arg_desc_still_works

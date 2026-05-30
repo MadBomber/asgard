@@ -8,7 +8,8 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 
-gem "minitest", "~> 5.16"
-gem "simplecov", "~> 0.22"
 gem "flog"
+gem "minitest", "~> 5.16"
 gem "racc"
+gem "rubocop"
+gem "simplecov", "~> 0.22"

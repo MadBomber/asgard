@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require "tempfile"
 
 module Asgard
@@ -12,12 +13,12 @@ module Asgard
       $stdout.puts script unless silent
 
       success = if script.include?("\n")
-        system("bash", "-c", script)
-      else
-        system(script)
-      end
+                  system("bash", "-c", script)
+                else
+                  system(script)
+                end
 
-      exit($?.exitstatus) unless success
+      exit($CHILD_STATUS.exitstatus) unless success
     end
 
     # Write +script+ to a tempfile and execute it with +interpreter+.
@@ -34,11 +35,11 @@ module Asgard
 
       $stdout.puts script unless silent
 
-    Tempfile.create(["asgard_", ext]) do |f|
+      Tempfile.create(["asgard_", ext]) do |f|
         f.write(script)
         f.flush
         system(interpreter.to_s, f.path)
-        exit($?.exitstatus) unless $?.success?
+        exit($CHILD_STATUS.exitstatus) unless $CHILD_STATUS.success?
       end
     end
   end

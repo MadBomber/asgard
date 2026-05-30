@@ -27,7 +27,7 @@ module Asgard
   # Each file typically reopens class Tasks to add tasks.
   # The .loki entry point is excluded — it is loaded separately by run!.
   def self.load_loki(dir)
-    Dir.glob(File.join(dir, "*.loki")).sort.each { |f| load f }
+    Dir.glob(File.join(dir, "*.loki")).each { |f| load f }
   end
 
   # Main entry point invoked by the asgard executable.

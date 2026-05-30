@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "thor"
-require "set"
 require "dagwood"
 
 module Asgard
@@ -67,7 +66,7 @@ module Asgard
       def _build_dep_graph(stages)
         graph = {}
         stages.each_with_index do |stage, i|
-          prev_stage = i > 0 ? stages[i - 1] : []
+          prev_stage = i.positive? ? stages[i - 1] : []
           stage.each { |task| graph[task] = prev_stage.dup }
         end
         graph
@@ -109,7 +108,7 @@ module Asgard
         else
           @_pending_single_desc      = nil
           @_pending_single_desc_opts = nil
-          super(usage_or_desc, description, options)
+          super
         end
       end
 
@@ -127,14 +126,14 @@ module Asgard
         pending = Array(@_pending_deps)
         if pending.any?
           raise Asgard::Error,
-            "depends_on(#{pending.join(', ')}) declared without a following task definition"
+                "depends_on(#{pending.join(', ')}) declared without a following task definition"
         end
 
         return if _deps.empty?
 
         all_task_names = all_commands.keys.map(&:to_sym)
-        full_graph     = all_task_names.each_with_object({}) do |task, hash|
-          hash[task] = _deps.fetch(task, []).flatten
+        full_graph     = all_task_names.to_h do |task|
+          [task, _deps.fetch(task, []).flatten]
         end
 
         undefined = _deps.values.flatten.uniq - all_task_names
@@ -142,14 +141,14 @@ module Asgard
           raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
         end
 
-        _deps.each do |_task, stages|
+        _deps.each_value do |stages|
           stages.flatten.each do |dep|
             meth = instance_method(dep.to_s) rescue nil
             next unless meth
             required = meth.parameters.count { |type, _| type == :req }
-            if required > 0
+            if required.positive?
               raise Asgard::Error,
-                "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
+                    "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
             end
           end
         end
@@ -191,6 +190,7 @@ module Asgard
       # wait on its ConditionVariable rather than proceeding immediately,
       # preventing the race where parallel tasks start before a shared dep
       # has actually completed.
+      # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
       def invoke_command(command, *args)
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
@@ -235,6 +235,7 @@ module Asgard
           end
         end
       end
+      # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
 
       def _run_dep(task)
         command = self.class.all_commands[task.to_s]

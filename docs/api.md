@@ -38,7 +38,6 @@ After loading task files, it calls `Tasks.validate_deps!` (circular dependency c
 |---|---|---|
 | `depends_on` | `depends_on(*tasks)` | Declare prerequisites for the next `def`. Bare symbols run sequentially; arrays within the splat run as a parallel group. |
 | `var` | `var(name, value = nil, &block)` | Declare a named variable. If `value` responds to `call` (lambda/proc) or a block is given, the value is computed lazily on first access. Accessible in task bodies as a method. |
-| `import` | `import(mod)` | Include a module into the current class (thin alias for `include`). |
 | `dotenv` | `dotenv(path = ".env")` | Load the specified `.env` file into `ENV` using the dotenv gem. Silently skipped if the file does not exist. Called at class-load time. |
 | `sh` | `sh(script, silent: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. |
 | `shebang` | `shebang(interpreter, script, silent: false)` | Instance method. Write `script` to a tempfile and execute it with `interpreter`. See the [Shell Helpers](shell.md) page for the full interpreter table. |

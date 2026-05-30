@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **`import` DSL method** — `import(mod)` was a one-line alias for Ruby's built-in `include`. Callers can use `include` directly. The method, its test, and its API documentation entry have all been removed.
+
 ### Refactored
 
 - **`validate_deps!` decomposed into focused private helpers** — the method was performing four unrelated validations in one body (orphaned `depends_on` check, undefined dep name check, dep arity check, cycle detection). Each concern is now a dedicated `_`-prefixed private method (`_check_orphaned_deps!`, `_check_undefined_deps!`, `_check_dep_arities!`, `_build_and_sort_graph`). `validate_deps!` is now a sequencer of ~8 lines. Flog score dropped from 87.3 to 24.4. The inline `rescue nil` on `instance_method` was also removed — by the time arity is checked, undefined deps have already been rejected, so the rescue was dead code.

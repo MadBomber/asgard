@@ -112,10 +112,6 @@ module Asgard
         end
       end
 
-      def import(mod)
-        include mod
-      end
-
       def dotenv(path = ".env")
         require "dotenv"
         Dotenv.load(path) if File.exist?(path)

@@ -513,23 +513,6 @@ class TestAsgardResetRan < Minitest::Test
   end
 end
 
-class TestAsgardImport < Minitest::Test
-  def test_import_merges_tasks_from_module
-    task_log = []
-
-    mod = Module.new
-    mod.define_singleton_method(:included) do |base|
-      base.desc "ping", "ping task"
-      base.define_method(:ping) { task_log << :ping }
-    end
-
-    klass    = Class.new(Asgard::Base) { import mod }
-    instance = klass.new([], {}, {})
-    instance.ping
-    assert_equal [:ping], task_log
-  end
-end
-
 class TestAsgardDotenv < Minitest::Test
   def test_dotenv_loads_env_file
     Dir.mktmpdir do |dir|

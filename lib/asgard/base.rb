@@ -123,40 +123,53 @@ module Asgard
 
       # Validate the full dep graph for cycles using Dagwood::DependencyGraph.
       def validate_deps!
-        pending = Array(@_pending_deps)
-        if pending.any?
-          raise Asgard::Error,
-                "depends_on(#{pending.join(', ')}) declared without a following task definition"
-        end
-
+        _check_orphaned_deps!
         return if _deps.empty?
 
         all_task_names = all_commands.keys.map(&:to_sym)
-        full_graph     = all_task_names.to_h do |task|
-          [task, _deps.fetch(task, []).flatten]
-        end
-
-        undefined = _deps.values.flatten.uniq - all_task_names
-        if undefined.any?
-          raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
-        end
-
-        _deps.each_value do |stages|
-          stages.flatten.each do |dep|
-            meth = instance_method(dep.to_s) rescue nil
-            next unless meth
-            required = meth.parameters.count { |type, _| type == :req }
-            if required.positive?
-              raise Asgard::Error,
-                    "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
-            end
-          end
-        end
-
-        Dagwood::DependencyGraph.new(full_graph).order
+        _check_undefined_deps!(all_task_names)
+        _check_dep_arities!
+        _build_and_sort_graph(all_task_names)
       rescue TSort::Cyclic => e
         raise Asgard::CircularDependencyError, e.message
       end
+
+      private
+
+      def _check_orphaned_deps!
+        pending = Array(@_pending_deps)
+        return unless pending.any?
+
+        raise Asgard::Error,
+              "depends_on(#{pending.join(', ')}) declared without a following task definition"
+      end
+
+      def _check_undefined_deps!(all_task_names)
+        undefined = _deps.values.flatten.uniq - all_task_names
+        return unless undefined.any?
+
+        raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
+      end
+
+      def _check_dep_arities!
+        _deps.each_value do |stages|
+          stages.flatten.each do |dep|
+            meth = instance_method(dep.to_s)
+            required = meth.parameters.count { |type, _| type == :req }
+            next unless required.positive?
+
+            raise Asgard::Error,
+                  "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
+          end
+        end
+      end
+
+      def _build_and_sort_graph(all_task_names)
+        full_graph = all_task_names.to_h { |task| [task, _deps.fetch(task, []).flatten] }
+        Dagwood::DependencyGraph.new(full_graph).order
+      end
+
+      public
 
       def method_added(method_name)
         if @_pending_single_desc && !no_commands?
@@ -190,13 +203,22 @@ module Asgard
       # wait on its ConditionVariable rather than proceeding immediately,
       # preventing the race where parallel tasks start before a shared dep
       # has actually completed.
-      # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
       def invoke_command(command, *args)
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
+        return unless _acquire_run_token(target)
 
-        should_run = self.class._ran_mutex.synchronize do
+        begin
+          _run_deps_for(target)
+          command.run(self, *args)
+        ensure
+          _signal_done(target)
+        end
+      end
+
+      def _acquire_run_token(target)
+        self.class._ran_mutex.synchronize do
           if self.class._done.include?(target)
             false
           elsif self.class._running.include?(target)
@@ -207,35 +229,33 @@ module Asgard
             true
           end
         end
-        return unless should_run
+      end
 
-        begin
-          stages = self.class._deps[target]
-          if stages&.any?
-            graph  = self.class._build_dep_graph(stages)
-            groups = Dagwood::DependencyGraph.new(graph).parallel_order
+      def _run_deps_for(target)
+        stages = self.class._deps[target]
+        return unless stages&.any?
 
-            groups.each do |group|
-              if group.size > 1
-                threads = group.map { |task| Thread.new { _run_dep(task) } }
-                errors  = []
-                threads.each { |t| begin; t.join; rescue => e; errors << e; end }
-                raise errors.first if errors.any?
-              else
-                _run_dep(group.first)
-              end
-            end
-          end
+        groups = Dagwood::DependencyGraph.new(self.class._build_dep_graph(stages)).parallel_order
+        groups.each { |group| _run_dep_group(group) }
+      end
 
-          command.run(self, *args)
-        ensure
-          self.class._ran_mutex.synchronize do
-            self.class._done.add(target)
-            self.class._cond[target].broadcast
-          end
+      def _run_dep_group(group)
+        if group.size > 1
+          threads = group.map { |task| Thread.new { _run_dep(task) } }
+          errors  = []
+          threads.each { |t| begin; t.join; rescue => e; errors << e; end }
+          raise errors.first if errors.any?
+        else
+          _run_dep(group.first)
         end
       end
-      # rubocop:enable Metrics/MethodLength, Metrics/AbcSize
+
+      def _signal_done(target)
+        self.class._ran_mutex.synchronize do
+          self.class._done.add(target)
+          self.class._cond[target].broadcast
+        end
+      end
 
       def _run_dep(task)
         command = self.class.all_commands[task.to_s]

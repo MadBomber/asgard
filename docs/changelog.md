@@ -8,6 +8,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 
 ## [Unreleased]
 
+### Removed
+
+- **`var` DSL method** — replaced by native Ruby class variables. Use `@@name ||= "value".freeze` in the class body. Class variables are visible in all task instance methods and in subcommand subclasses, making them the correct tool for shared configuration in a Thor-based task runner. See [Variables](variables.md).
+
 ## [0.2.0] — 2026-05-29
 
 ### Changed

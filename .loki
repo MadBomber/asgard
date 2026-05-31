@@ -3,18 +3,16 @@
 # Task is pre-defined by the gem — just reopen it to add tasks.
 
 class Tasks
-  var :gem_name, "asgard"
-  var :version,  -> { Asgard::VERSION }
+  @@gem_name ||= "asgard".freeze
 
   desc "Run the test suite"
   def test
     sh "bundle exec rake test"
   end
 
-  depends_on :test
-  desc "Run tests then flog"
+  desc "Run all quality gates (tests, RuboCop, Flog)"
   def quality
-    sh "flog lib/"
+    sh "bundle exec rake quality"
   end
 
   desc "Build the gem package"

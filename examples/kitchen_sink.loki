@@ -5,9 +5,9 @@
 # install, release) so this file can be loaded alongside them without conflict.
 
 class Tasks
-  # ── Asgard: var — static value and lazy lambda ─────────────────────────────
-  var :app_name,  "my_app"
-  var :build_dir, -> { "builds/#{app_name}" }
+  # ── Ruby class variables — shared across all tasks and subcommands ──────────
+  @@app_name  ||= "my_app".freeze
+  @@build_dir ||= "builds/#{@@app_name}".freeze
 
   # ── Asgard: dotenv — load environment variables ────────────────────────────
   # Uncomment to activate:
@@ -39,7 +39,7 @@ class Tasks
   # ── Basic task — no parameters ─────────────────────────────────────────────
   desc "Say hello (default task when no command is given)"
   def greet
-    puts "Hello from #{app_name} (#{options[:env]})!"
+    puts "Hello from #{@@app_name} (#{options[:env]})!"
   end
 
   # ── Positional parameter with default ──────────────────────────────────────
@@ -79,7 +79,7 @@ class Tasks
   option :tags,                   type: :array,                              desc: "Build tags to apply"
   option :defines,                type: :hash,                               desc: "Preprocessor defines (KEY:VALUE)"
   def compile
-    puts "Compiling #{app_name} → #{options[:output]}"
+    puts "Compiling #{@@app_name} → #{options[:output]}"
   end
 
   # ── required option + enum + banner ────────────────────────────────────────
@@ -99,7 +99,7 @@ class Tasks
          default: "main",
          desc:    "Git branch to deploy"
   def deploy(env = "staging")
-    puts "Deploying #{app_name}@#{options[:branch]} to #{env}..."
+    puts "Deploying #{@@app_name}@#{options[:branch]} to #{env}..."
   end
 
   # ── long_desc — extended help shown by `asgard help report` ────────────────

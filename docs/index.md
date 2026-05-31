@@ -13,11 +13,11 @@
 <li><strong>Task Dependencies</strong> — sequential, parallel, and mixed dependency graphs via <code>depends_on</code></li>
 <li><strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads</li>
 <li><strong>Subcommands</strong> — group related tasks under a named namespace</li>
-<li><strong>Variables</strong> — static values and lazy-evaluated lambdas via <code>var</code></li>
+<li><strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands</li>
 <li><strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts</li>
 <li><strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code></li>
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
-<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code></li>
+<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task</li>
 </ul>
 </td>
@@ -41,7 +41,7 @@ touch .loki
 cat >> .loki << 'EOF'
 class Tasks
   desc "Say hello"
-  def hello = sh 'echo "Hello from Asgard!"'
+  def hello = puts "Hello from Asgard!"
 end
 EOF
 
@@ -53,9 +53,9 @@ asgard hello
 
 ## How It Works
 
-Asgard searches upward from your current directory for a `.loki` file. That file marks the project root. Additional `*.loki` files in the same directory can be loaded by passing `--auto-load` to the `asgard` command. All task files reopen `class Tasks`, which is pre-defined by the gem as a subclass of `Asgard::Base` (itself a Thor subclass).
+Asgard searches upward from your current directory for a `.loki` file. That file marks the project root. Additional `*.loki` files in the same directory can be loaded via `import "*.loki"` at the top of `.loki`. All task files reopen `class Tasks`, which is pre-defined by the gem as a subclass of `Asgard::Base` (itself a Thor subclass).
 
-The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_desc`, `argument`, `default_task`, `map`, and `subcommand` all work exactly as documented in Thor — with Asgard's own `depends_on`, `var`, `sh`, `shebang`, and `dotenv` layered on top.
+The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_desc`, `argument`, `default_task`, `map`, and `subcommand` all work exactly as documented in Thor — with Asgard's own `depends_on`, `sh`, `shebang`, and `dotenv` layered on top.
 
 ---
 

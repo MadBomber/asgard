@@ -11,7 +11,7 @@ A task with no parameters and no options:
 ```ruby
 class Tasks
   desc "Say hello"
-  def hello = sh 'echo "Hello, World!"'
+  def hello = puts "Hello, World!"
 end
 ```
 
@@ -31,7 +31,7 @@ Positional parameters are declared directly in the method signature. Document th
 class Tasks
   desc "greet NAME", "Greet NAME; omit NAME to greet the world"
   def greet(name = "World")
-    sh "echo 'Hello, #{name}!'"
+    puts "Hello, #{name}!"
   end
 end
 ```
@@ -249,14 +249,14 @@ class Tasks
            desc:    "Name to greet"
 
   desc "hello NAME", "Say hello to NAME"
-  def hello = sh "echo 'Hello, #{name}!'"
+  def hello = puts "Hello, #{name}!"
 end
 ```
 
 For most multi-task `.loki` files, the simpler positional default pattern is safer:
 
 ```ruby
-def hello(name = "World") = sh "echo 'Hello, #{name}!'"
+def hello(name = "World") = puts "Hello, #{name}!"
 ```
 
 ---

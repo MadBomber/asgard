@@ -17,11 +17,11 @@
 - <strong>Task Dependencies</strong> — sequential, parallel, and mixed dependency graphs via <code>depends_on</code><br>
 - <strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads<br>
 - <strong>Subcommands</strong> — group related tasks under a named namespace<br>
-- <strong>Variables</strong> — static values and lazy-evaluated lambdas via <code>var</code><br>
+- <strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands<br>
 - <strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts<br>
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
-- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code><br>
+- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
 - <strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task<br>
 </td>
 </tr>
@@ -52,7 +52,7 @@ Every `.loki` file defines tasks as methods inside `class Tasks`. The `Tasks` cl
 ```ruby
 class Tasks
   desc "Say hello"
-  def hello = sh 'echo "Hello, World!"'
+  def hello = puts "Hello, World!"
 end
 ```
 
@@ -67,7 +67,7 @@ Declare positional parameters directly in the method signature. Document them in
 ```ruby
 class Tasks
   desc "hello NAME", "Say hello to NAME"
-  def hello(name = "World") = sh "echo 'Hello, #{name}!'"
+  def hello(name = "World") = puts "Hello, #{name}!"
 end
 ```
 
@@ -88,7 +88,7 @@ class Tasks
            desc:    "Name to greet"
 
   desc "hello NAME", "Say hello to NAME"
-  def hello = sh "echo 'Hello, #{name}!'"
+  def hello = puts "Hello, #{name}!"
 end
 ```
 
@@ -103,7 +103,7 @@ class Tasks
   method_option :count,  aliases: "-n", type: :numeric, default: 1, desc: "Repeat N times"
   def hello(name = "World")
     message = options[:shout] ? "HELLO, #{name.upcase}!" : "Hello, #{name}!"
-    options[:count].times { sh "echo '#{message}'" }
+    options[:count].times { puts message }
   end
 end
 ```
@@ -128,7 +128,7 @@ class Tasks
   method_option :count, aliases: "-n", type: :numeric, default: 1, desc: "Repeat N times"
   def hello(name = "World")
     message = options[:shout] ? "HELLO, #{name.upcase}!" : "Hello, #{name}!"
-    options[:count].times { sh "echo '#{message}'" }
+    options[:count].times { puts message }
   end
 end
 ```
@@ -139,7 +139,7 @@ end
 
 `depends_on` declares what must run before a task. Each dependency runs at most once per `asgard` invocation regardless of how many tasks declare it. Circular dependencies are caught at startup.
 
-`desc` and `depends_on` are independent — either can come first, both must appear before `def`. `var` declarations between `depends_on` and `def` are safe and do not consume the pending dependency.
+`desc` and `depends_on` are independent — either can come first, both must appear before `def`.
 
 ### Sequential dependencies
 
@@ -202,7 +202,7 @@ class Tasks
   # setup first, then lint+build in parallel, then test, then notify
   depends_on :setup, [:lint, :build], :test, :notify
   desc "Full CI pipeline"
-  def ci = sh "echo 'CI complete'"
+  def ci = puts "CI complete"
 end
 ```
 
@@ -224,17 +224,23 @@ asgard ci executes:
 
 ## Variables
 
-`var` declares a named value available to all tasks as a method. Pass a lambda for lazy evaluation — it is called once on first use:
+Shared configuration values are declared as Ruby class variables (`@@name`) at the top of the class body. Use `||=` so the first declaration wins when multiple `.loki` files reopen `Tasks`, and `.freeze` to prevent mutation:
 
 ```ruby
 class Tasks
-  var :app,     "myapp"
-  var :version, -> { `git describe --tags`.strip }
+  @@app     ||= "myapp".freeze
+  @@max_jobs ||= 4
 
   desc "Create a release tag"
-  def tag = sh "git tag #{app}-#{version}"
+  def tag = sh "git tag #{@@app}-#{version}"
+
+  private
+
+  def version = `git describe --tags`.strip
 end
 ```
+
+Class variables are visible in all task instance methods and in subcommand subclasses — unlike class instance variables (`@name`), which are not accessible inside instance methods.
 
 ---
 
@@ -365,16 +371,30 @@ PY
 
 ## Environment variables
 
-`dotenv` loads a `.env` file into the environment before tasks run:
+`dotenv` loads a `.env` file into the environment before tasks run. Use the `env` Kernel method to read environment variables inside task bodies — it accepts a symbol or string and upcases the key automatically:
 
 ```ruby
 class Tasks
   dotenv              # loads .env
   dotenv ".env.local" # or a specific file
 
-  desc "Print the app name from .env"
-  def check = sh "echo $APP_NAME"
+  desc "Start the server"
+  def start
+    sh "puma -p #{env(:port, '3000')} -e #{env(:rack_env, 'development')}"
+  end
+
+  desc "Deploy the app"
+  def deploy
+    sh "cap #{env(:deploy_target)} deploy"  # raises KeyError if DEPLOY_TARGET is unset
+  end
 end
+```
+
+| Call | Behaviour |
+|------|-----------|
+| `env(:port, "3000")` | Returns `"3000"` when `PORT` is unset |
+| `env(:api_key)` | Raises `KeyError` when `API_KEY` is missing |
+| `env("DATABASE_URL")` | String name works too — always upcased |
 ```
 
 ---
@@ -421,7 +441,7 @@ asgard deploy staging
 asgard deploy production
 ```
 
-Subcommand tasks have all the same access to helper methods like `sh`, `shebang`, `depends_on`, `var`, and the built-in `--debug`/`--verbose` class options as normal tasks.
+Subcommand tasks have all the same access to `sh`, `shebang`, `depends_on`, and the built-in `--debug`/`--verbose` class options as normal tasks. `@@` class variables declared on `Tasks` are also visible in subcommand subclasses.
 
 `depends_on` only works within a subcommand group exactly as it does at the top level:
 
@@ -470,7 +490,7 @@ Common `method_option` keys: `aliases`, `type`, `default`, `required`, `desc`, `
 
 ## Task files
 
-Asgard searches the current directory and its ancestors for a `.loki` file. That file marks the project root. `*.loki` files in the same directory are loaded only when `asgard` is invoked with `--auto-load`.
+Asgard searches the current directory and its ancestors for a `.loki` file. That file marks the project root. Additional `*.loki` files are loaded only when your `.loki` file explicitly calls `import`.
 
 ### Single file
 
@@ -541,7 +561,6 @@ end
 |---|---|
 | `Asgard.run!(argv)` | Entry point — finds `.loki`, loads task files, starts CLI |
 | `Asgard.find_task_file` | Returns path to `.loki` searching from CWD upward, or nil |
-| `Asgard.load_loki(dir)` | Loads all `*.loki` files in dir alphabetically — called by `run!` only when `--auto-load` is passed |
 
 `run!` handles its own errors — a missing `.loki`, a circular dependency, or a `depends_on` that names a task that doesn't exist all produce a clean one-line message and exit 1.
 

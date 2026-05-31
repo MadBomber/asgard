@@ -12,7 +12,6 @@ These class methods are defined on the `Asgard` module itself.
 |---|---|---|
 | `run!` | `Asgard.run!(argv)` | Main entry point. Finds `.loki`, loads all task files, validates the dependency graph, and dispatches via Thor. Handles its own errors: missing `.loki` and circular dependencies both produce a clean one-line message and `exit 1`. |
 | `find_task_file` | `Asgard.find_task_file → String, nil` | Searches `Dir.pwd` and each ancestor directory for a `.loki` file. Returns the absolute path string of the first match, or `nil` if none is found. |
-| `load_loki` | `Asgard.load_loki(dir)` | Loads all `*.loki` files in `dir` alphabetically, excluding `.loki` itself. Called by `run!` only when `--auto-load` is present in `argv`. |
 
 ### `run!` Details
 
@@ -30,6 +29,75 @@ After loading task files, it calls `Tasks.validate_deps!` (circular dependency c
 
 ---
 
+## Kernel Methods
+
+These methods are defined as `module_function` on `Kernel` and are therefore available everywhere in Ruby — at the top level of `.loki` files, inside class bodies, and inside task method bodies. No `require` or `include` is needed; they are loaded when `asgard` starts.
+
+| Method | Signature | Returns | Description |
+|---|---|---|---|
+| `loki_up` | `loki_up(name = ".loki") → String, nil` | Absolute path or `nil` | Searches `Dir.pwd` and each ancestor directory for a file named `name`. Returns the first match's absolute path, or `nil` if not found. Exact filenames only — does not expand globs. |
+| `import` | `import(path) → true, false` | `true` if any file newly loaded | Loads one `.loki` file or a glob of `.loki` files. Relative paths resolve relative to the caller's file (like `require_relative`). Idempotent via `$LOADED_FEATURES`. Raises `ArgumentError` if `path` does not end with `.loki`. Raises `LoadError` if a non-glob path does not exist. |
+| `import_up` | `import_up(name = ".loki") → true, false` | `true` if any file newly loaded | Combines `loki_up` and `import`. Walks ancestors to find the file or glob match, then loads it. Returns `false` if nothing is found. |
+| `debug?` | `debug? → true, false` | `$DEBUG` | Returns the current value of `$DEBUG`. Set to `true` by `--debug` on the CLI or directly via `$DEBUG = true`. |
+| `verbose?` | `verbose? → true, false` | `$VERBOSE` | Returns the current value of `$VERBOSE`. Set to `true` by `--verbose` on the CLI or directly via `$VERBOSE = true`. |
+| `env` | `env(name, default = nil) → String, nil` | `ENV` value or default | Fetches an environment variable by symbol or string name. The name is upcased automatically. Raises `KeyError` when the variable is missing and no default is given. |
+
+### `loki_up` Details
+
+```ruby
+loki_up                       # find .loki (the entry point marker)
+loki_up("gem_tasks.loki")     # find gem_tasks.loki in CWD or any ancestor
+```
+
+Returns an absolute path string or `nil`. Does not load the file.
+
+```ruby
+if (path = loki_up("gem_tasks.loki"))
+  import path
+end
+```
+
+### `import` Details
+
+```ruby
+import "build.loki"                  # relative — resolved from the calling file's directory
+import "/home/shared/gem_tasks.loki" # absolute
+import "*.loki"                      # all *.loki in the same directory as the caller
+import "../shared/*.loki"            # all *.loki one level up
+import "**/*.loki"                   # all *.loki recursively
+import Pathname.new("tasks.loki")    # Pathname accepted
+```
+
+**Extension requirement:** the path (or glob pattern) must end with `.loki`. Passing any other extension raises `ArgumentError`.
+
+**Glob behaviour:** `Dir.glob` is used for pattern expansion. `*.loki` does not match `.loki` (the dotfile) — Ruby's glob excludes dotfiles from `*` by default. Files are loaded in the order `Dir.glob` returns them (sorted on Ruby ≥ 2.7).
+
+**Idempotency:** each resolved absolute path is checked against `$LOADED_FEATURES` before loading. A file already in `$LOADED_FEATURES` is silently skipped and contributes `false` to the return value.
+
+**Return value:** `true` if at least one file was newly loaded; `false` if all matched files were already loaded or no glob pattern produced any matches.
+
+**Verbose/debug output** (to stderr):
+- `verbose?` true — prints each file path as it is loaded
+- `debug?` true — also prints a skip message for each already-loaded file
+
+### `import_up` Details
+
+```ruby
+import_up                          # find and load .loki
+import_up "gem_tasks.loki"         # find and load gem_tasks.loki up the tree
+import_up "*.loki"                 # find the nearest ancestor with *.loki files and load them all
+```
+
+**Exact name:** delegates to `loki_up` to find the file, then calls `import` with the absolute path. Returns `false` without raising if the file is not found.
+
+**Glob name:** walks ancestor directories manually using `Dir.glob`. Stops at the **first** ancestor that has any matches and loads all of them — it does not continue walking after finding a match. Returns `false` if no ancestor contains matching files.
+
+**Verbose/debug output** (to stderr):
+- `verbose?` true — prints `name → /full/path` when a file or directory is found
+- `debug?` true — also prints `name not found` when the search comes up empty
+
+---
+
 ## `Asgard::Base` DSL Class Methods
 
 `Asgard::Base` is a `Thor` subclass that provides the task DSL. It is the superclass of `Tasks`. All DSL methods are class methods (called in the class body).
@@ -37,7 +105,6 @@ After loading task files, it calls `Tasks.validate_deps!` (circular dependency c
 | Method | Signature | Description |
 |---|---|---|
 | `depends_on` | `depends_on(*tasks)` | Declare prerequisites for the next `def`. Bare symbols run sequentially; arrays within the splat run as a parallel group. |
-| `var` | `var(name, value = nil, &block)` | Declare a named variable. If `value` responds to `call` (lambda/proc) or a block is given, the value is computed lazily on first access. Accessible in task bodies as a method. |
 | `dotenv` | `dotenv(path = ".env")` | Load the specified `.env` file into `ENV` using the dotenv gem. Silently skipped if the file does not exist. Called at class-load time. |
 | `sh` | `sh(script, silent: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. |
 | `shebang` | `shebang(interpreter, script, silent: false)` | Instance method. Write `script` to a tempfile and execute it with `interpreter`. See the [Shell Helpers](shell.md) page for the full interpreter table. |
@@ -64,9 +131,8 @@ depends_on :setup, [:lint, :build], :test  # setup, then lint+build concurrently
 | `class_option :debug` | class option | `--debug` flag. Sets `$DEBUG = true` before any task runs. Boolean, default `false`. |
 | `class_option :verbose` | class option | `--verbose` flag. Sets `$VERBOSE = true` before any task runs. Boolean, default `false`. |
 | `_version` | private task method | Implements `--version`. Prints `Asgard::VERSION` and exits. Registered via `map "--version" => :_version`. Uses `_` prefix convention. |
-| `debug?` | private instance method | Returns `$DEBUG`. Available in all task bodies and subcommand classes that inherit from `Tasks`. |
-| `verbose?` | private instance method | Returns `$VERBOSE`. Available in all task bodies and subcommand classes that inherit from `Tasks`. |
-| `--auto-load` | CLI flag (consumed by `run!`) | Triggers loading of all `*.loki` files before the main `.loki` and the requested task. Consumed by `run!` before Thor dispatch. |
+| `debug?` | Kernel module function | Returns `$DEBUG`. Available everywhere via `Kernel`. |
+| `verbose?` | Kernel module function | Returns `$VERBOSE`. Available everywhere via `Kernel`. |
 
 ---
 
@@ -77,7 +143,6 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 | Method | Description |
 |---|---|
 | `_deps` | Hash mapping task name symbols to their stage arrays. Set by `depends_on` + `method_added`. |
-| `_vars` | Hash mapping var name symbols to their static values or callables. |
 | `_ran_tasks` | `Set` of task name symbols that have already run in the current invocation. |
 | `_ran_mutex` | `Mutex` protecting `_ran_tasks` for thread-safe deduplication. |
 | `_build_dep_graph(stages)` | Translates the stage array (from `_deps`) into a Dagwood-compatible hash. |

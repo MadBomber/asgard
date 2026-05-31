@@ -51,7 +51,7 @@ Open `.loki` in your editor and add a task:
 ```ruby
 class Tasks
   desc "Say hello to the world"
-  def hello = sh 'echo "Hello, World!"'
+  def hello = puts "Hello, World!"
 end
 ```
 
@@ -64,7 +64,6 @@ end
 
 ```bash
 asgard hello
-# echo "Hello, World!"
 # Hello, World!
 ```
 
@@ -90,7 +89,7 @@ Positional parameters are declared directly in the method signature. Document th
 class Tasks
   desc "greet NAME", "Greet someone by name"
   def greet(name = "World")
-    sh "echo 'Hello, #{name}!'"
+    puts "Hello, #{name}!"
   end
 end
 ```
@@ -115,7 +114,7 @@ class Tasks
   option :shout, aliases: "-s", type: :boolean, desc: "Uppercase the greeting"
   def greet(name = "World")
     msg = options[:shout] ? "HELLO, #{name.upcase}!" : "Hello, #{name}!"
-    sh "echo '#{msg}'"
+    puts msg
   end
 end
 ```
@@ -163,7 +162,7 @@ Inside a task body, use the `debug?` and `verbose?` predicates:
 
 ```ruby
 def hello
-  sh "echo 'building...'"
+  puts "building..."
   sh "make --debug" if debug?
 end
 ```

@@ -37,8 +37,8 @@ Inheriting from `Tasks` (rather than `Asgard::Base` or `Thor`) gives the subcomm
 
 - `sh` and `shebang` shell helpers (from `Asgard::Shell`)
 - `depends_on` for dependency declarations
-- `var` for variables
 - `dotenv` for environment loading
+- `@@` class variables declared on `Tasks` (visible in all subclasses)
 - The built-in `--debug` and `--verbose` class options
 - The `debug?` and `verbose?` private predicates
 - Any private helpers or `no_commands` methods defined on `Tasks`
@@ -176,6 +176,6 @@ myproject/
   db_subcommands.loki      ← defines DBCommands
 ```
 
-When `--auto-load` is used, `*.loki` files are loaded alphabetically before `.loki`, so both `DBCommands` and `ServerCommands` are defined by the time `.loki` runs its `subcommand` calls.
+Because siblings loaded via `import "*.loki"` execute before `.loki`'s own class body, both `DBCommands` and `ServerCommands` are defined by the time `.loki` runs its `subcommand` calls.
 
 See [`examples/server_subcommands.loki`](examples.md#server-subcommands) and [`examples/db_subcommands.loki`](examples.md#db-subcommands) for complete working examples.

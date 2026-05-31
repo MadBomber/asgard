@@ -2,7 +2,7 @@
 # Demonstrates Thor subcommands registered on the top-level Tasks class.
 #
 # The subcommand class inherits from Tasks so it has access to sh, shebang,
-# var, depends_on, and the built-in --debug/--verbose class options.
+# depends_on, and the built-in --debug/--verbose class options.
 #
 # Usage:
 #   asgard server          # shows subcommand help

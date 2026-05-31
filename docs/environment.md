@@ -13,7 +13,7 @@ class Tasks
   dotenv   # loads .env from the current working directory
 
   desc "Print the app name from .env"
-  def check = sh "echo $APP_NAME"
+  def check = puts env(:app_name)
 end
 ```
 
@@ -46,8 +46,7 @@ end
 `dotenv` is a **class-level** call — it executes at Ruby class-load time, not when a task is invoked. This means:
 
 1. Variables are available in `ENV` before any task method runs.
-2. They are also available to lambda variables declared with `var` that reference `ENV`.
-3. They are available during `depends_on` dependency resolution.
+2. They are available during `depends_on` dependency resolution.
 
 ```ruby
 class Tasks
@@ -79,20 +78,39 @@ This makes it safe to commit a `.env.local` line to your `.loki` without requiri
 
 ---
 
-## Environment Variables vs. `var`
+## Environment Variables vs. Class Variables
 
-Use `dotenv` to bring external configuration into `ENV`, and `var` to define task-internal computed values:
+Use `dotenv` to bring external configuration into `ENV`. Use `@@` class variables for fixed values declared in the task file, and read from `ENV` directly in task bodies or helper methods when the value comes from the environment:
 
 ```ruby
 class Tasks
   dotenv
 
-  # Read from ENV (set by dotenv or the shell)
-  var :app_name, -> { ENV.fetch("APP_NAME", "myapp") }
-  var :port,     -> { ENV.fetch("PORT", "3000").to_i }
+  @@app_name ||= "myapp".freeze
+
+  desc "Start the server"
+  def start
+    port = ENV.fetch("PORT", "3000").to_i
+    sh "puma -b tcp://0.0.0.0:#{port} -w #{ENV.fetch('WORKERS', '2')}"
+  end
+end
+```
+
+For `ENV` values used in multiple tasks, define a private helper method:
+
+```ruby
+class Tasks
+  dotenv
 
   desc "Start the server"
   def start = sh "puma -p #{port}"
+
+  desc "Show config"
+  def config = puts "#{@@app_name} on port #{port}"
+
+  private
+
+  def port = ENV.fetch("PORT", "3000").to_i
 end
 ```
 

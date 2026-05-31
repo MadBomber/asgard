@@ -27,7 +27,7 @@ Alternatively, copy individual example files into your own project's directory.
 
 The most comprehensive example — demonstrates every Thor DSL feature available in Asgard:
 
-- `var` with a static value and a lazy lambda
+- `@@` class variables for shared configuration values
 - `dotenv` (commented out, ready to activate)
 - `class_option` with `:boolean` and `:string` types, including `enum`
 - `default_task` — sets the default command when `asgard` is run with no arguments

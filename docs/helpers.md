@@ -73,8 +73,6 @@ class Tasks
 end
 ```
 
-`var`-declared variables are also implemented using `no_commands` internally, which is why they appear as callable methods but not as CLI commands.
-
 ---
 
 ## Choosing Between `private` and `no_commands`
@@ -92,6 +90,8 @@ For most helpers, `private` is the right choice. Use `no_commands` when the help
 ---
 
 ## Sharing Helpers Across Files
+
+### Within a project
 
 Extract shared helpers into a plain Ruby module and load it from `.loki` using `require_relative`:
 
@@ -129,6 +129,30 @@ Because `include` in the class body makes the module methods available as instan
 
 !!! tip
     Helpers in a shared module can call `sh`, `shebang`, and other Asgard DSL methods because those are included in `Tasks` (via `Asgard::Base` and `Asgard::Shell`) and are available in `self` when the module method is invoked.
+
+### Across projects with `import_up`
+
+If helpers are defined as tasks in a shared `.loki` file, use `import_up` to load them from any sub-project without knowing the absolute path:
+
+```
+~/sandbox/
+  shared_helpers.loki   ← defines helper tasks available to all sub-projects
+  projectA/
+    .loki
+  projectB/
+    .loki
+```
+
+```ruby
+# projectA/.loki  (and identically in projectB/.loki)
+import_up "shared_helpers.loki"
+
+class Tasks
+  # shared tasks are already defined in Tasks by here
+end
+```
+
+`import_up` walks up from `Dir.pwd` until it finds `shared_helpers.loki`, then loads it. It returns `false` without raising if the file is not found, making it safe to use in projects where the shared file may not always be present.
 
 ---
 

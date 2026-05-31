@@ -9,40 +9,6 @@ class TestAsgardVersion < Minitest::Test
   end
 end
 
-class TestAsgardLoadLoki < Minitest::Test
-  def test_loads_star_loki_files
-    Dir.mktmpdir do |dir|
-      dir = File.realpath(dir)
-      File.write(File.join(dir, "zebra.loki"),
-                 "class Tasks; desc 'zebra', 'z'; def zebra_task = nil; end")
-      File.write(File.join(dir, "alpha.loki"),
-                 "class Tasks; desc 'alpha', 'a'; def alpha_task = nil; end")
-      Asgard.load_loki(dir)
-      assert Tasks.method_defined?(:alpha_task)
-      assert Tasks.method_defined?(:zebra_task)
-    end
-  ensure
-    Tasks.class_eval { %i[alpha_task zebra_task].each { |m| remove_method(m) rescue nil } }
-    Tasks._reset_ran!
-  end
-
-  def test_ignores_dot_loki_file
-    Dir.mktmpdir do |dir|
-      dir = File.realpath(dir)
-      File.write(File.join(dir, ".loki"),
-                 "class Tasks; no_commands { def dot_loki_sentinel = nil }; end")
-      Asgard.load_loki(dir)
-      refute Tasks.method_defined?(:dot_loki_sentinel)
-    end
-  end
-
-  def test_does_nothing_when_no_star_loki_files_exist
-    Dir.mktmpdir do |dir|
-      Asgard.load_loki(File.realpath(dir))
-    end
-  end
-end
-
 class TestAsgardRun < Minitest::Test
   def test_run_exits_when_no_loki_file_found
     Dir.mktmpdir do |dir|
@@ -196,50 +162,477 @@ class TestAsgardFindFile < Minitest::Test
   end
 end
 
-class TestAsgardVar < Minitest::Test
+class TestLokiUp < Minitest::Test
+  def test_returns_nil_when_not_found
+    Dir.chdir("/tmp") do
+      assert_nil loki_up("nonexistent_sentinel_xyzzy.loki")
+    end
+  end
+
+  def test_finds_default_dot_loki_in_current_directory
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, ".loki")
+      File.write(path, "")
+      result = Dir.chdir(dir) { loki_up }
+      assert_equal path, result
+    end
+  end
+
+  def test_finds_default_dot_loki_in_parent_directory
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      path   = File.join(dir, ".loki")
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      File.write(path, "")
+      result = Dir.chdir(subdir) { loki_up }
+      assert_equal path, result
+    end
+  end
+
+  def test_finds_named_file_in_current_directory
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "gem_tasks.loki")
+      File.write(path, "")
+      result = Dir.chdir(dir) { loki_up("gem_tasks.loki") }
+      assert_equal path, result
+    end
+  end
+
+  def test_finds_named_file_in_parent_directory
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      path   = File.join(dir, "gem_tasks.loki")
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      File.write(path, "")
+      result = Dir.chdir(subdir) { loki_up("gem_tasks.loki") }
+      assert_equal path, result
+    end
+  end
+
+  def test_returns_nil_when_named_file_not_found
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+      result = Dir.chdir(dir) { loki_up("gem_tasks.loki") }
+      assert_nil result
+    end
+  end
+
+  def test_nearest_match_wins
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      File.write(File.join(dir,    "gem_tasks.loki"), "")
+      File.write(File.join(subdir, "gem_tasks.loki"), "")
+      result = Dir.chdir(subdir) { loki_up("gem_tasks.loki") }
+      assert_equal File.join(subdir, "gem_tasks.loki"), result
+    end
+  end
+
+  def test_available_as_kernel_module_method
+    assert_respond_to Kernel, :loki_up
+  end
+end
+
+class TestImport < Minitest::Test
   def setup
-    @klass = Class.new(Asgard::Base) do
-      var :greeting, "hello"
-      var :dynamic,  -> { "dyn_42" }
+    @orig_debug   = $DEBUG
+    @orig_verbose = $VERBOSE
+    $DEBUG   = false
+    $VERBOSE = false
+  end
+
+  def teardown
+    $DEBUG   = @orig_debug
+    $VERBOSE = @orig_verbose
+  end
+
+  def test_raises_for_non_loki_extension
+    err = assert_raises(ArgumentError) { import("/tmp/tasks.rb") }
+    assert_match ".loki", err.message
+  end
+
+  def test_raises_for_no_extension
+    assert_raises(ArgumentError) { import("/tmp/tasks") }
+  end
+
+  def test_accepts_pathname
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "gem_tasks.loki")
+      File.write(path, "")
+      assert import(Pathname.new(path))
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("gem_tasks.loki") }
+  end
+
+  def test_loads_loki_file_by_absolute_path
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "shared.loki")
+      File.write(path, "IMPORT_SHARED_LOADED = true")
+      import(path)
+      assert Object.const_get(:IMPORT_SHARED_LOADED)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("shared.loki") }
+    Object.send(:remove_const, :IMPORT_SHARED_LOADED) rescue nil
+  end
+
+  def test_returns_false_when_already_loaded
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "once.loki")
+      File.write(path, "")
+      import(path)
+      assert_equal false, import(path)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("once.loki") }
+  end
+
+  def test_glob_loads_all_matching_files
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "alpha.loki"), "IMPORT_GLOB_ALPHA = true")
+      File.write(File.join(dir, "beta.loki"),  "IMPORT_GLOB_BETA  = true")
+      assert import(File.join(dir, "*.loki"))
+      assert Object.const_get(:IMPORT_GLOB_ALPHA)
+      assert Object.const_get(:IMPORT_GLOB_BETA)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f =~ /alpha\.loki|beta\.loki/ }
+    %i[IMPORT_GLOB_ALPHA IMPORT_GLOB_BETA].each { |c| Object.send(:remove_const, c) rescue nil }
+  end
+
+  def test_glob_loads_in_alphabetical_order
+    Object.const_set(:IMPORT_ORDER_LOG, [])
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "z_tasks.loki"), "IMPORT_ORDER_LOG << :z")
+      File.write(File.join(dir, "a_tasks.loki"), "IMPORT_ORDER_LOG << :a")
+      import(File.join(dir, "*.loki"))
+      assert_equal %i[a z], IMPORT_ORDER_LOG
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f =~ /[az]_tasks\.loki/ }
+    Object.send(:remove_const, :IMPORT_ORDER_LOG) rescue nil
+  end
+
+  def test_glob_excludes_dot_loki_dotfile
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"),       "IMPORT_GLOB_DOTFILE  = true")
+      File.write(File.join(dir, "named.loki"),  "IMPORT_GLOB_NAMED    = true")
+      import(File.join(dir, "*.loki"))
+      refute Object.const_defined?(:IMPORT_GLOB_DOTFILE)
+      assert Object.const_get(:IMPORT_GLOB_NAMED)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f =~ /\.loki$/ }
+    %i[IMPORT_GLOB_DOTFILE IMPORT_GLOB_NAMED].each { |c| Object.send(:remove_const, c) rescue nil }
+  end
+
+  def test_glob_returns_false_when_no_files_match
+    Dir.mktmpdir do |dir|
+      assert_equal false, import(File.join(File.realpath(dir), "*.loki"))
     end
   end
 
-  def test_static_var_returns_value
-    assert_equal "hello", @klass.new([], {}, {}).greeting
-  end
-
-  def test_dynamic_var_is_evaluated_lazily
-    assert_equal "dyn_42", @klass.new([], {}, {}).dynamic
-  end
-
-  def test_var_with_block
-    klass = Class.new(Asgard::Base) do
-      var(:computed) { "block_val" }
+  def test_glob_is_idempotent
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "once.loki"), "")
+      import(File.join(dir, "*.loki"))
+      assert_equal false, import(File.join(dir, "*.loki"))
     end
-    assert_equal "block_val", klass.new([], {}, {}).computed
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("once.loki") }
   end
 
-  def test_var_lambda_is_memoized
-    call_count = 0
-    klass = Class.new(Asgard::Base) do
-      var :expensive, lambda {
-        call_count += 1
-        "result"
-      }
+  def test_verbose_prints_path_to_stderr
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "verbose.loki")
+      File.write(path, "")
+      _, err = capture_io do
+        $VERBOSE = true
+        import(path)
+      end
+      assert_match path, err
     end
-    instance = klass.new([], {}, {})
-    3.times { instance.expensive }
-    assert_equal 1, call_count
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("verbose.loki") }
   end
 
-  def test_var_memoization_is_per_instance
-    klass = Class.new(Asgard::Base) do
-      var :counter, -> { Object.new }
+  def test_debug_prints_path_to_stderr
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "debugged.loki")
+      File.write(path, "")
+      _, err = capture_io do
+        $DEBUG = true
+        import(path)
+      end
+      assert_match path, err
     end
-    a = klass.new([], {}, {})
-    b = klass.new([], {}, {})
-    assert_same a.counter, a.counter
-    refute_same a.counter, b.counter
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("debugged.loki") }
+  end
+
+  def test_debug_prints_skip_message_for_already_loaded_file
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "skip_me.loki")
+      File.write(path, "")
+      import(path)
+      _, err = capture_io do
+        $DEBUG = true
+        import(path)
+      end
+      assert_match "already loaded", err
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("skip_me.loki") }
+  end
+
+  def test_no_output_when_neither_verbose_nor_debug
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "quiet.loki")
+      File.write(path, "")
+      out, err = capture_io { import(path) }
+      assert_empty out
+      assert_empty err
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("quiet.loki") }
+  end
+
+  def test_available_as_kernel_module_method
+    assert_respond_to Kernel, :import
+  end
+end
+
+class TestImportUp < Minitest::Test
+  def setup
+    @orig_debug   = $DEBUG
+    @orig_verbose = $VERBOSE
+    $DEBUG   = false
+    $VERBOSE = false
+  end
+
+  def teardown
+    $DEBUG   = @orig_debug
+    $VERBOSE = @orig_verbose
+  end
+
+  def test_returns_false_when_file_not_found
+    Dir.chdir("/tmp") do
+      assert_equal false, import_up("nonexistent_xyzzy.loki")
+    end
+  end
+
+  def test_loads_named_loki_file_found_up_the_tree
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      path = File.join(dir, "gem_tasks.loki")
+      File.write(path, "IMPORT_UP_GEM_TASKS_LOADED = true")
+      Dir.chdir(subdir) { import_up("gem_tasks.loki") }
+      assert Object.const_get(:IMPORT_UP_GEM_TASKS_LOADED)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("gem_tasks.loki") }
+    Object.send(:remove_const, :IMPORT_UP_GEM_TASKS_LOADED) rescue nil
+  end
+
+  def test_loads_default_dot_loki
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, ".loki")
+      File.write(path, "IMPORT_UP_DOT_LOKI_LOADED = true")
+      Dir.chdir(dir) { import_up }
+      assert Object.const_get(:IMPORT_UP_DOT_LOKI_LOADED)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?(".loki") }
+    Object.send(:remove_const, :IMPORT_UP_DOT_LOKI_LOADED) rescue nil
+  end
+
+  def test_is_idempotent
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "idempotent.loki")
+      File.write(path, "")
+      Dir.chdir(dir) { import_up("idempotent.loki") }
+      Dir.chdir(dir) { assert_equal false, import_up("idempotent.loki") }
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("idempotent.loki") }
+  end
+
+  def test_glob_loads_matching_files_in_first_ancestor_with_matches
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      File.write(File.join(dir, "shared.loki"), "IMPORT_UP_GLOB_SHARED = true")
+      Dir.chdir(subdir) { import_up("*.loki") }
+      assert Object.const_get(:IMPORT_UP_GLOB_SHARED)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("shared.loki") }
+    Object.send(:remove_const, :IMPORT_UP_GLOB_SHARED) rescue nil
+  end
+
+  def test_glob_stops_at_first_ancestor_with_matches
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      File.write(File.join(dir,    "root.loki"),  "IMPORT_UP_GLOB_ROOT  = true")
+      File.write(File.join(subdir, "local.loki"), "IMPORT_UP_GLOB_LOCAL = true")
+      Dir.chdir(subdir) { import_up("*.loki") }
+      assert  Object.const_defined?(:IMPORT_UP_GLOB_LOCAL)
+      refute  Object.const_defined?(:IMPORT_UP_GLOB_ROOT)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f =~ /root\.loki|local\.loki/ }
+    %i[IMPORT_UP_GLOB_ROOT IMPORT_UP_GLOB_LOCAL].each { |c| Object.send(:remove_const, c) rescue nil }
+  end
+
+  def test_glob_returns_false_when_no_ancestor_has_matches
+    Dir.mktmpdir do |dir|
+      dir    = File.realpath(dir)
+      subdir = File.join(dir, "sub")
+      Dir.mkdir(subdir)
+      result = Dir.chdir(subdir) { import_up("*.loki") }
+      assert_equal false, result
+    end
+  end
+
+  def test_verbose_prints_found_path_to_stderr
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "found.loki")
+      File.write(path, "")
+      _, err = capture_io do
+        $VERBOSE = true
+        Dir.chdir(dir) { import_up("found.loki") }
+      end
+      assert_match "found.loki", err
+      assert_match path, err
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("found.loki") }
+  end
+
+  def test_debug_prints_not_found_to_stderr
+    Dir.chdir("/tmp") do
+      _, err = capture_io do
+        $DEBUG = true
+        import_up("missing_xyzzy.loki")
+      end
+      assert_match "not found", err
+    end
+  end
+
+  def test_no_output_when_neither_verbose_nor_debug
+    Dir.mktmpdir do |dir|
+      dir  = File.realpath(dir)
+      path = File.join(dir, "silent.loki")
+      File.write(path, "")
+      out, err = capture_io { Dir.chdir(dir) { import_up("silent.loki") } }
+      assert_empty out
+      assert_empty err
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("silent.loki") }
+  end
+
+  def test_available_as_kernel_module_method
+    assert_respond_to Kernel, :import_up
+  end
+end
+
+class TestKernelPredicates < Minitest::Test
+  def setup
+    @orig_debug   = $DEBUG
+    @orig_verbose = $VERBOSE
+  end
+
+  def teardown
+    $DEBUG   = @orig_debug
+    $VERBOSE = @orig_verbose
+  end
+
+  def test_debug_predicate_reflects_global
+    $DEBUG = true
+    assert debug?
+    $DEBUG = false
+    refute debug?
+  end
+
+  def test_verbose_predicate_reflects_global
+    $VERBOSE = true
+    assert verbose?
+    $VERBOSE = false
+    refute verbose?
+  end
+
+  def test_debug_available_as_kernel_module_method
+    assert_respond_to Kernel, :debug?
+  end
+
+  def test_verbose_available_as_kernel_module_method
+    assert_respond_to Kernel, :verbose?
+  end
+end
+
+class TestKernelEnv < Minitest::Test
+  def setup
+    @orig = ENV.to_h
+  end
+
+  def teardown
+    ENV.replace(@orig)
+  end
+
+  def test_symbol_name_is_upcased
+    ENV["ASGARD_TEST_PORT"] = "4000"
+    assert_equal "4000", env(:asgard_test_port)
+  end
+
+  def test_string_name_is_upcased
+    ENV["ASGARD_TEST_APP"] = "myapp"
+    assert_equal "myapp", env("asgard_test_app")
+  end
+
+  def test_already_uppercase_string_works
+    ENV["ASGARD_TEST_APP"] = "myapp"
+    assert_equal "myapp", env("ASGARD_TEST_APP")
+  end
+
+  def test_returns_default_when_missing
+    ENV.delete("ASGARD_TEST_MISSING")
+    assert_equal "fallback", env(:asgard_test_missing, "fallback")
+  end
+
+  def test_raises_key_error_when_missing_and_no_default
+    ENV.delete("ASGARD_TEST_MISSING")
+    assert_raises(KeyError) { env(:asgard_test_missing) }
+  end
+
+  def test_available_as_kernel_module_method
+    assert_respond_to Kernel, :env
   end
 end
 
@@ -299,21 +692,6 @@ class TestAsgardDependsOn < Minitest::Test
 
       depends_on :build
       no_commands { define_method(:helper) {} }
-      desc "test", "run tests"
-      define_method(:test) { log << :test }
-    end
-    klass.new([], {}, {}).invoke(:test)
-    assert_equal %i[build test], log
-  end
-
-  def test_depends_on_survives_var_declaration_between_declaration_and_task
-    log   = []
-    klass = Class.new(Asgard::Base) do
-      desc "build", "build"
-      define_method(:build) { log << :build }
-
-      depends_on :build
-      var :gem_name, "asgard"
       desc "test", "run tests"
       define_method(:test) { log << :test }
     end
@@ -549,34 +927,20 @@ class TestAsgardRunSuccess < Minitest::Test
     Tasks._reset_ran!
   end
 
-  def test_star_loki_files_not_loaded_without_auto_load_flag
+  def test_star_loki_files_loaded_when_dot_loki_calls_import
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
-      File.write(File.join(dir, ".loki"), "")
-      File.write(File.join(dir, "extra.loki"),
-                 "class Tasks; desc 'extra_task', 'extra'; def extra_task = nil; end")
+      File.write(File.join(dir, "extra3.loki"),
+                 "class Tasks; desc 'extra3_task', 'extra3'; def extra3_task = nil; end")
+      File.write(File.join(dir, ".loki"), "import '#{File.join(dir, "*.loki")}'")
       Dir.chdir(dir) { Asgard.run!(["help"]) rescue nil }
-      refute Tasks.method_defined?(:extra_task),
-             "extra.loki should not be loaded without --auto-load"
+      assert Tasks.method_defined?(:extra3_task),
+             "extra3.loki should be loaded when .loki calls import"
     end
   ensure
-    Tasks.class_eval { remove_method(:extra_task) rescue nil }
+    Tasks.class_eval { remove_method(:extra3_task) rescue nil }
     Tasks._reset_ran!
-  end
-
-  def test_star_loki_files_loaded_with_auto_load_flag
-    Dir.mktmpdir do |dir|
-      dir = File.realpath(dir)
-      File.write(File.join(dir, ".loki"), "")
-      File.write(File.join(dir, "extra2.loki"),
-                 "class Tasks; desc 'extra2_task', 'extra2'; def extra2_task = nil; end")
-      Dir.chdir(dir) { Asgard.run!(["--auto-load", "help"]) rescue nil }
-      assert Tasks.method_defined?(:extra2_task),
-             "extra2.loki should be loaded when --auto-load is passed"
-    end
-  ensure
-    Tasks.class_eval { remove_method(:extra2_task) rescue nil }
-    Tasks._reset_ran!
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("extra3.loki") }
   end
 end
 
@@ -693,17 +1057,6 @@ class TestAsgardDescShorthand < Minitest::Test
     cmd = klass.all_commands["my_task"]
     assert_equal "custom_usage NAME",    cmd.usage
     assert_equal "explicit description", cmd.description
-  end
-
-  def test_single_arg_desc_survives_var_between_desc_and_method
-    klass = Class.new(Asgard::Base) do
-      desc "Run tests"
-      var :gem_name, "asgard"
-      define_method(:test) {}
-    end
-    cmd = klass.all_commands["test"]
-    assert_equal "test",       cmd.usage
-    assert_equal "Run tests",  cmd.description
   end
 
   def test_single_arg_desc_survives_no_commands_block_between_desc_and_method

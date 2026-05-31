@@ -80,6 +80,8 @@ Naming/PredicatePrefix:
   Enabled: false
 
 Naming/PredicateMethod:
+  AllowedMethods:
+    - import
   Exclude:
     - 'test/**/*'
 

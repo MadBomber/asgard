@@ -94,7 +94,7 @@ class Tasks
   # setup first, then lint+build in parallel, then test, then notify
   depends_on :setup, [:lint, :build], :test, :notify
   desc "Full CI pipeline"
-  def ci = sh "echo 'CI complete'"
+  def ci = puts "CI complete"
 end
 ```
 

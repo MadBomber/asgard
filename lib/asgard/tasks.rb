@@ -14,21 +14,10 @@ class Tasks < Asgard::Base
                default: false,
                desc:    "Enable verbose output ($VERBOSE = true)"
 
-  desc "--auto-load", "Load all *.loki files from the project root before running"
-  map "--auto-load" => :_auto_load
-  def _auto_load
-    # Consumed by run! before Thor dispatch — never called directly.
-  end
-
   desc "--version", "Show asgard version"
   map "--version" => :_version
   def _version
     puts Asgard::VERSION
     exit
   end
-
-  private
-
-  def debug?   = $DEBUG
-  def verbose? = $VERBOSE
 end

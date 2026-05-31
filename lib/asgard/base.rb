@@ -16,7 +16,6 @@ module Asgard
         super
         Asgard::Base.subclasses << subclass
         subclass.instance_variable_set(:@_deps,              {})
-        subclass.instance_variable_set(:@_vars,              {})
         subclass.instance_variable_set(:@_pending_deps,      [])
         subclass.instance_variable_set(:@_pending_single_desc,      nil)
         subclass.instance_variable_set(:@_pending_single_desc_opts, nil)
@@ -28,10 +27,6 @@ module Asgard
 
       def _deps
         @_deps ||= {}
-      end
-
-      def _vars
-        @_vars ||= {}
       end
 
       def _running
@@ -81,21 +76,6 @@ module Asgard
       #   depends_on :setup, [:build, :lint], :test  # setup, then build+lint, then test
       def depends_on(*tasks)
         @_pending_deps = tasks
-      end
-
-      def var(name, value = nil, &block)
-        value = block if block_given?
-        _vars[name.to_sym] = value
-        no_commands do
-          define_method(name) do
-            ivar = :"@__var_#{name}"
-            unless instance_variable_defined?(ivar)
-              v = self.class._vars[name.to_sym]
-              instance_variable_set(ivar, v.respond_to?(:call) ? v.call : v)
-            end
-            instance_variable_get(ivar)
-          end
-        end
       end
 
       # Allow single-argument desc: desc "Run the tests"
@@ -203,60 +183,67 @@ module Asgard
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
-        return unless _acquire_run_token(target)
+        return unless acquire_run_token(target)
 
         begin
-          _run_deps_for(target)
+          run_deps_for(target)
           command.run(self, *args)
         ensure
-          _signal_done(target)
+          signal_done(target)
         end
       end
+    end
 
-      def _acquire_run_token(target)
-        self.class._ran_mutex.synchronize do
-          if self.class._done.include?(target)
-            false
-          elsif self.class._running.include?(target)
-            self.class._cond[target].wait(self.class._ran_mutex) until self.class._done.include?(target)
-            false
-          else
-            self.class._running.add(target)
-            true
-          end
-        end
-      end
+    private
 
-      def _run_deps_for(target)
-        stages = self.class._deps[target]
-        return unless stages&.any?
-
-        groups = Dagwood::DependencyGraph.new(self.class._build_dep_graph(stages)).parallel_order
-        groups.each { |group| _run_dep_group(group) }
-      end
-
-      def _run_dep_group(group)
-        if group.size > 1
-          threads = group.map { |task| Thread.new { _run_dep(task) } }
-          errors  = []
-          threads.each { |t| begin; t.join; rescue => e; errors << e; end }
-          raise errors.first if errors.any?
+    def acquire_run_token(target)
+      self.class._ran_mutex.synchronize do
+        if self.class._done.include?(target)
+          false
+        elsif self.class._running.include?(target)
+          self.class._cond[target].wait(self.class._ran_mutex) until self.class._done.include?(target)
+          false
         else
-          _run_dep(group.first)
+          self.class._running.add(target)
+          true
         end
       end
+    end
 
-      def _signal_done(target)
-        self.class._ran_mutex.synchronize do
-          self.class._done.add(target)
-          self.class._cond[target].broadcast
+    def run_deps_for(target)
+      stages = self.class._deps[target]
+      return unless stages&.any?
+
+      groups = Dagwood::DependencyGraph.new(self.class._build_dep_graph(stages)).parallel_order
+      groups.each { |group| run_dep_group(group) }
+    end
+
+    def run_dep_group(group)
+      if group.size > 1
+        threads = group.map { |task| Thread.new { run_dep(task) } }
+        errors  = []
+        threads.each { |t| begin; t.join; rescue => e; errors << e; end }
+        if errors.size == 1
+          raise errors.first
+        elsif errors.any?
+          errors.each { |e| warn "asgard: #{e.message}" }
+          raise Asgard::Error, "#{errors.size} parallel dependencies failed"
         end
+      else
+        run_dep(group.first)
       end
+    end
 
-      def _run_dep(task)
-        command = self.class.all_commands[task.to_s]
-        invoke_command(command) if command
+    def signal_done(target)
+      self.class._ran_mutex.synchronize do
+        self.class._done.add(target)
+        self.class._cond[target].broadcast
       end
+    end
+
+    def run_dep(task)
+      command = self.class.all_commands[task.to_s]
+      invoke_command(command) if command
     end
   end
 end

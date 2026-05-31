@@ -141,13 +141,12 @@ Walks up from `Dir.pwd` and stops at the **first ancestor directory** that conta
 
 ```
 ~/sandbox/
-  shared/
-    gem_tasks.loki     ← loaded by import_up("*.loki") from ~/sandbox/myproject/sub/
-    ci_tasks.loki      ← also loaded — same directory as the first match
+  gem_tasks.loki     ← loaded by import_up("*.loki") from ~/sandbox/myproject/sub/
+  ci_tasks.loki      ← also loaded — same directory as the first match
   myproject/
     .loki
     sub/
-      # Dir.pwd here; import_up("*.loki") finds ~/sandbox/shared/
+      # Dir.pwd here; import_up("*.loki") finds ~/sandbox/*.loki files
 ```
 
 ### Return value

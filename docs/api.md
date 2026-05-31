@@ -150,8 +150,10 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 | Method | Description |
 |---|---|
 | `_deps` | Hash mapping task name symbols to their stage arrays. Set by `depends_on` + `method_added`. |
-| `_ran_tasks` | `Set` of task name symbols that have already run in the current invocation. |
-| `_ran_mutex` | `Mutex` protecting `_ran_tasks` for thread-safe deduplication. |
+| `_done` | `Set` of task name symbols that have completed in the current invocation. |
+| `_running` | `Set` of task name symbols currently executing (started but not yet finished). |
+| `_cond` | Hash of `ConditionVariable` objects keyed by task name; threads wait here when a dep is in-flight. |
+| `_ran_mutex` | `Mutex` protecting `_done`, `_running`, and `_cond` for thread-safe access. |
 | `_build_dep_graph(stages)` | Translates the stage array (from `_deps`) into a Dagwood-compatible hash. |
 
 ---
@@ -161,10 +163,10 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 `Asgard::Base` overrides Thor's `invoke_command` to implement dependency resolution and deduplication:
 
 1. Sets `$DEBUG` / `$VERBOSE` from `options` if the corresponding flags are present.
-2. Checks `_ran_tasks` — skips if this task has already run.
-3. Marks the task as ran.
-4. Resolves dependency stages from `_deps`, builds the Dagwood graph, and executes groups (parallel groups in threads, sequential groups one at a time).
-5. Calls `command.run(self, *args)` to execute the task itself.
+2. Tries to acquire a run token (`acquire_run_token`): if the task is already in `_done`, returns immediately (skip); if it is in `_running`, waits on the `_cond` ConditionVariable until it finishes, then returns (skip); otherwise adds the task to `_running` and continues.
+3. Resolves dependency stages from `_deps`, builds the Dagwood graph, and executes groups (parallel groups in threads, sequential groups one at a time).
+4. Calls `command.run(self, *args)` to execute the task itself.
+5. In an `ensure` block, adds the task to `_done` and broadcasts on its `_cond` to wake any waiting threads.
 
 ---
 

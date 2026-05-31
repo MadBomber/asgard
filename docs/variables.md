@@ -6,7 +6,7 @@ Asgard task files are plain Ruby. Shared configuration values are declared using
 
 ## Ruby Variable Types
 
-Ruby has four kinds of variables, each with a distinct prefix and scope. Understanding the differences matters because tasks are instance methods — the wrong variable type will simply not be visible where you expect it.
+Ruby has four kinds of variables plus constants, each with a distinct prefix and scope. Understanding the differences matters because tasks are instance methods — the wrong variable type will simply not be visible where you expect it.
 
 | Kind | Prefix | Example | Scope |
 |------|--------|---------|-------|

@@ -52,10 +52,8 @@ end
 class Tasks
   dotenv
 
-  var :database_url, -> { ENV.fetch("DATABASE_URL") }
-
   desc "Run migrations"
-  def migrate = sh "DATABASE_URL=#{database_url} rails db:migrate"
+  def migrate = sh "DATABASE_URL=#{env(:database_url)} rails db:migrate"
 end
 ```
 

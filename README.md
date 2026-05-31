@@ -22,7 +22,7 @@
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
-- <strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task<br>
+- <strong>Built-in Flags</strong> — <code>--debug</code> and <code>--verbose</code> available on every task; <code>--version</code> at the top level<br>
 </td>
 </tr>
 </table>
@@ -395,7 +395,6 @@ end
 | `env(:port, "3000")` | Returns `"3000"` when `PORT` is unset |
 | `env(:api_key)` | Raises `KeyError` when `API_KEY` is missing |
 | `env("DATABASE_URL")` | String name works too — always upcased |
-```
 
 ---
 
@@ -505,10 +504,17 @@ Split tasks across files — each reopens `class Tasks`:
 
 ```
 myproject/
-  .loki          ← entry point, can be empty
+  .loki          ← entry point; calls import to load task files
   build.loki
   deploy.loki
   test.loki
+```
+
+The `.loki` entry file must call `import` to load the other task files. It also marks the project root for auto-discovery:
+
+```ruby
+# .loki
+import "*.loki"
 ```
 
 ```ruby
@@ -537,16 +543,16 @@ class Tasks
 end
 ```
 
-The `.loki` entry point can be completely empty — it only needs to exist to mark the project root.
+In a single-file project, `.loki` can be completely empty — its presence alone marks the project root. In a multi-file project, add at least an `import` call.
 
 ### Explicit loading
 
-Load any Ruby or `.loki` file manually from `.loki`:
+Load any Ruby or `.loki` file manually from `.loki`. Use `require_relative` for plain Ruby; use `import` for `.loki` files (it enforces the extension and is idempotent):
 
 ```ruby
 # .loki
 require_relative "shared/helpers"
-require_relative "ci.loki"
+import "ci.loki"
 
 class Tasks
   # additional tasks

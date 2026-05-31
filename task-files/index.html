@@ -1760,7 +1760,7 @@
 </span></code></pre></div>
 <hr />
 <h2 id="finding-files-with-loki_up">Finding Files with <code>loki_up</code><a class="headerlink" href="#finding-files-with-loki_up" title="Permanent link">&para;</a></h2>
-<p><code>loki_up(name = ".loki")</code> searches <code>Dir.pwd</code> and each ancestor directory for a file with the given name, returning its absolute path or <code>nil</code>. It does <strong>not</strong> load the file — it only finds it.</p>
+<p><code>loki_up(name = ".loki")</code> searches <code>Dir.pwd</code> and each ancestor directory for a file with the given name, returning a <code>Pathname</code> or <code>nil</code>. It does <strong>not</strong> load the file — it only finds it.</p>
 <p>Despite the name, <code>loki_up</code> is not limited to <code>.loki</code> files — it will locate any file by name. This makes it useful for finding shared config files, <code>.env</code> files, or any other resource that lives somewhere up the directory tree:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">loki_up</span><span class="w">                    </span><span class="c1"># finds .loki (the project root marker)</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;gem_tasks.loki&quot;</span><span class="p">)</span><span class="w">  </span><span class="c1"># finds gem_tasks.loki in CWD or any ancestor</span>
@@ -2023,7 +2023,7 @@
 <tbody>
 <tr>
 <td><code>loki_up(name)</code></td>
-<td>Yes</td>
+<td>Yes (<code>Pathname</code>)</td>
 <td>No</td>
 <td>No</td>
 <td>Yes</td>

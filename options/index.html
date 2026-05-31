@@ -823,6 +823,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Class Options (Shared Across All Tasks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-class-options-and-no_negate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boolean class options and no_negate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1175,6 +1192,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Class Options (Shared Across All Tasks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boolean-class-options-and-no_negate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boolean class options and no_negate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1411,45 +1445,65 @@
 </span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>Both <code>deploy</code> and <code>migrate</code> automatically accept <code>--dry-run</code> and <code>--env</code>.</p>
+<h3 id="boolean-class-options-and-no_negate">Boolean class options and <code>no_negate</code><a class="headerlink" href="#boolean-class-options-and-no_negate" title="Permanent link">&para;</a></h3>
+<p>Thor automatically generates <code>[--no-name]</code> and <code>[--skip-name]</code> help entries alongside every boolean <code>class_option</code>. When negation is meaningful — <code>--dry-run</code> paired with <code>--no-dry-run</code> — this is useful. When negation is meaningless, call <code>no_negate</code> immediately after the declaration to remove the extra variants from the help output:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">class_option</span><span class="w"> </span><span class="ss">:color</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">               </span><span class="ss">type</span><span class="p">:</span><span class="w">    </span><span class="ss">:boolean</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">               </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">               </span><span class="ss">desc</span><span class="p">:</span><span class="w">    </span><span class="s2">&quot;Colorise output&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="n">no_negate</span><span class="w"> </span><span class="ss">:color</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Help output before <code>no_negate</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>[--color], [--no-color], [--skip-color]  # Colorise output
+</span></code></pre></div>
+<p>Help output after <code>no_negate</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[--color]                                # Colorise output
+</span></code></pre></div>
+<p><code>no_negate</code> accepts multiple option names in a single call:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">no_negate</span><span class="w"> </span><span class="ss">:color</span><span class="p">,</span><span class="w"> </span><span class="ss">:version</span><span class="p">,</span><span class="w"> </span><span class="ss">:emoji</span>
+</span></code></pre></div>
+<p>It has no effect on runtime behaviour — <code>--no-color</code> still works on the CLI; only the help display is affected.</p>
 <hr />
 <h2 id="built-in-flags">Built-in Flags<a class="headerlink" href="#built-in-flags" title="Permanent link">&para;</a></h2>
-<p><code>Tasks</code> ships with three built-in class options and a version flag:</p>
+<p><code>Tasks</code> ships with three built-in <code>class_option</code> declarations — <code>--debug</code>, <code>--verbose</code>, and <code>--version</code> — all visible in the Options section of <code>asgard help</code>.</p>
 <h3 id="-version"><code>--version</code><a class="headerlink" href="#-version" title="Permanent link">&para;</a></h3>
-<p>Prints <code>Asgard::VERSION</code> and exits. Implemented as the <code>_version</code> method with the <code>_</code> prefix convention (gem-owned, blocked from direct CLI invocation):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>asgard<span class="w"> </span>--version
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 0.1.2</span>
+<p>A <code>class_option :version</code> of type <code>:boolean</code>. Prints <code>Asgard::VERSION</code> and exits. Handled by <code>Asgard.run!</code> before the <code>.loki</code> file is loaded, so it works even in a directory without a <code>.loki</code> file. <code>no_negate :version</code> suppresses the <code>[--no-version]</code> / <code>[--skip-version]</code> variants (see <a href="#boolean-class-options-and-no_negate">Boolean class options and <code>no_negate</code></a> above):</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>--version
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># 0.3.0</span>
 </span></code></pre></div>
 <h3 id="-debug"><code>--debug</code><a class="headerlink" href="#-debug" title="Permanent link">&para;</a></h3>
 <p>A <code>class_option :debug</code> of type <code>:boolean</code>. When passed, sets <code>$DEBUG = true</code> before the task body runs (via the <code>invoke_command</code> hook in <code>Asgard::Base</code>):</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>build<span class="w"> </span>--debug
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>asgard<span class="w"> </span>build<span class="w"> </span>--debug
 </span></code></pre></div>
 <p>Inside the task, use the <code>debug?</code> predicate:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build&quot;</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build --trace&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">debug?</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build&quot;</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build --trace&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">debug?</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="-verbose"><code>--verbose</code><a class="headerlink" href="#-verbose" title="Permanent link">&para;</a></h3>
 <p>A <code>class_option :verbose</code> of type <code>:boolean</code>. When passed, sets <code>$VERBOSE = true</code> before the task body runs:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--verbose
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--verbose
 </span></code></pre></div>
 <p>Inside the task, use the <code>verbose?</code> predicate:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">test</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">verbose?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s2">&quot;--verbose&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rake test </span><span class="si">#{</span><span class="n">flags</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">test</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">verbose?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s2">&quot;--verbose&quot;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rake test </span><span class="si">#{</span><span class="n">flags</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
 <h2 id="debug-and-verbose-predicates"><code>debug?</code> and <code>verbose?</code> Predicates<a class="headerlink" href="#debug-and-verbose-predicates" title="Permanent link">&para;</a></h2>
 <p>Both are private methods on <code>Tasks</code>, thin wrappers around the global variables:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kp">private</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">debug?</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="vg">$DEBUG</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">verbose?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">$VERBOSE</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kp">private</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">debug?</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="vg">$DEBUG</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">verbose?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vg">$VERBOSE</span>
 </span></code></pre></div>
 <p>They are available in every task body and in subcommand classes that inherit from <code>Tasks</code>. Because <code>--debug</code> and <code>--verbose</code> are <code>class_option</code> declarations (not standalone commands), they work as modifiers alongside any task:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>asgard<span class="w"> </span>build<span class="w"> </span>--debug<span class="w"> </span>--verbose
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>production<span class="w"> </span>--verbose
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard<span class="w"> </span>build<span class="w"> </span>--debug<span class="w"> </span>--verbose
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>production<span class="w"> </span>--verbose
 </span></code></pre></div>
 <hr />
 <h2 id="option-types-reference">Option Types Reference<a class="headerlink" href="#option-types-reference" title="Permanent link">&para;</a></h2>
@@ -1540,10 +1594,10 @@
 <hr />
 <h2 id="_-prefix-convention"><code>_</code> Prefix Convention<a class="headerlink" href="#_-prefix-convention" title="Permanent link">&para;</a></h2>
 <p>Methods whose names start with <code>_</code> are considered gem-owned in Asgard's naming convention. <code>run!</code> guards against invoking them directly from the CLI:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>asgard<span class="w"> </span>_version
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># asgard: unknown command &#39;_version&#39;</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>asgard<span class="w"> </span>_something
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># asgard: unknown command &#39;_something&#39;</span>
 </span></code></pre></div>
-<p>If you define your own methods on <code>Tasks</code>, avoid the <code>_</code> prefix to prevent them from being silently blocked.</p>
+<p>If you define your own methods on <code>Tasks</code>, avoid the <code>_</code> prefix to prevent them from being blocked. Built-in <code>class_option</code> declarations (like <code>--version</code>, <code>--debug</code>, <code>--verbose</code>) do not use the <code>_</code> prefix because they are options, not commands.</p>
 
 
 

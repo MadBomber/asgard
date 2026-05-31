@@ -1440,8 +1440,8 @@
 </tr>
 <tr>
 <td><code>find_task_file</code></td>
-<td><code>Asgard.find_task_file → String, nil</code></td>
-<td>Searches <code>Dir.pwd</code> and each ancestor directory for a <code>.loki</code> file. Returns the absolute path string of the first match, or <code>nil</code> if none is found.</td>
+<td><code>Asgard.find_task_file → Pathname, nil</code></td>
+<td>Searches <code>Dir.pwd</code> and each ancestor directory for a <code>.loki</code> file. Returns a <code>Pathname</code> of the first match, or <code>nil</code> if none is found.</td>
 </tr>
 </tbody>
 </table>
@@ -1467,9 +1467,9 @@
 <tbody>
 <tr>
 <td><code>loki_up</code></td>
-<td><code>loki_up(name = ".loki") → String, nil</code></td>
-<td>Absolute path or <code>nil</code></td>
-<td>Searches <code>Dir.pwd</code> and each ancestor directory for a file named <code>name</code>. Returns the first match's absolute path, or <code>nil</code> if not found. Exact filenames only — does not expand globs.</td>
+<td><code>loki_up(name = ".loki") → Pathname, nil</code></td>
+<td><code>Pathname</code> or <code>nil</code></td>
+<td>Searches <code>Dir.pwd</code> and each ancestor directory for a file named <code>name</code>. Returns a <code>Pathname</code> for the first match, or <code>nil</code> if not found. Exact filenames only — does not expand globs.</td>
 </tr>
 <tr>
 <td><code>import</code></td>
@@ -1510,9 +1510,9 @@
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;.env&quot;</span><span class="p">)</span><span class="w">               </span><span class="c1"># find the nearest .env file up the tree</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;VERSION&quot;</span><span class="p">)</span><span class="w">            </span><span class="c1"># find a VERSION file in CWD or any ancestor</span>
 </span></code></pre></div>
-<p>Returns an absolute path string or <code>nil</code>. Does not load the file.</p>
+<p>Returns a <code>Pathname</code> or <code>nil</code>. Does not load the file. <code>Pathname</code> is accepted by <code>import</code>, <code>dotenv</code>, <code>load</code>, and standard Ruby file methods — no <code>.to_s</code> conversion needed in common usage.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;gem_tasks.loki&quot;</span><span class="p">))</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">import</span><span class="w"> </span><span class="n">path</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">import</span><span class="w"> </span><span class="n">path</span><span class="w">          </span><span class="c1"># Pathname accepted directly</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">end</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Pass the located .env to dotenv — works from any subdirectory</span>
@@ -1566,6 +1566,21 @@
 <td>Load the specified <code>.env</code> file into <code>ENV</code> using the dotenv gem. Silently skipped if the file does not exist. Called at class-load time.</td>
 </tr>
 <tr>
+<td><code>header</code></td>
+<td><code>header(text)</code></td>
+<td>Append a line of text shown above the commands list in <code>asgard help</code>. Each call adds another line. No-op for per-command help.</td>
+</tr>
+<tr>
+<td><code>footer</code></td>
+<td><code>footer(text)</code></td>
+<td>Prepend a line of text shown below the options block in <code>asgard help</code>. Each call inserts above the previous lines. No-op for per-command help.</td>
+</tr>
+<tr>
+<td><code>no_negate</code></td>
+<td><code>no_negate(*names)</code></td>
+<td>Suppress <code>[--no-name]</code> / <code>[--skip-name]</code> help entries for one or more boolean class options. Call after the <code>class_option</code> declaration.</td>
+</tr>
+<tr>
 <td><code>sh</code></td>
 <td><code>sh(script, silent: false)</code></td>
 <td>Instance method. Run a shell command or multiline heredoc. Single-line → <code>system(script)</code>; multiline → <code>system("bash", "-c", script)</code>. Exits with the command's status on failure.</td>
@@ -1616,9 +1631,9 @@
 <td><code>--verbose</code> flag. Sets <code>$VERBOSE = true</code> before any task runs. Boolean, default <code>false</code>.</td>
 </tr>
 <tr>
-<td><code>_version</code></td>
-<td>private task method</td>
-<td>Implements <code>--version</code>. Prints <code>Asgard::VERSION</code> and exits. Registered via <code>map "--version" =&gt; :_version</code>. Uses <code>_</code> prefix convention.</td>
+<td><code>class_option :version</code></td>
+<td>class option</td>
+<td><code>--version</code> flag. Handled by <code>Asgard.run!</code> before the <code>.loki</code> file is loaded — prints <code>Asgard::VERSION</code> and exits. <code>no_negate :version</code> suppresses the <code>[--no-version]</code> / <code>[--skip-version]</code> help entries.</td>
 </tr>
 <tr>
 <td><code>debug?</code></td>

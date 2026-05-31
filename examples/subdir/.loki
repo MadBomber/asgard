@@ -1,0 +1,12 @@
+# examples/subdir/.loki — root task file for this subdirectory.
+#
+# When asgard is run from examples/subdir/, it loads this file.
+# From here, import pulls in sibling task files explicitly.
+#
+# import accepts a direct path or a glob:
+#   import "import_up_demo.loki"       # a single file
+#   import "*.loki"                    # all loki files in this directory
+#   import "tasks/**/*.loki"           # all loki files under a tasks/ tree
+#   import "../shared/*.loki"          # files in a sibling directory
+
+import "import_up_demo.loki"

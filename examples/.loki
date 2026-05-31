@@ -1,3 +1,24 @@
-# asgard/examples/.loki
+# examples/.loki — root task file for the examples directory.
+#
+# Asgard loads only this file by default. Everything else must be
+# explicitly pulled in with import.
+#
+# import(path)
+#   Load a specific file or a glob of files, idempotently. Absolute
+#   paths, relative paths, and globs are all accepted.
+#
+# import_up(name)
+#   Walk CWD and every ancestor directory looking for `name`, then
+#   import it. Useful inside a nested task file that needs to pull in
+#   a shared config from the project root without knowing how deep it is.
+#
+# loki_up(name)
+#   Same walk as import_up but just returns the absolute path (or nil)
+#   without loading it — handy when you need the path for another purpose.
 
-import "*.loki"  # load all of the loki files in this directory
+# Load all *.loki files in this directory (kitchen_sink, concurrent, etc.)
+import "*.loki"
+
+# Load a task file from a subdirectory.
+# import also accepts a direct path, not just a glob.
+import "subdir/import_demo.loki"

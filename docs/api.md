@@ -44,9 +44,13 @@ These methods are defined as `module_function` on `Kernel` and are therefore ava
 
 ### `loki_up` Details
 
+Despite the name, `loki_up` is not limited to `.loki` files — it locates any file by walking up the directory tree:
+
 ```ruby
-loki_up                       # find .loki (the entry point marker)
+loki_up                       # find .loki (the project root marker)
 loki_up("gem_tasks.loki")     # find gem_tasks.loki in CWD or any ancestor
+loki_up(".env")               # find the nearest .env file up the tree
+loki_up("VERSION")            # find a VERSION file in CWD or any ancestor
 ```
 
 Returns an absolute path string or `nil`. Does not load the file.
@@ -55,6 +59,9 @@ Returns an absolute path string or `nil`. Does not load the file.
 if (path = loki_up("gem_tasks.loki"))
   import path
 end
+
+# Pass the located .env to dotenv — works from any subdirectory
+dotenv loki_up(".env") || ".env"
 ```
 
 ### `import` Details

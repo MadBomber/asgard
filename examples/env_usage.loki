@@ -5,11 +5,14 @@
 # automatically, and raises KeyError when a required variable is missing
 # rather than silently returning nil.
 #
-# Run from the examples/ directory:
+# Run from examples/ or any subdirectory — loki_up locates .env automatically:
 #   asgard env_demo
 
 class Tasks
-  dotenv  # loads .env from the current directory
+  # loki_up walks CWD and every ancestor until it finds .env, returning
+  # its absolute path. This works regardless of which directory asgard
+  # is run from — no hardcoded relative path needed.
+  dotenv loki_up(".env") || ".env"
 
   desc "Print environment variable values resolved via env()"
   def env_demo

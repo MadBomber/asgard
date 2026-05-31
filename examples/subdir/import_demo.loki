@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+# This file lives in a subdirectory and is explicitly imported by the
+# parent examples/.loki via import "subdir/import_demo.loki".
+#
+# In a real project a subdirectory might hold task files scoped to a
+# specific concern (deploy, database, CI) while the root .loki wires
+# them all together with import.
+
+class Tasks
+  desc "Confirm this task was loaded from a subdirectory via import"
+  def subdir_task
+    puts "Loaded from examples/subdir/import_demo.loki"
+  end
+end

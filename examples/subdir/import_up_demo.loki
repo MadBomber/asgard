@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+# Demonstrates import_up — find a file by walking up the directory tree
+# and load it, without needing to know how deep the current file is.
+#
+# import_up(name) combines loki_up(name) + import(path) in one call.
+# It searches CWD, then each ancestor in turn, and loads the first match.
+#
+# This is useful when a nested task file needs to pull in something from
+# the project root — a shared config, a common helpers file — without
+# hardcoding a relative path that would break if the file moves.
+#
+# import_up also accepts a glob:
+#   import_up "*.loki"                 # first directory (walking up) that contains any .loki file
+#   import_up "config/settings.loki"   # first ancestor with config/settings.loki
+#   import_up ".env"                   # locate a .env file anywhere up the tree
+
+# Load env_usage.loki from the nearest ancestor directory that contains it.
+import_up "env_usage.loki"

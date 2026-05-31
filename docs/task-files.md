@@ -95,9 +95,13 @@ import("gem_tasks.loki") ? "loaded now" : "already loaded"
 
 `loki_up(name = ".loki")` searches `Dir.pwd` and each ancestor directory for a file with the given name, returning its absolute path or `nil`. It does **not** load the file — it only finds it.
 
+Despite the name, `loki_up` is not limited to `.loki` files — it will locate any file by name. This makes it useful for finding shared config files, `.env` files, or any other resource that lives somewhere up the directory tree:
+
 ```ruby
-loki_up              # finds .loki
+loki_up                    # finds .loki (the project root marker)
 loki_up("gem_tasks.loki")  # finds gem_tasks.loki in CWD or any ancestor
+loki_up(".env")            # finds the nearest .env file up the tree
+loki_up("VERSION")         # finds a VERSION file in CWD or any ancestor
 ```
 
 Use `loki_up` when you need the path for other purposes, or to check whether a file exists before deciding to load it:
@@ -106,6 +110,9 @@ Use `loki_up` when you need the path for other purposes, or to check whether a f
 if (path = loki_up("gem_tasks.loki"))
   import path
 end
+
+# Pass the located .env to dotenv — works from any subdirectory
+dotenv loki_up(".env") || ".env"
 ```
 
 `loki_up` accepts exact filenames only. Glob patterns are not expanded by `loki_up` — use `import_up` for glob-aware ancestor search.

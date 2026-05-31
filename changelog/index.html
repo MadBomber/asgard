@@ -1009,6 +1009,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#removed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1037,7 +1059,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1065,7 +1087,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1087,7 +1109,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1115,7 +1137,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
+  <a href="#added_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1126,7 +1148,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1165,7 +1187,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added_2" class="md-nav__link">
+  <a href="#added_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1229,6 +1251,28 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#removed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1257,7 +1301,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changed" class="md-nav__link">
+  <a href="#changed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1285,7 +1329,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added" class="md-nav__link">
+  <a href="#added_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1307,7 +1351,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_1" class="md-nav__link">
+  <a href="#changed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1335,7 +1379,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added_1" class="md-nav__link">
+  <a href="#added_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1346,7 +1390,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#changed_2" class="md-nav__link">
+  <a href="#changed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Changed
@@ -1385,7 +1429,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#added_2" class="md-nav__link">
+  <a href="#added_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Added
@@ -1446,19 +1490,27 @@
 <p>The format follows <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>. Asgard adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <hr />
 <h2 id="unreleased"><a href="https://github.com/MadBomber/asgard/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>helper</code> DSL method</strong> — defines a method available in both class context (e.g. inside <code>header</code>) and instance context (inside task methods) with a single declaration. Eliminates the manual <code>def self.name</code> + <code>no_commands { private def name = self.class.name }</code> boilerplate. Supports positional arguments, keyword arguments, and block arguments. See <a href="../helpers/">Helper Methods</a>.</li>
+</ul>
+<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>quality</code> task</strong> — all three gates (<code>test</code>, <code>rubocop</code>, <code>flog_check</code>) now run in parallel. Each gate captures its own pass/fail result; output is suppressed on pass and filtered to failures only on fail. A summary table is printed after all gates complete.</li>
+</ul>
 <h3 id="removed">Removed<a class="headerlink" href="#removed" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>var</code> DSL method</strong> — replaced by native Ruby class variables. Use <code>@@name ||= "value".freeze</code> in the class body. Class variables are visible in all task instance methods and in subcommand subclasses, making them the correct tool for shared configuration in a Thor-based task runner. See <a href="../variables/">Variables</a>.</li>
 </ul>
 <h2 id="020-2026-05-29"><a href="https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0">0.2.0</a> — 2026-05-29<a class="headerlink" href="#020-2026-05-29" title="Permanent link">&para;</a></h2>
-<h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
+<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>*.loki</code> files are no longer auto-loaded by default. Pass <code>--auto-load</code> to <code>asgard</code> to load all <code>*.loki</code> files from the project root alphabetically before <code>.loki</code>. This is a breaking change for projects using the multi-file layout.</li>
 <li>Added <code>--auto-load</code> as a built-in CLI flag in <code>Tasks</code>, visible in <code>asgard help</code></li>
 </ul>
 <hr />
 <h2 id="012-2026-05-29"><a href="https://github.com/MadBomber/asgard/compare/v0.1.1...v0.1.2">0.1.2</a> — 2026-05-29<a class="headerlink" href="#012-2026-05-29" title="Permanent link">&para;</a></h2>
-<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>--version</code> built-in CLI flag — prints <code>Asgard::VERSION</code> and exits; implemented as a <code>_</code>-prefixed method in <code>Tasks</code> per the gem-owned naming convention</li>
 <li><code>--debug</code> and <code>--verbose</code> built-in <code>class_option</code> declarations on <code>Tasks</code> — set <code>$DEBUG</code>/<code>$VERBOSE</code> before any task runs via the <code>invoke_command</code> hook in <code>Asgard::Base</code></li>
@@ -1476,7 +1528,7 @@
 <ul>
 <li>Replaced <code>warn</code>/<code>exit 1</code> with <code>abort</code> throughout <code>run!</code> — <code>Kernel#warn</code> is silenced when <code>$VERBOSE = nil</code>, which is the default in Ruby 4.0; <code>abort</code> writes to <code>$stderr</code> regardless</li>
 </ul>
-<h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
+<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>--debug</code> and <code>--verbose</code> promoted from mapped tasks to <code>class_option</code> — they now work as modifiers alongside other commands (e.g. <code>asgard build --debug</code>) rather than as standalone commands</li>
 <li>Removed all references to <code>just</code> task runner and <code>recipe</code> terminology; Asgard uses "task" throughout</li>
@@ -1484,7 +1536,7 @@
 </ul>
 <hr />
 <h2 id="011-2026-05-28"><a href="https://github.com/MadBomber/asgard/compare/v0.1.0...v0.1.1">0.1.1</a> — 2026-05-28<a class="headerlink" href="#011-2026-05-28" title="Permanent link">&para;</a></h2>
-<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Parallel dependency execution — wrap deps in an array to run them concurrently:
   <code>depends_on [:build, :lint]</code> or <code>depends_on :setup, [:build, :lint], :deploy</code></li>
@@ -1493,7 +1545,7 @@
 <li><code>Tasks</code> class pre-defined by the gem (<code>class Tasks &lt; Asgard::Base</code>) — task files reopen it without restating the superclass</li>
 <li><code>lib/asgard/tasks.rb</code> — ships the pre-defined <code>Tasks</code> class</li>
 </ul>
-<h3 id="changed_2">Changed<a class="headerlink" href="#changed_2" title="Permanent link">&para;</a></h3>
+<h3 id="changed_3">Changed<a class="headerlink" href="#changed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Replaced <code>SimpleFlow</code> dependency with <code>Dagwood</code> — purpose-built DAG library with no extra dependencies and no Ruby 4 compatibility issues</li>
 <li><code>bin/asgard</code> simplified to two lines: <code>require "asgard"</code> + <code>Asgard.run!(ARGV)</code></li>
@@ -1512,7 +1564,7 @@
 </ul>
 <hr />
 <h2 id="010-2026-05-28"><a href="https://github.com/MadBomber/asgard/releases/tag/v0.1.0">0.1.0</a> — 2026-05-28<a class="headerlink" href="#010-2026-05-28" title="Permanent link">&para;</a></h2>
-<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
+<h3 id="added_3">Added<a class="headerlink" href="#added_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>Asgard::Base</code> — Thor subclass providing the task DSL</li>
 <li><code>depends_on</code> — declare task dependencies; dependencies run at most once per invocation</li>

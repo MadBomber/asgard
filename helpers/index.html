@@ -731,6 +731,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-helper-dsl-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The helper DSL Method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The helper DSL Method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem-it-solves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem it solves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use helper
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choosing-between-private-and-no_commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1145,6 +1206,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-helper-dsl-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The helper DSL Method
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The helper DSL Method">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem-it-solves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The problem it solves
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-helper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to use helper
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#choosing-between-private-and-no_commands" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1351,6 +1473,71 @@
 </span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
+<h2 id="the-helper-dsl-method">The <code>helper</code> DSL Method<a class="headerlink" href="#the-helper-dsl-method" title="Permanent link">&para;</a></h2>
+<p><code>helper</code> is an Asgard DSL method that defines a helper available in <strong>both class context and instance context</strong> with a single declaration. It is the right tool when a value needs to be used inside a <code>header</code> or <code>footer</code> call (which execute at class load time) and also inside task instance methods.</p>
+<h3 id="the-problem-it-solves">The problem it solves<a class="headerlink" href="#the-problem-it-solves" title="Permanent link">&para;</a></h3>
+<p>Thor task methods run as instance methods. Class-level DSL calls like <code>header</code> and <code>footer</code> run as class methods. A plain <code>def</code> only creates an instance method, so it cannot be called inside <code>header</code>. Conversely, <code>def self.name</code> only creates a class method, so it cannot be called inside a task body without <code>self.class.name</code>.</p>
+<p>The manual workaround is verbose:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="vc">@@project</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="s2">&quot;myapp&quot;</span><span class="o">.</span><span class="n">freeze</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="c1"># class method for header/footer</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nc">self</span><span class="o">.</span><span class="nf">version</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="vc">@@version</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;lib/myapp/version.rb&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/VERSION\s*=\s*&quot;([^&quot;]+)&quot;/</span><span class="p">)</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">freeze</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="c1"># private instance method delegating to the class method</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="n">no_commands</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="kp">private</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">version</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="vc">@@project</span><span class="si">}</span><span class="s2"> v</span><span class="si">#{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Show version&quot;</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">show_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">version</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>helper</code> replaces those six lines with one:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="vc">@@project</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="s2">&quot;myapp&quot;</span><span class="o">.</span><span class="n">freeze</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="n">helper</span><span class="p">(</span><span class="ss">:version</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="vc">@@version</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;lib/myapp/version.rb&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/VERSION\s*=\s*&quot;([^&quot;]+)&quot;/</span><span class="p">)</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">freeze</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="vc">@@project</span><span class="si">}</span><span class="s2"> v</span><span class="si">#{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Show version&quot;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">show_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">version</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="arguments">Arguments<a class="headerlink" href="#arguments" title="Permanent link">&para;</a></h3>
+<p><code>helper</code> supports any argument signature valid in a Ruby method definition: positional, keyword, default values, and blocks.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># No arguments</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">helper</span><span class="p">(</span><span class="ss">:project_root</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">loki_up</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">to_s</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Positional arguments</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">helper</span><span class="p">(</span><span class="ss">:gem_path</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;lib/</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">/version.rb&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Positional with default</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">helper</span><span class="p">(</span><span class="ss">:tag_prefix</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;-&quot;</span><span class="o">|</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="vc">@@project</span><span class="si">}#{</span><span class="n">sep</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="c1"># Positional and keyword arguments</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="n">helper</span><span class="p">(</span><span class="ss">:format_version</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="p">,</span><span class="w"> </span><span class="ss">prefix</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">separator</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;-&quot;</span><span class="o">|</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">prefix</span><span class="si">}#{</span><span class="nb">name</span><span class="si">}#{</span><span class="n">separator</span><span class="si">}#{</span><span class="n">version</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Wrong argument counts or unknown keyword names raise the same <code>ArgumentError</code> Ruby raises for any method call — no special error handling needed.</p>
+<h3 id="visibility">Visibility<a class="headerlink" href="#visibility" title="Permanent link">&para;</a></h3>
+<p><code>helper</code>-defined methods are:</p>
+<ul>
+<li><strong>Excluded from <code>asgard help</code></strong> — they never appear as commands</li>
+<li><strong>Blocked from CLI invocation</strong> — cannot be called directly from the command line</li>
+<li><strong>Private on the instance side</strong> — not accessible from outside the class</li>
+</ul>
+<h3 id="when-to-use-helper">When to use <code>helper</code><a class="headerlink" href="#when-to-use-helper" title="Permanent link">&para;</a></h3>
+<p>Use <code>helper</code> when the value or computation must be available in both a class-level DSL call (<code>header</code>, <code>footer</code>, a <code>@@var</code> initializer) and inside task instance methods. For helpers that are only needed inside task bodies, a plain <code>private</code> method is simpler.</p>
+<hr />
 <h2 id="choosing-between-private-and-no_commands">Choosing Between <code>private</code> and <code>no_commands</code><a class="headerlink" href="#choosing-between-private-and-no_commands" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1393,31 +1580,31 @@
 <h2 id="sharing-helpers-across-files">Sharing Helpers Across Files<a class="headerlink" href="#sharing-helpers-across-files" title="Permanent link">&para;</a></h2>
 <h3 id="within-a-project">Within a project<a class="headerlink" href="#within-a-project" title="Permanent link">&para;</a></h3>
 <p>Extract shared helpers into a plain Ruby module and load it from <code>.loki</code> using <code>require_relative</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># shared/helpers.rb</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">module</span><span class="w"> </span><span class="nn">BuildHelpers</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="kp">private</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">dir</span><span class="p">)</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;gcc -O2 -o bin/myapp </span><span class="si">#{</span><span class="n">dir</span><span class="si">}</span><span class="s2">/*.c&quot;</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">dist_path</span><span class="p">(</span><span class="n">ver</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="s2">&quot;pkg/myapp-</span><span class="si">#{</span><span class="n">ver</span><span class="si">}</span><span class="s2">.tar.gz&quot;</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># shared/helpers.rb</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">module</span><span class="w"> </span><span class="nn">BuildHelpers</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="kp">private</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">compile</span><span class="p">(</span><span class="n">dir</span><span class="p">)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;gcc -O2 -o bin/myapp </span><span class="si">#{</span><span class="n">dir</span><span class="si">}</span><span class="s2">/*.c&quot;</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">dist_path</span><span class="p">(</span><span class="n">ver</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="s2">&quot;pkg/myapp-</span><span class="si">#{</span><span class="n">ver</span><span class="si">}</span><span class="s2">.tar.gz&quot;</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># .loki</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">require_relative</span><span class="w"> </span><span class="s2">&quot;shared/helpers&quot;</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="kp">include</span><span class="w"> </span><span class="no">BuildHelpers</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Compile the project&quot;</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Create distribution archive&quot;</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;tar czf </span><span class="si">#{</span><span class="n">dist_path</span><span class="p">(</span><span class="n">app_version</span><span class="p">)</span><span class="si">}</span><span class="s2"> bin/&quot;</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># .loki</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">require_relative</span><span class="w"> </span><span class="s2">&quot;shared/helpers&quot;</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="kp">include</span><span class="w"> </span><span class="no">BuildHelpers</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Compile the project&quot;</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;src&quot;</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Create distribution archive&quot;</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;tar czf </span><span class="si">#{</span><span class="n">dist_path</span><span class="p">(</span><span class="n">app_version</span><span class="p">)</span><span class="si">}</span><span class="s2"> bin/&quot;</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>Because <code>include</code> in the class body makes the module methods available as instance methods, and they are declared <code>private</code> inside the module, they remain invisible to Thor.</p>
 <div class="admonition tip">
@@ -1426,38 +1613,38 @@
 </div>
 <h3 id="across-projects-with-import_up">Across projects with <code>import_up</code><a class="headerlink" href="#across-projects-with-import_up" title="Permanent link">&para;</a></h3>
 <p>If helpers are defined as tasks in a shared <code>.loki</code> file, use <code>import_up</code> to load them from any sub-project without knowing the absolute path:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>~/sandbox/
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  shared_helpers.loki   ← defines helper tasks available to all sub-projects
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  projectA/
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    .loki
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  projectB/
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    .loki
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>~/sandbox/
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  shared_helpers.loki   ← defines helper tasks available to all sub-projects
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  projectA/
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    .loki
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  projectB/
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    .loki
 </span></code></pre></div>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># projectA/.loki  (and identically in projectB/.loki)</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">&quot;shared_helpers.loki&quot;</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="c1"># shared tasks are already defined in Tasks by here</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># projectA/.loki  (and identically in projectB/.loki)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">&quot;shared_helpers.loki&quot;</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="c1"># shared tasks are already defined in Tasks by here</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><code>import_up</code> walks up from <code>Dir.pwd</code> until it finds <code>shared_helpers.loki</code>, then loads it. It returns <code>false</code> without raising if the file is not found, making it safe to use in projects where the shared file may not always be present.</p>
 <hr />
 <h2 id="helper-methods-in-subcommands">Helper Methods in Subcommands<a class="headerlink" href="#helper-methods-in-subcommands" title="Permanent link">&para;</a></h2>
 <p>Subcommand classes that inherit from <code>Tasks</code> also inherit all private helpers and <code>no_commands</code> methods defined on <code>Tasks</code>. You can also define helpers local to the subcommand class:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to staging&quot;</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;staging&quot;</span><span class="p">)</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to production&quot;</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">production</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;production&quot;</span><span class="p">)</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="kp">private</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy_to</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;cap </span><span class="si">#{</span><span class="n">env</span><span class="si">}</span><span class="s2"> deploy REV=</span><span class="si">#{</span><span class="n">current_sha</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="c1"># current_sha is inherited from Tasks if defined there</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to staging&quot;</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;staging&quot;</span><span class="p">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to production&quot;</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">production</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;production&quot;</span><span class="p">)</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="kp">private</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy_to</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;cap </span><span class="si">#{</span><span class="n">env</span><span class="si">}</span><span class="s2"> deploy REV=</span><span class="si">#{</span><span class="n">current_sha</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">  </span><span class="c1"># current_sha is inherited from Tasks if defined there</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="k">end</span>
 </span></code></pre></div>
 
 

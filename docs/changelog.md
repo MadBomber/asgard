@@ -8,6 +8,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 
 ## [Unreleased]
 
+### Added
+
+- **`helper` DSL method** — defines a method available in both class context (e.g. inside `header`) and instance context (inside task methods) with a single declaration. Eliminates the manual `def self.name` + `no_commands { private def name = self.class.name }` boilerplate. Supports positional arguments, keyword arguments, and block arguments. See [Helper Methods](helpers.md).
+
+### Changed
+
+- **`quality` task** — all three gates (`test`, `rubocop`, `flog_check`) now run in parallel. Each gate captures its own pass/fail result; output is suppressed on pass and filtered to failures only on fail. A summary table is printed after all gates complete.
+
 ### Removed
 
 - **`var` DSL method** — replaced by native Ruby class variables. Use `@@name ||= "value".freeze` in the class body. Class variables are visible in all task instance methods and in subcommand subclasses, making them the correct tool for shared configuration in a Thor-based task runner. See [Variables](variables.md).

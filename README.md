@@ -18,6 +18,7 @@
 - <strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads<br>
 - <strong>Subcommands</strong> — group related tasks under a named namespace<br>
 - <strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands<br>
+- <strong>`helper` DSL</strong> — define a method once, available in both class-level DSL calls (<code>header</code>) and inside task instance methods<br>
 - <strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts<br>
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
@@ -272,6 +273,40 @@ class Tasks
     sh "tar czf pkg/myapp-#{ver}.tar.gz bin/"
   end
 end
+```
+
+### The `helper` DSL method
+
+Some values need to be available in both class context (e.g. inside `header`) and inside task instance methods. `helper` defines the method once in both contexts:
+
+```ruby
+class Tasks
+  @@project ||= "myapp".freeze
+
+  helper(:version) {
+    File.read("lib/myapp/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+  }
+
+  header "#{@@project} v#{version}"   # class context
+
+  desc "Show the current version"
+  def show_version
+    puts version                        # instance context
+  end
+end
+```
+
+Without `helper`, achieving this requires two separate definitions:
+
+```ruby
+def self.version = File.read(...).match(...)[1].freeze
+no_commands { private def version = self.class.version }
+```
+
+`helper` accepts positional arguments, keyword arguments, and blocks — any signature valid in a Ruby method definition:
+
+```ruby
+helper(:tag) { |name, ver, prefix: "v"| "#{prefix}#{name}-#{ver}" }
 ```
 
 Helpers can also be shared across multiple `.loki` files by extracting them into a plain Ruby file and loading it explicitly:

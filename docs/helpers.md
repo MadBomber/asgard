@@ -75,6 +75,90 @@ end
 
 ---
 
+## The `helper` DSL Method
+
+`helper` is an Asgard DSL method that defines a helper available in **both class context and instance context** with a single declaration. It is the right tool when a value needs to be used inside a `header` or `footer` call (which execute at class load time) and also inside task instance methods.
+
+### The problem it solves
+
+Thor task methods run as instance methods. Class-level DSL calls like `header` and `footer` run as class methods. A plain `def` only creates an instance method, so it cannot be called inside `header`. Conversely, `def self.name` only creates a class method, so it cannot be called inside a task body without `self.class.name`.
+
+The manual workaround is verbose:
+
+```ruby
+class Tasks
+  @@project ||= "myapp".freeze
+
+  # class method for header/footer
+  def self.version
+    @@version ||= File.read("lib/myapp/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+  end
+
+  # private instance method delegating to the class method
+  no_commands do
+    private def version = self.class.version
+  end
+
+  header "#{@@project} v#{version}"
+
+  desc "Show version"
+  def show_version = puts version
+end
+```
+
+`helper` replaces those six lines with one:
+
+```ruby
+class Tasks
+  @@project ||= "myapp".freeze
+
+  helper(:version) {
+    @@version ||= File.read("lib/myapp/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+  }
+
+  header "#{@@project} v#{version}"
+
+  desc "Show version"
+  def show_version = puts version
+end
+```
+
+### Arguments
+
+`helper` supports any argument signature valid in a Ruby method definition: positional, keyword, default values, and blocks.
+
+```ruby
+# No arguments
+helper(:project_root) { loki_up.parent.to_s }
+
+# Positional arguments
+helper(:gem_path) { |name| "lib/#{name}/version.rb" }
+
+# Positional with default
+helper(:tag_prefix) { |sep = "-"| "#{@@project}#{sep}" }
+
+# Positional and keyword arguments
+helper(:format_version) { |name, version, prefix: "v", separator: "-"|
+  "#{prefix}#{name}#{separator}#{version}"
+}
+```
+
+Wrong argument counts or unknown keyword names raise the same `ArgumentError` Ruby raises for any method call — no special error handling needed.
+
+### Visibility
+
+`helper`-defined methods are:
+
+- **Excluded from `asgard help`** — they never appear as commands
+- **Blocked from CLI invocation** — cannot be called directly from the command line
+- **Private on the instance side** — not accessible from outside the class
+
+### When to use `helper`
+
+Use `helper` when the value or computation must be available in both a class-level DSL call (`header`, `footer`, a `@@var` initializer) and inside task instance methods. For helpers that are only needed inside task bodies, a plain `private` method is simpler.
+
+---
+
 ## Choosing Between `private` and `no_commands`
 
 | | `private` | `no_commands` |

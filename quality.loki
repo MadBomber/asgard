@@ -4,17 +4,43 @@
 class Tasks
   desc "Run the test suite"
   def test
-    sh "bundle exec ruby -Ilib:test test/test_asgard.rb"
+    output = `bundle exec ruby -Ilib:test test/test_asgard.rb 2>&1`
+    @test_result = $?.success? ? :pass : :fail
+    if @test_result == :fail
+      lines  = output.lines
+      start  = lines.index { |l| l =~ /^\s+1\) / } || 0
+      finish = lines.rindex { |l| l =~ /\d+ runs,/ } || -1
+      print lines[start..finish].join
+    end
   end
 
-  desc "Run all quality gates (tests, RuboCop, Flog)"
-  depends_on :test, [:rubocop, :flog_check]
+  desc "Run all quality gates (tests, RuboCop, Flog) in parallel"
+  depends_on [:test, :rubocop, :flog_check]
   def quality
+    results = { tests: @test_result, rubocop: @rubocop_result, flog: @flog_result }
+
+    if @flog_failures&.any?
+      puts "\nFlog failures (must be refactored):"
+      @flog_failures.each { |v| puts "  #{v}" }
+    end
+
+    puts "\n#{"=" * 60}"
+    puts "Quality Summary"
+    puts "=" * 60
+    results.each { |gate, status| puts "  [#{status == :pass ? "PASS" : "FAIL"}] #{gate}" }
+    puts "=" * 60
+
+    abort "\nQuality gate failed" if results.values.any?(:fail)
+    puts "\nAll quality gates passed."
   end
 
   desc "Check code style with RuboCop"
   def rubocop
-    sh "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop"
+    output = `RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop 2>&1`
+    @rubocop_result = $?.success? ? :pass : :fail
+    if @rubocop_result == :fail
+      output.each_line { |l| print l if l =~ /:\d+:\d+: [CWEF]: / }
+    end
   end
 
   desc "Auto-correct RuboCop offenses"
@@ -32,30 +58,18 @@ class Tasks
     flogger = Flog.new(all: true)
     flogger.flog(*Dir.glob("lib/**/*.rb"))
 
-    warnings = []
-    failures = []
+    warnings  = []
+    @flog_failures = []
 
     flogger.each_by_score do |method_name, score|
       next if method_name.end_with?("#none")
       if score > method_fail
-        failures << "#{"%.1f" % score}: #{method_name}"
+        @flog_failures << "#{"%.1f" % score}: #{method_name}"
       elsif score > method_warn
         warnings << "#{"%.1f" % score}: #{method_name}"
       end
     end
 
-    unless warnings.empty?
-      puts "\nFlog warnings (#{method_warn}–#{method_fail}) — target for future refactoring:"
-      warnings.each { |v| puts "  #{v}" }
-    end
-
-    if failures.empty?
-      puts "\nFlog: no methods exceed the failure threshold (>=#{method_fail})"
-    else
-      puts "\nFlog failures (>=#{method_fail}) — must be refactored:"
-      failures.each { |v| puts "  #{v}" }
-      $stdout.flush
-      abort "\nFlog quality gate failed: #{failures.size} method(s) exceed #{method_fail}"
-    end
+    @flog_result = @flog_failures.empty? ? :pass : :fail
   end
 end

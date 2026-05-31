@@ -119,6 +119,11 @@ module Asgard
         Dotenv.load(path) if File.exist?(path)
       end
 
+      def helper(name, &)
+        define_singleton_method(name, &)
+        no_commands { private define_method(name) { |*args, **kwargs, &blk| self.class.send(name, *args, **kwargs, &blk) } }
+      end
+
       def default_task(meth = nil)
         if meth && meth != :none && @_default_task_location
           here = caller_locations(1, 1).first

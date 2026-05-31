@@ -9,12 +9,8 @@ class Tasks
   @@project      ||= "asgard".freeze
   @@project_desc ||= "CLI-task runner"
 
-  def self.project_version
+  helper(:project_version) do
     @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
-  end
-
-  no_commands do
-    private def project_version = self.class.project_version
   end
 
   default_task :quality

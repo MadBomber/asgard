@@ -1149,3 +1149,44 @@ class TestAsgardShell < Minitest::Test
     end
   end
 end
+
+class TestAsgardDefaultTask < Minitest::Test
+  def test_no_warning_on_first_default_task
+    _, err = capture_io do
+      Class.new(Asgard::Base) do
+        desc "greet", "Say hello"
+        define_method(:greet) {}
+        default_task :greet
+      end
+    end
+    refute_match "overrides", err
+  end
+
+  def test_warns_when_default_task_overridden
+    _, err = capture_io do
+      Class.new(Asgard::Base) do
+        desc "greet", "Say hello"
+        define_method(:greet) {}
+        default_task :greet
+
+        desc "bye", "Say goodbye"
+        define_method(:bye) {}
+        default_task :bye
+      end
+    end
+    assert_match "overrides default_task :greet", err
+    assert_match "default_task :bye",             err
+  end
+
+  def test_warning_includes_file_and_line_numbers
+    _, err = capture_io do
+      Class.new(Asgard::Base) do
+        desc "a", "task a"; define_method(:a) {}
+        default_task :a
+        desc "b", "task b"; define_method(:b) {}
+        default_task :b
+      end
+    end
+    assert_match ".rb:", err
+  end
+end

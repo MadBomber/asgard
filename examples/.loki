@@ -1,2 +1,3 @@
-# The .loki file can be empty if there are *.loki files define the tasks
-# they will be auto loaded.
+# asgard/examples/.loki
+
+import "*.loki"  # load all of the loki files in this directory

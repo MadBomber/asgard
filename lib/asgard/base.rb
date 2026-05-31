@@ -97,6 +97,20 @@ module Asgard
         Dotenv.load(path) if File.exist?(path)
       end
 
+      def default_task(meth = nil)
+        if meth && meth != :none && @_default_task_location
+          here = caller_locations(1, 1).first
+          warn "asgard: default_task :#{meth} at #{here.path}:#{here.lineno} " \
+               "overrides default_task :#{@_default_task_name} set at " \
+               "#{@_default_task_location.path}:#{@_default_task_location.lineno}"
+        end
+        if meth && meth != :none
+          @_default_task_location = caller_locations(1, 1).first
+          @_default_task_name     = meth
+        end
+        super
+      end
+
       # Validate the full dep graph for cycles using Dagwood::DependencyGraph.
       def validate_deps!
         _check_orphaned_deps!

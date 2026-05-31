@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+# Demonstrates the env() Kernel helper for reading system environment variables.
+#
+# env() is cleaner than ENV[] — it accepts symbols or strings, upcases
+# automatically, and raises KeyError when a required variable is missing
+# rather than silently returning nil.
+#
+# Run from the examples/ directory:
+#   asgard env_demo
+
+class Tasks
+  dotenv  # loads .env from the current directory
+
+  desc "Print environment variable values resolved via env()"
+  def env_demo
+    puts <<~OUT
+      APP_NAME     : #{env(:app_name)}
+      PORT         : #{env(:port)}
+      API_KEY      : #{env(:api_key)}
+      DATABASE_URL : #{env(:database_url)}
+      LOG_LEVEL    : #{env(:log_level, "info")}
+    OUT
+  end
+end

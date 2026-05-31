@@ -202,6 +202,8 @@ end
 asgard        # same as: asgard greet
 ```
 
+Without `default_task`, running `asgard` with no arguments displays the help message.
+
 ---
 
 ## Command Aliases

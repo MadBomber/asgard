@@ -148,6 +148,28 @@ class Tasks
   desc "Full pipeline: check → compile+spec → pack"
   def pipeline = puts "Pipeline complete."
 
+  # ── Asgard: debug? / verbose? — Kernel predicates for conditional output ──────
+  # debug?   returns true when --debug is passed  (sets $DEBUG)
+  # verbose? returns true when --verbose is passed (sets $VERBOSE)
+  # Both are set by Asgard before invoke_command runs, so they are safe
+  # to read inside any task body.
+  #
+  # Run with:
+  #   asgard status --verbose
+  #   asgard status --debug
+  #   asgard status --verbose --debug
+  desc "Show application status"
+  def status
+    puts "#{@@app_name} is running in #{options[:env]} mode."
+    puts "  build dir : #{@@build_dir}" if verbose?
+    puts "  sha       : #{current_sha}" if verbose?
+    if debug?
+      puts "  $DEBUG    : #{$DEBUG.inspect}"
+      puts "  $VERBOSE  : #{$VERBOSE.inspect}"
+      puts "  options   : #{options.inspect}"
+    end
+  end
+
   # ── Thor: no_commands — public helper excluded from CLI and --help ──────────
   no_commands do
     def current_sha

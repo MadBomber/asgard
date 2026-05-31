@@ -1,29 +1,38 @@
 # frozen_string_literal: true
 # Demonstrates Thor subcommands registered on the top-level Tasks class.
 #
-# The subcommand class inherits from Tasks so it has access to sh, shebang,
-# depends_on, and the built-in --debug/--verbose class options.
+# Port state is persisted to .server.port so stop and restart always
+# operate on the same port the server was started on.
 #
 # Usage:
-#   asgard server          # shows subcommand help
+#   asgard server                    # shows subcommand help
 #   asgard server start
-#   asgard server start 4000 --workers 4 --daemon
+#   asgard server start -p 8000
+#   asgard server start -p 4000 --workers 4 --daemon
+#   asgard server stop
 #   asgard server stop --force
 #   asgard server status
-#   asgard server restart 4000
+#   asgard server restart            # stops then starts on the persisted port
+
+SERVER_PORT_FILE = "tmp/.server.port".freeze
 
 class ServerCommands < Tasks
-  desc "start [PORT]", "Start the server on PORT (default: 3000)"
-  option :daemon,  aliases: "-d", type: :boolean, default: false, desc: "Run as a background daemon"
-  option :workers, aliases: "-w", type: :numeric, default: 2,     desc: "Number of worker processes"
+  default_task :help  # This is the default value for the default_task
+
+  helper(:server_port) {
+    File.exist?(SERVER_PORT_FILE) ? File.read(SERVER_PORT_FILE).strip.to_i : 3000
+  }
+
+  desc "Start the server"
+  option :port,    aliases: "-p", type: :numeric, default: 3000,             desc: "Port to listen on"
+  option :daemon,  aliases: "-d", type: :boolean, default: false,            desc: "Run as a background daemon"
+  option :workers, aliases: "-w", type: :numeric, default: 2,                desc: "Number of worker processes"
   option :log,                    type: :string,  default: "log/server.log",
                                   banner: "FILE", desc:    "Write logs to FILE"
-  def start(port = "3000")
-    puts "Starting server on :%s with %d workers%s" % [
-      port,
-      options[:workers],
-      options[:daemon] ? " (daemon)" : ""
-    ]
+  def start
+    FileUtils.mkdir_p("tmp")
+    File.write(SERVER_PORT_FILE, options[:port].to_s)
+    puts "Starting server on :#{options[:port]} with #{options[:workers]} workers#{options[:daemon] ? " (daemon)" : ""}..."
   end
 
   desc "Stop the running server"
@@ -31,22 +40,22 @@ class ServerCommands < Tasks
   option :wait,                  type: :numeric, default: 30,   desc: "Seconds to wait for shutdown"
   def stop
     if options[:force]
-      puts "Force-stopping server..."
+      puts "Force-stopping server on :#{server_port}..."
     else
-      puts "Gracefully stopping server (timeout: #{options[:wait]}s)..."
+      puts "Gracefully stopping server on :#{server_port} (timeout: #{options[:wait] || 30}s)..."
     end
   end
 
   desc "Show server status and process info"
   def status
-    puts "Checking server status..."
+    puts "Server is listening on :#{server_port}"
   end
 
-  # depends_on works inside subcommand groups — stop runs before start
-  depends_on :stop, :start
-  desc "restart [PORT]", "Restart the server on PORT (stop, then start)"
-  def restart(port = "3000")
-    puts "Server restarted on port #{port}."
+  depends_on :stop
+  desc "Restart the server on the same port it was started on"
+  def restart
+    puts "Starting server on :#{server_port}..."
+    puts "Server restarted."
   end
 end
 

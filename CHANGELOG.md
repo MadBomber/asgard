@@ -5,9 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - Unreleased
+## [0.3.1] - Unreleased
 
 ### Added
+
+- **`helper(name, &block)` DSL method on `Asgard::Base`** — defines a method available in both class context (e.g. inside `header` or `footer`) and as a private instance method inside task bodies, with a single declaration. Eliminates the manual `def self.name` + `no_commands { private def name = self.class.name }` boilerplate. Supports positional arguments, keyword arguments, default values, and block arguments.
+  ```ruby
+  class Tasks
+    @@project ||= "myapp".freeze
+
+    helper(:version) {
+      File.read("lib/myapp/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+    }
+
+    header "#{@@project} v#{version}"   # class context
+
+    desc "Show the current version"
+    def show_version = puts version     # instance context
+  end
+  ```
 
 - **`header(text)` and `footer(text)` DSL methods on `Asgard::Base`** — attach static text to the general help output. `header` lines are printed above the commands list; `footer` lines are printed below the options block. Multiple calls accumulate: each `header` call appends a line, each `footer` call prepends a line, so content from later-loaded files naturally wraps around content from earlier files. Neither appears when `asgard help <command>` is called for per-command detail.
   ```ruby
@@ -40,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`env(name, default = nil)` Kernel method** — fetches a system environment variable by symbol or string name, upcasing the key automatically. `env(:port, "3000")` returns `"3000"` when `PORT` is unset; `env(:api_key)` raises `KeyError` when `API_KEY` is missing and no default is provided. Accepts both `env(:port)` and `env("PORT")` forms. Cleaner than `ENV['PORT']` in task bodies.
 - **Verbose/debug feedback for `import` and `import_up`** — when `verbose?` is true, each file loaded is printed to stderr. When `debug?` is true, already-loaded files are also reported (with an "already loaded" suffix), and `import_up` reports when a file is not found.
 - **RuboCop lint gate** — RuboCop is now a first-class quality gate alongside tests and Flog. Added `rubocop` to the Gemfile, a `.rubocop.yml` tuned for this codebase (Ruby 3.2 target, relaxed `Metrics` thresholds consistent with Flog as the primary complexity gate, `examples/` excluded), and `rake rubocop` / `rake rubocop_fix` tasks backed by a `tmp/rubocop_cache` directory for fast re-runs.
-- **Expanded `rake quality` task** — `quality` now runs three independent gates (tests + coverage, RuboCop, Flog) and prints a formatted pass/fail summary table after all gates complete, so every failure is visible in a single run rather than stopping at the first.
+- **Expanded `rake quality` task** — `quality` now runs three independent gates (tests + coverage, RuboCop, Flog) in parallel using `depends_on [:test, :rubocop, :flog_check]`. Each gate captures its pass/fail result in an instance variable; output is suppressed on pass and filtered to failures only on fail, preventing interleaved output from concurrent subprocesses. A formatted pass/fail summary table is printed after all gates complete, so every failure is visible in a single run.
 - **`rake flog_check` task** — replaces the bare `flog lib/` call with a structured task that enforces per-method thresholds (warn ≥20, fail ≥50), lists warnings and failures in separate sections, and exits non-zero only when the failure threshold is breached.
 - **Single-argument `desc` shorthand** — `desc` now accepts one string (the description) with the usage string omitted. The usage defaults to the method name, eliminating the redundant first argument for the common case:
   ```ruby

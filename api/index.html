@@ -1648,12 +1648,20 @@
 <td>Hash mapping task name symbols to their stage arrays. Set by <code>depends_on</code> + <code>method_added</code>.</td>
 </tr>
 <tr>
-<td><code>_ran_tasks</code></td>
-<td><code>Set</code> of task name symbols that have already run in the current invocation.</td>
+<td><code>_done</code></td>
+<td><code>Set</code> of task name symbols that have completed in the current invocation.</td>
+</tr>
+<tr>
+<td><code>_running</code></td>
+<td><code>Set</code> of task name symbols currently executing (started but not yet finished).</td>
+</tr>
+<tr>
+<td><code>_cond</code></td>
+<td>Hash of <code>ConditionVariable</code> objects keyed by task name; threads wait here when a dep is in-flight.</td>
 </tr>
 <tr>
 <td><code>_ran_mutex</code></td>
-<td><code>Mutex</code> protecting <code>_ran_tasks</code> for thread-safe deduplication.</td>
+<td><code>Mutex</code> protecting <code>_done</code>, <code>_running</code>, and <code>_cond</code> for thread-safe access.</td>
 </tr>
 <tr>
 <td><code>_build_dep_graph(stages)</code></td>
@@ -1666,10 +1674,10 @@
 <p><code>Asgard::Base</code> overrides Thor's <code>invoke_command</code> to implement dependency resolution and deduplication:</p>
 <ol>
 <li>Sets <code>$DEBUG</code> / <code>$VERBOSE</code> from <code>options</code> if the corresponding flags are present.</li>
-<li>Checks <code>_ran_tasks</code> — skips if this task has already run.</li>
-<li>Marks the task as ran.</li>
+<li>Tries to acquire a run token (<code>acquire_run_token</code>): if the task is already in <code>_done</code>, returns immediately (skip); if it is in <code>_running</code>, waits on the <code>_cond</code> ConditionVariable until it finishes, then returns (skip); otherwise adds the task to <code>_running</code> and continues.</li>
 <li>Resolves dependency stages from <code>_deps</code>, builds the Dagwood graph, and executes groups (parallel groups in threads, sequential groups one at a time).</li>
 <li>Calls <code>command.run(self, *args)</code> to execute the task itself.</li>
+<li>In an <code>ensure</code> block, adds the task to <code>_done</code> and broadcasts on its <code>_cond</code> to wake any waiting threads.</li>
 </ol>
 <hr />
 <h2 id="error-classes">Error Classes<a class="headerlink" href="#error-classes" title="Permanent link">&para;</a></h2>

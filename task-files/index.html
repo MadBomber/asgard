@@ -1788,13 +1788,12 @@
 </span></code></pre></div>
 <p>Walks up from <code>Dir.pwd</code> and stops at the <strong>first ancestor directory</strong> that contains any <code>*.loki</code> files, loading all of them. It does not aggregate matches from multiple levels — it loads only the nearest match, then stops.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>~/sandbox/
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  shared/
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    gem_tasks.loki     ← loaded by import_up(&quot;*.loki&quot;) from ~/sandbox/myproject/sub/
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    ci_tasks.loki      ← also loaded — same directory as the first match
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  myproject/
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    .loki
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    sub/
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>      # Dir.pwd here; import_up(&quot;*.loki&quot;) finds ~/sandbox/shared/
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  gem_tasks.loki     ← loaded by import_up(&quot;*.loki&quot;) from ~/sandbox/myproject/sub/
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  ci_tasks.loki      ← also loaded — same directory as the first match
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  myproject/
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    .loki
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    sub/
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>      # Dir.pwd here; import_up(&quot;*.loki&quot;) finds ~/sandbox/*.loki files
 </span></code></pre></div>
 <h3 id="return-value_1">Return value<a class="headerlink" href="#return-value_1" title="Permanent link">&para;</a></h3>
 <p>Returns <code>true</code> if any file was newly loaded, <code>false</code> if the file was not found or was already loaded.</p>

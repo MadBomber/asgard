@@ -9,6 +9,17 @@ class Tasks
   @@app_name  ||= "my_app".freeze
   @@build_dir ||= "builds/#{@@app_name}".freeze
 
+  # ── Computed values — plain private methods replace the removed var DSL ──────
+  # Declare as private so Thor does not try to register them as commands.
+  # Use @ivar ||= inside the method body to memoize expensive calls.
+  private
+
+  def version = `git describe --tags --always`.strip
+  def sha     = `git rev-parse --short HEAD`.strip
+  def branch  = @branch ||= `git rev-parse --abbrev-ref HEAD`.strip
+
+  public
+
   # ── Asgard: dotenv — load environment variables ────────────────────────────
   # Uncomment to activate:
   # dotenv              # loads .env
@@ -39,7 +50,7 @@ class Tasks
   # ── Basic task — no parameters ─────────────────────────────────────────────
   desc "Say hello (default task when no command is given)"
   def greet
-    puts "Hello from #{@@app_name} (#{options[:env]})!"
+    puts "Hello from #{@@app_name} #{version} (#{branch}) in #{options[:env]} mode!"
   end
 
   # ── Positional parameter with default ──────────────────────────────────────

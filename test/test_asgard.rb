@@ -1181,9 +1181,11 @@ class TestAsgardDefaultTask < Minitest::Test
   def test_warning_includes_file_and_line_numbers
     _, err = capture_io do
       Class.new(Asgard::Base) do
-        desc "a", "task a"; define_method(:a) {}
+        desc "a", "task a"
+        define_method(:a) {}
         default_task :a
-        desc "b", "task b"; define_method(:b) {}
+        desc "b", "task b"
+        define_method(:b) {}
         default_task :b
       end
     end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "pathname"
+
 module Kernel
   def debug?   = $DEBUG
   def verbose? = $VERBOSE
@@ -15,11 +17,11 @@ module Kernel
   module_function :env
 
   def loki_up(name = ".loki")
-    dir = Dir.pwd
+    dir = Pathname.new(Dir.pwd)
     loop do
-      candidate = File.join(dir, name)
-      return candidate if File.exist?(candidate)
-      parent = File.dirname(dir)
+      candidate = dir + name
+      return candidate if candidate.exist?
+      parent = dir.parent
       break if parent == dir
       dir = parent
     end

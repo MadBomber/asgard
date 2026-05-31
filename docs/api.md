@@ -11,7 +11,7 @@ These class methods are defined on the `Asgard` module itself.
 | Method | Signature | Description |
 |---|---|---|
 | `run!` | `Asgard.run!(argv)` | Main entry point. Finds `.loki`, loads all task files, validates the dependency graph, and dispatches via Thor. Handles its own errors: missing `.loki` and circular dependencies both produce a clean one-line message and `exit 1`. |
-| `find_task_file` | `Asgard.find_task_file → String, nil` | Searches `Dir.pwd` and each ancestor directory for a `.loki` file. Returns the absolute path string of the first match, or `nil` if none is found. |
+| `find_task_file` | `Asgard.find_task_file → Pathname, nil` | Searches `Dir.pwd` and each ancestor directory for a `.loki` file. Returns a `Pathname` of the first match, or `nil` if none is found. |
 
 ### `run!` Details
 
@@ -35,7 +35,7 @@ These methods are defined as `module_function` on `Kernel` and are therefore ava
 
 | Method | Signature | Returns | Description |
 |---|---|---|---|
-| `loki_up` | `loki_up(name = ".loki") → String, nil` | Absolute path or `nil` | Searches `Dir.pwd` and each ancestor directory for a file named `name`. Returns the first match's absolute path, or `nil` if not found. Exact filenames only — does not expand globs. |
+| `loki_up` | `loki_up(name = ".loki") → Pathname, nil` | `Pathname` or `nil` | Searches `Dir.pwd` and each ancestor directory for a file named `name`. Returns a `Pathname` for the first match, or `nil` if not found. Exact filenames only — does not expand globs. |
 | `import` | `import(path) → true, false` | `true` if any file newly loaded | Loads one `.loki` file or a glob of `.loki` files. Relative paths resolve relative to the caller's file (like `require_relative`). Idempotent via `$LOADED_FEATURES`. Raises `ArgumentError` if `path` does not end with `.loki`. Raises `LoadError` if a non-glob path does not exist. |
 | `import_up` | `import_up(name = ".loki") → true, false` | `true` if any file newly loaded | Combines `loki_up` and `import`. Walks ancestors to find the file or glob match, then loads it. Returns `false` if nothing is found. |
 | `debug?` | `debug? → true, false` | `$DEBUG` | Returns the current value of `$DEBUG`. Set to `true` by `--debug` on the CLI or directly via `$DEBUG = true`. |
@@ -53,11 +53,11 @@ loki_up(".env")               # find the nearest .env file up the tree
 loki_up("VERSION")            # find a VERSION file in CWD or any ancestor
 ```
 
-Returns an absolute path string or `nil`. Does not load the file.
+Returns a `Pathname` or `nil`. Does not load the file. `Pathname` is accepted by `import`, `dotenv`, `load`, and standard Ruby file methods — no `.to_s` conversion needed in common usage.
 
 ```ruby
 if (path = loki_up("gem_tasks.loki"))
-  import path
+  import path          # Pathname accepted directly
 end
 
 # Pass the located .env to dotenv — works from any subdirectory
@@ -113,6 +113,9 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 |---|---|---|
 | `depends_on` | `depends_on(*tasks)` | Declare prerequisites for the next `def`. Bare symbols run sequentially; arrays within the splat run as a parallel group. |
 | `dotenv` | `dotenv(path = ".env")` | Load the specified `.env` file into `ENV` using the dotenv gem. Silently skipped if the file does not exist. Called at class-load time. |
+| `header` | `header(text)` | Append a line of text shown above the commands list in `asgard help`. Each call adds another line. No-op for per-command help. |
+| `footer` | `footer(text)` | Prepend a line of text shown below the options block in `asgard help`. Each call inserts above the previous lines. No-op for per-command help. |
+| `no_negate` | `no_negate(*names)` | Suppress `[--no-name]` / `[--skip-name]` help entries for one or more boolean class options. Call after the `class_option` declaration. |
 | `sh` | `sh(script, silent: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. |
 | `shebang` | `shebang(interpreter, script, silent: false)` | Instance method. Write `script` to a tempfile and execute it with `interpreter`. See the [Shell Helpers](shell.md) page for the full interpreter table. |
 | `validate_deps!` | `Tasks.validate_deps!` | Build and topologically sort the full dependency graph using Dagwood. Raises `Asgard::CircularDependencyError` on cycles. Called by `run!` at startup. |
@@ -137,7 +140,7 @@ depends_on :setup, [:lint, :build], :test  # setup, then lint+build concurrently
 |---|---|---|
 | `class_option :debug` | class option | `--debug` flag. Sets `$DEBUG = true` before any task runs. Boolean, default `false`. |
 | `class_option :verbose` | class option | `--verbose` flag. Sets `$VERBOSE = true` before any task runs. Boolean, default `false`. |
-| `_version` | private task method | Implements `--version`. Prints `Asgard::VERSION` and exits. Registered via `map "--version" => :_version`. Uses `_` prefix convention. |
+| `class_option :version` | class option | `--version` flag. Handled by `Asgard.run!` before the `.loki` file is loaded — prints `Asgard::VERSION` and exits. `no_negate :version` suppresses the `[--no-version]` / `[--skip-version]` help entries. |
 | `debug?` | Kernel module function | Returns `$DEBUG`. Available everywhere via `Kernel`. |
 | `verbose?` | Kernel module function | Returns `$VERBOSE`. Available everywhere via `Kernel`. |
 

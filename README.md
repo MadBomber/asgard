@@ -22,7 +22,7 @@
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
-- <strong>Built-in Flags</strong> — <code>--debug</code> and <code>--verbose</code> available on every task; <code>--version</code> at the top level<br>
+- <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, and <code>--version</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
 </table>
@@ -299,6 +299,53 @@ end
 
 ---
 
+## Help header and footer
+
+Add static text above and below the command list in `asgard help` output:
+
+```ruby
+class Tasks
+  header "my-project — build & release tasks"
+  footer "See https://example.com/docs for details"
+end
+```
+
+Multiple calls accumulate. `header` appends each line (top to bottom); `footer` prepends each line (bottom to top), so content from a later-loaded `.loki` file sits closer to the commands:
+
+```ruby
+# .loki
+class Tasks
+  header "my-project"
+  footer "Maintainer: you@example.com"
+end
+
+import "*.loki"
+
+# deploy.loki
+class Tasks
+  header "  deploy targets: staging, production"
+  footer "See runbook at wiki/deploy"
+end
+```
+
+```
+my-project
+  deploy targets: staging, production
+
+Commands:
+  ...
+
+Options:
+  ...
+
+See runbook at wiki/deploy
+Maintainer: you@example.com
+```
+
+Header and footer text is only shown for the general `asgard help` page, not for `asgard help <command>`.
+
+---
+
 ## Options shared across all tasks
 
 `class_option` defines an option available to every task in the class:
@@ -566,7 +613,7 @@ end
 | Method | Description |
 |---|---|
 | `Asgard.run!(argv)` | Entry point — finds `.loki`, loads task files, starts CLI |
-| `Asgard.find_task_file` | Returns path to `.loki` searching from CWD upward, or nil |
+| `Asgard.find_task_file` | Returns a `Pathname` to `.loki` searching from CWD upward, or `nil` |
 
 `run!` handles its own errors — a missing `.loki`, a circular dependency, or a `depends_on` that names a task that doesn't exist all produce a clean one-line message and exit 1.
 

@@ -92,6 +92,28 @@ module Asgard
         end
       end
 
+      # Suppress [--no-name] / [--skip-name] from help for boolean class options
+      # where negation is meaningless. Call after class_option declarations.
+      def no_negate(*names)
+        names.each do |name|
+          opt = class_options[name]
+          next unless opt
+          opt.define_singleton_method(:usage) do |padding = 0|
+            aliases_for_usage.ljust(padding) + "[#{switch_name}]"
+          end
+        end
+      end
+
+      def header(text = nil)
+        return @_header if text.nil?
+        (@_header ||= []) << text
+      end
+
+      def footer(text = nil)
+        return @_footer if text.nil?
+        (@_footer ||= []).unshift(text)
+      end
+
       def dotenv(path = ".env")
         require "dotenv"
         Dotenv.load(path) if File.exist?(path)
@@ -100,9 +122,11 @@ module Asgard
       def default_task(meth = nil)
         if meth && meth != :none && @_default_task_location
           here = caller_locations(1, 1).first
-          warn "asgard: default_task :#{meth} at #{here.path}:#{here.lineno} " \
-               "overrides default_task :#{@_default_task_name} set at " \
-               "#{@_default_task_location.path}:#{@_default_task_location.lineno}"
+          # rubocop:disable Style/StderrPuts -- warn bypasses $stderr in Ruby 4.0, breaking capture_io in tests
+          $stderr.puts "asgard: default_task :#{meth} at #{here.path}:#{here.lineno} " \
+                       "overrides default_task :#{@_default_task_name} set at " \
+                       "#{@_default_task_location.path}:#{@_default_task_location.lineno}"
+          # rubocop:enable Style/StderrPuts
         end
         if meth && meth != :none
           @_default_task_location = caller_locations(1, 1).first
@@ -182,6 +206,13 @@ module Asgard
         _deps[method_name.to_sym] = pending.map { |d| Array(d).map(&:to_sym) }
         super
       end
+    end
+
+    def help(command = nil, subcommand = false) # rubocop:disable Style/OptionalBooleanParameter
+      say self.class.header.join("\n\n") if self.class.header && command.nil?
+      say "\n"
+      super
+      say self.class.footer.join("\n\n") if self.class.footer && command.nil?
     end
 
     no_commands do

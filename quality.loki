@@ -1,0 +1,61 @@
+# frozen_string_literal: true
+# Quality gate tasks — imported by .loki
+
+class Tasks
+  desc "Run the test suite"
+  def test
+    sh "bundle exec ruby -Ilib:test test/test_asgard.rb"
+  end
+
+  desc "Run all quality gates (tests, RuboCop, Flog)"
+  depends_on :test, [:rubocop, :flog_check]
+  def quality
+  end
+
+  desc "Check code style with RuboCop"
+  def rubocop
+    sh "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop"
+  end
+
+  desc "Auto-correct RuboCop offenses"
+  def rubocop_fix
+    sh "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop -a"
+  end
+
+  desc "Check code complexity with Flog (warn >=20, fail >=50)"
+  def flog_check
+    require "flog"
+
+    method_warn = 20.0
+    method_fail = 50.0
+
+    flogger = Flog.new(all: true)
+    flogger.flog(*Dir.glob("lib/**/*.rb"))
+
+    warnings = []
+    failures = []
+
+    flogger.each_by_score do |method_name, score|
+      next if method_name.end_with?("#none")
+      if score > method_fail
+        failures << "#{"%.1f" % score}: #{method_name}"
+      elsif score > method_warn
+        warnings << "#{"%.1f" % score}: #{method_name}"
+      end
+    end
+
+    unless warnings.empty?
+      puts "\nFlog warnings (#{method_warn}–#{method_fail}) — target for future refactoring:"
+      warnings.each { |v| puts "  #{v}" }
+    end
+
+    if failures.empty?
+      puts "\nFlog: no methods exceed the failure threshold (>=#{method_fail})"
+    else
+      puts "\nFlog failures (>=#{method_fail}) — must be refactored:"
+      failures.each { |v| puts "  #{v}" }
+      $stdout.flush
+      abort "\nFlog quality gate failed: #{failures.size} method(s) exceed #{method_fail}"
+    end
+  end
+end

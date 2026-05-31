@@ -71,19 +71,53 @@ end
 
 Both `deploy` and `migrate` automatically accept `--dry-run` and `--env`.
 
+### Boolean class options and `no_negate`
+
+Thor automatically generates `[--no-name]` and `[--skip-name]` help entries alongside every boolean `class_option`. When negation is meaningful — `--dry-run` paired with `--no-dry-run` — this is useful. When negation is meaningless, call `no_negate` immediately after the declaration to remove the extra variants from the help output:
+
+```ruby
+class Tasks
+  class_option :color,
+               type:    :boolean,
+               default: true,
+               desc:    "Colorise output"
+  no_negate :color
+end
+```
+
+Help output before `no_negate`:
+
+```
+[--color], [--no-color], [--skip-color]  # Colorise output
+```
+
+Help output after `no_negate`:
+
+```
+[--color]                                # Colorise output
+```
+
+`no_negate` accepts multiple option names in a single call:
+
+```ruby
+no_negate :color, :version, :emoji
+```
+
+It has no effect on runtime behaviour — `--no-color` still works on the CLI; only the help display is affected.
+
 ---
 
 ## Built-in Flags
 
-`Tasks` ships with three built-in class options and a version flag:
+`Tasks` ships with three built-in `class_option` declarations — `--debug`, `--verbose`, and `--version` — all visible in the Options section of `asgard help`.
 
 ### `--version`
 
-Prints `Asgard::VERSION` and exits. Implemented as the `_version` method with the `_` prefix convention (gem-owned, blocked from direct CLI invocation):
+A `class_option :version` of type `:boolean`. Prints `Asgard::VERSION` and exits. Handled by `Asgard.run!` before the `.loki` file is loaded, so it works even in a directory without a `.loki` file. `no_negate :version` suppresses the `[--no-version]` / `[--skip-version]` variants (see [Boolean class options and `no_negate`](#boolean-class-options-and-no_negate) above):
 
 ```bash
 asgard --version
-# 0.1.2
+# 0.3.0
 ```
 
 ### `--debug`
@@ -173,8 +207,8 @@ asgard deploy production --verbose
 Methods whose names start with `_` are considered gem-owned in Asgard's naming convention. `run!` guards against invoking them directly from the CLI:
 
 ```bash
-asgard _version
-# asgard: unknown command '_version'
+asgard _something
+# asgard: unknown command '_something'
 ```
 
-If you define your own methods on `Tasks`, avoid the `_` prefix to prevent them from being silently blocked.
+If you define your own methods on `Tasks`, avoid the `_` prefix to prevent them from being blocked. Built-in `class_option` declarations (like `--version`, `--debug`, `--verbose`) do not use the `_` prefix because they are options, not commands.

@@ -19,6 +19,15 @@ class TestAsgardRun < Minitest::Test
     end
   end
 
+  def test_version_flag_works_without_loki_file
+    Dir.mktmpdir do |dir|
+      out, _err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--version"]) } }
+      end
+      assert_equal Asgard::VERSION, out.chomp
+    end
+  end
+
   def test_run_catches_circular_dep_in_non_tasks_subclass
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
@@ -136,7 +145,7 @@ class TestAsgardFindFile < Minitest::Test
       path = File.join(dir, ".loki")
       File.write(path, "")
       result = Dir.chdir(dir) { Asgard.find_task_file }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -148,7 +157,7 @@ class TestAsgardFindFile < Minitest::Test
       Dir.mkdir(subdir)
       File.write(path, "")
       result = Dir.chdir(subdir) { Asgard.find_task_file }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -175,7 +184,7 @@ class TestLokiUp < Minitest::Test
       path = File.join(dir, ".loki")
       File.write(path, "")
       result = Dir.chdir(dir) { loki_up }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -187,7 +196,7 @@ class TestLokiUp < Minitest::Test
       Dir.mkdir(subdir)
       File.write(path, "")
       result = Dir.chdir(subdir) { loki_up }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -197,7 +206,7 @@ class TestLokiUp < Minitest::Test
       path = File.join(dir, "gem_tasks.loki")
       File.write(path, "")
       result = Dir.chdir(dir) { loki_up("gem_tasks.loki") }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -209,7 +218,7 @@ class TestLokiUp < Minitest::Test
       Dir.mkdir(subdir)
       File.write(path, "")
       result = Dir.chdir(subdir) { loki_up("gem_tasks.loki") }
-      assert_equal path, result
+      assert_equal Pathname.new(path), result
     end
   end
 
@@ -230,7 +239,7 @@ class TestLokiUp < Minitest::Test
       File.write(File.join(dir,    "gem_tasks.loki"), "")
       File.write(File.join(subdir, "gem_tasks.loki"), "")
       result = Dir.chdir(subdir) { loki_up("gem_tasks.loki") }
-      assert_equal File.join(subdir, "gem_tasks.loki"), result
+      assert_equal Pathname.new(File.join(subdir, "gem_tasks.loki")), result
     end
   end
 
@@ -962,11 +971,15 @@ class TestAsgardUnderscoreGuard < Minitest::Test
 end
 
 class TestAsgardBuiltinTasks < Minitest::Test
-  def test_version_task_prints_version_and_exits
-    out, = capture_io do
-      assert_raises(SystemExit) { Tasks.new([], {}, {})._version }
-    end
-    assert_equal Asgard::VERSION, out.chomp
+  def test_tasks_has_version_class_option
+    assert Tasks.class_options.key?(:version)
+  end
+
+  def test_version_option_suppresses_negation_in_help
+    usage = Tasks.class_options[:version].usage
+    refute_match(/--no-version/, usage)
+    refute_match(/--skip-version/, usage)
+    assert_match(/--version/, usage)
   end
 
   def test_tasks_has_debug_class_option
@@ -975,6 +988,54 @@ class TestAsgardBuiltinTasks < Minitest::Test
 
   def test_tasks_has_verbose_class_option
     assert Tasks.class_options.key?(:verbose)
+  end
+end
+
+class TestAsgardHeaderFooter < Minitest::Test
+  def setup
+    @klass = Class.new(Asgard::Base)
+    @klass.desc "go", "do the thing"
+    @klass.define_method(:go) {}
+  end
+
+  def test_header_appends_lines
+    @klass.header "line one"
+    @klass.header "line two"
+    assert_equal ["line one", "line two"], @klass.header
+  end
+
+  def test_footer_prepends_lines
+    @klass.footer "line one"
+    @klass.footer "line two"
+    assert_equal ["line two", "line one"], @klass.footer
+  end
+
+  def test_header_appears_before_commands_in_help
+    @klass.header "HEADER TEXT"
+    out, = capture_io { @klass.start(["help"]) }
+    assert out.index("HEADER TEXT") < out.index("Commands:")
+  end
+
+  def test_footer_appears_after_options_in_help
+    @klass.footer "FOOTER TEXT"
+    out, = capture_io { @klass.start(["help"]) }
+    assert out.index("FOOTER TEXT") > out.index("Commands:")
+  end
+
+  def test_header_and_footer_absent_for_per_command_help
+    @klass.header "HEADER TEXT"
+    @klass.footer "FOOTER TEXT"
+    out, = capture_io { @klass.start(%w[help go]) }
+    refute_match "HEADER TEXT", out
+    refute_match "FOOTER TEXT", out
+  end
+
+  def test_header_nil_by_default
+    assert_nil @klass.header
+  end
+
+  def test_footer_nil_by_default
+    assert_nil @klass.footer
   end
 end
 

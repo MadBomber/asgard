@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`header(text)` and `footer(text)` DSL methods on `Asgard::Base`** — attach static text to the general help output. `header` lines are printed above the commands list; `footer` lines are printed below the options block. Multiple calls accumulate: each `header` call appends a line, each `footer` call prepends a line, so content from later-loaded files naturally wraps around content from earlier files. Neither appears when `asgard help <command>` is called for per-command detail.
+  ```ruby
+  class Tasks
+    header "my-project — build & release tasks"
+    footer "See https://example.com/docs for details"
+  end
+  ```
+- **`no_negate(*names)` DSL method on `Asgard::Base`** — suppresses the `[--no-name]` and `[--skip-name]` negation variants from help output for boolean class options where negation is meaningless. Call it after the `class_option` declaration:
+  ```ruby
+  class_option :version, type: :boolean, default: false, desc: "Show version and exit"
+  no_negate :version
+  ```
+
+### Changed
+
+- **`--version` reimplemented as a `class_option`** — the flag now appears in the "Options" section of `asgard help` alongside `--debug` and `--verbose`, rather than as a listed command. The `_version` method and its `map "--version" => :_version` registration have been removed. The actual early-exit behaviour still lives in `Asgard.run!` (before the `.loki` file is required), so `--version` works even when no `.loki` file exists. `no_negate :version` suppresses the spurious `[--no-version]` / `[--skip-version]` variants.
+- **`loki_up` returns `Pathname` instead of `String`** — the return value is now a `Pathname` instance (or `nil` when not found). `Pathname` is accepted everywhere `loki_up`'s result is used: `import`, `dotenv`, `load`, and standard Ruby file methods all accept `Pathname` via `to_path` / `to_s`. Code that passes the result directly to those methods is unaffected; code that performs string operations on the path should call `.to_s` first.
+
+### Fixed
+
+- **Help output showed `tasks` prefix before every command** — `asgard help` displayed `asgard tasks build` instead of `asgard build`. The cause was a keyword-vs-positional mismatch in the `Asgard::Base#help` override: declaring `subcommand: false` as a keyword argument caused Ruby's `super` to forward it as the hash `{subcommand: false}`. Thor's `banner` method received this hash as the positional `subcommand` argument, treated it as truthy, and prepended the class namespace (`tasks`) to every command name. Fixed by changing the override signature to match Thor's positional signature: `def help(command = nil, subcommand = false)`.
+
+### Added (continued)
+
 - **`loki_up(name = ".loki")` Kernel method** — searches `Dir.pwd` and each ancestor directory for a file with the given name; returns the absolute path of the first match or `nil`. Available everywhere in Ruby (task bodies, `.loki` files, top-level code) as a `module_function` on `Kernel`.
 - **`import(path)` Kernel method** — loads a `.loki` file (or a glob of `.loki` files) with `require`-like idempotency via `$LOADED_FEATURES`. Accepts a `String` or `Pathname`. Relative paths are resolved relative to the caller's file (like `require_relative`). Glob patterns (`*.loki`, `**/*.loki`) expand via `Dir.glob` and load all matches. Returns `true` if any file was newly loaded, `false` if all were already loaded or no glob matches were found. Raises `ArgumentError` if the path does not end with `.loki`.
 - **`import_up(name = ".loki")` Kernel method** — combines `loki_up` and `import`. For exact names, finds the first ancestor directory containing that file and loads it. For glob names, finds the first ancestor directory containing any matching files and loads them all — stopping at that level rather than aggregating across multiple ancestors. Returns `false` if nothing is found.

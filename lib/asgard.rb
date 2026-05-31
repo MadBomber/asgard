@@ -19,6 +19,10 @@ module Asgard
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
+    if argv.include?("--version")
+      puts Asgard::VERSION
+      exit
+    end
     task_file = find_task_file or abort "asgard: no .loki file found in #{Dir.pwd}"
     before = Asgard::Base.subclasses.dup
     load task_file

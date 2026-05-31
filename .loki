@@ -2,33 +2,26 @@
 # Asgard gem's own task file.
 # Task is pre-defined by the gem — just reopen it to add tasks.
 
+import "quality.loki"
+import "gem_tasks.loki"
+
 class Tasks
-  @@gem_name ||= "asgard".freeze
+  @@project      ||= "asgard".freeze
+  @@project_desc ||= "CLI-task runner"
 
-  desc "Run the test suite"
-  def test
-    sh "bundle exec rake test"
+  def self.project_version
+    @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
 
-  desc "Run all quality gates (tests, RuboCop, Flog)"
-  def quality
-    sh "bundle exec rake quality"
+  no_commands do
+    private def project_version = self.class.project_version
   end
 
-  desc "Build the gem package"
-  def build
-    sh "bundle exec rake build"
-  end
+  default_task :quality
 
-  depends_on :test
-  desc "Build and install gem locally"
-  def install
-    sh "bundle exec rake install"
-  end
-
-  depends_on :quality
-  desc "Release to RubyGems"
-  def release
-    sh "bundle exec rake release"
-  end
+  header <<~HEAD
+    Porject:  #{@@project} (v#{project_version}) - #{@@project_desc}
+    Root Dir: #{loki_up.parent}
+    Default task: #{default_task}
+  HEAD
 end

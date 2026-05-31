@@ -93,7 +93,7 @@ import("gem_tasks.loki") ? "loaded now" : "already loaded"
 
 ## Finding Files with `loki_up`
 
-`loki_up(name = ".loki")` searches `Dir.pwd` and each ancestor directory for a file with the given name, returning its absolute path or `nil`. It does **not** load the file — it only finds it.
+`loki_up(name = ".loki")` searches `Dir.pwd` and each ancestor directory for a file with the given name, returning a `Pathname` or `nil`. It does **not** load the file — it only finds it.
 
 Despite the name, `loki_up` is not limited to `.loki` files — it will locate any file by name. This makes it useful for finding shared config files, `.env` files, or any other resource that lives somewhere up the directory tree:
 
@@ -401,7 +401,7 @@ end
 
 | Method | Finds? | Loads? | Glob? | Ancestor search? |
 |---|---|---|---|---|
-| `loki_up(name)` | Yes | No | No | Yes |
+| `loki_up(name)` | Yes (`Pathname`) | No | No | Yes |
 | `import(path)` | No | Yes | Yes | No |
 | `import_up(name)` | Yes | Yes | Yes | Yes |
 | Asgard's `run!` | Yes | `.loki` only | No | Yes |

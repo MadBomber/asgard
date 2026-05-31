@@ -1,0 +1,35 @@
+# frozen_string_literal: true
+# Gem lifecycle tasks — imported by .loki
+
+class Tasks
+  desc "Build the gem package"
+  depends_on :quality
+  def build
+    sh "mkdir -p pkg"
+    sh "gem build asgard.gemspec"
+    sh "mv asgard-#{project_version}.gem pkg/"
+  end
+
+  desc "Build and install gem locally"
+  depends_on :build
+  def install
+    sh "gem install pkg/asgard-#{project_version}.gem"
+  end
+
+  desc "Release to RubyGems"
+  depends_on :quality
+  def release
+    tag      = "v#{project_version}"
+    gem_file = "pkg/asgard-#{project_version}.gem"
+
+    abort "Working directory is not clean — commit or stash changes first." unless `git status --porcelain`.strip.empty?
+    abort "Tag #{tag} already exists." unless `git tag -l #{tag}`.strip.empty?
+
+    sh "mkdir -p pkg"
+    sh "gem build asgard.gemspec"
+    sh "mv asgard-#{project_version}.gem pkg/"
+    sh "git tag #{tag}"
+    sh "git push origin #{tag}"
+    sh "gem push #{gem_file}"
+  end
+end

@@ -949,10 +949,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#environment-variables-vs-var" class="md-nav__link">
+  <a href="#environment-variables-vs-class-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Environment Variables vs. var
+        Environment Variables vs. Class Variables
       
     </span>
   </a>
@@ -1184,10 +1184,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#environment-variables-vs-var" class="md-nav__link">
+  <a href="#environment-variables-vs-class-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Environment Variables vs. var
+        Environment Variables vs. Class Variables
       
     </span>
   </a>
@@ -1295,7 +1295,7 @@
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">   </span><span class="c1"># loads .env from the current working directory</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Print the app name from .env&quot;</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;echo $APP_NAME&quot;</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">env</span><span class="p">(</span><span class="ss">:app_name</span><span class="p">)</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="load-a-named-file">Load a Named File<a class="headerlink" href="#load-a-named-file" title="Permanent link">&para;</a></h3>
@@ -1317,7 +1317,6 @@
 <p><code>dotenv</code> is a <strong>class-level</strong> call — it executes at Ruby class-load time, not when a task is invoked. This means:</p>
 <ol>
 <li>Variables are available in <code>ENV</code> before any task method runs.</li>
-<li>They are also available to lambda variables declared with <code>var</code> that reference <code>ENV</code>.</li>
 <li>They are available during <code>depends_on</code> dependency resolution.</li>
 </ol>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
@@ -1342,27 +1341,43 @@
 </span></code></pre></div>
 <p>This makes it safe to commit a <code>.env.local</code> line to your <code>.loki</code> without requiring every developer to create the file.</p>
 <hr />
-<h2 id="environment-variables-vs-var">Environment Variables vs. <code>var</code><a class="headerlink" href="#environment-variables-vs-var" title="Permanent link">&para;</a></h2>
-<p>Use <code>dotenv</code> to bring external configuration into <code>ENV</code>, and <code>var</code> to define task-internal computed values:</p>
+<h2 id="environment-variables-vs-class-variables">Environment Variables vs. Class Variables<a class="headerlink" href="#environment-variables-vs-class-variables" title="Permanent link">&para;</a></h2>
+<p>Use <code>dotenv</code> to bring external configuration into <code>ENV</code>. Use <code>@@</code> class variables for fixed values declared in the task file, and read from <code>ENV</code> directly in task bodies or helper methods when the value comes from the environment:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">dotenv</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="c1"># Read from ENV (set by dotenv or the shell)</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="n">var</span><span class="w"> </span><span class="ss">:app_name</span><span class="p">,</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;APP_NAME&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;myapp&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">var</span><span class="w"> </span><span class="ss">:port</span><span class="p">,</span><span class="w">     </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;3000&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Start the server&quot;</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;puma -p </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">end</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="vc">@@app_name</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="s2">&quot;myapp&quot;</span><span class="o">.</span><span class="n">freeze</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Start the server&quot;</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;3000&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;puma -b tcp://0.0.0.0:</span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2"> -w </span><span class="si">#{</span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s1">&#39;WORKERS&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>For <code>ENV</code> values used in multiple tasks, define a private helper method:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">dotenv</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Start the server&quot;</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;puma -p </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Show config&quot;</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="vc">@@app_name</span><span class="si">}</span><span class="s2"> on port </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="kp">private</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;3000&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
 <h2 id="dotenv-file-format">Dotenv File Format<a class="headerlink" href="#dotenv-file-format" title="Permanent link">&para;</a></h2>
 <p>Standard dotenv file syntax applies:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># .env</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">APP_NAME</span><span class="o">=</span>myapp
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://localhost/myapp_development
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nv">REDIS_URL</span><span class="o">=</span>redis://localhost:6379/0
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># .env</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nv">APP_NAME</span><span class="o">=</span>myapp
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://localhost/myapp_development
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nv">REDIS_URL</span><span class="o">=</span>redis://localhost:6379/0
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span>
 </span></code></pre></div>
 <p>Multi-line values and quotes are supported per the dotenv gem's own documentation.</p>
 

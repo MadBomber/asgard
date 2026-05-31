@@ -1302,8 +1302,8 @@
 <ul>
 <li><code>sh</code> and <code>shebang</code> shell helpers (from <code>Asgard::Shell</code>)</li>
 <li><code>depends_on</code> for dependency declarations</li>
-<li><code>var</code> for variables</li>
 <li><code>dotenv</code> for environment loading</li>
+<li><code>@@</code> class variables declared on <code>Tasks</code> (visible in all subclasses)</li>
 <li>The built-in <code>--debug</code> and <code>--verbose</code> class options</li>
 <li>The <code>debug?</code> and <code>verbose?</code> private predicates</li>
 <li>Any private helpers or <code>no_commands</code> methods defined on <code>Tasks</code></li>
@@ -1416,7 +1416,7 @@
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  server_subcommands.loki  ← defines ServerCommands
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  db_subcommands.loki      ← defines DBCommands
 </span></code></pre></div>
-<p>When <code>--auto-load</code> is used, <code>*.loki</code> files are loaded alphabetically before <code>.loki</code>, so both <code>DBCommands</code> and <code>ServerCommands</code> are defined by the time <code>.loki</code> runs its <code>subcommand</code> calls.</p>
+<p>Because siblings loaded via <code>import "*.loki"</code> execute before <code>.loki</code>'s own class body, both <code>DBCommands</code> and <code>ServerCommands</code> are defined by the time <code>.loki</code> runs its <code>subcommand</code> calls.</p>
 <p>See <a href="../examples/#server-subcommands"><code>examples/server_subcommands.loki</code></a> and <a href="../examples/#db-subcommands"><code>examples/db_subcommands.loki</code></a> for complete working examples.</p>
 
 

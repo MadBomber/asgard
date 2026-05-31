@@ -1175,11 +1175,11 @@
 <li><strong>Task Dependencies</strong> — sequential, parallel, and mixed dependency graphs via <code>depends_on</code></li>
 <li><strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads</li>
 <li><strong>Subcommands</strong> — group related tasks under a named namespace</li>
-<li><strong>Variables</strong> — static values and lazy-evaluated lambdas via <code>var</code></li>
+<li><strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands</li>
 <li><strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts</li>
 <li><strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code></li>
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
-<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded on demand with <code>--auto-load</code></li>
+<li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task</li>
 </ul>
 </td>
@@ -1199,7 +1199,7 @@
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>cat<span class="w"> </span>&gt;&gt;<span class="w"> </span>.loki<span class="w"> </span><span class="s">&lt;&lt; &#39;EOF&#39;</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="s">class Tasks</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="s">  desc &quot;Say hello&quot;</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="s">  def hello = sh &#39;echo &quot;Hello from Asgard!&quot;&#39;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="s">  def hello = puts &quot;Hello from Asgard!&quot;</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="s">end</span>
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="s">EOF</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
@@ -1208,8 +1208,8 @@
 </span></code></pre></div>
 <hr />
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<p>Asgard searches upward from your current directory for a <code>.loki</code> file. That file marks the project root. Additional <code>*.loki</code> files in the same directory can be loaded by passing <code>--auto-load</code> to the <code>asgard</code> command. All task files reopen <code>class Tasks</code>, which is pre-defined by the gem as a subclass of <code>Asgard::Base</code> (itself a Thor subclass).</p>
-<p>The full Thor DSL is available: <code>desc</code>, <code>method_option</code>, <code>class_option</code>, <code>long_desc</code>, <code>argument</code>, <code>default_task</code>, <code>map</code>, and <code>subcommand</code> all work exactly as documented in Thor — with Asgard's own <code>depends_on</code>, <code>var</code>, <code>sh</code>, <code>shebang</code>, and <code>dotenv</code> layered on top.</p>
+<p>Asgard searches upward from your current directory for a <code>.loki</code> file. That file marks the project root. Additional <code>*.loki</code> files in the same directory can be loaded via <code>import "*.loki"</code> at the top of <code>.loki</code>. All task files reopen <code>class Tasks</code>, which is pre-defined by the gem as a subclass of <code>Asgard::Base</code> (itself a Thor subclass).</p>
+<p>The full Thor DSL is available: <code>desc</code>, <code>method_option</code>, <code>class_option</code>, <code>long_desc</code>, <code>argument</code>, <code>default_task</code>, <code>map</code>, and <code>subcommand</code> all work exactly as documented in Thor — with Asgard's own <code>depends_on</code>, <code>sh</code>, <code>shebang</code>, and <code>dotenv</code> layered on top.</p>
 <hr />
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Permanent link">&para;</a></h2>
 <table>

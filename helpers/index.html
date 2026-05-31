@@ -750,6 +750,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sharing Helpers Across Files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#within-a-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Within a project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#across-projects-with-import_up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Across projects with import_up
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1136,6 +1164,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sharing Helpers Across Files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#within-a-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Within a project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#across-projects-with-import_up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Across projects with import_up
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1294,7 +1350,6 @@
 </span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><code>var</code>-declared variables are also implemented using <code>no_commands</code> internally, which is why they appear as callable methods but not as CLI commands.</p>
 <hr />
 <h2 id="choosing-between-private-and-no_commands">Choosing Between <code>private</code> and <code>no_commands</code><a class="headerlink" href="#choosing-between-private-and-no_commands" title="Permanent link">&para;</a></h2>
 <table>
@@ -1336,6 +1391,7 @@
 <p>For most helpers, <code>private</code> is the right choice. Use <code>no_commands</code> when the helper must remain technically public (e.g., it will be inherited by a subcommand class).</p>
 <hr />
 <h2 id="sharing-helpers-across-files">Sharing Helpers Across Files<a class="headerlink" href="#sharing-helpers-across-files" title="Permanent link">&para;</a></h2>
+<h3 id="within-a-project">Within a project<a class="headerlink" href="#within-a-project" title="Permanent link">&para;</a></h3>
 <p>Extract shared helpers into a plain Ruby module and load it from <code>.loki</code> using <code>require_relative</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># shared/helpers.rb</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">module</span><span class="w"> </span><span class="nn">BuildHelpers</span>
@@ -1368,23 +1424,40 @@
 <p class="admonition-title">Tip</p>
 <p>Helpers in a shared module can call <code>sh</code>, <code>shebang</code>, and other Asgard DSL methods because those are included in <code>Tasks</code> (via <code>Asgard::Base</code> and <code>Asgard::Shell</code>) and are available in <code>self</code> when the module method is invoked.</p>
 </div>
+<h3 id="across-projects-with-import_up">Across projects with <code>import_up</code><a class="headerlink" href="#across-projects-with-import_up" title="Permanent link">&para;</a></h3>
+<p>If helpers are defined as tasks in a shared <code>.loki</code> file, use <code>import_up</code> to load them from any sub-project without knowing the absolute path:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>~/sandbox/
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  shared_helpers.loki   ← defines helper tasks available to all sub-projects
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  projectA/
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    .loki
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  projectB/
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    .loki
+</span></code></pre></div>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># projectA/.loki  (and identically in projectB/.loki)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">&quot;shared_helpers.loki&quot;</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="c1"># shared tasks are already defined in Tasks by here</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>import_up</code> walks up from <code>Dir.pwd</code> until it finds <code>shared_helpers.loki</code>, then loads it. It returns <code>false</code> without raising if the file is not found, making it safe to use in projects where the shared file may not always be present.</p>
 <hr />
 <h2 id="helper-methods-in-subcommands">Helper Methods in Subcommands<a class="headerlink" href="#helper-methods-in-subcommands" title="Permanent link">&para;</a></h2>
 <p>Subcommand classes that inherit from <code>Tasks</code> also inherit all private helpers and <code>no_commands</code> methods defined on <code>Tasks</code>. You can also define helpers local to the subcommand class:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to staging&quot;</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;staging&quot;</span><span class="p">)</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to production&quot;</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">production</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;production&quot;</span><span class="p">)</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="kp">private</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy_to</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;cap </span><span class="si">#{</span><span class="n">env</span><span class="si">}</span><span class="s2"> deploy REV=</span><span class="si">#{</span><span class="n">current_sha</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="c1"># current_sha is inherited from Tasks if defined there</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to staging&quot;</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;staging&quot;</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Deploy to production&quot;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">production</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">deploy_to</span><span class="p">(</span><span class="s2">&quot;production&quot;</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="kp">private</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy_to</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;cap </span><span class="si">#{</span><span class="n">env</span><span class="si">}</span><span class="s2"> deploy REV=</span><span class="si">#{</span><span class="n">current_sha</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="c1"># current_sha is inherited from Tasks if defined there</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="k">end</span>
 </span></code></pre></div>
 
 

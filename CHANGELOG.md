@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   def test = sh "bundle exec rake test"
   ```
   The two-argument form (`desc "usage", "description"`) still works unchanged and is still required when the usage string differs from the method name (e.g. `desc "build NAME", "Build an artifact"`).
+- **`default_task` override warning** — `Asgard::Base` now overrides Thor's `default_task` to warn to stderr when a second call would silently replace the first. The warning includes the task name, file, and line number for both the original declaration and the override, making accidental cross-file clobbering visible immediately.
+- **`examples/env_usage.loki` and `examples/.env`** — demonstrate the `env()` Kernel helper, including the default-fallback form (`env(:log_level, "info")`) for variables absent from the environment. Uses `loki_up(".env")` so `dotenv` locates the `.env` file correctly regardless of which directory `asgard` is invoked from.
+- **`examples/subdir/`** — three-file demo showing `import` and `import_up` across directory boundaries: `subdir/.loki` imports `import_up_demo.loki` by name; `import_up_demo.loki` calls `import_up "env_usage.loki"` to locate and load a file from an ancestor directory without a hardcoded path.
+- **`status` task in `kitchen_sink.loki`** — demonstrates `debug?` and `verbose?` predicates with conditional output; shows `--debug` printing `$DEBUG`, `$VERBOSE`, and the full options hash.
+- **Computed value methods in `kitchen_sink.loki`** — three private methods (`version`, `sha`, `branch`) demonstrating the idiomatic Ruby replacement for the removed `var` DSL, including memoization via `@ivar ||=`.
 
 ### Removed
 
@@ -36,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Refactored
 
 - **`validate_deps!` decomposed into focused private helpers** — the method was performing four unrelated validations in one body (orphaned `depends_on` check, undefined dep name check, dep arity check, cycle detection). Each concern is now a dedicated `_`-prefixed private method (`_check_orphaned_deps!`, `_check_undefined_deps!`, `_check_dep_arities!`, `_build_and_sort_graph`). `validate_deps!` is now a sequencer of ~8 lines. Flog score dropped from 87.3 to 24.4.
-- **`invoke_command` decomposed into focused private helpers** — the dispatch hook was handling deduplication gating, dependency graph resolution, parallel/sequential group execution, and completion signalling all in one 38-line method. Each concern is now extracted: `_acquire_run_token` (mutex check/wait/claim), `_run_deps_for` (graph build and group iteration), `_run_dep_group` (parallel thread fan-out vs inline), `_signal_done` (mutex mark-done and broadcast). `invoke_command` is now 10 lines. Flog score dropped from 109.8 to below the warning threshold.
+- **`invoke_command` dispatch helpers made private with descriptive names** — the dispatch hook was decomposed into focused helpers. Those helpers (`acquire_run_token`, `run_deps_for`, `run_dep_group`, `signal_done`, `run_dep`) are now declared `private` on `Asgard::Base` rather than wrapped in `no_commands`. The `_` prefix was dropped — the underscore convention is reserved for gem-owned methods on `Tasks`; `private` is sufficient to exclude instance methods from Thor's command registry. `invoke_command` itself stays in `no_commands` so Thor does not warn about an undescribed public method.
 
 ### Fixed
 
@@ -54,6 +59,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **`validate_deps!` detects undefined dependency names** — `depends_on :nonexistent` previously passed validation silently and produced no error at runtime. `validate_deps!` now raises `Asgard::Error` listing every dep name that does not correspond to a defined task.
+- **`default_task` behaviour documented** — `docs/tasks.md` now notes that running `asgard` with no arguments displays the help message when `default_task` is not set.
+- **`loki_up` scope clarified in docs** — `docs/task-files.md` and `docs/api.md` now make explicit that `loki_up` locates any file by name, not just `.loki` files, with examples for `.env` and `VERSION`. The `dotenv loki_up(".env") || ".env"` pattern is shown as the canonical way to load a `.env` file from any subdirectory.
+- **`examples/.loki`** — updated to use explicit `import "*.loki"` (sibling files) and `import "subdir/import_demo.loki"` (subdirectory file), with comments explaining `import`, `import_up`, and `loki_up`.
 
 ## [0.2.0] - 2026-05-29
 

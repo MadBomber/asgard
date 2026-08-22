@@ -1524,10 +1524,14 @@
 <li><strong><code>SKIP</code> / <code>WARN</code> quality-gate statuses</strong> — alongside <code>PASS</code>/<code>FAIL</code>; only <code>FAIL</code> blocks <code>quality</code>.</li>
 <li>Every quality gate now writes full detail to a <code>&lt;gate&gt;_output.txt</code> file (gitignored) and prints just a one-line summary to stdout.</li>
 <li><strong><code>asgard tree</code></strong> now shows the project header/footer, matching <code>asgard help</code>.</li>
+<li><strong><code>bundler_audit_check</code> task</strong> — <code>bundle-audit check --update</code> against <code>Gemfile.lock</code>; <code>FAIL</code> on any known vulnerability.</li>
+<li><strong><code>quality_rails.loki</code></strong> — imported only when <code>Rails</code> is defined; ships <code>brakeman_check</code> as a Rails security-scan example. No wiring needed — <code>quality</code> discovers it automatically (see <code>depends_on</code> below).</li>
+<li><strong><code>depends_on</code> accepts a Proc/lambda</strong>, not just a fixed list — resolved once, in <code>validate_deps!</code>, after every <code>.loki</code> file has loaded, instead of immediately. Solves "load order matters" for a dependency list that can't be known upfront, e.g. every task ending in <code>_check</code> across several files. See <a href="../dependencies/#dynamic-dependencies-proc-form">Dynamic Dependencies</a>.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>quality</code> task</strong> — now runs seven gates (<code>test</code>, <code>rubocop</code>, <code>flog_check</code>, <code>flay_check</code>, <code>reek</code>, <code>typos_check</code>, <code>fasterer_check</code>) in parallel, with a colorized PASS/FAIL/WARN/SKIP summary and tally.</li>
+<li><strong><code>quality</code> task</strong> — discovers every <code>*_check</code> task at run time (via a <code>depends_on</code> Proc) rather than a fixed list, and runs them all in parallel with a colorized PASS/FAIL/WARN/SKIP summary and tally.</li>
+<li><strong><code>test</code>, <code>rubocop</code>, <code>reek</code> renamed to <code>test_check</code>, <code>rubocop_check</code>, <code>reek_check</code></strong> — consistency with the other gates is what makes <code>quality</code>'s automatic discovery possible.</li>
 <li><strong><code>release</code> task</strong> — prompts for confirmation unless <code>-y</code>/<code>--yes</code> is passed.</li>
 <li><strong><code>Asgard::Base</code> and <code>Asgard::Doctor</code> split into mixins</strong> — <code>lib/asgard/base/{registry,dependency_graph,task_dsl,dispatch}.rb</code> and <code>lib/asgard/doctor/{task_sections,report}.rb</code>. No behavior change; drops both classes' Reek <code>TooManyMethods</code>/<code>TooManyInstanceVariables</code> warnings to zero.</li>
 </ul>

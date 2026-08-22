@@ -20,10 +20,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 - **`SKIP` / `WARN` quality-gate statuses** — alongside `PASS`/`FAIL`; only `FAIL` blocks `quality`.
 - Every quality gate now writes full detail to a `<gate>_output.txt` file (gitignored) and prints just a one-line summary to stdout.
 - **`asgard tree`** now shows the project header/footer, matching `asgard help`.
+- **`bundler_audit_check` task** — `bundle-audit check --update` against `Gemfile.lock`; `FAIL` on any known vulnerability.
+- **`quality_rails.loki`** — imported only when `Rails` is defined; ships `brakeman_check` as a Rails security-scan example. No wiring needed — `quality` discovers it automatically (see `depends_on` below).
+- **`depends_on` accepts a Proc/lambda**, not just a fixed list — resolved once, in `validate_deps!`, after every `.loki` file has loaded, instead of immediately. Solves "load order matters" for a dependency list that can't be known upfront, e.g. every task ending in `_check` across several files. See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-form).
 
 ### Changed
 
-- **`quality` task** — now runs seven gates (`test`, `rubocop`, `flog_check`, `flay_check`, `reek`, `typos_check`, `fasterer_check`) in parallel, with a colorized PASS/FAIL/WARN/SKIP summary and tally.
+- **`quality` task** — discovers every `*_check` task at run time (via a `depends_on` Proc) rather than a fixed list, and runs them all in parallel with a colorized PASS/FAIL/WARN/SKIP summary and tally.
+- **`test`, `rubocop`, `reek` renamed to `test_check`, `rubocop_check`, `reek_check`** — consistency with the other gates is what makes `quality`'s automatic discovery possible.
 - **`release` task** — prompts for confirmation unless `-y`/`--yes` is passed.
 - **`Asgard::Base` and `Asgard::Doctor` split into mixins** — `lib/asgard/base/{registry,dependency_graph,task_dsl,dispatch}.rb` and `lib/asgard/doctor/{task_sections,report}.rb`. No behavior change; drops both classes' Reek `TooManyMethods`/`TooManyInstanceVariables` warnings to zero.
 

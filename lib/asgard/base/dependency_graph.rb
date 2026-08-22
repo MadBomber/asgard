@@ -30,6 +30,13 @@ module Asgard
       #   depends_on :build, :lint                   # both sequential
       #   depends_on [:build, :lint]                 # build and lint in parallel
       #   depends_on :setup, [:build, :lint], :test  # setup, then build+lint, then test
+      #
+      # A sole Proc/lambda defers resolution to validate_deps! (after every
+      # .loki file has loaded), instead of now. It must return the same shape
+      # the splat form above would: an array of stages, each a Symbol
+      # (sequential) or Array (parallel group).
+      #
+      #   depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
       def depends_on(*tasks)
         @_pending_deps = tasks
       end
@@ -39,6 +46,7 @@ module Asgard
         _check_orphaned_deps!
         return if _deps.empty?
 
+        _resolve_lazy_deps!
         all_task_names = all_commands.keys.map(&:to_sym)
         _check_undefined_deps!(all_task_names)
         _check_dep_arities!
@@ -48,6 +56,38 @@ module Asgard
       end
 
       private
+
+      # Normalizes depends_on's raw splat args into a _deps-ready value: the
+      # sole Proc/lambda unresolved (see #depends_on), or a concrete stage
+      # array.
+      def _normalize_pending_deps(pending)
+        sole = pending.first
+        return sole if pending.size == 1 && sole.respond_to?(:call)
+
+        _stages_from(pending)
+      end
+
+      # Each element is a Symbol (sequential) or Array (parallel group).
+      def _stages_from(list)
+        list.map { |d| Array(d).map(&:to_sym) }
+      end
+
+      # Replaces any Proc-valued _deps entry (see #depends_on) with its
+      # resolved stage array. Runs once, after the full .loki chain has
+      # loaded, so the Proc can safely reference tasks defined in any file.
+      def _resolve_lazy_deps!
+        _deps.each do |task, stages_or_proc|
+          next unless stages_or_proc.respond_to?(:call)
+
+          _deps[task] = _stages_from(Array(_call_dep_proc(task, stages_or_proc)))
+        end
+      end
+
+      def _call_dep_proc(task, dep_proc)
+        dep_proc.call
+      rescue StandardError => e
+        raise Asgard::Error, "depends_on proc for '#{task}' raised #{e.class}: #{e.message}"
+      end
 
       def _check_orphaned_deps!
         pending = Array(@_pending_deps)

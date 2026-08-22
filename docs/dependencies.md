@@ -236,6 +236,42 @@ Because `*.loki` files are loaded alphabetically when `import "*.loki"` is used,
 
 ---
 
+## Dynamic Dependencies (Proc Form)
+
+`depends_on` normally takes a fixed list, recorded the moment the `def` right after it is encountered — which is why load order matters, as above. Pass a `Proc` or lambda instead, and that list is computed *later*, after every `.loki` file has finished loading, rather than at the point `depends_on` itself is evaluated:
+
+```ruby
+depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+desc "Run every *_check quality gate task in parallel"
+def quality
+  # ...
+end
+```
+
+This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in `.loki` files loaded *before* this one. A Proc is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point `depends_on` is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with `import "quality_rails.loki" if defined?(Rails)`.
+
+**Shape:** the Proc must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a `Symbol` (sequential) or `Array` (parallel group). The example above returns `[[:a_check, :b_check, :c_check]]`: one stage, containing every matching task, all running in parallel — the same shape as `depends_on [:a_check, :b_check, :c_check]`.
+
+**When it runs:** once, when `validate_deps!` runs (right after the `.loki` chain finishes loading, before any task dispatches). The resolved result replaces the Proc in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the *resolved* list — a Proc that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:
+
+```bash
+asgard quality
+# asgard: undefined task(s) in depends_on: ghost_check
+```
+
+**`self` inside the Proc:** since the Proc is written directly in a `class Tasks` body, it lexically captures that class as `self` — so it can call `all_commands`, `_deps`, or any other class-level method bare, without a `self.class.` prefix, even though it's actually invoked later from inside `validate_deps!`.
+
+**If the Proc raises**, the error is caught and re-raised as `Asgard::Error` naming the task it was declared for:
+
+```
+asgard: depends_on proc for 'quality' raised RuntimeError: boom
+```
+
+!!! tip
+    Reach for this only when the dependency list genuinely can't be known until every file has loaded — like "every task whose name ends in `_check`," discovered across several `.loki` files. For a fixed, known-upfront list, the plain array form is simpler and reads just as clearly.
+
+---
+
 ## depends_on Inside Subcommands
 
 `depends_on` works within subcommand classes exactly as it does at the top level. Dependency scope is per-class:

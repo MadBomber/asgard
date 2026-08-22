@@ -729,6 +729,78 @@ class TestAsgardDependsOn < Minitest::Test
   end
 end
 
+class TestAsgardDependsOnProc < Minitest::Test
+  def test_proc_dep_is_stored_unresolved_until_validate_deps
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) {}
+
+      depends_on -> { [[:build]] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    assert_respond_to klass._deps[:test], :call
+    klass.validate_deps!
+    assert_equal [[:build]], klass._deps[:test]
+  end
+
+  def test_proc_dep_runs_before_method
+    log = []
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) { log << :build }
+
+      depends_on -> { [[:build]] }
+      desc "test", "run tests"
+      define_method(:test) { log << :test }
+    end
+
+    klass.validate_deps!
+    klass.new([], {}, {}).invoke(:test)
+    assert_equal %i[build test], log
+  end
+
+  def test_proc_dep_body_runs_with_class_as_self
+    klass = Class.new(Asgard::Base) do
+      desc "a_check", "a"
+      define_method(:a_check) {}
+
+      desc "b_check", "b"
+      define_method(:b_check) {}
+
+      depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+      desc "quality", "aggregate"
+      define_method(:quality) {}
+    end
+
+    klass.validate_deps!
+    assert_equal [%i[a_check b_check]], klass._deps[:quality]
+  end
+
+  def test_proc_dep_error_is_wrapped_in_asgard_error
+    klass = Class.new(Asgard::Base) do
+      depends_on -> { raise "boom" }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "depends_on proc for 'test' raised RuntimeError: boom", error.message
+  end
+
+  def test_proc_dep_still_detects_undefined_task
+    klass = Class.new(Asgard::Base) do
+      depends_on -> { [[:ghost]] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "undefined task(s) in depends_on: ghost", error.message
+  end
+end
+
 class TestAsgardParallelDeps < Minitest::Test
   def test_parallel_deps_both_run_before_target
     log   = []

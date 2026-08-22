@@ -53,8 +53,7 @@ module Asgard
         return super if pending.empty?
         return super if private_method
 
-        # Each element is a Symbol (sequential) or Array (parallel group).
-        _deps[method_name.to_sym] = pending.map { |d| Array(d).map(&:to_sym) }
+        _deps[method_name.to_sym] = _normalize_pending_deps(pending)
         super
       end
     end

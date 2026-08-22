@@ -17,9 +17,12 @@ class Tasks
   end
 
   desc "Run every *_check quality gate task in parallel"
+  # A Proc defers resolution to validate_deps!, after every .loki file has
+  # loaded — so a *_check task from another file (e.g. quality_rails.loki's
+  # brakeman_check) is picked up too, with no need to redeclare anything here.
+  depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
   def quality
-    check_tasks = self.class.all_commands.keys.select { |name| name.end_with?("_check") }.sort
-    run_dep_group(check_tasks) if check_tasks.any?
+    check_tasks = self.class._deps.fetch(:quality, []).flatten.map(&:to_s)
 
     results = check_tasks.to_h do |name|
       [quality_gate_label(name), instance_variable_get("@#{name.delete_suffix("_check")}_result")]

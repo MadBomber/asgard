@@ -221,6 +221,15 @@ asgard ci executes:
   ci
 ```
 
+`depends_on` also accepts a `Proc`/lambda instead of a fixed list, resolved once every `.loki` file has finished loading rather than immediately — useful when the list can't be known upfront, e.g. "every task whose name ends in `_check`," discovered across several files:
+
+```ruby
+depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
+def quality = puts "running every *_check task..."
+```
+
+See [Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-form) for the full explanation.
+
 ---
 
 ## Variables

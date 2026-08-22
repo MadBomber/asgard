@@ -229,15 +229,14 @@ Tasks by file:
     xyzzy  .loki:15   active — redefines xyzzy.loki:6
 
   quality.loki
-    test           quality.loki:6
-    test_verbose   quality.loki:18
-    quality        quality.loki:24
-    rubocop        quality.loki:42
-    rubocop_fix    quality.loki:51
-    flog_check     quality.loki:56
-    flay_check     quality.loki:81
-    reek           quality.loki:98
-    reek_baseline  quality.loki:124
+    test          quality.loki:6
+    test_verbose  quality.loki:15
+    quality       quality.loki:21
+    rubocop       quality.loki:34
+    rubocop_fix   quality.loki:43
+    flog_check    quality.loki:48
+    flay_check    quality.loki:82
+    reek          quality.loki:104
 
   gem_tasks.loki
     console  gem_tasks.loki:6

@@ -3,6 +3,8 @@
 # Task is pre-defined by the gem — just reopen it to add tasks.
 
 import "quality.loki"
+import "quality_rails.loki" if defined?(Rails)
+
 import "gem_tasks.loki"
 import "git.loki"
 import "xyzzy.loki"  # An example for the --doctor flag
@@ -21,7 +23,7 @@ class Tasks
   default_task :quality
 
   header <<~HEAD
-    Porject:  #{@@project} (v#{project_version}) - #{@@project_desc}
+    Project:  #{@@project} (v#{project_version}) - #{@@project_desc}
     Root Dir: #{loki_up.parent}
     Default task: #{default_task}
   HEAD

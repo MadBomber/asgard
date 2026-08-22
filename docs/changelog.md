@@ -12,14 +12,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 
 - **`--doctor` built-in CLI flag** — diagnoses `.loki` resolution, import chains, and task definitions for the current directory. Handled directly in `Asgard.run!` (same pattern as `--version`), so it works even when a broken file, a circular/undefined dependency, or a silently redefined task would otherwise abort the whole process. Backed by the new `Asgard::Doctor` class. Includes a "Tasks by file" listing — every command grouped by the file it's defined in, as `file:line`, with any silently-overridden task annotated inline (`OVERRIDDEN by ...` / `active — redefines ...`). See [API Reference](api.md#asgarddoctor).
 - **`helper` DSL method** — defines a method available in both class context (e.g. inside `header`) and instance context (inside task methods) with a single declaration. Eliminates the manual `def self.name` + `no_commands { private def name = self.class.name }` boilerplate. Supports positional arguments, keyword arguments, and block arguments. See [Helper Methods](helpers.md).
-- **Flay and Reek quality gates** — `flay_check` checks for structural duplication (mass ≥ 150); `reek` checks code smells against a grandfathered baseline (`.quality/reek_baseline.txt`, regenerated via `reek_baseline`) so the gate only fails on new or worsened files.
+- **Flay and Reek quality gates** — `flay_check` checks for structural duplication (mass ≥ 150); `reek` checks code smells. Reviewed findings are grandfathered precisely, per method and detector, via `reek --todo`-generated `exclude:` entries in `.reek.yml` — a genuinely new smell still fails the gate even at an already-reviewed method.
 - **`test_verbose`, `console` tasks** — verbose test output and an IRB console with the gem loaded.
 - **`git.loki`** — per-repo `push`/`pull`/`fetch` tasks.
+- **`typos_check` / `typos_fix` tasks** — spell-checking via the external `typos` CLI (`brew install typos-cli`). Reports `SKIP` (not a failure) if `typos` isn't installed, with a one-line install hint.
+- **`fasterer_check` task** — performance-idiom suggestions from the `fasterer` gem, reported as `WARN` (non-blocking).
+- **`SKIP` / `WARN` quality-gate statuses** — alongside `PASS`/`FAIL`; only `FAIL` blocks `quality`.
+- Every quality gate now writes full detail to a `<gate>_output.txt` file (gitignored) and prints just a one-line summary to stdout.
+- **`asgard tree`** now shows the project header/footer, matching `asgard help`.
 
 ### Changed
 
-- **`quality` task** — now runs five gates (`test`, `rubocop`, `flog_check`, `flay_check`, `reek`) in parallel, with a colorized PASS/FAIL summary and pass/fail tally.
+- **`quality` task** — now runs seven gates (`test`, `rubocop`, `flog_check`, `flay_check`, `reek`, `typos_check`, `fasterer_check`) in parallel, with a colorized PASS/FAIL/WARN/SKIP summary and tally.
 - **`release` task** — prompts for confirmation unless `-y`/`--yes` is passed.
+- **`Asgard::Base` and `Asgard::Doctor` split into mixins** — `lib/asgard/base/{registry,dependency_graph,task_dsl,dispatch}.rb` and `lib/asgard/doctor/{task_sections,report}.rb`. No behavior change; drops both classes' Reek `TooManyMethods`/`TooManyInstanceVariables` warnings to zero.
 
 ### Fixed
 
@@ -27,6 +33,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 
 ### Removed
 
+- **`reek_baseline` / `ensure_quality_dir` tasks and `.quality/`** — superseded by precise per-method `exclude:` entries in `.reek.yml` (see the Reek gate entry above).
 - **`var` DSL method** — replaced by native Ruby class variables. Use `@@name ||= "value".freeze` in the class body. Class variables are visible in all task instance methods and in subcommand subclasses, making them the correct tool for shared configuration in a Thor-based task runner. See [Variables](variables.md).
 
 ## [0.2.0] — 2026-05-29

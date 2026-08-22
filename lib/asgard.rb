@@ -19,7 +19,8 @@ module Asgard
 
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
-    abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
+    first = argv.first
+    abort "asgard: unknown command '#{first}'" if first&.start_with?("_")
     if argv.include?("--version")
       puts Asgard::VERSION
       exit

@@ -80,7 +80,7 @@ class Tasks
   class_option :color,
                type:    :boolean,
                default: true,
-               desc:    "Colorise output"
+               desc:    "Colorize output"
   no_negate :color
 end
 ```
@@ -88,13 +88,13 @@ end
 Help output before `no_negate`:
 
 ```
-[--color], [--no-color], [--skip-color]  # Colorise output
+[--color], [--no-color], [--skip-color]  # Colorize output
 ```
 
 Help output after `no_negate`:
 
 ```
-[--color]                                # Colorise output
+[--color]                                # Colorize output
 ```
 
 `no_negate` accepts multiple option names in a single call:

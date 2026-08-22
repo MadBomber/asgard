@@ -1,5 +1,6 @@
 site
 Gemfile.lock
+*_output.txt
 /.bundle/
 /.yardoc
 /_yardoc/

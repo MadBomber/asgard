@@ -13,9 +13,10 @@ detectors:
   NilCheck:
     enabled: false
 
-  # Default is 5 — too tight for the dispatch/graph-building methods in Base and Doctor.
+  # Disabled: method size/complexity is already covered by Flog (the primary
+  # complexity gate) and RuboCop's Metrics/MethodLength.
   TooManyStatements:
-    max_statements: 10
+    enabled: false
 
   # Default is 4 — Doctor legitimately tracks several pieces of diagnostic state.
   TooManyInstanceVariables:
@@ -33,6 +34,67 @@ detectors:
       - k    # key
       - p    # path
       - t    # task / thread
+
+  # Reviewed and accepted as false positives / intentional design, per method
+  # (generated with `reek --todo` and hand-curated — see project review notes).
+  # Unlike a count-based baseline, this is precise: it grandfathers exactly
+  # these smells at exactly these methods, so a genuinely new smell at a new
+  # or existing method still fails the gate even if it doesn't change the
+  # file's total warning count.
+  Attribute:
+    exclude:
+      - Asgard::Doctor::ImportTracer#doctor # needs to stay settable/resettable per doctor run
+
+  BooleanParameter:
+    exclude:
+      - Asgard::Base#help          # must match Thor's positional super signature exactly
+      - Asgard::Shell#sh           # silent: is the real public API contract
+      - Asgard::Shell#shebang      # same
+
+  ControlParameter:
+    exclude:
+      - Asgard::Shell#sh
+      - Asgard::Shell#shebang
+
+  DuplicateMethodCall:
+    exclude:
+      - Asgard::Base::Dispatch#acquire_run_token  # done.include?(target): check, then poll-until-true
+      - Asgard::Base::Dispatch#run_dep_group      # errors.size: two branches of one guard
+      - Asgard::Doctor::Report#print_report       # puts divider: intentional top+bottom rule
+      - Asgard::Doctor::Report#summary_line       # errors.zero?: sequential guard clauses
+      - Asgard::Doctor#load_chain                 # Base.subclasses: before/after snapshot diff
+      - Kernel#import_up                          # "not found" warned from two independent branches
+      - Asgard#self.run!                          # Base.subclasses snapshot diff; e.message in separate rescues
+      - Asgard::Base#tree                          # say "\n": intentional blank line before and after the tree
+
+  FeatureEnvy:
+    exclude:
+      - Asgard::Base::Dispatch#acquire_run_token
+      - Asgard::Base::Dispatch#run_dep_group
+      - Asgard::Base::Dispatch#signal_done
+      - Asgard::Base::Registry#inherited            # inherited(subclass) configuring subclass is the whole point
+      - Asgard::Doctor::TaskSections#class_task_file_map
+      - Asgard::Doctor::TaskSections#relative_path
+      - Asgard::Doctor::TaskSections#task_status
+      - Asgard::Shell#shebang                       # Tempfile.create(&block) idiom
+
+  InstanceVariableAssumption:
+    exclude:
+      - Asgard::Base    # class-level DSL state built up across method_added/inherited, not object init
+      - Asgard::Doctor  # multi-phase report builder; @ivars set across report_markers/load_chain/etc in `run`
+
+  NestedIterators:
+    exclude:
+      - Asgard::Base::DependencyGraph#_build_dep_graph
+      - Asgard::Base::DependencyGraph#_check_dep_arities!
+      - Asgard::Base::TaskDSL#no_negate               # inner block defines a method, isn't really iteration
+      - Asgard::Doctor::Report#print_task_sections
+      - Asgard::Doctor::TaskSections#class_task_file_map
+      - Asgard::Doctor::TaskSections#override_count
+
+  UtilityFunction:
+    exclude:
+      - Asgard::Base::DependencyGraph#_build_dep_graph # genuinely pure, but tightly coupled to this graph model
 
 exclude_paths:
   - test

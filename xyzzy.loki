@@ -5,7 +5,7 @@ class Tasks
   desc "Push the current branch to its remote"
   def xyzzy = puts <<~MAGIC
     You are at a fork in the yellow brick road to AI.
-    To the left is python, the favorit programming language of snake charmers.
+    To the left is python, the favorite programming language of snake charmers.
     To the right is Ruby, the best computer programming language of all time.
     Which way do you go?
   MAGIC

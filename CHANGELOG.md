@@ -143,6 +143,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`test`, `rubocop`, `reek` renamed to `test_check`, `rubocop_check`, `reek_check`** — for consistency with the other gates, all of which already ended in `_check`. This convention is what makes automatic discovery possible: `quality`'s `depends_on` Proc finds every task whose name matches `_check\z` rather than naming them one by one.
 
+### Removed (continued)
+
+- **`dagwood` runtime dependency** — replaced by stdlib `TSort` for the one thing it was still doing (cycle detection); the parallel-execution plan itself was already derived directly from `depends_on`'s stage list, not from a rebuilt DAG. `_build_dep_graph` (dead code — its return value was already unused) is deleted along with the gemspec entry.
+
+### Changed (continued 4)
+
+- **`validate_deps!` cycle detection now uses stdlib `TSort`** instead of `Dagwood::DependencyGraph#order` — a private `Graph` `Struct` (`edges` member, `include TSort`) owns the task→dependency Hash and the traversal, raising `TSort::Cyclic` on a cycle exactly as before (converted to `Asgard::CircularDependencyError`). `run_deps_for` no longer round-trips through a rebuilt DAG on every dispatch — it iterates `_deps[target]`'s stage groups directly, which is already the parallel-execution plan `depends_on` built.
+
+### Fixed (continued 2)
+
+- **`quality.loki`'s parallel `*_check` tasks raced on shared instance state** — each `*_check` task wrote its pass/fail status to an ivar on `self` (`@test_result`, `@rubocop_result`, ...) from inside a `Thread.new` spawned by the same parallel-dependency group — an unsynchronized write across threads that MRI's GVL happens to hide today but would not on JRuby/TruffleRuby. Fixed at the framework level: `Dispatch#run_dep_group` now collects each task's own return value into a `Hash` (via `Thread#value`), `run_deps_for` merges per-stage results, and a new `dep_result`/`dep_results` instance API (backed by `Thread.current`, not `self`) hands them to the task body that depends on them. `quality.loki` and `quality_rails.loki`'s `*_check` tasks now return their status as a plain value instead of writing to an ivar; `quality` reads `dep_result(name)` instead of `instance_variable_get`.
+
+### Added (continued 4)
+
+- **`examples/bad.loki`** — a worked demonstration of the race the fix above addresses: 4 parallel workers read-modify-write a shared `@hits` counter directly (the anti-pattern `quality.loki` used to have), reliably losing updates. Kept as a contrast example for what `dep_result`/`dep_results` is for.
+
 ## [0.2.0] - 2026-05-29
 
 ### Changed

@@ -3,24 +3,10 @@
 module Asgard
   class Base < Thor
     # Dependency declaration (`depends_on`) and full-graph validation
-    # (`validate_deps!`), backed by Dagwood for topological sort and cycle
-    # detection.
+    # (`validate_deps!`), backed by stdlib TSort for cycle detection.
     module DependencyGraph
       def _deps
         @_deps ||= {}
-      end
-
-      # Translate stages into a DependencyGraph-compatible hash.
-      #
-      #   stages: [[:one], [:two, :three], [:four]]
-      #   → { one: [], two: [:one], three: [:one], four: [:two, :three] }
-      def _build_dep_graph(stages)
-        graph = {}
-        stages.each_with_index do |stage, i|
-          prev_stage = i.positive? ? stages[i - 1] : []
-          stage.each { |task| graph[task] = prev_stage.dup }
-        end
-        graph
       end
 
       # Declare dependencies for the next task.
@@ -41,7 +27,7 @@ module Asgard
         @_pending_deps = tasks
       end
 
-      # Validate the full dep graph for cycles using Dagwood::DependencyGraph.
+      # Validate the full dep graph for cycles using stdlib TSort.
       def validate_deps!
         _check_orphaned_deps!
         return if _deps.empty?
@@ -117,10 +103,22 @@ module Asgard
         end
       end
 
+      # Runs a full topological sort purely to raise TSort::Cyclic on a cycle;
+      # the order itself isn't otherwise used (execution order comes from the
+      # stage groups each task's own depends_on declared).
       def _build_and_sort_graph(all_task_names)
         full_graph = all_task_names.to_h { |task| [task, _deps.fetch(task, []).flatten] }
-        Dagwood::DependencyGraph.new(full_graph).order
+        Graph.new(full_graph).tsort
       end
+
+      # Minimal TSort-able wrapper around a task => dependency-list Hash.
+      Graph = Struct.new(:edges) do
+        include TSort
+
+        def tsort_each_node(&) = edges.each_key(&)
+        def tsort_each_child(node, &) = edges.fetch(node).each(&)
+      end
+      private_constant :Graph
     end
   end
 end

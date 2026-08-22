@@ -16,28 +16,31 @@ class Tasks
   desc "Check for Rails security vulnerabilities with Brakeman"
   def brakeman_check
     output = `bundle exec brakeman -q 2>&1`
-    @brakeman_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("brakeman_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /warnings? found/i }&.strip || @brakeman_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /warnings? found/i }&.strip || result.to_s
     puts "Brakeman: #{summary} (see brakeman_output.txt)"
+    result
   end
 
   desc "Check for Rails anti-patterns with RailsBestPractices"
   def rails_best_practices_check
     output = `bundle exec rails_best_practices --silent --without-color . 2>&1`
-    @rails_best_practices_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("rails_best_practices_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /warning/i }&.strip || @rails_best_practices_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /warning/i }&.strip || result.to_s
     puts "RailsBestPractices: #{summary} (see rails_best_practices_output.txt)"
+    result
   end
 
   desc "Check for database schema issues with ActiveRecordDoctor"
   def active_record_doctor_check
     output = `bundle exec rake active_record_doctor 2>&1`
-    @active_record_doctor_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("active_record_doctor_output.txt", output)
     issue_count = output.lines.count { |l| l.strip != "" }
-    summary = @active_record_doctor_result == :pass ? "no issues found" : "#{issue_count} issue line(s) found"
+    summary = result == :pass ? "no issues found" : "#{issue_count} issue line(s) found"
     puts "ActiveRecordDoctor: #{summary} (see active_record_doctor_output.txt)"
+    result
   end
 end

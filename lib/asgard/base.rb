@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "thor"
-require "dagwood"
+require "tsort"
 
 require_relative "base/registry"
 require_relative "base/dependency_graph"

@@ -5,10 +5,11 @@ class Tasks
   desc "Run the test suite"
   def test_check
     output = `bundle exec ruby -Ilib:test test/test_asgard.rb 2>&1`
-    @test_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("test_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /\d+ runs,/ }&.strip || @test_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /\d+ runs,/ }&.strip || result.to_s
     puts "Tests: #{summary} (see test_output.txt)"
+    result
   end
 
   desc "Run the test suite with verbose output"
@@ -24,9 +25,7 @@ class Tasks
   def quality
     check_tasks = self.class._deps.fetch(:quality, []).flatten.map(&:to_s)
 
-    results = check_tasks.to_h do |name|
-      [quality_gate_label(name), instance_variable_get("@#{name.delete_suffix("_check")}_result")]
-    end
+    results = check_tasks.to_h { |name| [quality_gate_label(name), dep_result(name)] }
 
     print_quality_summary(results)
   end
@@ -34,10 +33,11 @@ class Tasks
   desc "Check code style with RuboCop"
   def rubocop_check
     output = `RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop 2>&1`
-    @rubocop_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("rubocop_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files inspected/ }&.strip || @rubocop_result.to_s
+    summary = output.lines.find { |l| l =~ /files inspected/ }&.strip || result.to_s
     puts "RuboCop: #{summary} (see rubocop_output.txt)"
+    result
   end
 
   desc "Auto-correct RuboCop offenses"
@@ -55,28 +55,29 @@ class Tasks
     flogger = Flog.new(all: true)
     flogger.flog(*Dir.glob("lib/**/*.rb"))
 
-    warnings  = []
-    @flog_failures = []
+    warnings = []
+    failures = []
 
     flogger.each_by_score do |method_name, score|
       next if method_name.end_with?("#none")
       if score > method_fail
-        @flog_failures << "#{"%.1f" % score}: #{method_name}"
+        failures << "#{"%.1f" % score}: #{method_name}"
       elsif score > method_warn
         warnings << "#{"%.1f" % score}: #{method_name}"
       end
     end
 
-    @flog_result = @flog_failures.empty? ? :pass : :fail
+    result = failures.empty? ? :pass : :fail
 
     lines = ["Flog warnings (#{method_warn}–#{method_fail}):"]
     lines.concat(warnings.empty? ? ["  (none)"] : warnings.map { |w| "  #{w}" })
     lines << ""
     lines << "Flog failures (>= #{method_fail}):"
-    lines.concat(@flog_failures.empty? ? ["  (none)"] : @flog_failures.map { |f| "  #{f}" })
+    lines.concat(failures.empty? ? ["  (none)"] : failures.map { |f| "  #{f}" })
     File.write("flog_output.txt", "#{lines.join("\n")}\n")
 
-    puts "Flog: #{@flog_failures.size} failure(s), #{warnings.size} warning(s) (see flog_output.txt)"
+    puts "Flog: #{failures.size} failure(s), #{warnings.size} warning(s) (see flog_output.txt)"
+    result
   end
 
   desc "Check for structural code duplication with Flay (mass >= 150)"
@@ -89,25 +90,27 @@ class Tasks
     flay.process(*Dir.glob("lib/**/*.rb"))
     flay.analyze
 
-    @flay_result = flay.hashes.empty? ? :pass : :fail
+    result = flay.hashes.empty? ? :pass : :fail
 
     File.open("flay_output.txt", "w") do |f|
-      if @flay_result == :pass
+      if result == :pass
         f.puts "Flay: no structural duplication detected (mass >= #{mass_threshold})"
       else
         flay.report(f)
       end
     end
     puts "Flay: #{flay.hashes.size} duplication pattern(s) found (mass >= #{mass_threshold}) (see flay_output.txt)"
+    result
   end
 
   desc "Check code smells with Reek"
   def reek_check
     output = `bundle exec reek lib 2>&1`
-    @reek_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("reek_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /total warnings?/ }&.strip || @reek_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /total warnings?/ }&.strip || result.to_s
     puts "Reek: #{summary} (see reek_output.txt)"
+    result
   end
 
   desc "Check spelling with typos"
@@ -115,11 +118,12 @@ class Tasks
     return skip_typos unless command_available?("typos")
 
     output = `typos 2>&1`
-    @typos_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("typos_output.txt", output)
     count   = output.lines.count { |l| l.start_with?("error:") }
-    summary = @typos_result == :pass ? "no typos found" : "#{count} typo(s) found"
+    summary = result == :pass ? "no typos found" : "#{count} typo(s) found"
     puts "Typos: #{summary} (see typos_output.txt)"
+    result
   end
 
   desc "Auto-correct typos"
@@ -134,28 +138,31 @@ class Tasks
     return skip_erb_lint if Dir.glob("**/*.erb").empty?
 
     output = `bundle exec erb_lint --lint-all --enable-all-linters 2>&1`
-    @erb_lint_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("erb_lint_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /error\(s\)|no errors were found/i }&.strip || @erb_lint_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /error\(s\)|no errors were found/i }&.strip || result.to_s
     puts "ERBLint: #{summary} (see erb_lint_output.txt)"
+    result
   end
 
   desc "Check for performance suggestions with Fasterer"
   def fasterer_check
     output = `bundle exec fasterer lib 2>&1`.gsub(/\e\[\d+m/, "")
-    @fasterer_result = $?.success? ? :pass : :warn
+    result = $?.success? ? :pass : :warn
     File.write("fasterer_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files? inspected/ }&.strip || @fasterer_result.to_s
+    summary = output.lines.find { |l| l =~ /files? inspected/ }&.strip || result.to_s
     puts "Fasterer: #{summary} (see fasterer_output.txt)"
+    result
   end
 
   desc "Check Gemfile.lock for known vulnerabilities with bundler-audit"
   def bundler_audit_check
     output = `bundle exec bundle-audit check --update 2>&1`
-    @bundler_audit_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("bundler_audit_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /vulnerabilit/i }&.strip || @bundler_audit_result.to_s
+    summary = output.lines.reverse.find { |l| l =~ /vulnerabilit/i }&.strip || result.to_s
     puts "Bundler Audit: #{summary} (see bundler_audit_output.txt)"
+    result
   end
 
   desc "Check architecture boundaries with ArchSpec"
@@ -163,11 +170,12 @@ class Tasks
     return skip_archspec unless command_available?("archspec") && File.exist?("Archspec.rb")
 
     output = `archspec check 2>&1`
-    @archspec_result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :fail
     File.write("archspec_output.txt", output)
     summary = output.lines.reverse.find { |l| l =~ /architecture violations? found|ArchSpec passed/i }&.strip ||
-      @archspec_result.to_s
+      result.to_s
     puts "ArchSpec: #{summary} (see archspec_output.txt)"
+    result
   end
 
   # Curated display labels for the *_check tasks defined in this file. A
@@ -199,20 +207,20 @@ class Tasks
     end
 
     def skip_typos
-      @typos_result = :skip
       puts "Typos: SKIPPED — `typos` command not found. Install it with `brew install typos-cli`."
+      :skip
     end
 
     def skip_erb_lint
-      @erb_lint_result = :skip
       puts "ERBLint: SKIPPED — no .erb files found."
+      :skip
     end
 
     def skip_archspec
-      @archspec_result = :skip
       reason = command_available?("archspec") ? "no Archspec.rb found" : "`archspec` command not found"
       puts "ArchSpec: SKIPPED — #{reason}. Install it with `gem install archspec` " \
         "and run `archspec init` to generate one."
+      :skip
     end
 
     # Status badges. Only :fail is blocking (aborts the quality task);

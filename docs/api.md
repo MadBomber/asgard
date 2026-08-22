@@ -118,7 +118,7 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 | `no_negate` | `no_negate(*names)` | Suppress `[--no-name]` / `[--skip-name]` help entries for one or more boolean class options. Call after the `class_option` declaration. |
 | `sh` | `sh(script, silent: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. |
 | `shebang` | `shebang(interpreter, script, silent: false)` | Instance method. Write `script` to a tempfile and execute it with `interpreter`. See the [Shell Helpers](shell.md) page for the full interpreter table. |
-| `validate_deps!` | `Tasks.validate_deps!` | Build and topologically sort the full dependency graph using Dagwood. Raises `Asgard::CircularDependencyError` on cycles. Called by `run!` at startup. |
+| `validate_deps!` | `Tasks.validate_deps!` | Build and topologically sort the full dependency graph using stdlib `TSort`. Raises `Asgard::CircularDependencyError` on cycles. Called by `run!` at startup. |
 | `_reset_ran!` | `Tasks._reset_ran!` | Clear the per-invocation task deduplication set. Called by `run!` before dispatching. Thread-safe via Mutex. |
 
 ### `header` and `footer` Accumulation
@@ -276,7 +276,6 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 | `_running` | `Set` of task name symbols currently executing (started but not yet finished). |
 | `_cond` | Hash of `ConditionVariable` objects keyed by task name; threads wait here when a dep is in-flight. |
 | `_ran_mutex` | `Mutex` protecting `_done`, `_running`, and `_cond` for thread-safe access. |
-| `_build_dep_graph(stages)` | Translates the stage array (from `_deps`) into a Dagwood-compatible hash. |
 
 ---
 
@@ -286,7 +285,7 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 
 1. Sets `$DEBUG` / `$VERBOSE` from `options` if the corresponding flags are present.
 2. Tries to acquire a run token (`acquire_run_token`): if the task is already in `_done`, returns immediately (skip); if it is in `_running`, waits on the `_cond` ConditionVariable until it finishes, then returns (skip); otherwise adds the task to `_running` and continues.
-3. Resolves dependency stages from `_deps`, builds the Dagwood graph, and executes groups (parallel groups in threads, sequential groups one at a time).
+3. Resolves dependency stages from `_deps` — already the parallel-group execution plan `depends_on` built — and executes each group in order (parallel groups in threads, sequential groups one at a time).
 4. Calls `command.run(self, *args)` to execute the task itself.
 5. In an `ensure` block, adds the task to `_done` and broadcasts on its `_cond` to wake any waiting threads.
 
@@ -316,7 +315,6 @@ end
 | Gem | Version | Purpose |
 |---|---|---|
 | [thor](https://github.com/rails/thor) | `~> 1.0` | CLI framework; provides the full task DSL |
-| [dagwood](https://rubygems.org/gems/dagwood) | `~> 1.0` | DAG library for dependency graph resolution and topological sort |
 | [dotenv](https://github.com/bkeepers/dotenv) | `~> 3.0` | `.env` file loading |
 
 ---

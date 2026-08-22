@@ -192,7 +192,7 @@ ci
 
 ## Circular Dependency Detection
 
-Asgard validates the full dependency graph using [Dagwood](https://rubygems.org/gems/dagwood) before any task runs. A circular dependency produces a clean error and exits:
+Asgard validates the full dependency graph using stdlib [TSort](https://docs.ruby-lang.org/en/master/TSort.html) before any task runs. A circular dependency produces a clean error and exits:
 
 ```ruby
 class Tasks

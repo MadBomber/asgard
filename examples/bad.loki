@@ -1,0 +1,63 @@
+# frozen_string_literal: true
+# Demonstrates review.md Critical Issue #1: parallel depends_on tasks that
+# write to shared instance state on `self` race each other.
+#
+# quality.loki's *_check tasks each write a *different* named ivar
+# (@test_result, @rubocop_result, ...), so MRI's GVL happens to hide the
+# race in practice — every write lands on a distinct slot. This file
+# isolates the actual hazard by having 4 parallel workers read-modify-write
+# the SAME @hits counter, the way any real *_check task would if it
+# accumulated into one shared results structure instead of one ivar each.
+#
+# `@hits = @hits + 1` is not one atomic operation — it's a read, an add,
+# then a write — and MRI can switch threads between those steps. Thread.pass
+# inside the loop forces exactly those switches, so the lost-update race
+# shows up reliably instead of "most of the time."
+#
+# Run with:
+#   asgard bad_race
+#
+# Expected @hits: 4000 (4 workers x 1000 increments each)
+# Actual: consistently lower — proof of the lost-update race described in
+# review.md item #1.
+
+BAD_RACE_WORKERS = 4
+BAD_RACE_REPS    = 1000
+
+class Tasks
+  desc "Increment the shared @hits counter, unsynchronized (worker)"
+  def racer_1 = bump_shared_counter
+
+  desc "Increment the shared @hits counter, unsynchronized (worker)"
+  def racer_2 = bump_shared_counter
+
+  desc "Increment the shared @hits counter, unsynchronized (worker)"
+  def racer_3 = bump_shared_counter
+
+  desc "Increment the shared @hits counter, unsynchronized (worker)"
+  def racer_4 = bump_shared_counter
+
+  depends_on [:racer_1, :racer_2, :racer_3, :racer_4]
+  desc "Show the lost-update race in @hits"
+  def bad_race
+    expected = BAD_RACE_WORKERS * BAD_RACE_REPS
+    puts "expected @hits == #{expected}, got #{@hits}"
+
+    if @hits == expected
+      puts "no corruption this run — the race is timing-dependent, rerun a few times"
+    else
+      puts "DATA RACE CONFIRMED: #{expected - @hits} update(s) lost"
+    end
+  end
+
+  no_commands do
+    def bump_shared_counter
+      @hits ||= 0
+      BAD_RACE_REPS.times do
+        current = @hits    # read
+        Thread.pass        # force a context switch before the write lands
+        @hits = current + 1 # write — another thread's read may already be stale
+      end
+    end
+  end
+end

@@ -72,16 +72,13 @@ depends_on :a, [:b, :c], :d   # stages: [[:a], [:b, :c], [:d]]
 
 **`invoke_command`** (Thor dispatch hook):
 1. Atomically check `@_ran_tasks` Set (with `@_ran_mutex`); return early if already run
-2. Resolve `@_deps` stages → `_build_dep_graph` → `Dagwood::DependencyGraph#parallel_order`
-3. For each parallel group: spawn one thread per task, join; single-task groups run inline
+2. Look up `@_deps[target]` — already the parallel-group stage list `depends_on` built
+3. For each stage group: spawn one thread per task, join; single-task groups run inline
 4. Execute the target task
-
-**`_build_dep_graph(stages)`** converts stages to a DAG hash:
-- `[[:a], [:b, :c], [:d]]` → `{ a: [], b: [:a], c: [:a], d: [:b, :c] }`
 
 ### Dependency Resolution
 
-Dagwood topologically sorts the DAG and returns parallel groups. The thread-safe deduplication (`_ran_tasks` Set + Mutex) ensures each task runs exactly once even when multiple tasks share a common dependency.
+`depends_on`'s stage list (`[[:a], [:b, :c], [:d]]`) *is* the parallel-execution plan — no separate graph library is needed to run it. Cycle detection is a separate concern, handled once in `validate_deps!` via stdlib `TSort` over the full `@_deps` graph (raises `TSort::Cyclic`, converted to `Asgard::CircularDependencyError`). The thread-safe deduplication (`_ran_tasks` Set + Mutex) ensures each task runs exactly once even when multiple tasks share a common dependency.
 
 ### Shell Helpers
 

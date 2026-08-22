@@ -82,4 +82,4 @@ The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_d
 ## Requirements
 
 - Ruby >= 3.2.0
-- Dependencies: [thor](https://github.com/rails/thor) `~> 1.0`, [dagwood](https://rubygems.org/gems/dagwood) `~> 1.0`, [dotenv](https://github.com/bkeepers/dotenv) `~> 3.0`
+- Dependencies: [thor](https://github.com/rails/thor) `~> 1.0`, [dotenv](https://github.com/bkeepers/dotenv) `~> 3.0`

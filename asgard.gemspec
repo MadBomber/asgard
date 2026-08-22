@@ -36,7 +36,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "thor",    "~> 1.0"
-  spec.add_dependency "dagwood", "~> 1.0"
   spec.add_dependency "dotenv",  "~> 3.0"
 
   # For more information and examples about making a new gem, check out our

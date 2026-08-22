@@ -28,6 +28,13 @@ module Asgard
           @_cond ||= Hash.new { |h, k| h[k] = ConditionVariable.new }
         end
 
+        # Completed tasks' return values, keyed by task name — lets a task
+        # already run by one thread hand its result to another thread that
+        # shares the dependency, without either touching `self`.
+        def _results
+          @_results ||= {}
+        end
+
         def _ran_mutex
           @_ran_mutex ||= Mutex.new
         end
@@ -38,6 +45,7 @@ module Asgard
             @_running = Set.new
             @_done    = Set.new
             @_cond    = Hash.new { |h, k| h[k] = ConditionVariable.new }
+            @_results = {}
           end
         end
       end
@@ -48,17 +56,43 @@ module Asgard
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
-        return unless acquire_run_token(target)
+        return cached_result(target) unless acquire_run_token(target)
 
+        result = nil
         begin
-          run_deps_for(target)
-          command.run(self, *)
+          resolved_deps = run_deps_for(target)
+          result = with_dep_results(resolved_deps) { command.run(self, *) }
         ensure
-          signal_done(target)
+          signal_done(target, result)
         end
+        result
+      end
+
+      # The results of +target+'s direct dependencies, keyed by task name —
+      # available to a task body while it runs, e.g. `dep_result(:test_check)`.
+      def dep_results
+        Thread.current[:asgard_dep_results] || {}
+      end
+
+      def dep_result(task)
+        dep_results[task.to_sym]
       end
 
       private
+
+      def with_dep_results(results)
+        thread   = Thread.current
+        previous = thread[:asgard_dep_results]
+        thread[:asgard_dep_results] = results
+        yield
+      ensure
+        thread[:asgard_dep_results] = previous
+      end
+
+      def cached_result(target)
+        klass = self.class
+        klass._ran_mutex.synchronize { klass._results[target] }
+      end
 
       def acquire_run_token(target)
         klass   = self.class
@@ -80,34 +114,39 @@ module Asgard
       end
 
       def run_deps_for(target)
-        klass  = self.class
-        stages = klass._deps[target]
-        return unless stages&.any?
+        stages = self.class._deps[target]
+        return {} unless stages&.any?
 
-        groups = Dagwood::DependencyGraph.new(klass._build_dep_graph(stages)).parallel_order
-        groups.each { |group| run_dep_group(group) }
+        stages.each_with_object({}) { |group, acc| acc.merge!(run_dep_group(group)) }
       end
 
       def run_dep_group(group)
-        if group.size > 1
-          threads = group.map { |task| Thread.new { run_dep(task) } }
-          errors  = []
-          threads.each { |t| begin; t.join; rescue => e; errors << e; end }
-          if errors.size == 1
-            raise errors.first
-          elsif errors.any?
-            errors.each { |e| warn "asgard: #{e.message}" }
-            raise Asgard::Error, "#{errors.size} parallel dependencies failed"
-          end
-        else
-          run_dep(group.first)
+        return { group.first => run_dep(group.first) } unless group.size > 1
+
+        threads = group.map { |task| [task, Thread.new { run_dep(task) }] }
+        errors  = []
+        results = {}
+        threads.each do |task, t|
+          results[task] = t.value
+        rescue => e
+          errors << e
         end
+
+        if errors.size == 1
+          raise errors.first
+        elsif errors.any?
+          errors.each { |e| warn "asgard: #{e.message}" }
+          raise Asgard::Error, "#{errors.size} parallel dependencies failed"
+        end
+
+        results
       end
 
-      def signal_done(target)
+      def signal_done(target, result)
         klass = self.class
         klass._ran_mutex.synchronize do
           klass._done.add(target)
+          klass._results[target] = result
           klass._cond[target].broadcast
         end
       end

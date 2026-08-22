@@ -16,7 +16,7 @@ bundle exec rake build         # build .gem into pkg/
 bundle exec rake install       # install locally
 
 # or use the gem's own .loki file:
-asgard test
+asgard test_check
 asgard quality
 asgard release
 ```

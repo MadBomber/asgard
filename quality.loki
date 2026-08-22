@@ -3,7 +3,7 @@
 
 class Tasks
   desc "Run the test suite"
-  def test
+  def test_check
     output = `bundle exec ruby -Ilib:test test/test_asgard.rb 2>&1`
     @test_result = $?.success? ? :pass : :fail
     File.write("test_output.txt", output)
@@ -16,24 +16,20 @@ class Tasks
     sh "bundle exec ruby -Ilib:test test/test_asgard.rb -v"
   end
 
-  desc "Run all quality gates (tests, RuboCop, Flog, Flay, Reek, Typos, Fasterer) in parallel"
-  depends_on [:test, :rubocop, :flog_check, :flay_check, :reek, :typos_check, :fasterer_check]
+  desc "Run every *_check quality gate task in parallel"
   def quality
-    results = {
-      "Tests + Coverage" => @test_result,
-      "RuboCop"          => @rubocop_result,
-      "Flog Complexity"  => @flog_result,
-      "Flay Duplication" => @flay_result,
-      "Reek Smells"      => @reek_result,
-      "Typos"            => @typos_result,
-      "Fasterer"         => @fasterer_result,
-    }
+    check_tasks = self.class.all_commands.keys.select { |name| name.end_with?("_check") }.sort
+    run_dep_group(check_tasks) if check_tasks.any?
+
+    results = check_tasks.to_h do |name|
+      [quality_gate_label(name), instance_variable_get("@#{name.delete_suffix("_check")}_result")]
+    end
 
     print_quality_summary(results)
   end
 
   desc "Check code style with RuboCop"
-  def rubocop
+  def rubocop_check
     output = `RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop 2>&1`
     @rubocop_result = $?.success? ? :pass : :fail
     File.write("rubocop_output.txt", output)
@@ -103,7 +99,7 @@ class Tasks
   end
 
   desc "Check code smells with Reek"
-  def reek
+  def reek_check
     output = `bundle exec reek lib 2>&1`
     @reek_result = $?.success? ? :pass : :fail
     File.write("reek_output.txt", output)
@@ -139,11 +135,38 @@ class Tasks
     puts "Fasterer: #{summary} (see fasterer_output.txt)"
   end
 
+  desc "Check Gemfile.lock for known vulnerabilities with bundler-audit"
+  def bundler_audit_check
+    output = `bundle exec bundle-audit check --update 2>&1`
+    @bundler_audit_result = $?.success? ? :pass : :fail
+    File.write("bundler_audit_output.txt", output)
+    summary = output.lines.reverse.find { |l| l =~ /vulnerabilit/i }&.strip || @bundler_audit_result.to_s
+    puts "Bundler Audit: #{summary} (see bundler_audit_output.txt)"
+  end
+
+  # Curated display labels for the *_check tasks defined in this file. A
+  # *_check task from elsewhere (e.g. quality_rails.loki's brakeman_check,
+  # loaded automatically once Rails is defined) isn't listed here — it just
+  # falls back to a titleized version of its own name in quality_gate_label.
+  QUALITY_GATE_LABELS = {
+    "test_check"    => "Tests + Coverage",
+    "rubocop_check" => "RuboCop",
+    "flog_check"    => "Flog Complexity",
+    "flay_check"    => "Flay Duplication",
+    "reek_check"    => "Reek Smells",
+  }.freeze
+
   no_commands do
     # true if +name+ resolves to an executable file somewhere on PATH.
     def command_available?(name)
       ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).any? do |dir|
         File.executable?(File.join(dir, name))
+      end
+    end
+
+    def quality_gate_label(check_name)
+      QUALITY_GATE_LABELS.fetch(check_name) do
+        check_name.delete_suffix("_check").split("_").map(&:capitalize).join(" ")
       end
     end
 

@@ -1,0 +1,19 @@
+# frozen_string_literal: true
+# Rails-specific quality gate tasks — imported by .loki only when the Rails
+# constant is defined.
+#
+# `quality` (in quality.loki) discovers every *_check task at run time by
+# introspecting Tasks.all_commands, rather than a fixed depends_on list — so
+# any *_check task defined here is automatically picked up by `asgard
+# quality` too, with no need to redeclare or extend anything.
+
+class Tasks
+  desc "Check for Rails security vulnerabilities with Brakeman"
+  def brakeman_check
+    output = `bundle exec brakeman -q 2>&1`
+    @brakeman_result = $?.success? ? :pass : :fail
+    File.write("brakeman_output.txt", output)
+    summary = output.lines.reverse.find { |l| l =~ /warnings? found/i }&.strip || @brakeman_result.to_s
+    puts "Brakeman: #{summary} (see brakeman_output.txt)"
+  end
+end

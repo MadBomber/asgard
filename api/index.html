@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1035,6 +1035,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#header-and-footer-accumulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        header and footer Accumulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#depends_on-argument-shapes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1055,6 +1066,17 @@
     <span class="md-ellipsis">
       
         Tasks Built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asgarddoctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Doctor
       
     </span>
   </a>
@@ -1297,6 +1319,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#header-and-footer-accumulation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        header and footer Accumulation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#depends_on-argument-shapes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1317,6 +1350,17 @@
     <span class="md-ellipsis">
       
         Tasks Built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asgarddoctor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Doctor
       
     </span>
   </a>
@@ -1449,7 +1493,7 @@
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="no">Asgard</span><span class="o">.</span><span class="n">run!</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span>
 </span></code></pre></div>
 <p><code>run!</code> guards against direct invocation of <code>_</code>-prefixed commands before any files are loaded:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">abort</span><span class="w"> </span><span class="s2">&quot;asgard: unknown command &#39;</span><span class="si">#{</span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="o">&amp;.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">abort</span><span class="w"> </span><span class="s2">"asgard: unknown command '</span><span class="si">#{</span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">'"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="o">&amp;.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>After loading task files, it calls <code>Tasks.validate_deps!</code> (circular dependency check) and <code>Tasks._reset_ran!</code> (clears per-invocation deduplication state) before starting Thor.</p>
 <hr />
@@ -1506,25 +1550,25 @@
 <h3 id="loki_up-details"><code>loki_up</code> Details<a class="headerlink" href="#loki_up-details" title="Permanent link">&para;</a></h3>
 <p>Despite the name, <code>loki_up</code> is not limited to <code>.loki</code> files — it locates any file by walking up the directory tree:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">loki_up</span><span class="w">                       </span><span class="c1"># find .loki (the project root marker)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;gem_tasks.loki&quot;</span><span class="p">)</span><span class="w">     </span><span class="c1"># find gem_tasks.loki in CWD or any ancestor</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;.env&quot;</span><span class="p">)</span><span class="w">               </span><span class="c1"># find the nearest .env file up the tree</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;VERSION&quot;</span><span class="p">)</span><span class="w">            </span><span class="c1"># find a VERSION file in CWD or any ancestor</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">"gem_tasks.loki"</span><span class="p">)</span><span class="w">     </span><span class="c1"># find gem_tasks.loki in CWD or any ancestor</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">".env"</span><span class="p">)</span><span class="w">               </span><span class="c1"># find the nearest .env file up the tree</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">loki_up</span><span class="p">(</span><span class="s2">"VERSION"</span><span class="p">)</span><span class="w">            </span><span class="c1"># find a VERSION file in CWD or any ancestor</span>
 </span></code></pre></div>
 <p>Returns a <code>Pathname</code> or <code>nil</code>. Does not load the file. <code>Pathname</code> is accepted by <code>import</code>, <code>dotenv</code>, <code>load</code>, and standard Ruby file methods — no <code>.to_s</code> conversion needed in common usage.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;gem_tasks.loki&quot;</span><span class="p">))</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">"gem_tasks.loki"</span><span class="p">))</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">import</span><span class="w"> </span><span class="n">path</span><span class="w">          </span><span class="c1"># Pathname accepted directly</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="k">end</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># Pass the located .env to dotenv — works from any subdirectory</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">dotenv</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">&quot;.env&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s2">&quot;.env&quot;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">dotenv</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">".env"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s2">".env"</span>
 </span></code></pre></div>
 <h3 id="import-details"><code>import</code> Details<a class="headerlink" href="#import-details" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">import</span><span class="w"> </span><span class="s2">&quot;build.loki&quot;</span><span class="w">                  </span><span class="c1"># relative — resolved from the calling file&#39;s directory</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">&quot;/home/shared/gem_tasks.loki&quot;</span><span class="w"> </span><span class="c1"># absolute</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">import</span><span class="w"> </span><span class="s2">&quot;*.loki&quot;</span><span class="w">                      </span><span class="c1"># all *.loki in the same directory as the caller</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">import</span><span class="w"> </span><span class="s2">&quot;../shared/*.loki&quot;</span><span class="w">            </span><span class="c1"># all *.loki one level up</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">import</span><span class="w"> </span><span class="s2">&quot;**/*.loki&quot;</span><span class="w">                   </span><span class="c1"># all *.loki recursively</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">import</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;tasks.loki&quot;</span><span class="p">)</span><span class="w">    </span><span class="c1"># Pathname accepted</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">import</span><span class="w"> </span><span class="s2">"build.loki"</span><span class="w">                  </span><span class="c1"># relative — resolved from the calling file's directory</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">"/home/shared/gem_tasks.loki"</span><span class="w"> </span><span class="c1"># absolute</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">import</span><span class="w"> </span><span class="s2">"*.loki"</span><span class="w">                      </span><span class="c1"># all *.loki in the same directory as the caller</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">import</span><span class="w"> </span><span class="s2">"../shared/*.loki"</span><span class="w">            </span><span class="c1"># all *.loki one level up</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">import</span><span class="w"> </span><span class="s2">"**/*.loki"</span><span class="w">                   </span><span class="c1"># all *.loki recursively</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">import</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"tasks.loki"</span><span class="p">)</span><span class="w">    </span><span class="c1"># Pathname accepted</span>
 </span></code></pre></div>
 <p><strong>Extension requirement:</strong> the path (or glob pattern) must end with <code>.loki</code>. Passing any other extension raises <code>ArgumentError</code>.</p>
 <p><strong>Glob behaviour:</strong> <code>Dir.glob</code> is used for pattern expansion. <code>*.loki</code> does not match <code>.loki</code> (the dotfile) — Ruby's glob excludes dotfiles from <code>*</code> by default. Files are loaded in the order <code>Dir.glob</code> returns them (sorted on Ruby ≥ 2.7).</p>
@@ -1535,8 +1579,8 @@
 - <code>debug?</code> true — also prints a skip message for each already-loaded file</p>
 <h3 id="import_up-details"><code>import_up</code> Details<a class="headerlink" href="#import_up-details" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">import_up</span><span class="w">                          </span><span class="c1"># find and load .loki</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">&quot;gem_tasks.loki&quot;</span><span class="w">         </span><span class="c1"># find and load gem_tasks.loki up the tree</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">&quot;*.loki&quot;</span><span class="w">                 </span><span class="c1"># find the nearest ancestor with *.loki files and load them all</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">"gem_tasks.loki"</span><span class="w">         </span><span class="c1"># find and load gem_tasks.loki up the tree</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">import_up</span><span class="w"> </span><span class="s2">"*.loki"</span><span class="w">                 </span><span class="c1"># find the nearest ancestor with *.loki files and load them all</span>
 </span></code></pre></div>
 <p><strong>Exact name:</strong> delegates to <code>loki_up</code> to find the file, then calls <code>import</code> with the absolute path. Returns <code>false</code> without raising if the file is not found.</p>
 <p><strong>Glob name:</strong> walks ancestor directories manually using <code>Dir.glob</code>. Stops at the <strong>first</strong> ancestor that has any matches and loads all of them — it does not continue walking after finding a match. Returns <code>false</code> if no ancestor contains matching files.</p>
@@ -1602,11 +1646,41 @@
 </tr>
 </tbody>
 </table>
+<h3 id="header-and-footer-accumulation"><code>header</code> and <code>footer</code> Accumulation<a class="headerlink" href="#header-and-footer-accumulation" title="Permanent link">&para;</a></h3>
+<p>Both <code>header</code> and <code>footer</code> accumulate across multiple calls and across multiple imported <code>.loki</code> files, but they accumulate in opposite directions by design.</p>
+<p><strong><code>header</code> appends</strong> — each call adds to the bottom of the header block:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># .loki</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">"quality.loki"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">import</span><span class="w"> </span><span class="s2">"gem_tasks.loki"</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="s2">"Project: myapp"</span><span class="w">       </span><span class="c1"># line 1</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="s2">"Root: </span><span class="si">#{</span><span class="n">loki_up</span><span class="o">.</span><span class="n">parent</span><span class="si">}</span><span class="s2">"</span><span class="w">  </span><span class="c1"># line 2</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Result in <code>asgard help</code>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Project: myapp
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>Root: /home/user/myapp
+</span></code></pre></div></p>
+<p><strong><code>footer</code> prepends</strong> — each call inserts at the top of the footer block:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">footer</span><span class="w"> </span><span class="s2">"Github: https://github.com/org/myapp"</span><span class="w">  </span><span class="c1"># ends up second</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="n">footer</span><span class="w"> </span><span class="s2">"Docs: https://myapp.example.com"</span><span class="w">        </span><span class="c1"># ends up first</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Result in <code>asgard help</code>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Docs: https://myapp.example.com
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>Github: https://github.com/org/myapp
+</span></code></pre></div></p>
+<p><strong>Why the asymmetry?</strong> When task files are split across multiple <code>.loki</code> files, the base <code>.loki</code> is loaded first and any imported files are loaded after. With <code>header</code>, earlier-loaded content appears first (the project banner stays at the top). With <code>footer</code>, later-loaded content appears first — this allows an imported file to inject a note that appears above the base footer rather than after it.</p>
+<p>In practice: if only one file calls <code>header</code> and one file calls <code>footer</code>, the direction doesn't matter. The difference is visible only when multiple <code>.loki</code> files both call <code>header</code> or both call <code>footer</code>.</p>
+<p>Neither <code>header</code> nor <code>footer</code> appears when running per-command help (<code>asgard help &lt;task&gt;</code>).</p>
+<hr />
 <h3 id="depends_on-argument-shapes"><code>depends_on</code> Argument Shapes<a class="headerlink" href="#depends_on-argument-shapes" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">                          </span><span class="c1"># single sequential dep</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="w">                  </span><span class="c1"># two sequential deps</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span><span class="w">             </span><span class="c1"># lint and typecheck run in parallel</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="w">  </span><span class="c1"># setup, then lint+build concurrently, then test</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">                          </span><span class="c1"># single sequential dep</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="w">                  </span><span class="c1"># two sequential deps</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span><span class="w">             </span><span class="c1"># lint and typecheck run in parallel</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="w">  </span><span class="c1"># setup, then lint+build concurrently, then test</span>
 </span></code></pre></div>
 <hr />
 <h2 id="tasks-built-ins"><code>Tasks</code> Built-ins<a class="headerlink" href="#tasks-built-ins" title="Permanent link">&para;</a></h2>
@@ -1636,6 +1710,11 @@
 <td><code>--version</code> flag. Handled by <code>Asgard.run!</code> before the <code>.loki</code> file is loaded — prints <code>Asgard::VERSION</code> and exits. <code>no_negate :version</code> suppresses the <code>[--no-version]</code> / <code>[--skip-version]</code> help entries.</td>
 </tr>
 <tr>
+<td><code>class_option :doctor</code></td>
+<td>class option</td>
+<td><code>--doctor</code> flag. Handled by <code>Asgard.run!</code> before the <code>.loki</code> file is loaded — runs <code>Asgard::Doctor.new.run</code> and exits. <code>no_negate :doctor</code> suppresses the <code>[--no-doctor]</code> / <code>[--skip-doctor]</code> help entries.</td>
+</tr>
+<tr>
 <td><code>debug?</code></td>
 <td>Kernel module function</td>
 <td>Returns <code>$DEBUG</code>. Available everywhere via <code>Kernel</code>.</td>
@@ -1647,6 +1726,85 @@
 </tr>
 </tbody>
 </table>
+<hr />
+<h2 id="asgarddoctor"><code>Asgard::Doctor</code><a class="headerlink" href="#asgarddoctor" title="Permanent link">&para;</a></h2>
+<p><code>asgard --doctor</code> diagnoses <code>.loki</code> resolution, import chains, and task definitions for the current directory. It deliberately bypasses the normal <code>Tasks</code> boot sequence used by <code>run!</code>, so it can still report findings in situations that would otherwise abort the whole process — a broken <code>.loki</code> file, a circular or undefined dependency, or a task silently redefined by a later <code>def</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>new</code></td>
+<td><code>Asgard::Doctor.new(dir = Dir.pwd)</code></td>
+<td>Builds a doctor scoped to <code>dir</code>.</td>
+</tr>
+<tr>
+<td><code>run</code></td>
+<td><code>doctor.run</code></td>
+<td>Runs the full diagnostic pass and prints a report to stdout. Does not raise or exit — callers (like <code>Asgard.run!</code>) decide what to do afterward.</td>
+</tr>
+<tr>
+<td><code>ancestor_markers</code></td>
+<td><code>Asgard::Doctor.ancestor_markers(dir) → Array&lt;String&gt;</code></td>
+<td>Every <code>.loki</code> marker from <code>dir</code> up to the filesystem root, nearest first. Unlike <code>loki_up</code>, it collects every match instead of stopping at the first, so shadowed ancestor markers can be reported.</td>
+</tr>
+<tr>
+<td><code>duplicate_methods</code></td>
+<td><code>Asgard::Doctor.duplicate_methods(method_log) → Hash</code></td>
+<td>Given an <code>Asgard::Base</code> subclass's <code>_method_log</code>, returns the subset of entries defined at more than one location — same file or different — which is exactly what a silent <code>def</code> override looks like.</td>
+</tr>
+</tbody>
+</table>
+<p>Findings fall into three levels: <code>:info</code> (what was found — the marker used, each import's result), <code>:warn</code> (shadowed markers that are never reached), and <code>:error</code> (load failures, redefined methods, dependency graph problems).</p>
+<p>After the findings, the report prints a <strong>Tasks by file</strong> section: every Thor command, grouped by the <code>.loki</code> file it's defined in, as <code>relative/path:line</code> — a format an editor can jump straight to. A task name defined at more than one location gets every definition annotated inline: the earlier one(s) are marked <code>OVERRIDDEN by &lt;file&gt;:&lt;line&gt; — never callable</code>, and the winning (last) definition is marked <code>active — redefines &lt;file&gt;:&lt;line&gt;</code>. This is the exact class of bug the flag was built to catch — a later <code>def</code> silently replacing an earlier one, with no error anywhere else in the toolchain. The report ends with a one-line summary and a count of problems/warnings, where each overridden task counts as one problem.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>asgard<span class="w"> </span>--doctor
+</span></code></pre></div>
+<p>The asgard repo ships its own live example of this: <code>xyzzy.loki</code> defines a <code>xyzzy</code> task, and the top-level <code>.loki</code> (which imports it) reopens <code>Tasks</code> and defines <code>xyzzy</code> again — so the one from <code>xyzzy.loki</code> is silently dead. Clone the repo and run <code>asgard --doctor</code> from its root to see this for yourself:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard doctor -- /path/to/asgard
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>============================================================
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  [INFO] using .loki marker: /path/to/asgard/.loki
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  [INFO] import "quality.loki" -&gt; /path/to/asgard/quality.loki
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>  [INFO] import "gem_tasks.loki" -&gt; /path/to/asgard/gem_tasks.loki
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>  [INFO] import "git.loki" -&gt; /path/to/asgard/git.loki
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>  [INFO] import "xyzzy.loki" -&gt; /path/to/asgard/xyzzy.loki
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>Tasks by file:
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>  .loki
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    xyzzy  .loki:15   active — redefines xyzzy.loki:6
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>  quality.loki
+</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    test          quality.loki:6
+</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>    test_verbose  quality.loki:15
+</span><span id="__span-12-17"><a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>    quality       quality.loki:21
+</span><span id="__span-12-18"><a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>    rubocop       quality.loki:34
+</span><span id="__span-12-19"><a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>    rubocop_fix   quality.loki:43
+</span><span id="__span-12-20"><a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>    flog_check    quality.loki:48
+</span><span id="__span-12-21"><a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>    flay_check    quality.loki:82
+</span><span id="__span-12-22"><a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>    reek          quality.loki:104
+</span><span id="__span-12-23"><a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>
+</span><span id="__span-12-24"><a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>  gem_tasks.loki
+</span><span id="__span-12-25"><a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>    console  gem_tasks.loki:6
+</span><span id="__span-12-26"><a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>    build    gem_tasks.loki:16
+</span><span id="__span-12-27"><a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>    install  gem_tasks.loki:24
+</span><span id="__span-12-28"><a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>    release  gem_tasks.loki:31
+</span><span id="__span-12-29"><a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>
+</span><span id="__span-12-30"><a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>  git.loki
+</span><span id="__span-12-31"><a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>    push   git.loki:6
+</span><span id="__span-12-32"><a id="__codelineno-12-32" name="__codelineno-12-32" href="#__codelineno-12-32"></a>    pull   git.loki:9
+</span><span id="__span-12-33"><a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>    fetch  git.loki:12
+</span><span id="__span-12-34"><a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>
+</span><span id="__span-12-35"><a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>  xyzzy.loki
+</span><span id="__span-12-36"><a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>    xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:15 — never callable
+</span><span id="__span-12-37"><a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>============================================================
+</span><span id="__span-12-38"><a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>1 problem(s), 1 warning(s).
+</span></code></pre></div>
+<p>The warning is a shadowed ancestor <code>.loki</code> marker one directory further up the tree — unrelated to the override, and something you may or may not see depending on what's above the repo on your own machine.</p>
 <hr />
 <h2 id="asgardbase-internal-class-methods"><code>Asgard::Base</code> Internal Class Methods<a class="headerlink" href="#asgardbase-internal-class-methods" title="Permanent link">&para;</a></h2>
 <p>These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.</p>
@@ -1717,13 +1875,13 @@
 </tr>
 </tbody>
 </table>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">begin</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="no">Asgard</span><span class="o">.</span><span class="n">run!</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">rescue</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">CircularDependencyError</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">e</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="c1"># This is already handled inside run! — you only need this</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="c1"># if you call validate_deps! directly in your own tooling.</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="nb">abort</span><span class="w"> </span><span class="s2">&quot;circular dependency: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">begin</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="no">Asgard</span><span class="o">.</span><span class="n">run!</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">rescue</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">CircularDependencyError</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="n">e</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="c1"># This is already handled inside run! — you only need this</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="c1"># if you call validate_deps! directly in your own tooling.</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="nb">abort</span><span class="w"> </span><span class="s2">"circular dependency: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
 <h2 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h2>
@@ -1933,7 +2091,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

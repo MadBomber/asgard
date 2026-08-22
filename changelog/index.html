@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1031,6 +1031,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#removed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1098,7 +1109,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1273,6 +1284,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#removed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1340,7 +1362,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1492,14 +1514,30 @@
 <h2 id="unreleased"><a href="https://github.com/MadBomber/asgard/compare/v0.2.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>--doctor</code> built-in CLI flag</strong> — diagnoses <code>.loki</code> resolution, import chains, and task definitions for the current directory. Handled directly in <code>Asgard.run!</code> (same pattern as <code>--version</code>), so it works even when a broken file, a circular/undefined dependency, or a silently redefined task would otherwise abort the whole process. Backed by the new <code>Asgard::Doctor</code> class. Includes a "Tasks by file" listing — every command grouped by the file it's defined in, as <code>file:line</code>, with any silently-overridden task annotated inline (<code>OVERRIDDEN by ...</code> / <code>active — redefines ...</code>). See <a href="../api/#asgarddoctor">API Reference</a>.</li>
 <li><strong><code>helper</code> DSL method</strong> — defines a method available in both class context (e.g. inside <code>header</code>) and instance context (inside task methods) with a single declaration. Eliminates the manual <code>def self.name</code> + <code>no_commands { private def name = self.class.name }</code> boilerplate. Supports positional arguments, keyword arguments, and block arguments. See <a href="../helpers/">Helper Methods</a>.</li>
+<li><strong>Flay and Reek quality gates</strong> — <code>flay_check</code> checks for structural duplication (mass ≥ 150); <code>reek</code> checks code smells. Reviewed findings are grandfathered precisely, per method and detector, via <code>reek --todo</code>-generated <code>exclude:</code> entries in <code>.reek.yml</code> — a genuinely new smell still fails the gate even at an already-reviewed method.</li>
+<li><strong><code>test_verbose</code>, <code>console</code> tasks</strong> — verbose test output and an IRB console with the gem loaded.</li>
+<li><strong><code>git.loki</code></strong> — per-repo <code>push</code>/<code>pull</code>/<code>fetch</code> tasks.</li>
+<li><strong><code>typos_check</code> / <code>typos_fix</code> tasks</strong> — spell-checking via the external <code>typos</code> CLI (<code>brew install typos-cli</code>). Reports <code>SKIP</code> (not a failure) if <code>typos</code> isn't installed, with a one-line install hint.</li>
+<li><strong><code>fasterer_check</code> task</strong> — performance-idiom suggestions from the <code>fasterer</code> gem, reported as <code>WARN</code> (non-blocking).</li>
+<li><strong><code>SKIP</code> / <code>WARN</code> quality-gate statuses</strong> — alongside <code>PASS</code>/<code>FAIL</code>; only <code>FAIL</code> blocks <code>quality</code>.</li>
+<li>Every quality gate now writes full detail to a <code>&lt;gate&gt;_output.txt</code> file (gitignored) and prints just a one-line summary to stdout.</li>
+<li><strong><code>asgard tree</code></strong> now shows the project header/footer, matching <code>asgard help</code>.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>quality</code> task</strong> — all three gates (<code>test</code>, <code>rubocop</code>, <code>flog_check</code>) now run in parallel. Each gate captures its own pass/fail result; output is suppressed on pass and filtered to failures only on fail. A summary table is printed after all gates complete.</li>
+<li><strong><code>quality</code> task</strong> — now runs seven gates (<code>test</code>, <code>rubocop</code>, <code>flog_check</code>, <code>flay_check</code>, <code>reek</code>, <code>typos_check</code>, <code>fasterer_check</code>) in parallel, with a colorized PASS/FAIL/WARN/SKIP summary and tally.</li>
+<li><strong><code>release</code> task</strong> — prompts for confirmation unless <code>-y</code>/<code>--yes</code> is passed.</li>
+<li><strong><code>Asgard::Base</code> and <code>Asgard::Doctor</code> split into mixins</strong> — <code>lib/asgard/base/{registry,dependency_graph,task_dsl,dispatch}.rb</code> and <code>lib/asgard/doctor/{task_sections,report}.rb</code>. No behavior change; drops both classes' Reek <code>TooManyMethods</code>/<code>TooManyInstanceVariables</code> warnings to zero.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>bin/asgard</code></strong> — switched from <code>require "asgard"</code> to <code>require_relative "../lib/asgard"</code> so the executable always loads the library shipped alongside it, instead of whatever <code>asgard</code> gem happens to be installed separately.</li>
 </ul>
 <h3 id="removed">Removed<a class="headerlink" href="#removed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>reek_baseline</code> / <code>ensure_quality_dir</code> tasks and <code>.quality/</code></strong> — superseded by precise per-method <code>exclude:</code> entries in <code>.reek.yml</code> (see the Reek gate entry above).</li>
 <li><strong><code>var</code> DSL method</strong> — replaced by native Ruby class variables. Use <code>@@name ||= "value".freeze</code> in the class body. Class variables are visible in all task instance methods and in subcommand subclasses, making them the correct tool for shared configuration in a Thor-based task runner. See <a href="../variables/">Variables</a>.</li>
 </ul>
 <h2 id="020-2026-05-29"><a href="https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0">0.2.0</a> — 2026-05-29<a class="headerlink" href="#020-2026-05-29" title="Permanent link">&para;</a></h2>
@@ -1524,7 +1562,7 @@
 <li><code>concurrent.loki</code> — demonstrates parallel task execution with interleaved thread output</li>
 <li>README sections: Helper methods, Subcommands, Thor wrapper callout</li>
 </ul>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Replaced <code>warn</code>/<code>exit 1</code> with <code>abort</code> throughout <code>run!</code> — <code>Kernel#warn</code> is silenced when <code>$VERBOSE = nil</code>, which is the default in Ruby 4.0; <code>abort</code> writes to <code>$stderr</code> regardless</li>
 </ul>
@@ -1741,7 +1779,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

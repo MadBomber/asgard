@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -708,6 +708,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#transitive-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transitive Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#circular-dependency-detection" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1183,6 +1194,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#transitive-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transitive Dependencies
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#circular-dependency-detection" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1316,38 +1338,38 @@
 <h2 id="sequential-dependencies">Sequential Dependencies<a class="headerlink" href="#sequential-dependencies" title="Permanent link">&para;</a></h2>
 <p>Bare symbols run one after another in the order declared:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Compile the project&quot;</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build&quot;</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile the project"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run the test suite&quot;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake test&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the test suite"</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:test</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Publish the gem&quot;</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rake release&quot;</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Publish the gem"</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake release"</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">end</span>
 </span></code></pre></div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>release<span class="w">   </span><span class="c1"># build → test → release</span>
 </span></code></pre></div>
 <p>Multiple sequential dependencies in a single <code>depends_on</code> call run left to right:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Clean, build, and test&quot;</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake package&quot;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Clean, build, and test"</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake package"</span>
 </span></code></pre></div>
 <hr />
 <h2 id="parallel-dependencies">Parallel Dependencies<a class="headerlink" href="#parallel-dependencies" title="Permanent link">&para;</a></h2>
 <p>Wrap symbols in an array to declare they can run concurrently. Asgard waits for all tasks in a parallel group to finish before moving to the next stage:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Check code style&quot;</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rubocop&quot;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run type checks&quot;</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">typecheck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec srb tc&quot;</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run type checks"</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">typecheck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec srb tc"</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run tests (after lint and typecheck)&quot;</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rake test&quot;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests (after lint and typecheck)"</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
 </span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="k">end</span>
 </span></code></pre></div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w">   </span><span class="c1"># lint ∥ typecheck → test</span>
@@ -1357,16 +1379,16 @@
 <h2 id="mixed-sequential-and-parallel">Mixed Sequential and Parallel<a class="headerlink" href="#mixed-sequential-and-parallel" title="Permanent link">&para;</a></h2>
 <p>Mix bare symbols and arrays in a single <code>depends_on</code> call. Execution proceeds stage by stage — each stage completes before the next begins:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Install dependencies&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle install&quot;</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Check code style&quot;</span><span class="p">;</span><span class="w">     </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rubocop&quot;</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Compile assets&quot;</span><span class="p">;</span><span class="w">       </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake assets:precompile&quot;</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run tests&quot;</span><span class="p">;</span><span class="w">            </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle exec rake test&quot;</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Post to Slack&quot;</span><span class="p">;</span><span class="w">        </span><span class="k">def</span><span class="w"> </span><span class="nf">notify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;curl $SLACK_WEBHOOK -d &#39;{</span><span class="se">\&quot;</span><span class="s2">text</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\&quot;</span><span class="s2">done</span><span class="se">\&quot;</span><span class="s2">}&#39;&quot;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install dependencies"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span><span class="p">;</span><span class="w">     </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span><span class="p">;</span><span class="w">       </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span><span class="p">;</span><span class="w">            </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Post to Slack"</span><span class="p">;</span><span class="w">        </span><span class="k">def</span><span class="w"> </span><span class="nf">notify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"curl $SLACK_WEBHOOK -d '{</span><span class="se">\"</span><span class="s2">text</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">done</span><span class="se">\"</span><span class="s2">}'"</span>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="c1"># setup first, then lint+build in parallel, then test, then notify</span>
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:notify</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Full CI pipeline&quot;</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;CI complete&quot;</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Full CI pipeline"</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"CI complete"</span>
 </span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="k">end</span>
 </span></code></pre></div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>ci
@@ -1386,76 +1408,112 @@
 <h2 id="deduplication">Deduplication<a class="headerlink" href="#deduplication" title="Permanent link">&para;</a></h2>
 <p>Each task runs at most once per <code>asgard</code> invocation. If multiple tasks declare the same dependency, it executes only on its first encounter:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Install gems&quot;</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;bundle install&quot;</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install gems"</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run tests&quot;</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake test&quot;</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Check style&quot;</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rubocop&quot;</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check style"</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rubocop"</span>
 </span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
 </span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="o">]</span>
-</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Test and lint (setup runs once)&quot;</span>
-</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;done&quot;</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test and lint (setup runs once)"</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"done"</span>
 </span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>When <code>asgard ci</code> runs, <code>setup</code> executes once even though both <code>test</code> and <code>lint</code> declare it as a dependency. The deduplication set is managed with a <code>Mutex</code> so parallel groups are also safe.</p>
 <hr />
+<h2 id="transitive-dependencies">Transitive Dependencies<a class="headerlink" href="#transitive-dependencies" title="Permanent link">&para;</a></h2>
+<p>When a dependency has its own dependencies, Asgard resolves them recursively before running the dependent task. The deduplication set ensures each task runs at most once regardless of how many paths lead to it.</p>
+<p>Consider this graph:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Fetch gems"</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the full pipeline"</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>ci</code> declares three sequential dependencies: <code>build</code>, <code>lint</code>, <code>setup</code>. But <code>build</code> itself depends on <code>setup</code>. The effective execution order is:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>setup          ← run as build's prerequisite
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  ↓
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>build
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  ↓
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>lint
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  ↓
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>(setup skipped — already done)
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  ↓
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>ci
+</span></code></pre></div>
+<p><code>setup</code> runs once — on its first encounter as <code>build</code>'s prerequisite. When <code>ci</code>'s own stage for <code>setup</code> is reached, the deduplication set skips it.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When a task is both a transitive dependency and a direct dependency, declare it only where it logically belongs — as a prerequisite of the task that needs it. Declaring it redundantly at the top level is harmless (deduplication handles it) but adds noise.</p>
+</div>
+<hr />
 <h2 id="circular-dependency-detection">Circular Dependency Detection<a class="headerlink" href="#circular-dependency-detection" title="Permanent link">&para;</a></h2>
 <p>Asgard validates the full dependency graph using <a href="https://rubygems.org/gems/dagwood">Dagwood</a> before any task runs. A circular dependency produces a clean error and exits:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:b</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Task A&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;a&quot;</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:a</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Task B&quot;</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;b&quot;</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:b</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task A"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"a"</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:a</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task B"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"b"</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard<span class="w"> </span>a
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># asgard: circular dependency — TSort::Cyclic: ...</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard<span class="w"> </span>a
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># asgard: circular dependency — TSort::Cyclic: ...</span>
 </span></code></pre></div>
 <p>No backtrace is shown — just a single diagnostic line.</p>
 <hr />
 <h2 id="depends_on-across-multiple-files">depends_on Across Multiple Files<a class="headerlink" href="#depends_on-across-multiple-files" title="Permanent link">&para;</a></h2>
 <p><code>depends_on</code> works across <code>.loki</code> files because all files reopen the same <code>class Tasks</code>. The dependency is recorded when the <code>def</code> is encountered, so load order matters:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># build.loki</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Compile&quot;</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake build&quot;</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">end</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="c1"># test.loki</span>
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">           </span><span class="c1"># build.loki must be loaded first</span>
-</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Test&quot;</span>
-</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rake test&quot;</span>
-</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># build.loki</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile"</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">end</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># test.loki</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">           </span><span class="c1"># build.loki must be loaded first</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test"</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>When <code>--auto-load</code> is used, <code>*.loki</code> files are loaded alphabetically, so <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order, use explicit <code>require_relative</code> from <code>.loki</code>.</p>
+<p>Because <code>*.loki</code> files are loaded alphabetically when <code>import "*.loki"</code> is used, <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order precisely, use explicit <code>import</code> calls with full filenames rather than a glob.</p>
 <hr />
 <h2 id="depends_on-inside-subcommands">depends_on Inside Subcommands<a class="headerlink" href="#depends_on-inside-subcommands" title="Permanent link">&para;</a></h2>
 <p><code>depends_on</code> works within subcommand classes exactly as it does at the top level. Dependency scope is per-class:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Run migrations&quot;</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rails db:migrate&quot;</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Load seed data&quot;</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">&quot;rails db:seed&quot;</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;Migrate then seed&quot;</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Done.&quot;</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="k">end</span>
-</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
-</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">&quot;db SUBCOMMAND&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Manage the database&quot;</span>
-</span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">&quot;db&quot;</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
-</span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="k">end</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-14-14"><a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
+</span><span id="__span-14-15"><a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
+</span><span id="__span-14-16"><a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
 </span></code></pre></div>
 <p>See <a href="../subcommands/">Subcommands</a> for the full guide.</p>
 
@@ -1635,7 +1693,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

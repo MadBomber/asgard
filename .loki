@@ -4,10 +4,15 @@
 
 import "quality.loki"
 import "gem_tasks.loki"
+import "git.loki"
+import "xyzzy.loki"  # An example for the --doctor flag
 
 class Tasks
   @@project      ||= "asgard".freeze
   @@project_desc ||= "CLI-task runner"
+
+  desc "xyzzy"
+  def xyzzy = puts "everything in Ruby metaprogramming is magic"
 
   helper(:project_version) do
     @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze

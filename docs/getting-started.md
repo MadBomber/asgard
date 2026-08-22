@@ -138,24 +138,26 @@ myproject/
   qa.loki        ← test and lint tasks
 ```
 
-Each `*.loki` file reopens `class Tasks`. To load them, pass `--auto-load` to the `asgard` command — they are loaded alphabetically before `.loki`. See [Task Files](task-files.md) for full details.
+Each `*.loki` file reopens `class Tasks`. To load them, call `import "*.loki"` at the top of `.loki` — files are loaded in alphabetical order. See [Task Files](task-files.md) for full details.
 
 ---
 
 ## Built-in Flags
 
-Every task automatically has three flags available, defined as `class_option` on `Tasks`:
+Every task automatically has four flags available, defined as `class_option` on `Tasks`:
 
 | Flag | Description |
 |---|---|
 | `--version` | Print the Asgard version and exit |
 | `--debug` | Set `$DEBUG = true` before the task runs |
 | `--verbose` | Set `$VERBOSE = true` before the task runs |
+| `--doctor` | Diagnose `.loki` resolution, imports, and task definitions for the CWD, then exit |
 
 ```bash
 asgard --version
 asgard hello --debug
 asgard hello --verbose
+asgard --doctor
 ```
 
 Inside a task body, use the `debug?` and `verbose?` predicates:

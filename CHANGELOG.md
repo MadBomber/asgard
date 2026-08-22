@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - Unreleased
+## [0.3.2] - Unreleased
 
 ### Added
 
@@ -102,6 +102,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`default_task` behaviour documented** — `docs/tasks.md` now notes that running `asgard` with no arguments displays the help message when `default_task` is not set.
 - **`loki_up` scope clarified in docs** — `docs/task-files.md` and `docs/api.md` now make explicit that `loki_up` locates any file by name, not just `.loki` files, with examples for `.env` and `VERSION`. The `dotenv loki_up(".env") || ".env"` pattern is shown as the canonical way to load a `.env` file from any subdirectory.
 - **`examples/.loki`** — updated to use explicit `import "*.loki"` (sibling files) and `import "subdir/import_demo.loki"` (subdirectory file), with comments explaining `import`, `import_up`, and `loki_up`.
+
+### Added (continued)
+
+- **`--doctor` built-in CLI flag** — diagnoses `.loki` resolution, import chains, and task definitions for the current directory, then exits. Handled directly in `Asgard.run!` before the `.loki` file is loaded (same pattern as `--version`), so it keeps working in exactly the situations that would otherwise abort the whole process: a broken `.loki` file, a circular or undefined dependency, or a task silently redefined by a later `def`. Backed by the new `Asgard::Doctor` class. The report includes a "Tasks by file" listing: every command grouped by the file it's defined in, printed as `relative/path:line` so an editor can jump straight to it. A task name defined at more than one location gets every definition annotated inline — the earlier one(s) as `OVERRIDDEN by <file>:<line> — never callable`, the winning (last) one as `active — redefines <file>:<line>` — replacing the old flat "Tasks#x redefined" summary line with an annotation right where the problem is. See [API Reference](docs/api.md#asgarddoctor).
+- **Flay and Reek quality gates** — `flay_check` checks for structural code duplication (mass ≥ 150); `reek` checks code smells, grandfathering the current per-file smell count in `.quality/reek_baseline.txt` (regenerate with the new `reek_baseline` task) so the gate only fails on new or worsened files, not pre-existing debt. Both run as part of `quality` alongside `test`, `rubocop`, and `flog_check`. A `.reek.yml` tunes several detectors to this codebase's conventions (no doc-comment requirement, short variable names, etc).
+- **`test_verbose` task** — runs the test suite with Minitest's verbose (`-v`) output.
+- **Colorized quality gate summary** — `quality`'s final report now prints a green/red PASS/FAIL badge per gate plus a passed/failed tally, via a shared `print_quality_summary` helper.
+- **`console` task** — opens an IRB console with the gem loaded (`bin/console` if present, otherwise `bundle exec irb`).
+- **`git.loki`** — per-repo git tasks (`push`, `pull`, `fetch`), imported from `.loki`.
+
+### Changed (continued)
+
+- **`release` task** now prompts for confirmation (`Release asgard vX.Y.Z to RubyGems? [y/N]`) unless `-y`/`--yes` is passed, before tagging and pushing.
+
+### Fixed (continued)
+
+- **`bin/asgard` could silently run the wrong `asgard` version** — the executable did `require "asgard"`, which (without `bundle exec`) is resolved by RubyGems independently of where the script itself lives, so it could load a separately-installed gem version instead of this repo's own `lib/`. Changed to `require_relative "../lib/asgard"` so the executable always loads the library that ships alongside it, regardless of what else is installed.
 
 ## [0.2.0] - 2026-05-29
 

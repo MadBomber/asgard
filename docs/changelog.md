@@ -10,11 +10,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 
 ### Added
 
+- **`--doctor` built-in CLI flag** — diagnoses `.loki` resolution, import chains, and task definitions for the current directory. Handled directly in `Asgard.run!` (same pattern as `--version`), so it works even when a broken file, a circular/undefined dependency, or a silently redefined task would otherwise abort the whole process. Backed by the new `Asgard::Doctor` class. Includes a "Tasks by file" listing — every command grouped by the file it's defined in, as `file:line`, with any silently-overridden task annotated inline (`OVERRIDDEN by ...` / `active — redefines ...`). See [API Reference](api.md#asgarddoctor).
 - **`helper` DSL method** — defines a method available in both class context (e.g. inside `header`) and instance context (inside task methods) with a single declaration. Eliminates the manual `def self.name` + `no_commands { private def name = self.class.name }` boilerplate. Supports positional arguments, keyword arguments, and block arguments. See [Helper Methods](helpers.md).
+- **Flay and Reek quality gates** — `flay_check` checks for structural duplication (mass ≥ 150); `reek` checks code smells against a grandfathered baseline (`.quality/reek_baseline.txt`, regenerated via `reek_baseline`) so the gate only fails on new or worsened files.
+- **`test_verbose`, `console` tasks** — verbose test output and an IRB console with the gem loaded.
+- **`git.loki`** — per-repo `push`/`pull`/`fetch` tasks.
 
 ### Changed
 
-- **`quality` task** — all three gates (`test`, `rubocop`, `flog_check`) now run in parallel. Each gate captures its own pass/fail result; output is suppressed on pass and filtered to failures only on fail. A summary table is printed after all gates complete.
+- **`quality` task** — now runs five gates (`test`, `rubocop`, `flog_check`, `flay_check`, `reek`) in parallel, with a colorized PASS/FAIL summary and pass/fail tally.
+- **`release` task** — prompts for confirmation unless `-y`/`--yes` is passed.
+
+### Fixed
+
+- **`bin/asgard`** — switched from `require "asgard"` to `require_relative "../lib/asgard"` so the executable always loads the library shipped alongside it, instead of whatever `asgard` gem happens to be installed separately.
 
 ### Removed
 

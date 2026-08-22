@@ -145,6 +145,51 @@ When `asgard ci` runs, `setup` executes once even though both `test` and `lint` 
 
 ---
 
+## Transitive Dependencies
+
+When a dependency has its own dependencies, Asgard resolves them recursively before running the dependent task. The deduplication set ensures each task runs at most once regardless of how many paths lead to it.
+
+Consider this graph:
+
+```ruby
+class Tasks
+  desc "Fetch gems"
+  def setup = sh "bundle install"
+
+  depends_on :setup
+  desc "Compile assets"
+  def build = sh "rake assets:precompile"
+
+  desc "Check code style"
+  def lint = sh "bundle exec rubocop"
+
+  depends_on :build, :lint, :setup
+  desc "Run the full pipeline"
+  def ci = puts "Done."
+end
+```
+
+`ci` declares three sequential dependencies: `build`, `lint`, `setup`. But `build` itself depends on `setup`. The effective execution order is:
+
+```
+setup          ← run as build's prerequisite
+  ↓
+build
+  ↓
+lint
+  ↓
+(setup skipped — already done)
+  ↓
+ci
+```
+
+`setup` runs once — on its first encounter as `build`'s prerequisite. When `ci`'s own stage for `setup` is reached, the deduplication set skips it.
+
+!!! tip
+    When a task is both a transitive dependency and a direct dependency, declare it only where it logically belongs — as a prerequisite of the task that needs it. Declaring it redundantly at the top level is harmless (deduplication handles it) but adds noise.
+
+---
+
 ## Circular Dependency Detection
 
 Asgard validates the full dependency graph using [Dagwood](https://rubygems.org/gems/dagwood) before any task runs. A circular dependency produces a clean error and exits:
@@ -187,7 +232,7 @@ class Tasks
 end
 ```
 
-When `--auto-load` is used, `*.loki` files are loaded alphabetically, so `build.loki` loads before `test.loki`. If you need to control load order, use explicit `require_relative` from `.loki`.
+Because `*.loki` files are loaded alphabetically when `import "*.loki"` is used, `build.loki` loads before `test.loki`. If you need to control load order precisely, use explicit `import` calls with full filenames rather than a glob.
 
 ---
 

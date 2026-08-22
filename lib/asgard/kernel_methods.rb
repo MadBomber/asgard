@@ -29,11 +29,15 @@ module Kernel
   end
   module_function :loki_up
 
-  def import(path)
+  # +from+ is the call-site location used to resolve a relative +path+. It
+  # defaults to the immediate caller, but is exposed as a keyword so a
+  # wrapper (e.g. Asgard::Doctor's import tracer, prepended via `super`)
+  # can thread through the *real* caller instead of its own frame.
+  def import(path, from: caller_locations(1, 1).first)
     path = path.to_s
     raise ArgumentError, "import: path must end with .loki (got #{path.inspect})" unless path.end_with?(".loki")
     unless File.absolute_path?(path)
-      caller_dir = File.dirname(caller_locations(1, 1).first.absolute_path)
+      caller_dir = File.dirname(from.absolute_path)
       path = File.expand_path(path, caller_dir)
     end
     paths = path =~ /[*?\[{]/ ? Dir.glob(path) : [path]

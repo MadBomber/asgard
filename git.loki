@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+# Per-repo git tasks — imported by .loki
+
+class Tasks
+  desc "Push the current branch to its remote"
+  def push = sh "git push"
+
+  desc "Pull (fast-forward only) from the remote"
+  def pull = sh "git pull --ff-only"
+
+  desc "Fetch from the remote"
+  def fetch = sh "git fetch"
+end

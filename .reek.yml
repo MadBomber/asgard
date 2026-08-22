@@ -1,0 +1,41 @@
+---
+detectors:
+
+  # Disabled: conflicts with project no-comment coding style.
+  IrresponsibleModule:
+    enabled: false
+
+  # Disabled: bang methods without non-bang counterparts are common in internal APIs.
+  MissingSafeMethod:
+    enabled: false
+
+  # Disabled: explicit nil checks are idiomatic Ruby (nil? / unless nil, etc.).
+  NilCheck:
+    enabled: false
+
+  # Default is 5 — too tight for the dispatch/graph-building methods in Base and Doctor.
+  TooManyStatements:
+    max_statements: 10
+
+  # Default is 4 — Doctor legitimately tracks several pieces of diagnostic state.
+  TooManyInstanceVariables:
+    max_instance_variables: 6
+
+  # Accept standard Ruby short-name conventions for limited-scope variables.
+  UncommunicativeVariableName:
+    accept:
+      - _    # intentionally ignored
+      - d    # dep / dir / data
+      - e    # rescue => e
+      - f    # file / finding
+      - h    # hash
+      - i    # index
+      - k    # key
+      - p    # path
+      - t    # task / thread
+
+exclude_paths:
+  - test
+  - docs
+  - coverage
+  - pkg

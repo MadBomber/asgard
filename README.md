@@ -23,7 +23,7 @@
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
-- <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, and <code>--version</code> built-in class options; header/footer DSL for static help text<br>
+- <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
 </table>

@@ -2,6 +2,15 @@
 # Gem lifecycle tasks — imported by .loki
 
 class Tasks
+  desc "Open IRB console with the gem loaded"
+  def console
+    if File.exist?("bin/console")
+      sh "bin/console"
+    else
+      sh "bundle exec irb -Ilib -r #{@@project}"
+    end
+  end
+
   desc "Build the gem package"
   depends_on :quality
   def build
@@ -16,11 +25,18 @@ class Tasks
     sh "gem install pkg/asgard-#{project_version}.gem"
   end
 
-  desc "Release to RubyGems"
+  desc "release", "Release gem to RubyGems (runs quality gate first)"
+  option :yes, aliases: "-y", type: :boolean, default: false, desc: "Skip confirmation prompt"
   depends_on :quality
   def release
     tag      = "v#{project_version}"
     gem_file = "pkg/asgard-#{project_version}.gem"
+
+    unless options[:yes]
+      print "Release #{@@project} v#{project_version} to RubyGems? [y/N] "
+      $stdout.flush
+      return puts "Aborted." unless $stdin.gets.strip.downcase == "y"
+    end
 
     abort "Working directory is not clean — commit or stash changes first." unless `git status --porcelain`.strip.empty?
     abort "Tag #{tag} already exists." unless `git tag -l #{tag}`.strip.empty?

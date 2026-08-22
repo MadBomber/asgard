@@ -18,7 +18,7 @@
 <li><strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code></li>
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
 <li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
-<li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, and <code>--verbose</code> available on every task</li>
+<li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, <code>--verbose</code>, and <code>--doctor</code> available on every task</li>
 </ul>
 </td>
 </tr>
@@ -72,7 +72,7 @@ The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_d
 | [Subcommands](subcommands.md) | Grouping tasks under a namespace |
 | [Shell Helpers](shell.md) | `sh`, `shebang`, and supported interpreters |
 | [Environment](environment.md) | Loading `.env` files with `dotenv` |
-| [Task Files](task-files.md) | `.loki` root marker, `--auto-load`, multi-file layout |
+| [Task Files](task-files.md) | `.loki` root marker, `import`, multi-file layout |
 | [API Reference](api.md) | Module methods, DSL methods, error classes |
 | [Examples](examples.md) | Working `.loki` files for every feature |
 | [Changelog](changelog.md) | Release history |

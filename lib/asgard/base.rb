@@ -16,6 +16,7 @@ module Asgard
         super
         Asgard::Base.subclasses << subclass
         subclass.instance_variable_set(:@_deps,              {})
+        subclass.instance_variable_set(:@_method_log,        Hash.new { |h, k| h[k] = [] })
         subclass.instance_variable_set(:@_pending_deps,      [])
         subclass.instance_variable_set(:@_pending_single_desc,      nil)
         subclass.instance_variable_set(:@_pending_single_desc_opts, nil)
@@ -27,6 +28,15 @@ module Asgard
 
       def _deps
         @_deps ||= {}
+      end
+
+      # Every source_location a method name has ever been defined at, in
+      # definition order — so a later `def` silently overriding an earlier
+      # one (same name, different file) is still visible after the fact.
+      # Doctor (`asgard --doctor`) is the consumer; asgard itself doesn't
+      # otherwise care once the last definition wins.
+      def _method_log
+        @_method_log ||= Hash.new { |h, k| h[k] = [] }
       end
 
       def _running
@@ -191,6 +201,11 @@ module Asgard
       public
 
       def method_added(method_name)
+        unless method_name.to_s.start_with?("_")
+          loc = instance_method(method_name).source_location
+          _method_log[method_name] << loc if loc
+        end
+
         if @_pending_single_desc && !no_commands?
           pending_desc = @_pending_single_desc
           pending_opts = @_pending_single_desc_opts || {}

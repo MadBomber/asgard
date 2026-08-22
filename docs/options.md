@@ -1,6 +1,6 @@
 # Options & Flags
 
-Asgard tasks use the full Thor option system. Options declared with `method_option` (alias: `option`) apply to a single task. Options declared with `class_option` apply to every task in the class. Asgard ships with three built-in `class_option` declarations on `Tasks`: `--debug`, `--verbose`, and `--version`.
+Asgard tasks use the full Thor option system. Options declared with `method_option` (alias: `option`) apply to a single task. Options declared with `class_option` apply to every task in the class. Asgard ships with four built-in `class_option` declarations on `Tasks`: `--debug`, `--verbose`, `--version`, and `--doctor`.
 
 ---
 
@@ -109,7 +109,7 @@ It has no effect on runtime behaviour — `--no-color` still works on the CLI; o
 
 ## Built-in Flags
 
-`Tasks` ships with three built-in `class_option` declarations — `--debug`, `--verbose`, and `--version` — all visible in the Options section of `asgard help`.
+`Tasks` ships with four built-in `class_option` declarations — `--debug`, `--verbose`, `--version`, and `--doctor` — all visible in the Options section of `asgard help`.
 
 ### `--version`
 
@@ -119,6 +119,16 @@ A `class_option :version` of type `:boolean`. Prints `Asgard::VERSION` and exits
 asgard --version
 # 0.3.0
 ```
+
+### `--doctor`
+
+A `class_option :doctor` of type `:boolean`. Diagnoses `.loki` resolution, import chains, and task definitions for the current directory, then exits. Handled by `Asgard.run!` before the `.loki` file is loaded (same pattern as `--version`) — deliberately so, since it needs to keep working in the exact situations that would otherwise abort `run!`: a broken `.loki` file, a circular or undefined dependency, or a task silently redefined by a later `def`. The report includes a "Tasks by file" listing — every command grouped by the file it's defined in, as `file:line` — with any silently-overridden task called out inline, right where it's defined. `no_negate :doctor` suppresses the `[--no-doctor]` / `[--skip-doctor]` variants:
+
+```bash
+asgard --doctor
+```
+
+See [`Asgard::Doctor` in the API Reference](api.md#asgarddoctor) for the full breakdown of what it checks.
 
 ### `--debug`
 
@@ -211,4 +221,4 @@ asgard _something
 # asgard: unknown command '_something'
 ```
 
-If you define your own methods on `Tasks`, avoid the `_` prefix to prevent them from being blocked. Built-in `class_option` declarations (like `--version`, `--debug`, `--verbose`) do not use the `_` prefix because they are options, not commands.
+If you define your own methods on `Tasks`, avoid the `_` prefix to prevent them from being blocked. Built-in `class_option` declarations (like `--version`, `--debug`, `--verbose`, `--doctor`) do not use the `_` prefix because they are options, not commands.

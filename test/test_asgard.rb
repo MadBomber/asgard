@@ -28,6 +28,26 @@ class TestAsgardRun < Minitest::Test
     end
   end
 
+  def test_doctor_flag_works_without_loki_file
+    Dir.mktmpdir do |dir|
+      out, _err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+      end
+      assert_match "no .loki file found", out
+    end
+  end
+
+  def test_doctor_flag_reports_clean_tree
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+      out, _err = capture_io do
+        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+      end
+      assert_match "No problems found", out
+    end
+  end
+
   def test_run_catches_circular_dep_in_non_tasks_subclass
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
@@ -989,6 +1009,17 @@ class TestAsgardBuiltinTasks < Minitest::Test
   def test_tasks_has_verbose_class_option
     assert Tasks.class_options.key?(:verbose)
   end
+
+  def test_tasks_has_doctor_class_option
+    assert Tasks.class_options.key?(:doctor)
+  end
+
+  def test_doctor_option_suppresses_negation_in_help
+    usage = Tasks.class_options[:doctor].usage
+    refute_match(/--no-doctor/, usage)
+    refute_match(/--skip-doctor/, usage)
+    assert_match(/--doctor/, usage)
+  end
 end
 
 class TestAsgardHeaderFooter < Minitest::Test
@@ -1251,5 +1282,178 @@ class TestAsgardDefaultTask < Minitest::Test
       end
     end
     assert_match ".rb:", err
+  end
+end
+
+class TestDoctorAncestorMarkers < Minitest::Test
+  def test_finds_nearest_first
+    Dir.mktmpdir do |root|
+      root  = File.realpath(root)
+      child = File.join(root, "child")
+      Dir.mkdir(child)
+      File.write(File.join(root,  ".loki"), "")
+      File.write(File.join(child, ".loki"), "")
+
+      markers = Asgard::Doctor.ancestor_markers(child)
+      assert_equal File.join(child, ".loki"), markers.first
+      assert_includes markers, File.join(root, ".loki")
+    end
+  end
+
+  def test_empty_when_no_marker_exists
+    Dir.mktmpdir do |dir|
+      assert_empty Asgard::Doctor.ancestor_markers(File.realpath(dir))
+    end
+  end
+end
+
+class TestDoctorDuplicateMethods < Minitest::Test
+  def test_flags_names_with_more_than_one_location
+    log = { each: [["a.loki", 1], ["a.loki", 9]], once: [["a.loki", 1]] }
+    dups = Asgard::Doctor.duplicate_methods(log)
+    assert_equal %i[each], dups.keys
+    assert_equal log[:each], dups[:each]
+  end
+
+  def test_flags_same_file_redefinition_not_only_cross_file
+    # This is the exact shape of the real bug this feature exists to catch:
+    # two `def each` in the *same* file, second one silently wins.
+    log = { each: [["ws_git.loki", 28], ["ws_git.loki", 36]] }
+    assert_equal %i[each], Asgard::Doctor.duplicate_methods(log).keys
+  end
+
+  def test_empty_when_every_name_defined_once
+    log = { a: [["x.loki", 1]], b: [["y.loki", 2]] }
+    assert_empty Asgard::Doctor.duplicate_methods(log)
+  end
+end
+
+class TestDoctor < Minitest::Test
+  def test_reports_no_loki_found
+    Dir.mktmpdir do |dir|
+      out, = capture_io { Asgard::Doctor.new(File.realpath(dir)).run }
+      assert_match "no .loki file found", out
+      assert_match "1 problem(s)", out
+    end
+  end
+
+  def test_reports_shadowed_ancestor_markers
+    Dir.mktmpdir do |root|
+      root  = File.realpath(root)
+      child = File.join(root, "child")
+      Dir.mkdir(child)
+      File.write(File.join(root,  ".loki"), "")
+      File.write(File.join(child, ".loki"), "")
+
+      out, = capture_io { Asgard::Doctor.new(child).run }
+      assert_match "using .loki marker: #{File.join(child, '.loki')}", out
+      assert_match "shadowed marker (never reached): #{File.join(root, '.loki')}", out
+    end
+  end
+
+  def test_reports_import_chain
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "extra.loki"), "")
+      File.write(File.join(dir, ".loki"), 'import "extra.loki"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match(/import "extra\.loki" -> .*extra\.loki/, out)
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("extra.loki") }
+  end
+
+  def test_reports_load_failure_without_crashing
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "this is not ruby (((")
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "load failed", out
+      assert_match "SyntaxError", out
+    end
+  end
+
+  def test_reports_undefined_dependency
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class Tasks
+          depends_on :doctor_test_ghost
+          desc "doctor_test_a", "a"
+          def doctor_test_a = nil
+        end
+      RUBY
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "undefined task(s) in depends_on: doctor_test_ghost", out
+    end
+  ensure
+    Tasks.class_eval { remove_method(:doctor_test_a) rescue nil }
+    Tasks._deps.delete(:doctor_test_a)
+    Tasks._method_log.delete(:doctor_test_a)
+    Tasks._reset_ran!
+  end
+
+  def test_detects_same_file_method_redefinition
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class Tasks
+          desc "doctor_test_dup", "first"
+          def doctor_test_dup = :first
+
+          desc "doctor_test_dup", "second"
+          def doctor_test_dup = :second
+        end
+      RUBY
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "doctor_test_dup  .loki:3   OVERRIDDEN by .loki:6", out
+      assert_match "doctor_test_dup  .loki:6   active — redefines .loki:3", out
+      assert_match "1 problem(s)", out
+    end
+  ensure
+    Tasks.class_eval { remove_method(:doctor_test_dup) rescue nil }
+    Tasks._method_log.delete(:doctor_test_dup)
+    Tasks._reset_ran!
+  end
+
+  def test_clean_tree_reports_no_problems
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        class Tasks
+          desc "doctor_test_clean", "ok"
+          def doctor_test_clean = nil
+        end
+      RUBY
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "No problems found", out
+    end
+  ensure
+    Tasks.class_eval { remove_method(:doctor_test_clean) rescue nil }
+    Tasks._method_log.delete(:doctor_test_clean)
+    Tasks._reset_ran!
+  end
+
+  def test_relative_import_still_resolves_against_the_loki_file_not_doctor
+    # Regression guard: Doctor's import tracer prepends `import` and calls
+    # `super`, which used to shift `caller_locations` by one frame and break
+    # resolution of a relative `import "x.loki"` path (see kernel_methods.rb's
+    # `from:` keyword, threaded through explicitly for exactly this reason).
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "sibling.loki"), "")
+      File.write(File.join(dir, ".loki"), 'import "sibling.loki"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      refute_match "load failed", out
+      assert_match "No problems found", out
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("sibling.loki") }
   end
 end

@@ -5,6 +5,7 @@ require_relative "asgard/kernel_methods"
 require_relative "asgard/shell"
 require_relative "asgard/base"
 require_relative "asgard/tasks"
+require_relative "asgard/doctor"
 
 module Asgard
   class Error < StandardError; end
@@ -21,6 +22,10 @@ module Asgard
     abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
     if argv.include?("--version")
       puts Asgard::VERSION
+      exit
+    end
+    if argv.include?("--doctor")
+      Asgard::Doctor.new.run
       exit
     end
     task_file = find_task_file or abort "asgard: no .loki file found in #{Dir.pwd}"

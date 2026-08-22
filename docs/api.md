@@ -121,6 +121,52 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 | `validate_deps!` | `Tasks.validate_deps!` | Build and topologically sort the full dependency graph using Dagwood. Raises `Asgard::CircularDependencyError` on cycles. Called by `run!` at startup. |
 | `_reset_ran!` | `Tasks._reset_ran!` | Clear the per-invocation task deduplication set. Called by `run!` before dispatching. Thread-safe via Mutex. |
 
+### `header` and `footer` Accumulation
+
+Both `header` and `footer` accumulate across multiple calls and across multiple imported `.loki` files, but they accumulate in opposite directions by design.
+
+**`header` appends** — each call adds to the bottom of the header block:
+
+```ruby
+# .loki
+import "quality.loki"
+import "gem_tasks.loki"
+
+class Tasks
+  header "Project: myapp"       # line 1
+  header "Root: #{loki_up.parent}"  # line 2
+end
+```
+
+Result in `asgard help`:
+```
+Project: myapp
+Root: /home/user/myapp
+```
+
+**`footer` prepends** — each call inserts at the top of the footer block:
+
+```ruby
+class Tasks
+  footer "Github: https://github.com/org/myapp"  # ends up second
+  footer "Docs: https://myapp.example.com"        # ends up first
+end
+```
+
+Result in `asgard help`:
+```
+Docs: https://myapp.example.com
+Github: https://github.com/org/myapp
+```
+
+**Why the asymmetry?** When task files are split across multiple `.loki` files, the base `.loki` is loaded first and any imported files are loaded after. With `header`, earlier-loaded content appears first (the project banner stays at the top). With `footer`, later-loaded content appears first — this allows an imported file to inject a note that appears above the base footer rather than after it.
+
+In practice: if only one file calls `header` and one file calls `footer`, the direction doesn't matter. The difference is visible only when multiple `.loki` files both call `header` or both call `footer`.
+
+Neither `header` nor `footer` appears when running per-command help (`asgard help <task>`).
+
+---
+
 ### `depends_on` Argument Shapes
 
 ```ruby
@@ -141,8 +187,76 @@ depends_on :setup, [:lint, :build], :test  # setup, then lint+build concurrently
 | `class_option :debug` | class option | `--debug` flag. Sets `$DEBUG = true` before any task runs. Boolean, default `false`. |
 | `class_option :verbose` | class option | `--verbose` flag. Sets `$VERBOSE = true` before any task runs. Boolean, default `false`. |
 | `class_option :version` | class option | `--version` flag. Handled by `Asgard.run!` before the `.loki` file is loaded — prints `Asgard::VERSION` and exits. `no_negate :version` suppresses the `[--no-version]` / `[--skip-version]` help entries. |
+| `class_option :doctor` | class option | `--doctor` flag. Handled by `Asgard.run!` before the `.loki` file is loaded — runs `Asgard::Doctor.new.run` and exits. `no_negate :doctor` suppresses the `[--no-doctor]` / `[--skip-doctor]` help entries. |
 | `debug?` | Kernel module function | Returns `$DEBUG`. Available everywhere via `Kernel`. |
 | `verbose?` | Kernel module function | Returns `$VERBOSE`. Available everywhere via `Kernel`. |
+
+---
+
+## `Asgard::Doctor`
+
+`asgard --doctor` diagnoses `.loki` resolution, import chains, and task definitions for the current directory. It deliberately bypasses the normal `Tasks` boot sequence used by `run!`, so it can still report findings in situations that would otherwise abort the whole process — a broken `.loki` file, a circular or undefined dependency, or a task silently redefined by a later `def`.
+
+| Method | Signature | Description |
+|---|---|---|
+| `new` | `Asgard::Doctor.new(dir = Dir.pwd)` | Builds a doctor scoped to `dir`. |
+| `run` | `doctor.run` | Runs the full diagnostic pass and prints a report to stdout. Does not raise or exit — callers (like `Asgard.run!`) decide what to do afterward. |
+| `ancestor_markers` | `Asgard::Doctor.ancestor_markers(dir) → Array<String>` | Every `.loki` marker from `dir` up to the filesystem root, nearest first. Unlike `loki_up`, it collects every match instead of stopping at the first, so shadowed ancestor markers can be reported. |
+| `duplicate_methods` | `Asgard::Doctor.duplicate_methods(method_log) → Hash` | Given an `Asgard::Base` subclass's `_method_log`, returns the subset of entries defined at more than one location — same file or different — which is exactly what a silent `def` override looks like. |
+
+Findings fall into three levels: `:info` (what was found — the marker used, each import's result), `:warn` (shadowed markers that are never reached), and `:error` (load failures, redefined methods, dependency graph problems).
+
+After the findings, the report prints a **Tasks by file** section: every Thor command, grouped by the `.loki` file it's defined in, as `relative/path:line` — a format an editor can jump straight to. A task name defined at more than one location gets every definition annotated inline: the earlier one(s) are marked `OVERRIDDEN by <file>:<line> — never callable`, and the winning (last) definition is marked `active — redefines <file>:<line>`. This is the exact class of bug the flag was built to catch — a later `def` silently replacing an earlier one, with no error anywhere else in the toolchain. The report ends with a one-line summary and a count of problems/warnings, where each overridden task counts as one problem.
+
+```bash
+asgard --doctor
+```
+
+The asgard repo ships its own live example of this: `xyzzy.loki` defines a `xyzzy` task, and the top-level `.loki` (which imports it) reopens `Tasks` and defines `xyzzy` again — so the one from `xyzzy.loki` is silently dead. Clone the repo and run `asgard --doctor` from its root to see this for yourself:
+
+```
+asgard doctor -- /path/to/asgard
+============================================================
+  [INFO] using .loki marker: /path/to/asgard/.loki
+  [INFO] import "quality.loki" -> /path/to/asgard/quality.loki
+  [INFO] import "gem_tasks.loki" -> /path/to/asgard/gem_tasks.loki
+  [INFO] import "git.loki" -> /path/to/asgard/git.loki
+  [INFO] import "xyzzy.loki" -> /path/to/asgard/xyzzy.loki
+
+Tasks by file:
+
+  .loki
+    xyzzy  .loki:15   active — redefines xyzzy.loki:6
+
+  quality.loki
+    test           quality.loki:6
+    test_verbose   quality.loki:18
+    quality        quality.loki:24
+    rubocop        quality.loki:42
+    rubocop_fix    quality.loki:51
+    flog_check     quality.loki:56
+    flay_check     quality.loki:81
+    reek           quality.loki:98
+    reek_baseline  quality.loki:124
+
+  gem_tasks.loki
+    console  gem_tasks.loki:6
+    build    gem_tasks.loki:16
+    install  gem_tasks.loki:24
+    release  gem_tasks.loki:31
+
+  git.loki
+    push   git.loki:6
+    pull   git.loki:9
+    fetch  git.loki:12
+
+  xyzzy.loki
+    xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:15 — never callable
+============================================================
+1 problem(s), 1 warning(s).
+```
+
+The warning is a shadowed ancestor `.loki` marker one directory further up the tree — unrelated to the override, and something you may or may not see depending on what's above the repo on your own machine.
 
 ---
 

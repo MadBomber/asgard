@@ -26,4 +26,10 @@ class Tasks < Asgard::Base
                default: false,
                desc:    "Show asgard version and exit"
   no_negate :version
+
+  class_option :doctor,
+               type:    :boolean,
+               default: false,
+               desc:    "Diagnose .loki resolution, imports, and task definitions for the CWD, then exit"
+  no_negate :doctor
 end

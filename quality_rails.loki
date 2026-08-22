@@ -6,6 +6,11 @@
 # introspecting Tasks.all_commands, rather than a fixed depends_on list — so
 # any *_check task defined here is automatically picked up by `asgard
 # quality` too, with no need to redeclare or extend anything.
+#
+# Note on rubocop-rails: it's a RuboCop plugin, not a standalone CLI, so it
+# has no *_check task of its own here. Add the gem to the app's Gemfile and
+# `require: rubocop-rails` in its .rubocop.yml — the existing rubocop_check
+# (quality.loki) picks up the added Rails cops automatically.
 
 class Tasks
   desc "Check for Rails security vulnerabilities with Brakeman"
@@ -15,5 +20,24 @@ class Tasks
     File.write("brakeman_output.txt", output)
     summary = output.lines.reverse.find { |l| l =~ /warnings? found/i }&.strip || @brakeman_result.to_s
     puts "Brakeman: #{summary} (see brakeman_output.txt)"
+  end
+
+  desc "Check for Rails anti-patterns with RailsBestPractices"
+  def rails_best_practices_check
+    output = `bundle exec rails_best_practices --silent --without-color . 2>&1`
+    @rails_best_practices_result = $?.success? ? :pass : :fail
+    File.write("rails_best_practices_output.txt", output)
+    summary = output.lines.reverse.find { |l| l =~ /warning/i }&.strip || @rails_best_practices_result.to_s
+    puts "RailsBestPractices: #{summary} (see rails_best_practices_output.txt)"
+  end
+
+  desc "Check for database schema issues with ActiveRecordDoctor"
+  def active_record_doctor_check
+    output = `bundle exec rake active_record_doctor 2>&1`
+    @active_record_doctor_result = $?.success? ? :pass : :fail
+    File.write("active_record_doctor_output.txt", output)
+    issue_count = output.lines.count { |l| l.strip != "" }
+    summary = @active_record_doctor_result == :pass ? "no issues found" : "#{issue_count} issue line(s) found"
+    puts "ActiveRecordDoctor: #{summary} (see active_record_doctor_output.txt)"
   end
 end

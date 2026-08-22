@@ -129,6 +129,17 @@ class Tasks
     sh "typos -w"
   end
 
+  desc "Check ERB templates for style and safety issues with ERBLint"
+  def erb_lint_check
+    return skip_erb_lint if Dir.glob("**/*.erb").empty?
+
+    output = `bundle exec erb_lint --lint-all --enable-all-linters 2>&1`
+    @erb_lint_result = $?.success? ? :pass : :fail
+    File.write("erb_lint_output.txt", output)
+    summary = output.lines.reverse.find { |l| l =~ /error\(s\)|no errors were found/i }&.strip || @erb_lint_result.to_s
+    puts "ERBLint: #{summary} (see erb_lint_output.txt)"
+  end
+
   desc "Check for performance suggestions with Fasterer"
   def fasterer_check
     output = `bundle exec fasterer lib 2>&1`.gsub(/\e\[\d+m/, "")
@@ -147,16 +158,30 @@ class Tasks
     puts "Bundler Audit: #{summary} (see bundler_audit_output.txt)"
   end
 
+  desc "Check architecture boundaries with ArchSpec"
+  def archspec_check
+    return skip_archspec unless command_available?("archspec") && File.exist?("Archspec.rb")
+
+    output = `archspec check 2>&1`
+    @archspec_result = $?.success? ? :pass : :fail
+    File.write("archspec_output.txt", output)
+    summary = output.lines.reverse.find { |l| l =~ /architecture violations? found|ArchSpec passed/i }&.strip ||
+      @archspec_result.to_s
+    puts "ArchSpec: #{summary} (see archspec_output.txt)"
+  end
+
   # Curated display labels for the *_check tasks defined in this file. A
   # *_check task from elsewhere (e.g. quality_rails.loki's brakeman_check,
   # loaded automatically once Rails is defined) isn't listed here — it just
   # falls back to a titleized version of its own name in quality_gate_label.
   QUALITY_GATE_LABELS = {
-    "test_check"    => "Tests + Coverage",
-    "rubocop_check" => "RuboCop",
-    "flog_check"    => "Flog Complexity",
-    "flay_check"    => "Flay Duplication",
-    "reek_check"    => "Reek Smells",
+    "test_check"     => "Tests + Coverage",
+    "rubocop_check"  => "RuboCop",
+    "flog_check"     => "Flog Complexity",
+    "flay_check"     => "Flay Duplication",
+    "reek_check"     => "Reek Smells",
+    "erb_lint_check" => "ERBLint",
+    "archspec_check" => "ArchSpec",
   }.freeze
 
   no_commands do
@@ -176,6 +201,18 @@ class Tasks
     def skip_typos
       @typos_result = :skip
       puts "Typos: SKIPPED — `typos` command not found. Install it with `brew install typos-cli`."
+    end
+
+    def skip_erb_lint
+      @erb_lint_result = :skip
+      puts "ERBLint: SKIPPED — no .erb files found."
+    end
+
+    def skip_archspec
+      @archspec_result = :skip
+      reason = command_available?("archspec") ? "no Archspec.rb found" : "`archspec` command not found"
+      puts "ArchSpec: SKIPPED — #{reason}. Install it with `gem install archspec` " \
+        "and run `archspec init` to generate one."
     end
 
     # Status badges. Only :fail is blocking (aborts the quality task);

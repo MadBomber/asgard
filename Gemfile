@@ -8,6 +8,7 @@ gemspec
 gem "irb"
 gem "rake", "~> 13.0"
 
+gem "archspec"
 gem "bundler-audit"
 gem "fasterer"
 gem "flay"

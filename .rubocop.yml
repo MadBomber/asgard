@@ -6,6 +6,12 @@ AllCops:
     - 'examples/**/*'
     - 'vendor/**/*'
 
+# Archspec.rb's capitalization is mandated by the archspec gem itself, not a
+# style choice — it won't look for a snake_case config file.
+Naming/FileName:
+  Exclude:
+    - 'Archspec.rb'
+
 # ── Style: disabled cops ───────────────────────────────────────────────────
 Style/StringLiterals:
   Enabled: false

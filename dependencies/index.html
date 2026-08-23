@@ -1485,7 +1485,7 @@
 </div>
 <hr />
 <h2 id="circular-dependency-detection">Circular Dependency Detection<a class="headerlink" href="#circular-dependency-detection" title="Permanent link">&para;</a></h2>
-<p>Asgard validates the full dependency graph using <a href="https://rubygems.org/gems/dagwood">Dagwood</a> before any task runs. A circular dependency produces a clean error and exits:</p>
+<p>Asgard validates the full dependency graph using stdlib <a href="https://docs.ruby-lang.org/en/master/TSort.html">TSort</a> before any task runs. A circular dependency produces a clean error and exits:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:b</span>
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task A"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"a"</span>

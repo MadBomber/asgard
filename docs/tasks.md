@@ -206,6 +206,46 @@ Without `default_task`, running `asgard` with no arguments displays the help mes
 
 ---
 
+## Abbreviated Command Matching
+
+Every task is a Thor command, and Thor resolves any unambiguous prefix of a command name to that command automatically — no Asgard code involved, and nothing to declare. Given:
+
+```ruby
+class Tasks
+  desc "Check code style with RuboCop"
+  def rubocop_check = sh "bundle exec rubocop"
+
+  desc "Run the test suite"
+  def test_check = sh "bundle exec rake test"
+
+  desc "Run the test suite with verbose output"
+  def test_verbose = sh "bundle exec rake test -v"
+
+  desc "Deploy to production"
+  def deploy = sh "cap production deploy"
+
+  desc "Deploy to staging"
+  def deploy_staging = sh "cap staging deploy"
+end
+```
+
+```bash
+asgard r             # same as: asgard rubocop_check — the only task starting with "r"
+asgard test_c        # same as: asgard test_check     — enough of the name to be unique
+asgard test          # Ambiguous command test matches [test_check, test_verbose]
+asgard deploy        # runs deploy, not deploy_staging — see below
+```
+
+Thor matches on a plain prefix (`command_name.start_with?(typed_string)`), so the shortest string that is still unique for your task set works. Two details worth knowing:
+
+- **An exact full name always wins**, even if it's also a prefix of another task. `asgard deploy` runs `deploy` itself, never the ambiguous-prefix error, because `deploy` is a defined command — not merely a prefix of `deploy_staging`.
+- **An ambiguous prefix produces a clean error listing every candidate** (`Ambiguous command X matches [...]`) rather than guessing or running the alphabetically-first match. Type enough of the name to disambiguate.
+
+!!! tip
+    Because matching depends on every task name currently defined, a short prefix that's unique today can become ambiguous tomorrow when a new task with the same stem is added — e.g. adding `rubocop_fix` alongside `rubocop_check` turns `asgard r` from a clean match into `Ambiguous command r matches [rubocop_check, rubocop_fix]`. Use [`map`](#command-aliases) below for a short name you want to guarantee stays stable regardless of what other tasks get added later.
+
+---
+
 ## Command Aliases
 
 `map` creates short aliases for existing tasks:

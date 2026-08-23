@@ -489,6 +489,33 @@ end
 
 ---
 
+## Abbreviated command matching
+
+Every task is a Thor command, so you don't have to type the full name — Thor resolves any unambiguous prefix automatically, with no extra code:
+
+```ruby
+class Tasks
+  desc "Compile the project"
+  def build = sh "rake build"
+
+  desc "Deploy to production"
+  def deploy = sh "cap production deploy"
+
+  desc "Deploy to staging"
+  def deploy_staging = sh "cap staging deploy"
+end
+```
+
+```bash
+asgard b        # same as: asgard build   — only task starting with "b"
+asgard depl     # Ambiguous command depl matches [deploy, deploy_staging]
+asgard deploy   # runs deploy — an exact match always wins, even over a shorter ambiguous prefix
+```
+
+This is Thor's own dispatch behavior, not an Asgard feature — it applies to every task in every `.loki` file automatically. When a prefix matches more than one task, Thor lists the candidates instead of guessing; type enough of the name to disambiguate, or use `map` (below) to pin a short name that stays stable even if a later-added task would otherwise make it ambiguous.
+
+---
+
 ## Command aliases
 
 `map` creates alternative names for a task:

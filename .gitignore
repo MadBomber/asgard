@@ -9,3 +9,4 @@ Gemfile.lock
 /pkg/
 /spec/reports/
 tmp/
+/notes/

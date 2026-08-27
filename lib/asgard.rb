@@ -40,5 +40,7 @@ module Asgard
     abort "asgard: circular dependency — #{e.message}"
   rescue Error => e
     abort "asgard: #{e.message}"
+  rescue Interrupt
+    exit(130)
   end
 end

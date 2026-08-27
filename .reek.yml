@@ -104,6 +104,7 @@ detectors:
       - Asgard::Base::DependencyGraph#_build_dep_graph # genuinely pure, but tightly coupled to this graph model
       - Asgard::Base::Dispatch#dep_results             # thread-local by design, not self — that's the whole point
       - Asgard::Base::Dispatch#with_dep_results        # same: stashes results on Thread.current, not self
+      - Asgard::Shell#shell_argv                       # extracted pure on purpose so it's testable without invoking system/exec
 
 exclude_paths:
   - test

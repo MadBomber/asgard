@@ -107,7 +107,7 @@ module Asgard
       # the order itself isn't otherwise used (execution order comes from the
       # stage groups each task's own depends_on declared).
       def _build_and_sort_graph(all_task_names)
-        full_graph = all_task_names.to_h { |task| [task, _deps.fetch(task, []).flatten] }
+        full_graph = all_task_names.to_h { |task| [task, _deps.fetch(task) { [] }.flatten] }
         Graph.new(full_graph).tsort
       end
 

@@ -48,11 +48,10 @@ module Asgard
         here   = caller_locations(1, 1).first if active
 
         if active && @_default_task_location
-          # rubocop:disable Style/StderrPuts -- warn bypasses $stderr in Ruby 4.0, breaking capture_io in tests
+          # rubocop:disable-next Style/StderrPuts -- warn bypasses $stderr in Ruby 4.0, breaking capture_io in tests
           $stderr.puts "asgard: default_task :#{meth} at #{here.path}:#{here.lineno} " \
                        "overrides default_task :#{@_default_task_name} set at " \
                        "#{@_default_task_location.path}:#{@_default_task_location.lineno}"
-          # rubocop:enable Style/StderrPuts
         end
         if active
           @_default_task_location = here

@@ -3,10 +3,16 @@
 # Task is pre-defined by the gem — just reopen it to add tasks.
 
 import "quality.loki"
-import "quality_rails.loki" if defined?(Rails)
+# asgard runs as a separate process outside the app it's checking, so
+# `defined?(Rails)` never sees the app's Rails constant. RAILS_ROOT — set in
+# a Rails repo's own .envrc (`export RAILS_ROOT=$RR`, after RR is defined)
+# — is the signal instead.
+import "quality_rails.loki" if ENV["RAILS_ROOT"]
 
 import "gem_tasks.loki"
 import "git.loki"
+import "doc_tasks.loki"
+
 import "xyzzy.loki"  # An example for the --doctor flag
 
 class Tasks

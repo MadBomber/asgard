@@ -1,6 +1,7 @@
 # frozen_string_literal: true
-# Rails-specific quality gate tasks — imported by .loki only when the Rails
-# constant is defined.
+# Rails-specific quality gate tasks — imported by .loki only when RAILS_ROOT
+# is set. asgard runs as a separate process outside the app it's checking,
+# so `defined?(Rails)` never sees the app's Rails constant.
 #
 # `quality` (in quality.loki) discovers every *_check task at run time by
 # introspecting Tasks.all_commands, rather than a fixed depends_on list — so

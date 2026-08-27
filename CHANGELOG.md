@@ -159,6 +159,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`examples/bad.loki`** — a worked demonstration of the race the fix above addresses: 4 parallel workers read-modify-write a shared `@hits` counter directly (the anti-pattern `quality.loki` used to have), reliably losing updates. Kept as a contrast example for what `dep_result`/`dep_results` is for.
 
+### Added (continued 5)
+
+- **`sh(script, exec: true)`** — hands the command the asgard process itself via `Kernel.exec` instead of forking. For a task's final, long-running command (a dev server, a REPL) this replaces the ruby process outright, so nothing sits resident in memory behind it and Ctrl-C is handled directly by the command instead of unwinding back through asgard. `doc_tasks.loki`'s `doc_server` task (`sh "mkdocs serve", exec: true`) is the motivating example. See [Shell Helpers](docs/shell.md#handing-off-with-exec).
+- **`bootstrap` and `env_info` tasks in `kitchen_sink.loki`** — demonstrate `sh` with a multi-line heredoc (routed through `bash -c`) and a single-line command, respectively.
+
+### Fixed (continued 3)
+
+- **Ctrl-C during a running `sh` command printed a raw `Interrupt` backtrace** — SIGINT hits the whole foreground process group, so asgard's own ruby process raised `Interrupt` independently of whatever the shelled-out command did with the signal, and it went uncaught, unwinding through Thor and printing a stack trace before exiting. `Asgard.run!` now rescues `Interrupt` and exits with the conventional 130 status.
+
 ## [0.2.0] - 2026-05-29
 
 ### Changed

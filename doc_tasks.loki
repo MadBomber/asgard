@@ -1,0 +1,21 @@
+# dev/doc_tasks.loki
+
+# TODO: create common tasks for documentation management
+class Tasks
+
+  if File.exist?(ENV['RR']+'/.config/tocer/configuration.yml')
+    desc "Management table of contents"
+    def tocer = sh "tocer help"
+  end
+
+
+  if File.exist?(ENV['RR']+'/mkdocs.yml')
+    desc "Documentation builder"
+    def doc_builder = sh "mkdocs build"
+
+    desc "Documentation server startup"
+    depends_on :doc_builder
+    def doc_server = sh "mkdocs serve", exec: true
+  end
+
+end

@@ -2,7 +2,7 @@
 
 Asgard provides two methods for running shell commands and scripts from within task bodies: `sh` for shell commands and heredocs, and `shebang` for polyglot scripts. Both are provided by `Asgard::Shell` and mixed into every `Tasks` instance.
 
-Both methods exit with the command's status code on failure — they do not raise Ruby exceptions.
+Both methods exit with the command's status code on failure — they do not raise Ruby exceptions. `sh` also accepts `exec: true` to replace the asgard process outright instead of forking — see [Handing Off with `exec`](#handing-off-with-exec).
 
 ---
 
@@ -79,6 +79,35 @@ class Tasks
   end
 end
 ```
+
+### Handing Off with `exec`
+
+Pass `exec: true` to hand the command the asgard process itself instead of forking a child. Under the hood this calls `Kernel.exec` rather than `system`, which replaces the running ruby process image with the command — asgard doesn't stick around waiting on it.
+
+Use this for a task's final, long-running command — a dev server, a REPL, anything meant to take over the terminal — so there's no idle ruby process sitting in memory alongside it, and Ctrl-C is handled directly by the command instead of unwinding back through asgard:
+
+```ruby
+class Tasks
+  desc "Documentation server startup"
+  depends_on :doc_builder
+  def doc_server = sh "mkdocs serve", exec: true
+end
+```
+
+Since the process is replaced, nothing after the `sh` call ever runs, and `depends_on` chains upstream of it must already have finished (they have — dependencies run before the task body).
+
+```ruby
+class Tasks
+  desc "Start a REPL — never returns to asgard"
+  def console
+    sh "bundle exec pry", exec: true
+    puts "unreachable"
+  end
+end
+```
+
+!!! note
+    `exec: true` only makes sense for a command meant to run for the lifetime of the process. Don't use it for a step with more work queued after it in the same task.
 
 ---
 

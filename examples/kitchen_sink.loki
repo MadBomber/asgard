@@ -181,6 +181,19 @@ class Tasks
     end
   end
 
+  # ── Asgard: sh — run shell commands, single-line and multi-line heredoc ────
+  desc "Show environment info (single-line sh)"
+  def env_info = sh "echo Running #{@@app_name} on $(uname -s)"
+
+  desc "Bootstrap the local environment (multi-line sh / heredoc)"
+  def bootstrap
+    sh <<~SHELL
+      echo "App:  #{@@app_name}"
+      echo "Ruby: $(ruby -v)"
+      echo "Date: $(date)"
+    SHELL
+  end
+
   # ── Thor: no_commands — public helper excluded from CLI and --help ──────────
   no_commands do
     def current_sha

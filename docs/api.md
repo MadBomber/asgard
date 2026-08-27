@@ -116,7 +116,7 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 | `header` | `header(text)` | Append a line of text shown above the commands list in `asgard help`. Each call adds another line. No-op for per-command help. |
 | `footer` | `footer(text)` | Prepend a line of text shown below the options block in `asgard help`. Each call inserts above the previous lines. No-op for per-command help. |
 | `no_negate` | `no_negate(*names)` | Suppress `[--no-name]` / `[--skip-name]` help entries for one or more boolean class options. Call after the `class_option` declaration. |
-| `sh` | `sh(script, silent: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. |
+| `sh` | `sh(script, silent: false, exec: false)` | Instance method. Run a shell command or multiline heredoc. Single-line → `system(script)`; multiline → `system("bash", "-c", script)`. Exits with the command's status on failure. With `exec: true`, replaces the asgard process via `Kernel.exec` instead of forking — see [Shell Helpers](shell.md#handing-off-with-exec). |
 | `shebang` | `shebang(interpreter, script, silent: false)` | Instance method. Write `script` to a tempfile and execute it with `interpreter`. See the [Shell Helpers](shell.md) page for the full interpreter table. |
 | `validate_deps!` | `Tasks.validate_deps!` | Build and topologically sort the full dependency graph using stdlib `TSort`. Raises `Asgard::CircularDependencyError` on cycles. Called by `run!` at startup. |
 | `_reset_ran!` | `Tasks._reset_ran!` | Clear the per-invocation task deduplication set. Called by `run!` before dispatching. Thread-safe via Mutex. |

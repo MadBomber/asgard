@@ -75,6 +75,8 @@ detectors:
       - Asgard::Base::Registry#inherited            # inherited(subclass) configuring subclass is the whole point
       - Asgard::Base::DependencyGraph#_normalize_pending_deps # small transform of its own argument
       - Asgard::Base::DependencyGraph#_call_dep_proc          # rescue => e; e.class/e.message is inherent
+      - Asgard::Base::DependencyGraph#_validate_dep_stage!    # pure shape check of its own argument
+      - Asgard::Base::DependencyGraph#_validate_dep_leaf!     # pure shape check of its own argument
       - Asgard::Doctor::TaskSections#class_task_file_map
       - Asgard::Doctor::TaskSections#relative_path
       - Asgard::Doctor::TaskSections#task_status

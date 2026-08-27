@@ -1,0 +1,51 @@
+# examples/depends_on_block/bad/.loki
+# BAD example: depends_on block returning a mis-shaped result.
+#
+# Compare with ../good/.loki, which does this correctly:
+#
+#   depends_on { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+#     ^                                                                ^
+#     one wrapping [ ] — this is "one stage, containing every matching
+#     task, all running in parallel."
+#
+# It's an easy typo to add a SECOND wrapping array, thinking the outer
+# array is "the list of stages" and the inner one is "this stage's tasks"
+# as two separate concerns:
+#
+#   depends_on { [[all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)]] }
+#                ^                                                        ^
+#                that's one stage too many — the middle array ends up
+#                *inside* a stage as a dependency, not as the stage itself.
+#
+# depends_on's block/Proc result is validated the moment it resolves
+# (during validate_deps!, before any task runs): every stage must be a
+# Symbol/String (sequential) or an Array of Symbol/String (parallel group)
+# — nesting one level deeper than that is rejected with Asgard::Error
+# instead of failing later with a confusing NoMethodError.
+#
+# Run with (from this directory):
+#   asgard quality
+#
+# Expected output (validate_deps! aborts before quality — or any other
+# task — ever runs):
+#   asgard: depends_on proc/block for 'quality' returned invalid dependency
+#   [:a_check, :b_check, :c_check] (Array) in a parallel group; expected a
+#   Symbol or String
+
+class Tasks
+  desc "Run the first check"
+  def a_check = puts "running a_check ..."
+
+  desc "Run the second check"
+  def b_check = puts "running b_check ..."
+
+  desc "Run the third check"
+  def c_check = puts "running c_check ..."
+
+  # BUG: double-wrapped — [[ ... ]] instead of [ ... ]. See comment above.
+  depends_on { [[all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)]] }
+  desc "Run every *_check task in parallel, then report"
+  def quality
+    puts "quality: all *_check tasks passed"
+  end
+end

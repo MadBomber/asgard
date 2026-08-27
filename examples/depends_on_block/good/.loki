@@ -1,0 +1,83 @@
+# examples/depends_on_block/good/.loki
+# GOOD example: depends_on with a block instead of a Proc/lambda.
+#
+# A block behaves exactly like `-> { ... }` — it defers resolution to
+# validate_deps! (once, after every .loki file has loaded) instead of
+# resolving the moment depends_on is evaluated. This is the real pattern
+# from this gem's own quality.loki: gather every task whose name ends in
+# `_check`, without having to know their names or load order upfront.
+#
+# The block's return value is validated once it resolves: it must be an
+# Array of stages, each a Symbol/String (sequential) or an Array of
+# Symbol/String (parallel group) — see ../bad/.loki for what happens when
+# that shape is wrong.
+#
+# `{ ... }` braces are used below for the short, single-line blocks (quality,
+# full_cycle) — standard Ruby style reserves `do ... end` for a block that
+# spans multiple statements, shown in smoke further down.
+#
+# Run with (from this directory):
+#   asgard quality
+#
+# Expected output:
+#   running a_check ...
+#   running b_check ...
+#   running c_check ...
+#   quality: all *_check tasks passed
+
+class Tasks
+  desc "Run the first check"
+  def a_check = puts "running a_check ..."
+
+  desc "Run the second check"
+  def b_check = puts "running b_check ..."
+
+  desc "Run the third check"
+  def c_check = puts "running c_check ..."
+
+  # self inside the block is the Tasks class (it's written directly in the
+  # class body), so all_commands can be called bare, with no self.class.
+  # prefix — even though the block itself isn't invoked until later.
+  depends_on { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+  desc "Run every *_check task in parallel, then report"
+  def quality
+    puts "quality: all *_check tasks passed"
+  end
+
+  # A block can also return a mix of sequential Symbols and parallel Arrays,
+  # exactly like the plain splat form: depends_on :setup, [:a_check, :b_check], :teardown
+  desc "Prepare fixtures before the checks run"
+  def setup = puts "setup: fixtures ready"
+
+  desc "Clean up fixtures after the checks run"
+  def teardown = puts "teardown: fixtures removed"
+
+  depends_on { [:setup, %i[a_check b_check], :teardown] }
+  desc "setup, then a_check+b_check in parallel, then teardown"
+  def full_cycle
+    puts "full_cycle: done"
+  end
+
+  # A block spanning multiple statements — local variables, some computation
+  # — reads more naturally as do...end than as one long `{ ... }` line.
+  # Whatever it does along the way, the last expression is still what gets
+  # returned and validated: here, [:setup, Array, :teardown], the same shape
+  # as full_cycle above.
+  #
+  # Gotcha: this block runs during validate_deps!, which happens *before*
+  # Thor parses this invocation's CLI options (see the Entry Point Flow in
+  # CLAUDE.md) — so checking `--verbose`/`--debug` in here would always see
+  # the pre-flag default, never what was actually passed on this run. Keep
+  # depends_on blocks limited to shaping the dependency graph itself.
+  depends_on do
+    all_checks  = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
+    slow_checks = %i[c_check]
+    fast_checks = all_checks - slow_checks
+
+    [:setup, fast_checks, :teardown]
+  end
+  desc "setup, then every *_check except the slow ones, then teardown"
+  def smoke
+    puts "smoke: done"
+  end
+end

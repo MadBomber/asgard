@@ -22,7 +22,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/). Asg
 - **`asgard tree`** now shows the project header/footer, matching `asgard help`.
 - **`bundler_audit_check` task** — `bundle-audit check --update` against `Gemfile.lock`; `FAIL` on any known vulnerability.
 - **`quality_rails.loki`** — imported only when `Rails` is defined; ships `brakeman_check` as a Rails security-scan example. No wiring needed — `quality` discovers it automatically (see `depends_on` below).
-- **`depends_on` accepts a Proc/lambda**, not just a fixed list — resolved once, in `validate_deps!`, after every `.loki` file has loaded, instead of immediately. Solves "load order matters" for a dependency list that can't be known upfront, e.g. every task ending in `_check` across several files. See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-form).
+- **`depends_on` accepts a Proc/lambda**, not just a fixed list — resolved once, in `validate_deps!`, after every `.loki` file has loaded, instead of immediately. Solves "load order matters" for a dependency list that can't be known upfront, e.g. every task ending in `_check` across several files. See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form).
+- **`depends_on` also accepts a block** — `depends_on { ... }` or `depends_on do ... end`, interchangeable with the Proc/lambda form above. Task arguments and a block can't be combined; doing so raises `Asgard::Error`.
+- **The Proc/lambda/block result is now shape-validated** once resolved — it must be an `Array` of `Symbol`/`String` (sequential) or `Array` of `Symbol`/`String` (parallel group) stages, nested no deeper. A bad shape raises a clear `Asgard::Error` naming the task and the offending value instead of a raw `NoMethodError`. See `examples/depends_on_block/{good,bad}/`.
 
 ### Changed
 

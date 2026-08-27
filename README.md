@@ -221,14 +221,28 @@ asgard ci executes:
   ci
 ```
 
-`depends_on` also accepts a `Proc`/lambda instead of a fixed list, resolved once every `.loki` file has finished loading rather than immediately — useful when the list can't be known upfront, e.g. "every task whose name ends in `_check`," discovered across several files:
+`depends_on` also accepts a `Proc`/lambda (or, equivalently, a block) instead of a fixed list, resolved once every `.loki` file has finished loading rather than immediately — useful when the list can't be known upfront, e.g. "every task whose name ends in `_check`," discovered across several files:
 
 ```ruby
 depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
 def quality = puts "running every *_check task..."
+
+depends_on { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
+def quality2 = puts "same, as a block..."
+
+# do...end for a block spanning multiple statements — braces are for
+# single-line blocks like the two above. The last expression is still what
+# gets returned and validated.
+depends_on do
+  checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
+  slow   = %i[c_check]
+
+  [checks - slow]
+end
+def quality3 = puts "same, minus the slow checks, as a multi-line block..."
 ```
 
-See [Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-form) for the full explanation.
+See [Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-block-form) for the full explanation.
 
 ---
 

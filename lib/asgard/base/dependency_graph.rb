@@ -17,13 +17,21 @@ module Asgard
       #   depends_on [:build, :lint]                 # build and lint in parallel
       #   depends_on :setup, [:build, :lint], :test  # setup, then build+lint, then test
       #
-      # A sole Proc/lambda defers resolution to validate_deps! (after every
-      # .loki file has loaded), instead of now. It must return the same shape
-      # the splat form above would: an array of stages, each a Symbol
-      # (sequential) or Array (parallel group).
+      # A sole Proc/lambda, or a block in place of the splat args, defers
+      # resolution to validate_deps! (after every .loki file has loaded),
+      # instead of now. It must return the same shape the splat form above
+      # would: an array of stages, each a Symbol (sequential) or Array
+      # (parallel group).
       #
       #   depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
-      def depends_on(*tasks)
+      #   depends_on { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
+      def depends_on(*tasks, &block)
+        if block
+          raise Asgard::Error, "depends_on accepts either task arguments or a block, not both" if tasks.any?
+
+          tasks = [block]
+        end
+
         @_pending_deps = tasks
       end
 
@@ -65,7 +73,9 @@ module Asgard
         _deps.each do |task, stages_or_proc|
           next unless stages_or_proc.respond_to?(:call)
 
-          _deps[task] = _stages_from(Array(_call_dep_proc(task, stages_or_proc)))
+          result = Array(_call_dep_proc(task, stages_or_proc))
+          _validate_dep_shape!(task, result)
+          _deps[task] = _stages_from(result)
         end
       end
 
@@ -73,6 +83,32 @@ module Asgard
         dep_proc.call
       rescue StandardError => e
         raise Asgard::Error, "depends_on proc for '#{task}' raised #{e.class}: #{e.message}"
+      end
+
+      # A resolved proc/lambda/block result must be an Array of stages, each
+      # either a Symbol/String (sequential) or an Array of Symbol/String
+      # (parallel group) — no deeper nesting, no other leaf types.
+      def _validate_dep_shape!(task, result)
+        result.each { |stage| _validate_dep_stage!(task, stage) }
+      end
+
+      def _validate_dep_stage!(task, stage)
+        case stage
+        when Symbol, String then nil
+        when Array           then stage.each { |leaf| _validate_dep_leaf!(task, leaf) }
+        else
+          raise Asgard::Error,
+                "depends_on proc/block for '#{task}' returned invalid stage #{stage.inspect} " \
+                "(#{stage.class}); expected a Symbol, String, or Array of them"
+        end
+      end
+
+      def _validate_dep_leaf!(task, leaf)
+        return if leaf.is_a?(Symbol) || leaf.is_a?(String)
+
+        raise Asgard::Error,
+              "depends_on proc/block for '#{task}' returned invalid dependency #{leaf.inspect} " \
+              "(#{leaf.class}) in a parallel group; expected a Symbol or String"
       end
 
       def _check_orphaned_deps!

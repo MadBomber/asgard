@@ -803,6 +803,134 @@ class TestAsgardDependsOnProc < Minitest::Test
   end
 end
 
+class TestAsgardDependsOnBlock < Minitest::Test
+  def test_block_dep_is_stored_unresolved_until_validate_deps
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) {}
+
+      depends_on { [[:build]] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    assert_respond_to klass._deps[:test], :call
+    klass.validate_deps!
+    assert_equal [[:build]], klass._deps[:test]
+  end
+
+  def test_block_dep_runs_before_method
+    log = []
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) { log << :build }
+
+      depends_on { [[:build]] }
+      desc "test", "run tests"
+      define_method(:test) { log << :test }
+    end
+
+    klass.validate_deps!
+    klass.new([], {}, {}).invoke(:test)
+    assert_equal %i[build test], log
+  end
+
+  def test_block_dep_body_runs_with_class_as_self
+    klass = Class.new(Asgard::Base) do
+      desc "a_check", "a"
+      define_method(:a_check) {}
+
+      desc "b_check", "b"
+      define_method(:b_check) {}
+
+      depends_on { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+      desc "quality", "aggregate"
+      define_method(:quality) {}
+    end
+
+    klass.validate_deps!
+    assert_equal [%i[a_check b_check]], klass._deps[:quality]
+  end
+
+  def test_depends_on_rejects_tasks_and_block_together
+    error = assert_raises(Asgard::Error) do
+      Class.new(Asgard::Base) do
+        depends_on(:build) { [[:build]] }
+        desc "test", "run tests"
+        define_method(:test) {}
+      end
+    end
+
+    assert_match "depends_on accepts either task arguments or a block, not both", error.message
+  end
+end
+
+class TestAsgardDependsOnShapeValidation < Minitest::Test
+  def test_accepts_symbol_and_string_leaves
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) {}
+
+      desc "lint", "lint"
+      define_method(:lint) {}
+
+      depends_on { [%i[build lint], "build"] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    klass.validate_deps!
+    assert_equal [%i[build lint], %i[build]], klass._deps[:test]
+  end
+
+  def test_bare_symbol_result_is_coerced_to_a_single_sequential_stage
+    klass = Class.new(Asgard::Base) do
+      desc "build", "compile"
+      define_method(:build) {}
+
+      depends_on { :build }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    klass.validate_deps!
+    assert_equal [%i[build]], klass._deps[:test]
+  end
+
+  def test_rejects_stage_that_is_not_symbol_string_or_array
+    klass = Class.new(Asgard::Base) do
+      depends_on { [123] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "depends_on proc/block for 'test' returned invalid stage 123 (Integer)", error.message
+  end
+
+  def test_rejects_non_symbol_leaf_inside_parallel_group
+    klass = Class.new(Asgard::Base) do
+      depends_on { [[:build, 123]] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "depends_on proc/block for 'test' returned invalid dependency 123 (Integer) in a parallel group", error.message
+  end
+
+  def test_rejects_nesting_deeper_than_one_level
+    klass = Class.new(Asgard::Base) do
+      depends_on { [[[:build]]] }
+      desc "test", "run tests"
+      define_method(:test) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_match "depends_on proc/block for 'test' returned invalid dependency [:build] (Array) in a parallel group", error.message
+  end
+end
+
 class TestAsgardParallelDeps < Minitest::Test
   def test_parallel_deps_both_run_before_target
     log   = []

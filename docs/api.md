@@ -111,7 +111,7 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 
 | Method | Signature | Description |
 |---|---|---|
-| `depends_on` | `depends_on(*tasks)` | Declare prerequisites for the next `def`. Bare symbols run sequentially; arrays within the splat run as a parallel group. A sole `Proc`/lambda defers resolution to `validate_deps!` (after every `.loki` file has loaded) instead of resolving immediately — see [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-form). |
+| `depends_on` | `depends_on(*tasks, &block)` | Declare prerequisites for the next `def`. Bare symbols run sequentially; arrays within the splat run as a parallel group. A sole `Proc`/lambda, or a block in place of the splat args, defers resolution to `validate_deps!` (after every `.loki` file has loaded) instead of resolving immediately — see [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form). Passing both task arguments and a block raises `Asgard::Error`. |
 | `dotenv` | `dotenv(path = ".env")` | Load the specified `.env` file into `ENV` using the dotenv gem. Silently skipped if the file does not exist. Called at class-load time. |
 | `header` | `header(text)` | Append a line of text shown above the commands list in `asgard help`. Each call adds another line. No-op for per-command help. |
 | `footer` | `footer(text)` | Prepend a line of text shown below the options block in `asgard help`. Each call inserts above the previous lines. No-op for per-command help. |
@@ -175,12 +175,14 @@ depends_on :clean, :build                  # two sequential deps
 depends_on [:lint, :typecheck]             # lint and typecheck run in parallel
 depends_on :setup, [:lint, :build], :test  # setup, then lint+build concurrently, then test
 
-# A sole Proc/lambda defers resolution to validate_deps!, after every .loki
-# file has loaded — must return the same shape the splat form above would.
+# A sole Proc/lambda (or, equivalently, a block) defers resolution to
+# validate_deps!, after every .loki file has loaded — must return the same
+# shape the splat form above would; the shape is validated when it resolves.
 depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
+depends_on { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
 ```
 
-See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-form) for the full explanation of the Proc form — why it exists, when it runs, and how errors are reported.
+See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form) for the full explanation of the Proc/block form — why it exists, when it runs, and how errors are reported.
 
 ---
 

@@ -236,9 +236,9 @@ Because `*.loki` files are loaded alphabetically when `import "*.loki"` is used,
 
 ---
 
-## Dynamic Dependencies (Proc Form)
+## Dynamic Dependencies (Proc / Block Form)
 
-`depends_on` normally takes a fixed list, recorded the moment the `def` right after it is encountered — which is why load order matters, as above. Pass a `Proc` or lambda instead, and that list is computed *later*, after every `.loki` file has finished loading, rather than at the point `depends_on` itself is evaluated:
+`depends_on` normally takes a fixed list, recorded the moment the `def` right after it is encountered — which is why load order matters, as above. Pass a `Proc` or lambda instead — or, equivalently, a block — and that list is computed *later*, after every `.loki` file has finished loading, rather than at the point `depends_on` itself is evaluated:
 
 ```ruby
 depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
@@ -246,22 +246,33 @@ desc "Run every *_check quality gate task in parallel"
 def quality
   # ...
 end
+
+depends_on { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+desc "Same thing, written as a block"
+def quality2
+  # ...
+end
 ```
 
-This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in `.loki` files loaded *before* this one. A Proc is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point `depends_on` is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with `import "quality_rails.loki" if defined?(Rails)`.
+This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in `.loki` files loaded *before* this one. A Proc/block is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point `depends_on` is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with `import "quality_rails.loki" if defined?(Rails)`. `depends_on` accepts task arguments *or* a block, never both — combining them raises `Asgard::Error`.
 
-**Shape:** the Proc must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a `Symbol` (sequential) or `Array` (parallel group). The example above returns `[[:a_check, :b_check, :c_check]]`: one stage, containing every matching task, all running in parallel — the same shape as `depends_on [:a_check, :b_check, :c_check]`.
+**Shape:** the Proc/block must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a `Symbol`/`String` (sequential) or an `Array` of `Symbol`/`String` (parallel group), nested no deeper than that. The example above returns `[[:a_check, :b_check, :c_check]]`: one stage, containing every matching task, all running in parallel — the same shape as `depends_on [:a_check, :b_check, :c_check]`. This shape is validated once the result comes back — a bad return value (wrong type, a stage that isn't a Symbol/String/Array, a leaf inside a parallel group that isn't a Symbol/String, or nesting more than one level deep) raises `Asgard::Error` naming the task and the offending value, instead of failing later with an opaque `NoMethodError`:
 
-**When it runs:** once, when `validate_deps!` runs (right after the `.loki` chain finishes loading, before any task dispatches). The resolved result replaces the Proc in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the *resolved* list — a Proc that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:
+```bash
+asgard quality
+# asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them
+```
+
+**When it runs:** once, when `validate_deps!` runs (right after the `.loki` chain finishes loading, before any task dispatches). The resolved result replaces the Proc/block in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the *resolved* list — a Proc/block that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:
 
 ```bash
 asgard quality
 # asgard: undefined task(s) in depends_on: ghost_check
 ```
 
-**`self` inside the Proc:** since the Proc is written directly in a `class Tasks` body, it lexically captures that class as `self` — so it can call `all_commands`, `_deps`, or any other class-level method bare, without a `self.class.` prefix, even though it's actually invoked later from inside `validate_deps!`.
+**`self` inside the Proc/block:** since it's written directly in a `class Tasks` body, it lexically captures that class as `self` — so it can call `all_commands`, `_deps`, or any other class-level method bare, without a `self.class.` prefix, even though it's actually invoked later from inside `validate_deps!`.
 
-**If the Proc raises**, the error is caught and re-raised as `Asgard::Error` naming the task it was declared for:
+**If the Proc/block raises**, the error is caught and re-raised as `Asgard::Error` naming the task it was declared for:
 
 ```
 asgard: depends_on proc for 'quality' raised RuntimeError: boom

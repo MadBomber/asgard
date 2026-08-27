@@ -168,6 +168,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Ctrl-C during a running `sh` command printed a raw `Interrupt` backtrace** — SIGINT hits the whole foreground process group, so asgard's own ruby process raised `Interrupt` independently of whatever the shelled-out command did with the signal, and it went uncaught, unwinding through Thor and printing a stack trace before exiting. `Asgard.run!` now rescues `Interrupt` and exits with the conventional 130 status.
 
+### Added (continued 6)
+
+- **`depends_on` accepts a block in addition to a Proc/lambda** — `depends_on { ... }` (or `depends_on do ... end` for a block spanning multiple statements) defers resolution to `validate_deps!` exactly like the existing sole-Proc/lambda form; the two are interchangeable. `depends_on` still accepts task arguments *or* a block, never both — combining them raises `Asgard::Error`. See [Dynamic Dependencies](docs/dependencies.md#dynamic-dependencies-proc-block-form).
+- **The resolved Proc/lambda/block result is now shape-validated** — once `validate_deps!` calls it, the return value must be an `Array` of stages, each a `Symbol`/`String` (sequential) or an `Array` of `Symbol`/`String` (parallel group), nested no deeper than that. A bad shape (wrong type, an invalid stage, a non-Symbol/String leaf, or nesting more than one level deep) now raises `Asgard::Error` naming the task and the offending value, instead of failing later with an opaque `NoMethodError`.
+- **`examples/depends_on_block/good/` and `examples/depends_on_block/bad/`** — two self-contained example projects (each its own `.loki` root, isolated from the main `examples/` tree) demonstrating the block form: `good/` covers single-line `{ ... }`, `do...end`, and a mixed sequential+parallel shape; `bad/` demonstrates the double-wrapped-array mistake that the new shape validation catches, with the exact `Asgard::Error` message it produces.
+
 ## [0.2.0] - 2026-05-29
 
 ### Changed

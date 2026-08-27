@@ -915,6 +915,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#handing-off-with-exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handing Off with exec
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1256,6 +1267,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#handing-off-with-exec" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handing Off with exec
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1444,7 +1466,7 @@
 
 <h1 id="shell-helpers">Shell Helpers<a class="headerlink" href="#shell-helpers" title="Permanent link">&para;</a></h1>
 <p>Asgard provides two methods for running shell commands and scripts from within task bodies: <code>sh</code> for shell commands and heredocs, and <code>shebang</code> for polyglot scripts. Both are provided by <code>Asgard::Shell</code> and mixed into every <code>Tasks</code> instance.</p>
-<p>Both methods exit with the command's status code on failure — they do not raise Ruby exceptions.</p>
+<p>Both methods exit with the command's status code on failure — they do not raise Ruby exceptions. <code>sh</code> also accepts <code>exec: true</code> to replace the asgard process outright instead of forking — see <a href="#handing-off-with-exec">Handing Off with <code>exec</code></a>.</p>
 <hr />
 <h2 id="sh-run-shell-commands"><code>sh</code> — Run Shell Commands<a class="headerlink" href="#sh-run-shell-commands" title="Permanent link">&para;</a></h2>
 <h3 id="single-line-command">Single-Line Command<a class="headerlink" href="#single-line-command" title="Permanent link">&para;</a></h3>
@@ -1499,60 +1521,82 @@
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="k">end</span>
 </span></code></pre></div>
+<h3 id="handing-off-with-exec">Handing Off with <code>exec</code><a class="headerlink" href="#handing-off-with-exec" title="Permanent link">&para;</a></h3>
+<p>Pass <code>exec: true</code> to hand the command the asgard process itself instead of forking a child. Under the hood this calls <code>Kernel.exec</code> rather than <code>system</code>, which replaces the running ruby process image with the command — asgard doesn't stick around waiting on it.</p>
+<p>Use this for a task's final, long-running command — a dev server, a REPL, anything meant to take over the terminal — so there's no idle ruby process sitting in memory alongside it, and Ctrl-C is handled directly by the command instead of unwinding back through asgard:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation server startup"</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="nb">exec</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Since the process is replaced, nothing after the <code>sh</code> call ever runs, and <code>depends_on</code> chains upstream of it must already have finished (they have — dependencies run before the task body).</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start a REPL — never returns to asgard"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">console</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec pry"</span><span class="p">,</span><span class="w"> </span><span class="nb">exec</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"unreachable"</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>exec: true</code> only makes sense for a command meant to run for the lifetime of the process. Don't use it for a step with more work queued after it in the same task.</p>
+</div>
 <hr />
 <h2 id="shebang-polyglot-scripts"><code>shebang</code> — Polyglot Scripts<a class="headerlink" href="#shebang-polyglot-scripts" title="Permanent link">&para;</a></h2>
 <p><code>shebang</code> writes the script body to a tempfile with the appropriate extension and executes it with the specified interpreter. Use it to embed Python, Node.js, Ruby, Perl, or any other interpreter directly in a task:</p>
 <h3 id="python">Python<a class="headerlink" href="#python" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run Python data analysis"</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="sh">      import json</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="sh">      data = json.load(open("results.json"))</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="sh">      print(f"Total: {sum(data.values())}")</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="dl">    PYTHON</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="k">end</span>
-</span></code></pre></div>
-<h3 id="nodejs">Node.js<a class="headerlink" href="#nodejs" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Build frontend assets with esbuild"</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">bundle_assets</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:node</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">JS</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="sh">      const esbuild = require("esbuild")</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="sh">      esbuild.buildSync({</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="sh">        entryPoints: ["src/app.js"],</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="sh">        bundle: true,</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="sh">        outfile: "dist/app.js"</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="sh">      })</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="dl">    JS</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">end</span>
-</span></code></pre></div>
-<h3 id="ruby">Ruby<a class="headerlink" href="#ruby" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Transform data with Ruby"</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">transform</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:ruby</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">RUBY</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="sh">      require "json"</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="sh">      data = JSON.parse(File.read("input.json"))</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="sh">      File.write("output.json", JSON.pretty_generate(data.transform_values(&amp;:upcase)))</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="dl">    RUBY</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run Python data analysis"</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="sh">      import json</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="sh">      data = json.load(open("results.json"))</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="sh">      print(f"Total: {sum(data.values())}")</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="dl">    PYTHON</span>
 </span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="k">end</span>
 </span></code></pre></div>
-<h3 id="bash">Bash<a class="headerlink" href="#bash" title="Permanent link">&para;</a></h3>
+<h3 id="nodejs">Node.js<a class="headerlink" href="#nodejs" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a bash provisioning script"</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">provision</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="sh">      set -euo pipefail</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="sh">      apt-get update</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="sh">      apt-get install -y curl wget git</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="sh">      echo "Provisioned at $(date)"</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="dl">    BASH</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="k">end</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Build frontend assets with esbuild"</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">bundle_assets</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:node</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">JS</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="sh">      const esbuild = require("esbuild")</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="sh">      esbuild.buildSync({</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="sh">        entryPoints: ["src/app.js"],</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="sh">        bundle: true,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="sh">        outfile: "dist/app.js"</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="sh">      })</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="dl">    JS</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="ruby">Ruby<a class="headerlink" href="#ruby" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Transform data with Ruby"</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">transform</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:ruby</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">RUBY</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="sh">      require "json"</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="sh">      data = JSON.parse(File.read("input.json"))</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="sh">      File.write("output.json", JSON.pretty_generate(data.transform_values(&amp;:upcase)))</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="dl">    RUBY</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="bash">Bash<a class="headerlink" href="#bash" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a bash provisioning script"</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">provision</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="sh">      set -euo pipefail</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="sh">      apt-get update</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="sh">      apt-get install -y curl wget git</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="sh">      echo "Provisioned at $(date)"</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="dl">    BASH</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
 <h2 id="supported-interpreters">Supported Interpreters<a class="headerlink" href="#supported-interpreters" title="Permanent link">&para;</a></h2>
@@ -1610,34 +1654,34 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Unknown interpreter symbols get a <code>.tmp</code> extension and are passed to <code>system</code> directly. This makes it easy to use interpreters not in the table above:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">shebang</span><span class="w"> </span><span class="ss">:lua</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">LUA</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="sh">  print("Hello from Lua!")</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="dl">LUA</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">shebang</span><span class="w"> </span><span class="ss">:lua</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">LUA</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="sh">  print("Hello from Lua!")</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="dl">LUA</span>
 </span></code></pre></div>
 </div>
 <h3 id="silent-mode_1">Silent Mode<a class="headerlink" href="#silent-mode_1" title="Permanent link">&para;</a></h3>
 <p><code>shebang</code> also accepts <code>silent: true</code>, though in practice the interpreter itself controls what is printed:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="n">script_body</span><span class="p">,</span><span class="w"> </span><span class="ss">silent</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="n">script_body</span><span class="p">,</span><span class="w"> </span><span class="ss">silent</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="k">end</span>
 </span></code></pre></div>
 <hr />
 <h2 id="combining-sh-and-shebang">Combining <code>sh</code> and <code>shebang</code><a class="headerlink" href="#combining-sh-and-shebang" title="Permanent link">&para;</a></h2>
 <p>You can mix both in the same task:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell + Python pipeline"</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="sh">      import subprocess</span>
-</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="sh">      print(result.stdout)</span>
-</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="dl">    PYTHON</span>
-</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
-</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
-</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell + Python pipeline"</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="sh">      import subprocess</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="sh">      print(result.stdout)</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="dl">    PYTHON</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="k">end</span>
 </span></code></pre></div>
 
 

@@ -1601,8 +1601,8 @@
 <tbody>
 <tr>
 <td><code>depends_on</code></td>
-<td><code>depends_on(*tasks)</code></td>
-<td>Declare prerequisites for the next <code>def</code>. Bare symbols run sequentially; arrays within the splat run as a parallel group. A sole <code>Proc</code>/lambda defers resolution to <code>validate_deps!</code> (after every <code>.loki</code> file has loaded) instead of resolving immediately — see <a href="../dependencies/#dynamic-dependencies-proc-form">Dynamic Dependencies</a>.</td>
+<td><code>depends_on(*tasks, &amp;block)</code></td>
+<td>Declare prerequisites for the next <code>def</code>. Bare symbols run sequentially; arrays within the splat run as a parallel group. A sole <code>Proc</code>/lambda, or a block in place of the splat args, defers resolution to <code>validate_deps!</code> (after every <code>.loki</code> file has loaded) instead of resolving immediately — see <a href="../dependencies/#dynamic-dependencies-proc-block-form">Dynamic Dependencies</a>. Passing both task arguments and a block raises <code>Asgard::Error</code>.</td>
 </tr>
 <tr>
 <td><code>dotenv</code></td>
@@ -1626,8 +1626,8 @@
 </tr>
 <tr>
 <td><code>sh</code></td>
-<td><code>sh(script, silent: false)</code></td>
-<td>Instance method. Run a shell command or multiline heredoc. Single-line → <code>system(script)</code>; multiline → <code>system("bash", "-c", script)</code>. Exits with the command's status on failure.</td>
+<td><code>sh(script, silent: false, exec: false)</code></td>
+<td>Instance method. Run a shell command or multiline heredoc. Single-line → <code>system(script)</code>; multiline → <code>system("bash", "-c", script)</code>. Exits with the command's status on failure. With <code>exec: true</code>, replaces the asgard process via <code>Kernel.exec</code> instead of forking — see <a href="../shell/#handing-off-with-exec">Shell Helpers</a>.</td>
 </tr>
 <tr>
 <td><code>shebang</code></td>
@@ -1682,11 +1682,13 @@
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span><span class="w">             </span><span class="c1"># lint and typecheck run in parallel</span>
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="w">  </span><span class="c1"># setup, then lint+build concurrently, then test</span>
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># A sole Proc/lambda defers resolution to validate_deps!, after every .loki</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># file has loaded — must return the same shape the splat form above would.</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="c1"># A sole Proc/lambda (or, equivalently, a block) defers resolution to</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># validate_deps!, after every .loki file has loaded — must return the same</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># shape the splat form above would; the shape is validated when it resolves.</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
-<p>See <a href="../dependencies/#dynamic-dependencies-proc-form">Dynamic Dependencies</a> for the full explanation of the Proc form — why it exists, when it runs, and how errors are reported.</p>
+<p>See <a href="../dependencies/#dynamic-dependencies-proc-block-form">Dynamic Dependencies</a> for the full explanation of the Proc/block form — why it exists, when it runs, and how errors are reported.</p>
 <hr />
 <h2 id="tasks-built-ins"><code>Tasks</code> Built-ins<a class="headerlink" href="#tasks-built-ins" title="Permanent link">&para;</a></h2>
 <p><code>Tasks</code> is pre-defined by the gem as <code>class Tasks &lt; Asgard::Base</code>. It adds the following:</p>

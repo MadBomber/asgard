@@ -741,10 +741,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dynamic-dependencies-proc-form" class="md-nav__link">
+  <a href="#dynamic-dependencies-proc-block-form" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic Dependencies (Proc Form)
+        Dynamic Dependencies (Proc / Block Form)
       
     </span>
   </a>
@@ -1238,10 +1238,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dynamic-dependencies-proc-form" class="md-nav__link">
+  <a href="#dynamic-dependencies-proc-block-form" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic Dependencies (Proc Form)
+        Dynamic Dependencies (Proc / Block Form)
       
     </span>
   </a>
@@ -1516,23 +1516,32 @@
 </span></code></pre></div>
 <p>Because <code>*.loki</code> files are loaded alphabetically when <code>import "*.loki"</code> is used, <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order precisely, use explicit <code>import</code> calls with full filenames rather than a glob.</p>
 <hr />
-<h2 id="dynamic-dependencies-proc-form">Dynamic Dependencies (Proc Form)<a class="headerlink" href="#dynamic-dependencies-proc-form" title="Permanent link">&para;</a></h2>
-<p><code>depends_on</code> normally takes a fixed list, recorded the moment the <code>def</code> right after it is encountered — which is why load order matters, as above. Pass a <code>Proc</code> or lambda instead, and that list is computed <em>later</em>, after every <code>.loki</code> file has finished loading, rather than at the point <code>depends_on</code> itself is evaluated:</p>
+<h2 id="dynamic-dependencies-proc-block-form">Dynamic Dependencies (Proc / Block Form)<a class="headerlink" href="#dynamic-dependencies-proc-block-form" title="Permanent link">&para;</a></h2>
+<p><code>depends_on</code> normally takes a fixed list, recorded the moment the <code>def</code> right after it is encountered — which is why load order matters, as above. Pass a <code>Proc</code> or lambda instead — or, equivalently, a block — and that list is computed <em>later</em>, after every <code>.loki</code> file has finished loading, rather than at the point <code>depends_on</code> itself is evaluated:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every *_check quality gate task in parallel"</span>
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality</span>
 </span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="c1"># ...</span>
 </span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="k">end</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Same thing, written as a block"</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality2</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">  </span><span class="c1"># ...</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in <code>.loki</code> files loaded <em>before</em> this one. A Proc is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point <code>depends_on</code> is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with <code>import "quality_rails.loki" if defined?(Rails)</code>.</p>
-<p><strong>Shape:</strong> the Proc must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a <code>Symbol</code> (sequential) or <code>Array</code> (parallel group). The example above returns <code>[[:a_check, :b_check, :c_check]]</code>: one stage, containing every matching task, all running in parallel — the same shape as <code>depends_on [:a_check, :b_check, :c_check]</code>.</p>
-<p><strong>When it runs:</strong> once, when <code>validate_deps!</code> runs (right after the <code>.loki</code> chain finishes loading, before any task dispatches). The resolved result replaces the Proc in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the <em>resolved</em> list — a Proc that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:</p>
+<p>This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in <code>.loki</code> files loaded <em>before</em> this one. A Proc/block is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point <code>depends_on</code> is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with <code>import "quality_rails.loki" if defined?(Rails)</code>. <code>depends_on</code> accepts task arguments <em>or</em> a block, never both — combining them raises <code>Asgard::Error</code>.</p>
+<p><strong>Shape:</strong> the Proc/block must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a <code>Symbol</code>/<code>String</code> (sequential) or an <code>Array</code> of <code>Symbol</code>/<code>String</code> (parallel group), nested no deeper than that. The example above returns <code>[[:a_check, :b_check, :c_check]]</code>: one stage, containing every matching task, all running in parallel — the same shape as <code>depends_on [:a_check, :b_check, :c_check]</code>. This shape is validated once the result comes back — a bad return value (wrong type, a stage that isn't a Symbol/String/Array, a leaf inside a parallel group that isn't a Symbol/String, or nesting more than one level deep) raises <code>Asgard::Error</code> naming the task and the offending value, instead of failing later with an opaque <code>NoMethodError</code>:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard<span class="w"> </span>quality
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them</span>
 </span></code></pre></div>
-<p><strong><code>self</code> inside the Proc:</strong> since the Proc is written directly in a <code>class Tasks</code> body, it lexically captures that class as <code>self</code> — so it can call <code>all_commands</code>, <code>_deps</code>, or any other class-level method bare, without a <code>self.class.</code> prefix, even though it's actually invoked later from inside <code>validate_deps!</code>.</p>
-<p><strong>If the Proc raises</strong>, the error is caught and re-raised as <code>Asgard::Error</code> naming the task it was declared for:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>asgard: depends_on proc for 'quality' raised RuntimeError: boom
+<p><strong>When it runs:</strong> once, when <code>validate_deps!</code> runs (right after the <code>.loki</code> chain finishes loading, before any task dispatches). The resolved result replaces the Proc/block in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the <em>resolved</em> list — a Proc/block that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>asgard<span class="w"> </span>quality
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check</span>
+</span></code></pre></div>
+<p><strong><code>self</code> inside the Proc/block:</strong> since it's written directly in a <code>class Tasks</code> body, it lexically captures that class as <code>self</code> — so it can call <code>all_commands</code>, <code>_deps</code>, or any other class-level method bare, without a <code>self.class.</code> prefix, even though it's actually invoked later from inside <code>validate_deps!</code>.</p>
+<p><strong>If the Proc/block raises</strong>, the error is caught and re-raised as <code>Asgard::Error</code> naming the task it was declared for:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>asgard: depends_on proc for 'quality' raised RuntimeError: boom
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1541,24 +1550,24 @@
 <hr />
 <h2 id="depends_on-inside-subcommands">depends_on Inside Subcommands<a class="headerlink" href="#depends_on-inside-subcommands" title="Permanent link">&para;</a></h2>
 <p><code>depends_on</code> works within subcommand classes exactly as it does at the top level. Dependency scope is per-class:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
-</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
-</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="k">end</span>
-</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
-</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
-</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
-</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="k">end</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
 </span></code></pre></div>
 <p>See <a href="../subcommands/">Subcommands</a> for the full guide.</p>
 

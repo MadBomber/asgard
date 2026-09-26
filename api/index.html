@@ -687,6 +687,8 @@
       
         
       
+        
+      
     
     
     
@@ -829,6 +831,34 @@
     
   
     Environment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scheduled Tasks
   
 
     
@@ -1077,6 +1107,17 @@
     <span class="md-ellipsis">
       
         Asgard::Doctor
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asgardschedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Schedule
       
     </span>
   </a>
@@ -1368,6 +1409,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#asgardschedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#asgardbase-internal-class-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1496,6 +1548,7 @@
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">abort</span><span class="w"> </span><span class="s2">"asgard: unknown command '</span><span class="si">#{</span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">'"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">argv</span><span class="o">.</span><span class="n">first</span><span class="o">&amp;.</span><span class="n">start_with?</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span>
 </span></code></pre></div>
 <p>After loading task files, it calls <code>Tasks.validate_deps!</code> (circular dependency check) and <code>Tasks._reset_ran!</code> (clears per-invocation deduplication state) before starting Thor.</p>
+<p>If the dispatched task returns exactly <code>:fail</code>, <code>run!</code> exits with status 1 (the quality-gate convention). Any other return value, including <code>:warn</code> and <code>:skip</code>, exits 0.</p>
 <hr />
 <h2 id="kernel-methods">Kernel Methods<a class="headerlink" href="#kernel-methods" title="Permanent link">&para;</a></h2>
 <p>These methods are defined as <code>module_function</code> on <code>Kernel</code> and are therefore available everywhere in Ruby — at the top level of <code>.loki</code> files, inside class bodies, and inside task method bodies. No <code>require</code> or <code>include</code> is needed; they are loaded when <code>asgard</code> starts.</p>
@@ -1731,6 +1784,16 @@
 <td>Kernel module function</td>
 <td>Returns <code>$VERBOSE</code>. Available everywhere via <code>Kernel</code>.</td>
 </tr>
+<tr>
+<td><code>schedule</code></td>
+<td>class method (DSL)</td>
+<td><code>schedule :task, at:/every:, ...</code> — declares a scheduled entry. Extended from <code>Asgard::Schedule::DSL</code>; see <a href="#asgardschedule"><code>Asgard::Schedule</code></a>.</td>
+</tr>
+<tr>
+<td><code>_schedule</code></td>
+<td>subcommand</td>
+<td><code>asgard schedule SUBCOMMAND</code>, backed by <code>Asgard::Schedule::Commands</code>. <code>map "schedule" =&gt; :_schedule</code> keeps the typed name <code>schedule</code>, and a user task named <code>schedule</code> cannot shadow it.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1813,6 +1876,46 @@
 </span></code></pre></div>
 <p>The warning is a shadowed ancestor <code>.loki</code> marker one directory further up the tree — unrelated to the override, and something you may or may not see depending on what's above the repo on your own machine.</p>
 <hr />
+<h2 id="asgardschedule"><code>Asgard::Schedule</code><a class="headerlink" href="#asgardschedule" title="Permanent link">&para;</a></h2>
+<p>Scheduled tasks. The user-facing guide is <a href="../schedule/">Scheduled Tasks</a>; this section covers the Ruby API.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>declare</code></td>
+<td><code>Asgard::Schedule.declare(task, **settings) → Hash</code></td>
+<td>What <code>Tasks.schedule</code> calls. Validates via <code>normalize</code> and records the entry. Redeclaring an identical entry is a no-op; a different entry under the same name raises <code>ArgumentError</code>.</td>
+</tr>
+<tr>
+<td><code>declarations</code></td>
+<td><code>Asgard::Schedule.declarations → Hash</code></td>
+<td>Declared entries for this run, keyed by entry name.</td>
+</tr>
+<tr>
+<td><code>normalize</code></td>
+<td><code>Asgard::Schedule.normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil) → Hash</code></td>
+<td>Validates one declaration and returns <code>{ name:, task:, args:, at:, on:, every:, env: }</code>. Pure.</td>
+</tr>
+<tr>
+<td><code>backend_class</code></td>
+<td><code>Asgard::Schedule.backend_class(platform = RUBY_PLATFORM)</code></td>
+<td><code>Launchd</code> on darwin, <code>Systemd</code> on linux; raises <code>Asgard::Schedule::Error</code> elsewhere.</td>
+</tr>
+<tr>
+<td><code>runner</code> / <code>runner=</code></td>
+<td><code>Asgard::Schedule.runner → #call</code></td>
+<td>The command runner new backends use: <code>argv</code> in, <code>[output, success?]</code> out. Defaults to <code>RUNNER</code> (<code>Open3.capture2e</code>); tests assign a recording runner, and <code>nil</code> restores the default.</td>
+</tr>
+</tbody>
+</table>
+<p>Both backends, <code>Asgard::Schedule::Launchd</code> and <code>Asgard::Schedule::Systemd</code>, implement the same instance API: <code>files</code>, <code>install</code>, <code>uninstall</code>, <code>start</code>, <code>stop</code>, <code>trigger</code>, <code>installed_names</code>, <code>status</code>, <code>log_path</code>, <code>notes</code>. Each class also exposes the pure helpers that build its job files (<code>Launchd.plist</code>, <code>Systemd.service_unit</code>, <code>Systemd.timer_unit</code>, ...), so they can be tested without a scheduler.</p>
+<hr />
 <h2 id="asgardbase-internal-class-methods"><code>Asgard::Base</code> Internal Class Methods<a class="headerlink" href="#asgardbase-internal-class-methods" title="Permanent link">&para;</a></h2>
 <p>These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.</p>
 <table>
@@ -1870,6 +1973,11 @@
 <td><code>Asgard::Error</code></td>
 <td><code>StandardError</code></td>
 <td>Base error class for all Asgard errors.</td>
+</tr>
+<tr>
+<td><code>Asgard::Schedule::Error</code></td>
+<td><code>Asgard::Error</code></td>
+<td>Raised when a <code>launchctl</code>/<code>systemctl</code> command fails, or on an unsupported platform. <code>run!</code> reports it as <code>asgard: &lt;message&gt;</code>.</td>
 </tr>
 <tr>
 <td><code>Asgard::CircularDependencyError</code></td>

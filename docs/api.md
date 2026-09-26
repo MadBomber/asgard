@@ -27,6 +27,8 @@ abort "asgard: unknown command '#{argv.first}'" if argv.first&.start_with?("_")
 
 After loading task files, it calls `Tasks.validate_deps!` (circular dependency check) and `Tasks._reset_ran!` (clears per-invocation deduplication state) before starting Thor.
 
+If the dispatched task returns exactly `:fail`, `run!` exits with status 1 (the quality-gate convention). Any other return value, including `:warn` and `:skip`, exits 0.
+
 ---
 
 ## Kernel Methods
@@ -198,6 +200,8 @@ See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form)
 | `class_option :doctor` | class option | `--doctor` flag. Handled by `Asgard.run!` before the `.loki` file is loaded — runs `Asgard::Doctor.new.run` and exits. `no_negate :doctor` suppresses the `[--no-doctor]` / `[--skip-doctor]` help entries. |
 | `debug?` | Kernel module function | Returns `$DEBUG`. Available everywhere via `Kernel`. |
 | `verbose?` | Kernel module function | Returns `$VERBOSE`. Available everywhere via `Kernel`. |
+| `schedule` | class method (DSL) | `schedule :task, at:/every:, ...` — declares a scheduled entry. Extended from `Asgard::Schedule::DSL`; see [`Asgard::Schedule`](#asgardschedule). |
+| `_schedule` | subcommand | `asgard schedule SUBCOMMAND`, backed by `Asgard::Schedule::Commands`. `map "schedule" => :_schedule` keeps the typed name `schedule`, and a user task named `schedule` cannot shadow it. |
 
 ---
 
@@ -267,6 +271,22 @@ The warning is a shadowed ancestor `.loki` marker one directory further up the t
 
 ---
 
+## `Asgard::Schedule`
+
+Scheduled tasks. The user-facing guide is [Scheduled Tasks](schedule.md); this section covers the Ruby API.
+
+| Method | Signature | Description |
+|---|---|---|
+| `declare` | `Asgard::Schedule.declare(task, **settings) → Hash` | What `Tasks.schedule` calls. Validates via `normalize` and records the entry. Redeclaring an identical entry is a no-op; a different entry under the same name raises `ArgumentError`. |
+| `declarations` | `Asgard::Schedule.declarations → Hash` | Declared entries for this run, keyed by entry name. |
+| `normalize` | `Asgard::Schedule.normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil) → Hash` | Validates one declaration and returns `{ name:, task:, args:, at:, on:, every:, env: }`. Pure. |
+| `backend_class` | `Asgard::Schedule.backend_class(platform = RUBY_PLATFORM)` | `Launchd` on darwin, `Systemd` on linux; raises `Asgard::Schedule::Error` elsewhere. |
+| `runner` / `runner=` | `Asgard::Schedule.runner → #call` | The command runner new backends use: `argv` in, `[output, success?]` out. Defaults to `RUNNER` (`Open3.capture2e`); tests assign a recording runner, and `nil` restores the default. |
+
+Both backends, `Asgard::Schedule::Launchd` and `Asgard::Schedule::Systemd`, implement the same instance API: `files`, `install`, `uninstall`, `start`, `stop`, `trigger`, `installed_names`, `status`, `log_path`, `notes`. Each class also exposes the pure helpers that build its job files (`Launchd.plist`, `Systemd.service_unit`, `Systemd.timer_unit`, ...), so they can be tested without a scheduler.
+
+---
+
 ## `Asgard::Base` Internal Class Methods
 
 These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.
@@ -298,6 +318,7 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 | Class | Superclass | Description |
 |---|---|---|
 | `Asgard::Error` | `StandardError` | Base error class for all Asgard errors. |
+| `Asgard::Schedule::Error` | `Asgard::Error` | Raised when a `launchctl`/`systemctl` command fails, or on an unsupported platform. `run!` reports it as `asgard: <message>`. |
 | `Asgard::CircularDependencyError` | `Asgard::Error` | Raised by `validate_deps!` when a cycle is detected in the dependency graph. `run!` catches this and calls `abort` with a clean message. |
 
 ```ruby

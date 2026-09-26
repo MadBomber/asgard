@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-26
+
+### Added
+
+- **Scheduled tasks, built in** — `schedule :task, at: "17:30", on: :weekdays`
+  (or `every: 3600`) at class level in a `.loki` declares a periodic run, and
+  `asgard schedule preview|install|list|start|stop|trigger|log|remove`
+  manages the entries under launchd (macOS) or systemd user timers (Linux).
+  Missed calendar runs fire on wake; a project `.envrc` is loaded at run time
+  through `direnv exec`. Promoted from the standalone `dev/schedule.loki`;
+  job labels and paths are unchanged, so entries it installed are still
+  recognized. ActiveSupport is no longer required: `every:` takes seconds or
+  any object with `in_seconds`. The command is registered as the gem-owned
+  `_schedule` and mapped to `schedule`. See
+  [Scheduled Tasks](https://madbomber.github.io/asgard/schedule/).
+- **`Asgard::Schedule::Error`** (subclass of `Asgard::Error`) — raised when
+  `launchctl`/`systemctl` fails; `Asgard.run!` reports it as a one-line
+  `asgard: ...` message.
+
+### Changed
+
+- **Upgrading from `dev/schedule.loki`:** remove `import_up "dev/schedule.loki"`
+  from your `.loki`. Its `Tasks.schedule` overrides the built-in one and
+  records declarations where `asgard schedule` never looks.
+- `Asgard::Error` and `Asgard::CircularDependencyError` now live in
+  `lib/asgard/errors.rb`, loaded first. No change to the classes themselves.
+- The gem's own test run (`test_check`, `test_verbose`) loads every
+  `test/test_*.rb` in one process, so coverage is measured across the whole
+  suite.
+
+### Fixed
+
+- **`asgard <task>` now exits 1 when the task returns `:fail`** — quality-gate
+  tasks (`*_check`) signal failure by returning `:fail`; previously that result
+  was discarded and asgard always exited 0, so callers relying on the exit
+  status (CI, cross-repo runners like `ws_quality.loki`) saw every individual
+  gate as passing. The aggregate `quality` task was unaffected (it aborts
+  itself). Only a top-level result of exactly `:fail` maps to exit 1; `:warn`
+  and `:skip` remain non-blocking.
+
 ## [0.3.3] - 2026-08-27
 
 ### Added
@@ -105,7 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (continued)
 
-- **`--doctor` built-in CLI flag** — diagnoses `.loki` resolution, import chains, and task definitions for the current directory, then exits. Handled directly in `Asgard.run!` before the `.loki` file is loaded (same pattern as `--version`), so it keeps working in exactly the situations that would otherwise abort the whole process: a broken `.loki` file, a circular or undefined dependency, or a task silently redefined by a later `def`. Backed by the new `Asgard::Doctor` class. The report includes a "Tasks by file" listing: every command grouped by the file it's defined in, printed as `relative/path:line` so an editor can jump straight to it. A task name defined at more than one location gets every definition annotated inline — the earlier one(s) as `OVERRIDDEN by <file>:<line> — never callable`, the winning (last) one as `active — redefines <file>:<line>` — replacing the old flat "Tasks#x redefined" summary line with an annotation right where the problem is. See [API Reference](docs/api.md#asgarddoctor).
+- **`--doctor` built-in CLI flag** — diagnoses `.loki` resolution, import chains, and task definitions for the current directory, then exits. Handled directly in `Asgard.run!` before the `.loki` file is loaded (same pattern as `--version`), so it keeps working in exactly the situations that would otherwise abort the whole process: a broken `.loki` file, a circular or undefined dependency, or a task silently redefined by a later `def`. Backed by the new `Asgard::Doctor` class. The report includes a "Tasks by file" listing: every command grouped by the file it's defined in, printed as `relative/path:line` so an editor can jump straight to it. A task name defined at more than one location gets every definition annotated inline — the earlier one(s) as `OVERRIDDEN by <file>:<line> — never callable`, the winning (last) one as `active — redefines <file>:<line>` — replacing the old flat "Tasks#x redefined" summary line with an annotation right where the problem is. See [API Reference](https://madbomber.github.io/asgard/api/#asgarddoctor).
 - **Flay and Reek quality gates** — `flay_check` checks for structural code duplication (mass ≥ 150); `reek` checks code smells. Both run as part of `quality` alongside `test`, `rubocop`, and `flog_check`. A `.reek.yml` tunes several detectors to this codebase's conventions (no doc-comment requirement, short variable names, disabled `TooManyStatements`, etc), plus per-method `exclude:` entries (generated with `reek --todo` and hand-curated) that grandfather specific reviewed smells at specific methods — precise enough that a genuinely new smell still fails the gate even at an already-reviewed method, unlike a per-file count.
 - **`test_verbose` task** — runs the test suite with Minitest's verbose (`-v`) output.
 - **Colorized quality gate summary** — `quality`'s final report now prints a green/red PASS/FAIL badge per gate plus a passed/failed tally, via a shared `print_quality_summary` helper.
@@ -135,7 +175,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (continued 3)
 
-- **`depends_on` accepts a Proc/lambda in addition to a fixed list** — a sole callable defers resolution to `validate_deps!` (once, right after every `.loki` file has loaded) instead of resolving immediately when `depends_on` itself is evaluated. This solves the "load order matters" problem for a dependency list that can't be known upfront — e.g. "every task whose name ends in `_check`," discovered across several files including ones imported conditionally (`import "quality_rails.loki" if defined?(Rails)`). The Proc must return the same shape the splat form would receive (an array of stages, each a `Symbol` or `Array`); it's written directly in the class body, so it lexically captures that class as `self` and can call `all_commands` bare. A Proc that raises is re-raised as `Asgard::Error` naming the task it was declared for; a Proc that resolves to an undefined task or a cycle is still caught by the existing startup validation, since the resolved result is checked exactly like a plain array. See [Dynamic Dependencies](docs/dependencies.md#dynamic-dependencies-proc-form).
+- **`depends_on` accepts a Proc/lambda in addition to a fixed list** — a sole callable defers resolution to `validate_deps!` (once, right after every `.loki` file has loaded) instead of resolving immediately when `depends_on` itself is evaluated. This solves the "load order matters" problem for a dependency list that can't be known upfront — e.g. "every task whose name ends in `_check`," discovered across several files including ones imported conditionally (`import "quality_rails.loki" if defined?(Rails)`). The Proc must return the same shape the splat form would receive (an array of stages, each a `Symbol` or `Array`); it's written directly in the class body, so it lexically captures that class as `self` and can call `all_commands` bare. A Proc that raises is re-raised as `Asgard::Error` naming the task it was declared for; a Proc that resolves to an undefined task or a cycle is still caught by the existing startup validation, since the resolved result is checked exactly like a plain array. See [Dynamic Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-block-form).
 - **`bundler_audit_check` task** — runs `bundle-audit check --update` against `Gemfile.lock` (new dev dependency `bundler-audit`); reports `FAIL` on any known vulnerability, since this is a security gate, not a suggestion.
 - **`quality_rails.loki`** — imported by `.loki` only when `Rails` is defined; currently ships `brakeman_check`, a Rails security-scan example. Needs no wiring into `quality`'s dependency list — `quality`'s `depends_on` Proc discovers it automatically once it's loaded.
 
@@ -161,7 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (continued 5)
 
-- **`sh(script, exec: true)`** — hands the command the asgard process itself via `Kernel.exec` instead of forking. For a task's final, long-running command (a dev server, a REPL) this replaces the ruby process outright, so nothing sits resident in memory behind it and Ctrl-C is handled directly by the command instead of unwinding back through asgard. `doc_tasks.loki`'s `doc_server` task (`sh "mkdocs serve", exec: true`) is the motivating example. See [Shell Helpers](docs/shell.md#handing-off-with-exec).
+- **`sh(script, exec: true)`** — hands the command the asgard process itself via `Kernel.exec` instead of forking. For a task's final, long-running command (a dev server, a REPL) this replaces the ruby process outright, so nothing sits resident in memory behind it and Ctrl-C is handled directly by the command instead of unwinding back through asgard. `doc_tasks.loki`'s `doc_server` task (`sh "mkdocs serve", exec: true`) is the motivating example. See [Shell Helpers](https://madbomber.github.io/asgard/shell/#handing-off-with-exec).
 - **`bootstrap` and `env_info` tasks in `kitchen_sink.loki`** — demonstrate `sh` with a multi-line heredoc (routed through `bash -c`) and a single-line command, respectively.
 
 ### Fixed (continued 3)
@@ -170,7 +210,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added (continued 6)
 
-- **`depends_on` accepts a block in addition to a Proc/lambda** — `depends_on { ... }` (or `depends_on do ... end` for a block spanning multiple statements) defers resolution to `validate_deps!` exactly like the existing sole-Proc/lambda form; the two are interchangeable. `depends_on` still accepts task arguments *or* a block, never both — combining them raises `Asgard::Error`. See [Dynamic Dependencies](docs/dependencies.md#dynamic-dependencies-proc-block-form).
+- **`depends_on` accepts a block in addition to a Proc/lambda** — `depends_on { ... }` (or `depends_on do ... end` for a block spanning multiple statements) defers resolution to `validate_deps!` exactly like the existing sole-Proc/lambda form; the two are interchangeable. `depends_on` still accepts task arguments *or* a block, never both — combining them raises `Asgard::Error`. See [Dynamic Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-block-form).
 - **The resolved Proc/lambda/block result is now shape-validated** — once `validate_deps!` calls it, the return value must be an `Array` of stages, each a `Symbol`/`String` (sequential) or an `Array` of `Symbol`/`String` (parallel group), nested no deeper than that. A bad shape (wrong type, an invalid stage, a non-Symbol/String leaf, or nesting more than one level deep) now raises `Asgard::Error` naming the task and the offending value, instead of failing later with an opaque `NoMethodError`.
 - **`examples/depends_on_block/good/` and `examples/depends_on_block/bad/`** — two self-contained example projects (each its own `.loki` root, isolated from the main `examples/` tree) demonstrating the block form: `good/` covers single-line `{ ... }`, `do...end`, and a mixed sequential+parallel shape; `bad/` demonstrates the double-wrapped-array mistake that the new shape validation catches, with the exact `Asgard::Error` message it produces.
 
@@ -251,7 +291,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
-[0.3.0]: https://github.com/MadBomber/asgard/compare/v0.2.2...HEAD
+[0.4.0]: https://github.com/MadBomber/asgard/compare/v0.3.3...v0.4.0
+[0.3.3]: https://github.com/MadBomber/asgard/compare/v0.2.0...v0.3.3
 [0.2.0]: https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/MadBomber/asgard/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/MadBomber/asgard/compare/v0.1.0...v0.1.1

@@ -12,7 +12,8 @@ Gem::Specification.new do |spec|
   spec.description = <<~DESC
     A powerful Ruby-based task runner for any kind of project with task dependency tracking
     and concurrent execution of designated tasks. Uses Thor for its rich CLI options, var
-    declarations, dotenv, sh/shebang helpers, and importable task files.
+    declarations, dotenv, sh/shebang helpers, importable task files, and scheduled
+    execution of tasks via launchd (macOS) or systemd timers (Linux).
   DESC
   spec.homepage = "https://github.com/madbomber/asgard"
   spec.license = "MIT"

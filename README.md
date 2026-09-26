@@ -23,6 +23,7 @@
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
+- <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
 - <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
@@ -604,6 +605,39 @@ Each subcommand group can have its own `desc`, `long_desc`, `option`, `class_opt
 See [`examples/server_subcommands.loki`](examples/server_subcommands.loki) and [`examples/db_subcommands.loki`](examples/db_subcommands.loki) for full working examples.
 
 ---
+
+## Scheduled tasks
+
+Any task can run on a schedule under the platform's own scheduler:
+**launchd** on macOS, **systemd user timers** on Linux. Declare schedules at
+class level in `.loki`:
+
+```ruby
+class Tasks
+  schedule :daily_summary, at: "17:30", on: :weekdays
+  schedule :backup,        at: %w[02:00 14:00]          # on: defaults to :daily
+  schedule :sync,          every: 3600                  # seconds
+  schedule :report, options: "--period week", at: "16:00", on: :friday
+end
+```
+
+Then manage them with the built-in `schedule` command:
+
+```bash
+asgard schedule preview        # job files install would write
+asgard schedule install        # load declared entries; drop undeclared ones
+asgard schedule list           # installed entries, state, last exit status
+asgard schedule stop NAME      # stop one entry (persists across reboots and installs)
+asgard schedule start NAME     # start a stopped entry, or install just this one
+asgard schedule trigger NAME   # run an installed entry now
+asgard schedule log NAME [-f]  # print (or follow) the entry's log
+asgard schedule remove         # remove all of this project's entries
+```
+
+Jobs run `asgard <task> [options]` from the directory holding `.loki`, with
+the `PATH` captured at install time; a project `.envrc` is loaded at run time
+through `direnv exec`. See [Scheduled Tasks](https://madbomber.github.io/asgard/schedule/)
+for every keyword, entry naming, and file locations.
 
 ## `method_option` types reference
 

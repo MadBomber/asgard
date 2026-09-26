@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 # Quality gate tasks — imported by .loki
 
+require "shellwords"
+
 class Tasks
+  # One process for every test/test_*.rb, so SimpleCov sees the whole suite.
+  TEST_LOADER = %q(Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }).shellescape.freeze
+
   desc "Run the test suite"
   def test_check
-    output = `bundle exec ruby -Ilib:test test/test_asgard.rb 2>&1`
+    output = `bundle exec ruby -Ilib:test -e #{TEST_LOADER} 2>&1`
     result = $?.success? ? :pass : :fail
     File.write("test_output.txt", output)
     summary = output.lines.reverse.find { |l| l =~ /\d+ runs,/ }&.strip || result.to_s
@@ -14,7 +19,7 @@ class Tasks
 
   desc "Run the test suite with verbose output"
   def test_verbose
-    sh "bundle exec ruby -Ilib:test test/test_asgard.rb -v"
+    sh "bundle exec ruby -Ilib:test -e #{TEST_LOADER} -- -v"
   end
 
   desc "Run every *_check quality gate task in parallel"

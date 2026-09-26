@@ -44,6 +44,7 @@ detectors:
   Attribute:
     exclude:
       - Asgard::Doctor::ImportTracer#doctor # needs to stay settable/resettable per doctor run
+      - Asgard::Schedule#runner                     # test seam: tests swap in a recording runner, nil restores RUNNER
 
   BooleanParameter:
     exclude:
@@ -55,6 +56,7 @@ detectors:
     exclude:
       - Asgard::Shell#sh
       - Asgard::Shell#shebang
+      - Asgard::Schedule#entry_name                 # as: is the user's explicit override of the derived name
 
   DuplicateMethodCall:
     exclude:
@@ -66,6 +68,7 @@ detectors:
       - Kernel#import_up                          # "not found" warned from two independent branches
       - Asgard#self.run!                          # Base.subclasses snapshot diff; e.message in separate rescues
       - Asgard::Base#tree                          # say "\n": intentional blank line before and after the tree
+      - Asgard::Schedule::Launchd#unload             # loaded?(name): check, then poll until bootout finishes
 
   FeatureEnvy:
     exclude:
@@ -86,6 +89,7 @@ detectors:
     exclude:
       - Asgard::Base::DependencyGraph#_normalize_pending_deps # respond_to?(:call) distinguishes a Proc from an Array/Symbol — no polymorphic alternative over Ruby's own built-in types
       - Asgard::Base::DependencyGraph#_resolve_lazy_deps!     # same check
+      - Asgard::Schedule#seconds                         # duck-types ActiveSupport::Duration (in_seconds) without depending on it
 
   InstanceVariableAssumption:
     exclude:
@@ -100,6 +104,8 @@ detectors:
       - Asgard::Doctor::Report#print_task_sections
       - Asgard::Doctor::TaskSections#class_task_file_map
       - Asgard::Doctor::TaskSections#override_count
+      - Asgard::Schedule::Commands#preview            # specs x files per spec
+      - Asgard::Schedule::Launchd#self.calendar_intervals # times x weekdays
 
   UtilityFunction:
     exclude:
@@ -107,6 +113,39 @@ detectors:
       - Asgard::Base::Dispatch#dep_results             # thread-local by design, not self — that's the whole point
       - Asgard::Base::Dispatch#with_dep_results        # same: stashes results on Thread.current, not self
       - Asgard::Shell#shell_argv                       # extracted pure on purpose so it's testable without invoking system/exec
+      - Asgard::Schedule::DSL#schedule                 # class-level DSL delegating to the Schedule registry
+      - Asgard::Schedule::Commands#schedules           # Thor no_commands helpers: reads of the registry / CWD shared by the subcommands
+      - Asgard::Schedule::Commands#schedule_root
+      - Asgard::Schedule::Commands#schedule_summary
+
+  # Asgard::Schedule: the backends implement a fixed API (see
+  # lib/asgard/schedule/declaration.rb) plus pure, separately tested helpers,
+  # and the keyword parameters below mirror launchd/systemd job fields and the
+  # `schedule` DSL's own keywords.
+  DataClump:
+    exclude:
+      - Asgard::Schedule                            # at:/on: and task/args are the declaration's vocabulary
+
+  LongParameterList:
+    exclude:
+      - Asgard::Schedule#normalize                  # the `schedule` DSL keywords
+      - Asgard::Schedule#describe
+      - Asgard::Schedule#program_arguments
+      - Asgard::Schedule::Launchd#self.plist        # one keyword per plist field
+      - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
+      - Asgard::Schedule::Systemd#self.timer_unit
+      - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
+
+  RepeatedConditional:
+    exclude:
+      - Asgard::Schedule::Launchd                   # loaded?(name) guards distinct launchctl transitions
+
+  TooManyMethods:
+    exclude:
+      - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
+      - Asgard::Schedule::Launchd                   # backend API + pure helpers
+      - Asgard::Schedule::Systemd
+
 
 exclude_paths:
   - test

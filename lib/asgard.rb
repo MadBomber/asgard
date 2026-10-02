@@ -15,6 +15,10 @@ module Asgard
     loki_up
   end
 
+  # `asgard schedule list` reports every project's scheduled entries, so it
+  # works from a directory with no .loki above it.
+  def self.machine_wide?(argv) = argv.first(2) == %w[schedule list]
+
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     first = argv.first
@@ -27,9 +31,10 @@ module Asgard
       Asgard::Doctor.new.run
       exit
     end
-    task_file = find_task_file or abort "asgard: no .loki file found in #{Dir.pwd}"
+    task_file = find_task_file
+    abort "asgard: no .loki file found in #{Dir.pwd}" unless task_file || machine_wide?(argv)
     before = Asgard::Base.subclasses.dup
-    load task_file
+    load task_file if task_file
     newly_defined = Asgard::Base.subclasses - before
     (newly_defined + [Tasks]).uniq.each(&:validate_deps!)
     Tasks._reset_ran!

@@ -626,13 +626,16 @@ Then manage them with the built-in `schedule` command:
 ```bash
 asgard schedule preview        # job files install would write
 asgard schedule install        # load declared entries; drop undeclared ones
-asgard schedule list           # installed entries, state, last exit status
+asgard schedule list           # this project's entries, state, last exit (--all: every project's)
 asgard schedule stop NAME      # stop one entry (persists across reboots and installs)
 asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule log NAME [-f]  # print (or follow) the entry's log
 asgard schedule remove         # remove all of this project's entries
 ```
+
+`stop`, `start`, `trigger` and `log` also take an entry of another project
+(`list --all` shows them); write `project/name` when two projects share a name.
 
 Jobs run `asgard <task> [options]` from the directory holding `.loki`, with
 the `PATH` captured at install time; a project `.envrc` is loaded at run time

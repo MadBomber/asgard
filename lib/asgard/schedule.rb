@@ -3,6 +3,7 @@
 require_relative "schedule/declaration"
 require_relative "schedule/launchd"
 require_relative "schedule/systemd"
+require_relative "schedule/table"
 require_relative "schedule/commands"
 
 module Asgard

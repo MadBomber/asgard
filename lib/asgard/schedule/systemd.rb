@@ -76,6 +76,30 @@ module Asgard
         UNIT
       end
 
+      # ExecStart= words, undoing `quote`.
+      def self.parse_exec_start(service)
+        line = service[/^ExecStart=(.*)$/, 1].to_s
+        line.scan(/"((?:[^"\\]|\\.)*)"/).flatten.map { |word| word.gsub(/\\(.)/, '\1').gsub("$$", "$").gsub("%%", "%") }
+      end
+
+      # "Mon,Fri *-*-* 17:30:00" => { hour: 17, minute: 30, days: [1, 5] }
+      def self.parse_on_calendar(text)
+        days = text[/\A([A-Z][a-z]{2}(?:,[A-Z][a-z]{2})*) /, 1]
+        hour, minute = text.scan(/(\d+):(\d+)/).first.map(&:to_i)
+        { hour:, minute:, days: days&.split(",")&.map { |abbr| DAY_ABBREVIATIONS.index(abbr) } }
+      end
+
+      # The WorkingDirectory= (the project root) of a service unit, or nil.
+      def self.parse_directory(service) = service[/^WorkingDirectory=(.*)$/, 1]&.gsub("%%", "%")
+
+      # { calendar: [entry], every: Integer|nil } from a timer unit.
+      def self.parse_timer(timer)
+        {
+          calendar: timer.scan(/^OnCalendar=(.*)$/).flatten.map { |text| parse_on_calendar(text) },
+          every:    timer[/^OnUnitActiveSec=(\d+)/, 1]&.to_i
+        }
+      end
+
       # `systemctl show -p A -p B` output => { "A" => "...", "B" => "..." }
       def self.parse_show(output) = output.lines.to_h { |line| line.chomp.split("=", 2) }.reject { |k, _| k.to_s.empty? }
 
@@ -154,6 +178,29 @@ module Asgard
       def installed_names
         prefix = self.class.unit_prefix(@project)
         Dir.glob(timer_path("*")).map { |path| File.basename(path, ".timer").delete_prefix(prefix) }.sort
+      end
+
+      # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
+      def installed_entries
+        paths = Dir.glob(File.join(@config, "systemd", "user", "#{UNIT_PREFIX}.*.timer"))
+        paths.map { |path| File.basename(path, ".timer").delete_prefix("#{UNIT_PREFIX}.").split(".", 2) }
+             .select { |entry| entry.size == 2 }.sort
+      end
+
+      # { command:, schedule: } as installed, read from the unit files; nil when there are none.
+      def installed_columns(name)
+        paths = [service_path(name), timer_path(name)]
+        return unless paths.all? { |path| File.exist?(path) }
+
+        klass = self.class
+        service, timer = paths.map { |path| File.read(path) }
+        Schedule.installed_columns(arguments: klass.parse_exec_start(service), **klass.parse_timer(timer))
+      end
+
+      # The project root the job runs in, read from the service unit; nil when there isn't one.
+      def installed_directory(name)
+        path = service_path(name)
+        self.class.parse_directory(File.read(path)) if File.exist?(path)
       end
 
       def status(name)

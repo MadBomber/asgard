@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-10-02
+
+### Added
+
+- **`asgard schedule list --all` (`-a`)** — lists every project's scheduled
+  entries, one table per project under a
+  `Project: name (/full/path/to/project)` header. Other projects' `.loki`
+  files are not loaded: their COMMAND and SCHEDULE columns, and the project
+  path, are read back from the installed launchd plist or systemd unit files.
+  Outside any `.loki` tree, `asgard schedule list` shows every project
+  automatically instead of failing with "no .loki file found".
+- **`stop`, `start`, `trigger` and `log` accept entries of other projects**, so
+  they work from any directory. A bare name matches this project's entry first,
+  then any other project's; when two other projects share a name, write it as
+  `project/name`.
+- A project-scoped `list` with nothing installed now ends with
+  "Use `asgard schedule list --all` to see all currently scheduled tasks."
+- Backend API: `installed_entries` (every project's entries),
+  `installed_columns(name)` and `installed_directory(name)` (read from the job
+  files) on both the launchd and systemd backends.
+- Runtime dependency: `tty-table` (~> 0.12), which brings `pastel` and
+  `tty-screen`.
+
+### Changed
+
+- **`asgard schedule list` prints a table** — NAME, COMMAND, SCHEDULE, STATE and
+  LAST EXIT, with long cells wrapped to the terminal width, replacing one text
+  line per entry. A run of hourly times collapses
+  (`10:00-17:00 hourly weekdays`). Color is used on a terminal and turned off
+  by `NO_COLOR` or when piped.
+- The not-installed messages from `stop`, `start`, `trigger` and `log` point at
+  `asgard schedule list --all`.
+
+### Fixed
+
+- Scheduled entries were invisible outside the directory tree of the project
+  that installed them: `list` and every per-entry command were scoped to the
+  project found from the current directory, so `launchctl list` showed jobs
+  that `asgard schedule list` did not.
+
 ## [0.4.0] - 2026-09-26
 
 ### Added

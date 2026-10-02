@@ -64,6 +64,40 @@ module Asgard
         end
       end
 
+      # The parts of a plist (as `plist` writes it) that say what runs and when:
+      # { arguments: [String], calendar: [{ hour:, minute:, days: [Integer]|nil }], every: Integer|nil }
+      def self.parse_plist(xml)
+        {
+          arguments: array_body(xml, "ProgramArguments").scan(%r{<string>(.*?)</string>}m).flatten.map { |text| unescape(text) },
+          calendar:  calendar_entries(array_body(xml, "StartCalendarInterval").scan(%r{<dict>(.*?)</dict>}m).flatten),
+          every:     xml[%r{<key>StartInterval</key>\s*<integer>(\d+)</integer>}, 1]&.to_i
+        }
+      end
+
+      # StartCalendarInterval dict bodies => one entry per time, days collected.
+      def self.calendar_entries(dicts)
+        dicts.map { |body| parse_dict(body) }
+             .group_by { |dict| dict.values_at("Hour", "Minute") }
+             .map { |(hour, minute), group| calendar_entry(hour, minute, group) }
+      end
+
+      # <key>Hour</key><integer>13</integer>... => { "Hour" => 13, ... }
+      def self.parse_dict(body) = body.scan(%r{<key>(\w+)</key>\s*<integer>(\d+)</integer>}).to_h { |key, num| [key, num.to_i] }
+
+      # group: the Weekday-bearing dicts for one time; days is nil when there are none (every day).
+      def self.calendar_entry(hour, minute, group)
+        days = group.filter_map { |dict| dict["Weekday"] }
+        { hour:, minute:, days: days.empty? ? nil : days }
+      end
+
+      # The text inside the <array> that follows <key>key</key>.
+      def self.array_body(xml, key) = xml[%r{<key>#{key}</key>\s*<array>(.*?)</array>}m, 1].to_s
+
+      # The WorkingDirectory (the project root) of a plist, or nil.
+      def self.parse_directory(xml) = xml[%r{<key>WorkingDirectory</key>\s*<string>(.*?)</string>}m, 1]&.then { |text| unescape(text) }
+
+      def self.unescape(text) = text.gsub("&lt;", "<").gsub("&gt;", ">").gsub("&amp;", "&")
+
       def self.escape(text) = text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
 
       # ---- backend API ------------------------------------------------------
@@ -134,6 +168,27 @@ module Asgard
       def installed_names
         prefix = self.class.label_prefix(@project)
         Dir.glob(plist_path("*")).map { |path| File.basename(path, ".plist").delete_prefix(prefix) }.sort
+      end
+
+      # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
+      def installed_entries
+        paths = Dir.glob(File.join(@home, "Library", "LaunchAgents", "#{LABEL_PREFIX}.*.plist"))
+        paths.map { |path| File.basename(path, ".plist").delete_prefix("#{LABEL_PREFIX}.").split(".", 2) }
+             .select { |entry| entry.size == 2 }.sort
+      end
+
+      # { command:, schedule: } as installed, read from the plist; nil when there isn't one.
+      def installed_columns(name)
+        path = plist_path(name)
+        return unless File.exist?(path)
+
+        Schedule.installed_columns(**self.class.parse_plist(File.read(path)))
+      end
+
+      # The project root the job runs in, read from the plist; nil when there isn't one.
+      def installed_directory(name)
+        path = plist_path(name)
+        self.class.parse_directory(File.read(path)) if File.exist?(path)
       end
 
       def status(name)

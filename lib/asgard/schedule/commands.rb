@@ -54,6 +54,11 @@ module Asgard
 
         def schedule_summary(spec) = "#{Schedule.command_line(spec[:task], spec[:args])} (#{Schedule.describe(**spec)})"
 
+        # One `list` row for this project: its declaration (if still declared) plus live state.
+        def schedule_row(name)
+          { name:, **Schedule.declared_columns(schedules[name], "no longer declared"), **Schedule.live_columns(scheduler, name) }
+        end
+
         def schedule_install(spec, asgard:, direnv:)
           name  = spec[:name]
           state = scheduler.install(spec, asgard:, direnv:)
@@ -64,16 +69,6 @@ module Asgard
         def schedule_uninstall(name)
           scheduler.uninstall(name)
           puts "removed #{name}"
-        end
-
-        def require_installed!(name)
-          abort "#{name} is not installed (see `asgard schedule list`)." unless scheduler.installed_names.include?(name)
-        end
-
-        def require_known!(name)
-          return if schedules.key?(name) || scheduler.installed_names.include?(name)
-
-          abort "#{name} is neither declared nor installed (see `asgard schedule list`)."
         end
       end
 
@@ -100,61 +95,132 @@ module Asgard
         scheduler.notes.each { |note| $stderr.puts note }
       end
 
-      desc "list", "Show this project's installed entries, their state, and last exit status"
-      def list
-        names = scheduler.installed_names
-        return puts "No scheduled tasks installed for #{schedule_project} (#{scheduler.scheduler})." if names.empty?
+      no_commands do
+        # [backend, entry name] for an installed entry of this or any project: a
+        # bare name, or project/name when several projects use the same one. nil if none.
+        def find_installed(name)
+          return [scheduler, name] if scheduler.installed_names.include?(name)
 
-        names.each do |name|
-          status = scheduler.status(name)
-          state  = case status[:state]
-                   when :active  then "active; last exit: #{status[:last_exit] || 'never run'}"
-                   when :stopped then "stopped"
-                   else "not loaded"
-                   end
-          spec   = schedules[name]
-          timing = spec ? schedule_summary(spec) : "no longer declared"
-          puts "#{name}  #{timing}  [#{state}]  log: #{scheduler.log_path(name)}"
+          project, entry = name.include?("/") ? name.split("/", 2) : [nil, name]
+          matches = scheduler.installed_entries.select { |slug, found| found == entry && (project.nil? || slug == project) }
+          abort "#{name} is in several projects (#{matches.map(&:first).join(', ')}); name one as project/#{entry}." if matches.size > 1
+
+          matches.first&.then { |slug, found| [backend_for(slug), found] }
         end
+
+        def resolve_installed(name) = find_installed(name) || abort("#{name} is not installed (see `asgard schedule list --all`).")
+
+        # Like resolve_installed, but a declared entry of this project counts even before it is installed.
+        def resolve_known(name)
+          return [scheduler, name] if schedules.key?(name)
+
+          find_installed(name) || abort("#{name} is neither declared nor installed (see `asgard schedule list --all`).")
+        end
+
+        # True when list should cover every project: asked for with --all, or
+        # there is no .loki here, so no single project to scope to.
+        def list_all? = options[:all] || Asgard.find_task_file.nil?
+
+        # What `list` says when there is nothing to show; a project-scoped list
+        # also tells the user how to look further.
+        def no_schedules_message
+          backend = scheduler.scheduler
+          return "No scheduled tasks installed (#{backend})." if list_all?
+
+          "No scheduled tasks installed for #{schedule_project} (#{backend}).\n" \
+            "Use `asgard schedule list --all` to see all currently scheduled tasks."
+        end
+
+        # The rows to list, grouped under a project title: { "Project: name (/path)" => [row, ...] }
+        # for every project, or { nil => [row, ...] } for this one. Empty groups drop out.
+        def list_groups
+          groups = list_all? ? all_schedule_groups : { nil => scheduler.installed_names.map { |name| schedule_row(name) } }
+          groups.reject { |_, rows| rows.empty? }
+        end
+
+        # Every installed entry on the machine, grouped by project.
+        def all_schedule_groups
+          by_project = scheduler.installed_entries.group_by(&:first)
+          by_project.to_h { |slug, entries| [project_title(slug, entries.first.last), entry_rows(entries)] }
+        end
+
+        # "Project: slug (/full/path)", the path read from one of the project's job files.
+        def project_title(slug, name)
+          dir = slug == current_slug ? schedule_root : backend_for(slug).installed_directory(name)
+          ["Project: #{slug}", ("(#{dir})" if dir)].compact.join(" ")
+        end
+
+        def current_slug = Asgard.find_task_file && Schedule.slug(schedule_project)
+
+        def backend_for(slug) = Schedule.backend_class.new(project: slug, root: schedule_root)
+
+        def entry_rows(entries) = entries.map { |slug, name| entry_row(slug, name) }
+
+        # This project's entries keep their declaration columns; see other_project_row.
+        def entry_row(slug, name)
+          return schedule_row(name) if slug == current_slug
+
+          other_project_row(slug, name)
+        end
+
+        # A row for an entry of another project: its .loki isn't loaded, so the
+        # command and schedule are read back from the installed job files.
+        def other_project_row(slug, name)
+          backend = backend_for(slug)
+          shown   = backend.installed_columns(name) || Schedule.declared_columns(nil, "(unreadable)")
+          { name:, **shown, **Schedule.live_columns(backend, name) }
+        end
+      end
+
+      desc "list", "Show this project's installed entries, their state, and last exit status"
+      method_option :all, aliases: "-a", type: :boolean, desc: "List every project's entries, not just this one's"
+      def list
+        groups = list_groups
+        return puts(no_schedules_message) if groups.empty?
+
+        puts groups.map { |title, rows| Schedule::Table.draw(rows, title:) }.join("\n\n")
+        puts "\nLogs: #{File.dirname(scheduler.log_path(groups.values.first.first[:name]))}  (asgard schedule log NAME)"
       end
 
       desc "stop NAME", "Stop one scheduled entry; it stays stopped across reboots and installs until started"
       def stop(name)
-        require_installed!(name)
-        scheduler.stop(name)
+        backend, entry = resolve_installed(name)
+        backend.stop(entry)
         puts "stopped #{name}"
       end
 
       desc "start NAME", "Start a stopped entry, or install and start just this declared entry"
       def start(name)
-        require_known!(name)
-        spec = schedules[name]
+        backend, entry = resolve_known(name)
+        own  = backend.equal?(scheduler)
+        spec = schedules[entry] if own
 
         if spec
           declared_schedules # validates the task exists
           scheduler.install(spec, asgard: schedule_asgard, direnv: schedule_direnv) # refresh the job files
         else
-          $stderr.puts "schedule: #{name} is no longer declared; starting its installed job as-is"
+          why = own ? "is no longer declared" : "belongs to another project"
+          $stderr.puts "schedule: #{name} #{why}; starting its installed job as-is"
         end
-        scheduler.start(name)
+        backend.start(entry)
         puts "started #{name}"
       end
 
       desc "trigger NAME", "Run an installed entry now, under the scheduler's environment"
       def trigger(name)
-        require_installed!(name)
-        abort "#{name} is stopped; `asgard schedule start #{name}` first." if scheduler.status(name)[:state] == :stopped
+        backend, entry = resolve_installed(name)
+        abort "#{name} is stopped; `asgard schedule start #{name}` first." if backend.status(entry)[:state] == :stopped
 
-        scheduler.trigger(name)
-        puts "triggered #{name}; output goes to #{scheduler.log_path(name)}"
+        backend.trigger(entry)
+        puts "triggered #{name}; output goes to #{backend.log_path(entry)}"
       end
 
       desc "log NAME", "Print the named entry's log file to STDOUT"
       method_option :follow, aliases: "-f", type: :boolean, desc: "Keep printing new output as it arrives (tail -f)"
       def log(name)
-        require_known!(name)
+        backend, entry = resolve_known(name)
 
-        path = scheduler.log_path(name)
+        path = backend.log_path(entry)
         return $stderr.puts "#{name} has no log yet (#{path}); it is created on the first run." unless File.exist?(path)
         return sh("tail -n +1 -f #{path.shellescape}", silent: true, exec: true) if options[:follow]
 

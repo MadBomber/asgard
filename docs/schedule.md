@@ -65,13 +65,18 @@ end
 ```bash
 asgard schedule preview        # print the job files install would write
 asgard schedule install        # load declared entries; drop entries no longer declared
-asgard schedule list           # installed entries, schedule, state, last exit status
+asgard schedule list           # this project's entries, state, last exit (--all: every project's)
 asgard schedule stop NAME      # stop one entry (stays stopped across reboots and installs)
 asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now, under the scheduler
 asgard schedule log NAME [-f]  # print the entry's log (-f keeps following it)
 asgard schedule remove         # unload and delete all of this project's entries
 ```
+
+`stop`, `start`, `trigger` and `log` also accept an entry of another project, so
+they work from any directory. Use the name shown by `list --all`; if two projects
+have an entry with the same name, write it as `project/name` (this project's own
+entry wins a bare name).
 
 Re-run `asgard schedule install` after changing declarations or your `PATH`.
 

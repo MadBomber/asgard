@@ -24,6 +24,9 @@ module Asgard
   #   #start(name) / #stop(name)          # stop persists across reboots and reinstalls
   #   #trigger(name)                      # run once now, under the scheduler
   #   #installed_names                    # => ["demo", ...] for this project
+  #   #installed_entries                  # => [[project_slug, "demo"], ...] for every project
+  #   #installed_columns(name)            # => { command:, schedule: } read back from the job files, or nil
+  #   #installed_directory(name)          # => the project root the job runs in, or nil
   #   #status(name)                       # => { state: :active|:stopped|:not_loaded, last_exit: String|nil }
   #   #log_path(name)                     # => path the job's output is appended to
   #   #notes                              # => [String] platform hints to show after install
@@ -119,6 +122,64 @@ module Asgard
       return "every #{every}s" if every
 
       "#{Array(at).join(', ')} #{Array(on).join(', ')}"
+    end
+
+    # For the `list` table: like describe, but a run of hourly times
+    # collapses ("10:00, 11:00 ... 17:00" => "10:00-17:00 hourly").
+    def describe_compact(at: nil, on: :daily, every: nil, **)
+      return "every #{every}s" if every
+
+      "#{compact_times(Array(at))} #{Array(on).join(', ')}"
+    end
+
+    # The command and schedule columns of a `list` row for a declared entry.
+    def list_columns(spec) = { command: command_line(spec[:task], spec[:args]), schedule: describe_compact(**spec) }
+
+    # The command and schedule columns of a `list` row: the declaration's, or
+    # `missing` in the schedule column when there is none.
+    def declared_columns(spec, missing) = spec ? list_columns(spec) : { command: "-", schedule: missing }
+
+    # The state and last-exit columns of a `list` row, from a backend's live status.
+    def live_columns(backend, name)
+      state, last_exit = backend.status(name).values_at(:state, :last_exit)
+      { state: state.to_s.tr("_", " "), last_exit: state == :active ? (last_exit || "never run") : "-" }
+    end
+
+    # The command a job runs, from its program arguments: everything from
+    # `asgard` on, so a direnv wrapper and the asgard install path drop out.
+    def command_from_arguments(arguments)
+      start = arguments.index { |word| File.basename(word) == "asgard" }
+      Shellwords.join(["asgard", *arguments.drop(start ? start + 1 : 0)])
+    end
+
+    # describe_compact for calendar entries (the shape `calendar` returns), one
+    # group per distinct set of days: "17:30 weekdays; 09:00 saturday".
+    def describe_calendar(entries)
+      entries.group_by { |entry| entry[:days]&.sort }.map { |days, group| describe_days(days, group) }.join("; ")
+    end
+
+    def describe_days(days, group)
+      describe_compact(at: group.map { |entry| format("%<hour>02d:%<minute>02d", entry) }, on: day_names(days))
+    end
+
+    # The command and schedule columns for a job read back from its files.
+    def installed_columns(arguments:, calendar:, every:)
+      { command: command_from_arguments(arguments), schedule: every ? "every #{every}s" : describe_calendar(calendar) }
+    end
+
+    # Weekday numbers back to what on: took: nil => :daily, [1, 2, 3, 4, 5] => :weekdays, [5] => [:friday].
+    def day_names(days)
+      return :daily unless days
+
+      names = days.map { |day| DAYS.fetch(day) }
+      DAY_GROUPS.key(names) || names
+    end
+
+    def compact_times(times)
+      parsed = times.map { |time| parse_time(time) }
+      hourly = parsed.size >= 3 && parsed.map(&:last).uniq.size == 1 &&
+               parsed.each_cons(2).all? { |(hour, _), (next_hour, _)| next_hour == hour + 1 }
+      hourly ? "#{times.first}-#{times.last} hourly" : times.join(", ")
     end
 
     # "17:30" => [17, 30]

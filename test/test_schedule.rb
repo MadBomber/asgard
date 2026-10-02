@@ -95,6 +95,17 @@ class TestScheduleDeclaration < Minitest::Test
     assert_equal "asgard report --title Week\\ 39", SD.command_line("report", ["--title", "Week 39"])
   end
 
+  def test_command_from_arguments
+    assert_equal "asgard sync --fast", Asgard::Schedule.command_from_arguments(%w[/opt/bin/asgard sync --fast])
+    assert_equal "asgard sync", Asgard::Schedule.command_from_arguments(%w[/opt/homebrew/bin/direnv exec /proj asgard sync])
+    assert_equal "asgard", Asgard::Schedule.command_from_arguments([])
+  end
+
+  def test_describe_calendar_groups_by_days
+    entries = [{ hour: 17, minute: 0, days: [1, 2, 3, 4, 5] }, { hour: 9, minute: 0, days: [6] }, { hour: 8, minute: 0, days: nil }]
+    assert_equal "17:00 weekdays; 09:00 saturday; 08:00 daily", Asgard::Schedule.describe_calendar(entries)
+  end
+
   def test_describe
     assert_equal "every 60s", SD.describe(every: 60)
     assert_equal "17:30 weekdays", SD.describe(at: "17:30", on: :weekdays)
@@ -232,6 +243,69 @@ class TestScheduleLaunchd < Minitest::Test
     assert_equal :stopped, backend("/h", stopped).status("demo")[:state]
   end
 
+  def test_installed_entries_spans_projects
+    Dir.mktmpdir do |home|
+      dir = File.join(home, "Library/LaunchAgents")
+      FileUtils.mkdir_p(dir)
+      %w[com.madbomber.asgard.my-app.b com.madbomber.asgard.other.c.d com.example.unrelated.x].each do |label|
+        File.write(File.join(dir, "#{label}.plist"), "")
+      end
+      assert_equal [["my-app", "b"], ["other", "c.d"]], backend(home).installed_entries
+    end
+  end
+
+  # What installed_columns reads back must match what the declaration lists.
+  ROUND_TRIPS = [
+    { at: "13:30", on: :friday },
+    { at: "17:00", on: :weekdays },
+    { at: %w[10:00 11:00 12:00 13:00], on: :weekdays },
+    { at: %w[09:00 18:30], on: %i[monday thursday] },
+    { at: "06:15" },
+    { every: 90 },
+    { at: "08:00", options: "--period week --title 'Week End'", as: "demo" }
+  ].freeze
+
+  def round_trip(home, **settings)
+    declared = spec(**settings)
+    backend(home).files(declared, asgard: "/opt/bin/asgard", direnv: nil).each do |path, content|
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+    end
+    [backend(home).installed_columns("demo"), Asgard::Schedule.list_columns(declared)]
+  end
+
+  def test_installed_columns_round_trip
+    ROUND_TRIPS.each do |settings|
+      Dir.mktmpdir do |home|
+        read, declared = round_trip(home, **settings)
+        assert_equal declared, read, settings.inspect
+      end
+    end
+  end
+
+  def test_installed_columns_drops_the_direnv_wrapper
+    Dir.mktmpdir do |home|
+      declared = spec(at: "17:00")
+      backend(home).files(declared, asgard: "/opt/bin/asgard", direnv: "/opt/homebrew/bin/direnv").each do |path, content|
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, content)
+      end
+      assert_equal "asgard demo", backend(home).installed_columns("demo")[:command]
+    end
+  end
+
+  def test_installed_directory
+    Dir.mktmpdir do |home|
+      round_trip(home, at: "17:00")
+      assert_equal "/proj", backend(home).installed_directory("demo")
+      assert_nil backend(home).installed_directory("nope")
+    end
+  end
+
+  def test_installed_columns_is_nil_without_job_files
+    Dir.mktmpdir { |home| assert_nil backend(home).installed_columns("nope") }
+  end
+
   def test_installed_names
     Dir.mktmpdir do |home|
       dir = File.join(home, "Library/LaunchAgents")
@@ -249,6 +323,58 @@ class TestScheduleSystemd < Minitest::Test
 
   def backend(home, runner = FakeRunner.new, env: {})
     Asgard::Schedule::Systemd.new(project: "My App", root: "/proj", home:, runner:, env:, user: "dewayne")
+  end
+
+  # What installed_columns reads back must match what the declaration lists.
+  ROUND_TRIPS = [
+    { at: "13:30", on: :friday },
+    { at: "17:00", on: :weekdays },
+    { at: %w[10:00 11:00 12:00 13:00], on: :weekdays },
+    { at: %w[09:00 18:30], on: %i[monday thursday] },
+    { at: "06:15" },
+    { every: 90 },
+    { at: "08:00", options: "--period week --title 'Week End'", as: "demo" }
+  ].freeze
+
+  def round_trip(home, **settings)
+    declared = spec(**settings)
+    backend(home).files(declared, asgard: "/opt/bin/asgard", direnv: nil).each do |path, content|
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, content)
+    end
+    [backend(home).installed_columns("demo"), Asgard::Schedule.list_columns(declared)]
+  end
+
+  def test_installed_columns_round_trip
+    ROUND_TRIPS.each do |settings|
+      Dir.mktmpdir do |home|
+        read, declared = round_trip(home, **settings)
+        assert_equal declared, read, settings.inspect
+      end
+    end
+  end
+
+  def test_installed_columns_drops_the_direnv_wrapper
+    Dir.mktmpdir do |home|
+      declared = spec(at: "17:00")
+      backend(home).files(declared, asgard: "/opt/bin/asgard", direnv: "/opt/homebrew/bin/direnv").each do |path, content|
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, content)
+      end
+      assert_equal "asgard demo", backend(home).installed_columns("demo")[:command]
+    end
+  end
+
+  def test_installed_directory
+    Dir.mktmpdir do |home|
+      round_trip(home, at: "17:00")
+      assert_equal "/proj", backend(home).installed_directory("demo")
+      assert_nil backend(home).installed_directory("nope")
+    end
+  end
+
+  def test_installed_columns_is_nil_without_job_files
+    Dir.mktmpdir { |home| assert_nil backend(home).installed_columns("nope") }
   end
 
   def test_unit_slugs_the_project
@@ -453,8 +579,10 @@ class TestScheduleCommands < Minitest::Test
   def backend = Asgard::Schedule.backend_class.new(project: "proj", root: File.realpath(@project))
 
   def test_asgard_schedule_maps_to_the_subcommand
+    Asgard::Schedule::Commands._reset_ran! # each task runs once per process; an earlier test may have run `list`
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[schedule list]) } }
     assert_match "No scheduled tasks installed for proj", out
+    assert_match "asgard schedule list --all", out
   end
 
   def test_subcommand_usage_reads_schedule_not__schedule
@@ -481,7 +609,9 @@ class TestScheduleCommands < Minitest::Test
     assert_equal ["tree"], backend.installed_names
 
     out, = capture_io { schedule("list") }
-    assert_match(/^tree  asgard tree \(every 60s\)  \[.+\]  log: /, out)
+    assert_match(/NAME\s+│\s*COMMAND\s+│\s*SCHEDULE\s+│\s*STATE\s+│\s*LAST EXIT/, out)
+    assert_match(/│ tree\s+│ asgard tree\s+│ every 60s/, out)
+    assert_match(/^Logs: .*asgard schedule log NAME/, out)
 
     out, = capture_io { schedule("remove") }
     assert_match "removed tree", out
@@ -497,6 +627,31 @@ class TestScheduleCommands < Minitest::Test
     out, = capture_io { schedule("install") }
     assert_match "removed old", out
     assert_equal ["tree"], backend.installed_names
+  end
+
+  def test_list_all_shows_other_projects_and_runs_outside_a_project
+    Tasks.schedule :tree, every: 60
+    capture_io { schedule("install") }
+    Asgard::Schedule.declarations.clear
+    Tasks.schedule :tree, every: 60, as: "nightly"
+    spec  = Asgard::Schedule.declarations["nightly"]
+    other = Asgard::Schedule.backend_class.new(project: "elsewhere", root: @tmp)
+    other.install(spec, asgard: File.join(@bin, "asgard"), direnv: nil)
+    Asgard::Schedule.declarations.clear
+    Tasks.schedule :tree, every: 60
+
+    out, = capture_io { schedule("list") }
+    refute_match "elsewhere", out
+
+    out, = capture_io { schedule("list", "--all") }
+    assert_equal ["Project: elsewhere (#{@tmp})", "Project: proj (#{File.realpath(@project)})"], out.lines.grep(/^Project:/).map(&:chomp)
+    assert_match(/^Project: elsewhere .*\n┌.*?│ nightly\s+│ asgard tree\s+│ every 60s/m, out)
+    assert_match(/^Project: proj .*\n┌.*?│ tree\s+│ asgard tree/m, out)
+    assert_equal 1, out.scan(/^Logs:/).size
+
+    File.delete(File.join(@project, ".loki"))
+    out, = capture_io { schedule("list") }
+    assert_match "Project: elsewhere", out
   end
 
   def test_list_marks_undeclared_entries
@@ -554,6 +709,53 @@ class TestScheduleCommands < Minitest::Test
     assert_match "started tree", out
   end
 
+  # Installs `tree` under project "elsewhere" (not loaded here) and, optionally, under this project too.
+  def install_elsewhere(also_here: false)
+    Tasks.schedule :tree, every: 60
+    capture_io { schedule("install") } if also_here
+    spec = Asgard::Schedule.declarations["tree"]
+    Asgard::Schedule.backend_class.new(project: "elsewhere", root: @tmp).install(spec, asgard: File.join(@bin, "asgard"), direnv: nil)
+    Asgard::Schedule.declarations.clear
+  end
+
+  # Did a stop (launchctl disable / systemctl disable) reach this label or unit?
+  def disabled?(name) = @runner.commands.any? { |line| line.include?(name) && line.include?("disable") }
+
+  def test_commands_reach_entries_of_other_projects
+    install_elsewhere
+    other = Asgard::Schedule.backend_class.new(project: "elsewhere", root: @tmp)
+
+    assert_match "stopped tree", capture_io { schedule("stop", "tree") }.first
+    assert disabled?("asgard.elsewhere.tree"), @runner.commands.inspect
+    _, err = capture_io { schedule("start", "tree") }
+    assert_match "belongs to another project", err
+    assert_match "triggered elsewhere/tree", capture_io { schedule("trigger", "elsewhere/tree") }.first
+
+    FileUtils.mkdir_p(File.dirname(other.log_path("tree")))
+    File.write(other.log_path("tree"), "other ran\n")
+    assert_equal "other ran\n", capture_io { schedule("log", "tree") }.first
+  end
+
+  def test_same_name_in_two_projects_needs_the_project_prefix
+    install_elsewhere(also_here: true)
+    Asgard::Schedule.declarations.clear
+
+    assert_match "stopped tree", capture_io { schedule("stop", "tree") }.first # this project wins a bare name
+    assert disabled?("asgard.proj.tree")
+    refute disabled?("asgard.elsewhere.tree")
+    assert_match "stopped elsewhere/tree", capture_io { schedule("stop", "elsewhere/tree") }.first
+    assert disabled?("asgard.elsewhere.tree")
+  end
+
+  def test_a_bare_name_found_in_several_other_projects_is_ambiguous
+    install_elsewhere
+    spec = Asgard::Schedule.normalize(:tree, every: 60)
+    Asgard::Schedule.backend_class.new(project: "third", root: @tmp).install(spec, asgard: File.join(@bin, "asgard"), direnv: nil)
+
+    _, err = capture_io { assert_raises(SystemExit) { schedule("stop", "tree") } }
+    assert_match "tree is in several projects (elsewhere, third); name one as project/tree", err
+  end
+
   def test_log
     Tasks.schedule :tree, every: 60
     _, err = capture_io { schedule("log", "tree") }
@@ -569,5 +771,59 @@ class TestScheduleCommands < Minitest::Test
   def test_remove_with_nothing_installed
     out, = capture_io { schedule("remove") }
     assert_match "No scheduled tasks installed for proj.", out
+  end
+end
+
+class TestScheduleTable < Minitest::Test
+  SD = Asgard::Schedule
+
+  ROWS = [{ name: "a", command: "asgard a", schedule: "17:00 weekdays", state: "active", last_exit: "0" },
+          { name: "long_name", command: "asgard b", schedule: "13:30 friday", state: "stopped", last_exit: "-" }].freeze
+
+  LONG = [{ name: "status_shell_hourly", command: "asgard status shell_hourly",
+            schedule: "10:00-17:00 hourly weekdays", state: "active", last_exit: "never run" }].freeze
+
+  def test_describe_compact_collapses_hourly_runs
+    hours = (10..17).map { |h| format("%02d:00", h) }
+    assert_equal "10:00-17:00 hourly weekdays", SD.describe_compact(at: hours, on: :weekdays)
+    assert_equal "09:00, 13:30 friday", SD.describe_compact(at: %w[09:00 13:30], on: :friday)
+    assert_equal "every 60s", SD.describe_compact(every: 60)
+  end
+
+  def test_table_draws_header_and_one_line_per_row
+    out = SD::Table.new(ROWS, color: false, width: 100).render
+    assert_match(/NAME\s+│\s*COMMAND\s+│\s*SCHEDULE\s+│\s*STATE\s+│\s*LAST EXIT/, out)
+    assert_match(/long_name\s+│\s*asgard b/, out)
+    refute_includes out, "\e["
+  end
+
+  def test_table_wraps_long_cells_and_keeps_short_ones_whole
+    wide   = SD::Table.new(LONG, color: false, width: 140).render
+    narrow = SD::Table.new(LONG, color: false, width: 95).render
+    assert_operator narrow.lines.size, :>, wide.lines.size
+    assert(narrow.lines.all? { |line| line.chomp.length <= 95 })
+    assert_includes narrow, "status_shell_hourly"
+    assert_includes narrow, "never run"
+  end
+
+  def test_column_widths_shrink_only_flexible_columns
+    roomy = SD::Table.new(LONG, color: false, width: 200)
+    tight = SD::Table.new(LONG, color: false, width: 90)
+    assert_equal roomy.column_widths.values_at(0, 3, 4), tight.column_widths.values_at(0, 3, 4)
+    assert_operator tight.column_widths[1], :<, roomy.column_widths[1]
+    assert_operator tight.column_widths[2], :<, roomy.column_widths[2]
+    assert_equal 90, tight.total_width
+  end
+
+  def test_table_colors_only_on_request
+    rows = [{ name: "a", command: "c", schedule: "s", state: "active", last_exit: "1" }]
+    assert_includes SD::Table.new(rows, color: true, width: 100).render, "\e[31m1"
+  end
+
+  def test_terminal_width_for_non_tty_uses_columns_then_default
+    io = StringIO.new
+    assert_equal 120, SD::Table.terminal_width(io, env: {})
+    assert_equal 90,  SD::Table.terminal_width(io, env: { "COLUMNS" => "90" })
+    assert_equal 120, SD::Table.terminal_width(io, env: { "COLUMNS" => "wide" })
   end
 end

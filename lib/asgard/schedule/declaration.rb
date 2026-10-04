@@ -6,8 +6,10 @@ require "shellwords"
 module Asgard
   # Scheduled asgard tasks, run by the platform's own scheduler: launchd on
   # macOS (Schedule::Launchd), systemd user timers on Linux
-  # (Schedule::Systemd). Both run a calendar job missed while the machine
-  # slept as soon as it wakes.
+  # (Schedule::Systemd), Task Scheduler on Windows (Schedule::Windows). All
+  # three run a calendar job missed while the machine slept as soon as it
+  # wakes. Schedule::Cron (ASGARD_SCHEDULER=cron) is the portable fallback;
+  # cron skips missed runs.
   #
   # This file is the platform-neutral half: it validates `schedule`
   # declarations and builds the command a job runs. Everything here is pure,
@@ -18,7 +20,7 @@ module Asgard
   #
   #   Backend.new(project:, root:, home: Dir.home, runner: Schedule.runner)
   #   #scheduler                          # => "launchd" / "systemd"
-  #   #files(spec, asgard:, direnv:)      # => { path => content } install would write
+  #   #files(spec, asgard:, direnv:)      # => { path => content } install would write (cron: { "crontab" => block })
   #   #install(spec, asgard:, direnv:)    # write + load; => :active, or :stopped if stopped earlier
   #   #uninstall(name)                    # unload, clear any stop, delete files
   #   #start(name) / #stop(name)          # stop persists across reboots and reinstalls
@@ -57,13 +59,25 @@ module Asgard
 
       def runner = @runner || RUNNER
 
-      # The backend class for +platform+ (a RUBY_PLATFORM string).
-      def backend_class(platform = RUBY_PLATFORM)
+      # The backend class for +platform+ (a RUBY_PLATFORM string), unless
+      # +scheduler+ (ASGARD_SCHEDULER: launchd, systemd or cron) names one.
+      def backend_class(platform = RUBY_PLATFORM, scheduler: ENV.fetch("ASGARD_SCHEDULER", nil))
+        return named_backend(scheduler) unless scheduler.to_s.empty?
+
         case platform
-        when /darwin/ then Launchd
-        when /linux/  then Systemd
-        else raise Error, "#{platform} is not supported (needs macOS launchd or Linux systemd)"
+        when /darwin/       then Launchd
+        when /linux/        then Systemd
+        when /mingw|mswin/  then Windows
+        else raise Error, "#{platform} is not supported (needs macOS launchd, Linux systemd or Windows Task Scheduler; " \
+                          "set ASGARD_SCHEDULER=cron to use crontab)"
         end
+      end
+
+      # Every backend by the name ASGARD_SCHEDULER takes.
+      def backends = { "launchd" => Launchd, "systemd" => Systemd, "cron" => Cron, "windows" => Windows }
+
+      def named_backend(name)
+        backends.fetch(name.to_s.downcase) { raise Error, "ASGARD_SCHEDULER=#{name} is not one of #{backends.keys.join(', ')}" }
       end
     end
 
@@ -148,9 +162,20 @@ module Asgard
     # The command a job runs, from its program arguments: everything from
     # `asgard` on, so a direnv wrapper and the asgard install path drop out.
     def command_from_arguments(arguments)
-      start = arguments.index { |word| File.basename(word) == "asgard" }
+      start = arguments.index { |word| program_name(word) == "asgard" }
       Shellwords.join(["asgard", *arguments.drop(start ? start + 1 : 0)])
     end
+
+    # "C:\Ruby\bin\asgard.bat" => "asgard", whatever the platform.
+    def program_name(word) = File.basename(word.to_s.tr("\\", "/"), ".*")
+
+    # `&`, `<` and `>` as XML text (launchd plists, Task Scheduler definitions).
+    def xml_escape(text) = text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+
+    def xml_unescape(text) = text.gsub("&lt;", "<").gsub("&gt;", ">").gsub("&amp;", "&")
+
+    # What Windows runs for a command name: RubyGems installs asgard.bat there.
+    WINDOWS_EXTENSIONS = %w[.bat .cmd .exe].freeze
 
     # describe_compact for calendar entries (the shape `calendar` returns), one
     # group per distinct set of days: "17:30 weekdays; 09:00 saturday".
@@ -218,10 +243,12 @@ module Asgard
     # PATH captured at install time, plus the declaration's env:.
     def environment(spec, path = ENV.fetch("PATH", nil)) = { "PATH" => path.to_s }.merge(spec[:env])
 
-    # First executable named +command+ on +path+ (a PATH-style String), or nil.
+    # First executable named +command+ (or command.bat, .cmd, .exe) on +path+
+    # (a PATH-style String), or nil.
     def which(command, path)
-      path.to_s.split(File::PATH_SEPARATOR)
-          .map { |dir| File.join(dir, command) }
+      names = [command, *WINDOWS_EXTENSIONS.map { |ext| "#{command}#{ext}" }]
+      path.to_s.split(File::PATH_SEPARATOR).product(names)
+          .map { |dir, name| File.join(dir, name) }
           .find { |file| File.file?(file) && File.executable?(file) }
     end
 

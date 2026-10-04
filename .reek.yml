@@ -84,6 +84,7 @@ detectors:
       - Asgard::Doctor::TaskSections#relative_path
       - Asgard::Doctor::TaskSections#task_status
       - Asgard::Shell#shebang                       # Tempfile.create(&block) idiom
+      - Asgard::Schedule::Cron#write_crontab        # same
 
   ManualDispatch:
     exclude:
@@ -135,6 +136,9 @@ detectors:
       - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
       - Asgard::Schedule::Systemd#self.timer_unit
       - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
+      - Asgard::Schedule::Cron#self.command         # one keyword per crontab job field
+      - Asgard::Schedule::Windows#self.task_xml     # one keyword per task definition field
+      - Asgard::Schedule::Windows#definition        # the backend API's asgard:/direnv: plus the task's enabled flag
 
   RepeatedConditional:
     exclude:
@@ -145,6 +149,8 @@ detectors:
       - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
       - Asgard::Schedule::Launchd                   # backend API + pure helpers
       - Asgard::Schedule::Systemd
+      - Asgard::Schedule::Cron
+      - Asgard::Schedule::Windows
 
 
 exclude_paths:

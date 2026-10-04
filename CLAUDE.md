@@ -10,16 +10,19 @@ Asgard is a Ruby task runner. Users define tasks in `.loki` files by reopening t
 
 ```bash
 bundle install
-bundle exec rake test          # run tests (enforces 95% SimpleCov coverage)
-bundle exec rake quality       # test + flog complexity check
-bundle exec rake build         # build .gem into pkg/
-bundle exec rake install       # install locally
-
-# or use the gem's own .loki file:
-asgard test_check
-asgard quality
-asgard release
+asgard                 # default task: quality (every *_check gate in parallel)
+asgard test_check      # run the test suite (enforces 95% SimpleCov coverage)
+asgard test_verbose    # same, verbose output
+asgard rubocop_check   # one gate on its own; also flog_, flay_, reek_, exhale_, archspec_check ...
+asgard build           # build .gem into pkg/
+asgard install         # build and install locally
+asgard release         # quality gate, then push to RubyGems
+asgard tree            # every available task
 ```
+
+There is no Rakefile. Asgard is its own task runner: the tasks that a Rakefile would
+hold live in the `.loki` files at the repo root (`quality.loki`, `gem_tasks.loki`,
+`git.loki`, `doc_tasks.loki`), imported by `.loki`.
 
 Whole suite (one process, so SimpleCov sees everything): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
 
@@ -45,7 +48,7 @@ Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fal
 | `lib/asgard/tasks.rb` | `class Tasks < Asgard::Base` — the convention class users reopen; also holds gem-owned built-in tasks |
 | `lib/asgard/schedule.rb` | `Asgard::Schedule` — the `schedule` DSL registry; requires the files below |
 | `lib/asgard/schedule/declaration.rb` | Pure declaration validation + the backend API contract |
-| `lib/asgard/schedule/launchd.rb`, `systemd.rb` | Platform backends; shell out through an injectable runner |
+| `lib/asgard/schedule/launchd.rb`, `systemd.rb`, `windows.rb`, `cron.rb` | Platform backends (cron only via `ASGARD_SCHEDULER=cron`); shell out through an injectable runner |
 | `lib/asgard/schedule/commands.rb` | `asgard schedule ...` subcommands (registered as `_schedule`, mapped to `schedule`) |
 
 ### Naming Convention for Gem-Owned Methods
@@ -67,6 +70,12 @@ end
 `method_added` in `Base` already skips `_`-prefixed methods when attaching dependency metadata, so built-ins are naturally excluded from the dependency graph.
 
 Do not define `_`-prefixed methods in user `.loki` files — that namespace is reserved for the gem.
+
+### Duplication Contract (`contract/`)
+
+`exhale dry` (run by `asgard exhale_check`) fails on duplicated code unless the Contract keeps it. `contract/schedule_backend/duplication.md` declares the four scheduler backends (`Launchd`, `Systemd`, `Cron`, `Windows`) parallel on purpose: they share shapes (`initialize`, `run!`, `installed_entries`, `installed_directory`) but stay independent so a fix for one scheduler never touches another. Anything platform-neutral belongs in `declaration.rb`, not a shared base class. A clause naming code that no longer exists, or keeping nothing, fails the gate, so update the Contract when a backend is renamed or removed.
+
+`Archspec.rb` (`asgard archspec_check`) enforces the same obligations statically: each backend is its own component that must implement the backend API, may not reference `Open3` or call `system`/`spawn`/`capture*`, and may not reference another backend or the CLI. Two cycles are deliberately excluded from `no_cycles` and documented there (Tasks and the schedule CLI; the backend factory in `declaration.rb` and the backends). Add a new backend to the `BACKENDS` hash in `Archspec.rb` and to the Contract.
 
 ### DSL Mechanics (`lib/asgard/base.rb`)
 
@@ -106,7 +115,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 
 ## Testing
 
-Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
+Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv), a `FakeCrontab` and a `FakeSchtasks` so every backend tests on any platform. SimpleCov minimum is 95%, configured in `test/test_helper.rb`, which starts coverage before requiring the library; `asgard test_check` (quality.loki) loads every test file in one process so coverage covers the whole suite.
 
 Key test patterns: tests frequently subclass `Asgard::Base` directly (not `Tasks`) to test the engine in isolation, and use `capture_io` for output assertions.
 
@@ -119,11 +128,11 @@ class Tasks
   @@gem_name ||= "asgard".freeze
 
   desc "test", "Run tests"
-  def test = sh "bundle exec rake test"
+  def test = sh "ruby -Ilib:test test/test_asgard.rb"
 
   depends_on :test
-  desc "release", "Build and release"
-  def release = sh "bundle exec rake release"
+  desc "build", "Build the gem"
+  def build = sh "gem build #{@@gem_name}.gemspec"
 end
 ```
 

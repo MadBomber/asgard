@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Windows backend** (`Asgard::Schedule::Windows`) — on mingw/mswin Rubies
+  each schedule entry becomes a Task Scheduler task under `\asgard\<project>`,
+  registered with `schtasks` from an XML definition in
+  `%LOCALAPPDATA%\asgard\tasks`. Output goes to `%LOCALAPPDATA%\asgard\logs`
+  via `cmd.exe`. `every:` must be whole minutes up to 31 days; an argument
+  containing a double quote is refused.
+- **cron backend** (`Asgard::Schedule::Cron`) — each schedule entry becomes a
+  marked block in the user's crontab. Select it with
+  `ASGARD_SCHEDULER=cron` (`launchd`, `systemd` and `windows` are accepted
+  too). cron skips runs missed while the machine was off, cannot report a
+  last exit status, and accepts only `every:` intervals that divide an hour
+  or a day.
+- `Schedule.which` also finds `name.bat`, `.cmd` and `.exe`, so `asgard` is
+  found on a Windows PATH; `Schedule.command_from_arguments` recognizes
+  `asgard.bat`.
+- **Duplication Contract** (`contract/schedule_backend/`) — declares the four
+  scheduler backends parallel on purpose, so `exhale dry` keeps their shared
+  shapes (`initialize`, `run!`, `installed_entries`, `installed_directory`)
+  instead of failing the gate; the reason is written next to the clause.
+- `Archspec.rb` now covers the scheduler: components for the neutral core,
+  the `schedule` CLI and each backend; every backend must implement the
+  documented API, shell out only through the injected runner, and reference
+  neither another backend nor the CLI.
+
 ## [0.4.1] - 2026-10-02
 
 ### Added

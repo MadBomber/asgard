@@ -96,9 +96,9 @@ module Asgard
       # The WorkingDirectory (the project root) of a plist, or nil.
       def self.parse_directory(xml) = xml[%r{<key>WorkingDirectory</key>\s*<string>(.*?)</string>}m, 1]&.then { |text| unescape(text) }
 
-      def self.unescape(text) = text.gsub("&lt;", "<").gsub("&gt;", ">").gsub("&amp;", "&")
+      def self.unescape(text) = Schedule.xml_unescape(text)
 
-      def self.escape(text) = text.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+      def self.escape(text) = Schedule.xml_escape(text)
 
       # ---- backend API ------------------------------------------------------
 

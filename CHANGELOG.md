@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Schedule.which` also finds `name.bat`, `.cmd` and `.exe`, so `asgard` is
   found on a Windows PATH; `Schedule.command_from_arguments` recognizes
   `asgard.bat`.
+- **Duplication Contract** (`contract/schedule_backend/`) — declares the four
+  scheduler backends parallel on purpose, so `exhale dry` keeps their shared
+  shapes (`initialize`, `run!`, `installed_entries`, `installed_directory`)
+  instead of failing the gate; the reason is written next to the clause.
 
 ## [0.4.1] - 2026-10-02
 

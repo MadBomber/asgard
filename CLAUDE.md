@@ -10,16 +10,19 @@ Asgard is a Ruby task runner. Users define tasks in `.loki` files by reopening t
 
 ```bash
 bundle install
-bundle exec rake test          # run tests (enforces 95% SimpleCov coverage)
-bundle exec rake quality       # test + flog complexity check
-bundle exec rake build         # build .gem into pkg/
-bundle exec rake install       # install locally
-
-# or use the gem's own .loki file:
-asgard test_check
-asgard quality
-asgard release
+asgard                 # default task: quality (every *_check gate in parallel)
+asgard test_check      # run the test suite (enforces 95% SimpleCov coverage)
+asgard test_verbose    # same, verbose output
+asgard rubocop_check   # one gate on its own; also flog_, flay_, reek_, exhale_, archspec_check ...
+asgard build           # build .gem into pkg/
+asgard install         # build and install locally
+asgard release         # quality gate, then push to RubyGems
+asgard tree            # every available task
 ```
+
+There is no Rakefile. Asgard is its own task runner: the tasks that a Rakefile would
+hold live in the `.loki` files at the repo root (`quality.loki`, `gem_tasks.loki`,
+`git.loki`, `doc_tasks.loki`), imported by `.loki`.
 
 Whole suite (one process, so SimpleCov sees everything): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
 
@@ -112,7 +115,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 
 ## Testing
 
-Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv), a `FakeCrontab` and a `FakeSchtasks` so every backend tests on any platform. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
+Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv), a `FakeCrontab` and a `FakeSchtasks` so every backend tests on any platform. SimpleCov minimum is 95%, configured in `test/test_helper.rb`, which starts coverage before requiring the library; `asgard test_check` (quality.loki) loads every test file in one process so coverage covers the whole suite.
 
 Key test patterns: tests frequently subclass `Asgard::Base` directly (not `Tasks`) to test the engine in isolation, and use `capture_io` for output assertions.
 
@@ -125,11 +128,11 @@ class Tasks
   @@gem_name ||= "asgard".freeze
 
   desc "test", "Run tests"
-  def test = sh "bundle exec rake test"
+  def test = sh "ruby -Ilib:test test/test_asgard.rb"
 
   depends_on :test
-  desc "release", "Build and release"
-  def release = sh "bundle exec rake release"
+  desc "build", "Build the gem"
+  def build = sh "gem build #{@@gem_name}.gemspec"
 end
 ```
 

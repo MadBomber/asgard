@@ -280,10 +280,10 @@ Scheduled tasks. The user-facing guide is [Scheduled Tasks](schedule.md); this s
 | `declare` | `Asgard::Schedule.declare(task, **settings) → Hash` | What `Tasks.schedule` calls. Validates via `normalize` and records the entry. Redeclaring an identical entry is a no-op; a different entry under the same name raises `ArgumentError`. |
 | `declarations` | `Asgard::Schedule.declarations → Hash` | Declared entries for this run, keyed by entry name. |
 | `normalize` | `Asgard::Schedule.normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil) → Hash` | Validates one declaration and returns `{ name:, task:, args:, at:, on:, every:, env: }`. Pure. |
-| `backend_class` | `Asgard::Schedule.backend_class(platform = RUBY_PLATFORM)` | `Launchd` on darwin, `Systemd` on linux; raises `Asgard::Schedule::Error` elsewhere. |
+| `backend_class` | `Asgard::Schedule.backend_class(platform = RUBY_PLATFORM, scheduler: ENV["ASGARD_SCHEDULER"])` | `Launchd` on darwin, `Systemd` on linux, `Windows` on mingw/mswin; raises `Asgard::Schedule::Error` elsewhere. `scheduler:` (`launchd`, `systemd`, `cron` or `windows`) overrides the platform. |
 | `runner` / `runner=` | `Asgard::Schedule.runner → #call` | The command runner new backends use: `argv` in, `[output, success?]` out. Defaults to `RUNNER` (`Open3.capture2e`); tests assign a recording runner, and `nil` restores the default. |
 
-Both backends, `Asgard::Schedule::Launchd` and `Asgard::Schedule::Systemd`, implement the same instance API: `files`, `install`, `uninstall`, `start`, `stop`, `trigger`, `installed_names`, `status`, `log_path`, `notes`. Each class also exposes the pure helpers that build its job files (`Launchd.plist`, `Systemd.service_unit`, `Systemd.timer_unit`, ...), so they can be tested without a scheduler.
+All four backends, `Asgard::Schedule::Launchd`, `Asgard::Schedule::Systemd`, `Asgard::Schedule::Cron` and `Asgard::Schedule::Windows`, implement the same instance API: `files`, `install`, `uninstall`, `start`, `stop`, `trigger`, `installed_names`, `status`, `log_path`, `notes`. Each class also exposes the pure helpers that build its job files (`Launchd.plist`, `Systemd.service_unit`, `Systemd.timer_unit`, ...), so they can be tested without a scheduler.
 
 ---
 

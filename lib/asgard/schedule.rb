@@ -3,6 +3,8 @@
 require_relative "schedule/declaration"
 require_relative "schedule/launchd"
 require_relative "schedule/systemd"
+require_relative "schedule/cron"
+require_relative "schedule/windows"
 require_relative "schedule/table"
 require_relative "schedule/commands"
 

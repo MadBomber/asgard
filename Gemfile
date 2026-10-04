@@ -10,6 +10,7 @@ gem "rake", "~> 13.0"
 
 gem "archspec"
 gem "bundler-audit"
+gem "exhale"
 gem "fasterer"
 gem "flay"
 gem "flog"

@@ -160,6 +160,16 @@ class Tasks
     result
   end
 
+  desc "Check for duplicated code introduced since the base branch with Exhale"
+  def exhale_check
+    output = `bundle exec exhale lib 2>&1`.gsub(/\e\[\d+m/, "")
+    result = $?.success? ? :pass : :warn
+    File.write("exhale_output.txt", output)
+    summary = output.lines.find { |l| l.start_with?("exhale") }&.strip || result.to_s
+    puts "Exhale: #{summary} (see exhale_output.txt)"
+    result
+  end
+
   desc "Check Gemfile.lock for known vulnerabilities with bundler-audit"
   def bundler_audit_check
     output = `bundle exec bundle-audit check --update 2>&1`

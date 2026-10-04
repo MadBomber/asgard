@@ -45,7 +45,7 @@ Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fal
 | `lib/asgard/tasks.rb` | `class Tasks < Asgard::Base` — the convention class users reopen; also holds gem-owned built-in tasks |
 | `lib/asgard/schedule.rb` | `Asgard::Schedule` — the `schedule` DSL registry; requires the files below |
 | `lib/asgard/schedule/declaration.rb` | Pure declaration validation + the backend API contract |
-| `lib/asgard/schedule/launchd.rb`, `systemd.rb` | Platform backends; shell out through an injectable runner |
+| `lib/asgard/schedule/launchd.rb`, `systemd.rb`, `windows.rb`, `cron.rb` | Platform backends (cron only via `ASGARD_SCHEDULER=cron`); shell out through an injectable runner |
 | `lib/asgard/schedule/commands.rb` | `asgard schedule ...` subcommands (registered as `_schedule`, mapped to `schedule`) |
 
 ### Naming Convention for Gem-Owned Methods
@@ -106,7 +106,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 
 ## Testing
 
-Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
+Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv), a `FakeCrontab` and a `FakeSchtasks` so every backend tests on any platform. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
 
 Key test patterns: tests frequently subclass `Asgard::Base` directly (not `Tasks`) to test the engine in isolation, and use `capture_io` for output assertions.
 

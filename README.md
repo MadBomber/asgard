@@ -23,7 +23,7 @@
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
-- <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
+- <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS), systemd timers (Linux) or Task Scheduler (Windows) with <code>schedule</code> and <code>asgard schedule install</code><br>
 - <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
@@ -609,7 +609,7 @@ See [`examples/server_subcommands.loki`](examples/server_subcommands.loki) and [
 ## Scheduled tasks
 
 Any task can run on a schedule under the platform's own scheduler:
-**launchd** on macOS, **systemd user timers** on Linux. Declare schedules at
+**launchd** on macOS, **systemd user timers** on Linux, **Task Scheduler** on Windows. Declare schedules at
 class level in `.loki`:
 
 ```ruby

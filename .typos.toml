@@ -1,0 +1,4 @@
+# Words typos would otherwise "correct".
+[default.extend-identifiers]
+# schtasks' output-format flag (`schtasks /Query /FO CSV`), not a typo of "of"/"for".
+FO = "FO"

@@ -90,14 +90,36 @@ If the project has a `.envrc`, the job runs under `direnv exec`, so API keys and
 
 Entries are scoped to the project (the name of the directory holding `.loki`), so `list`, `install` and `remove` only touch this project's jobs.
 
-| | macOS (launchd) | Linux (systemd) |
-|---|---|---|
-| Job files | `~/Library/LaunchAgents/com.madbomber.asgard.<project>.<name>.plist` | `~/.config/systemd/user/asgard.<project>.<name>.{service,timer}` |
-| Logs | `~/Library/Logs/asgard/` | `~/.local/state/asgard/` (honors `XDG_STATE_HOME`) |
-| Stop | `launchctl disable` | `systemctl --user disable --now` |
-| Caveats | runs only while you're logged in | runs only while you're logged in unless `loginctl enable-linger`; needs systemd 240+ |
+| | macOS (launchd) | Linux (systemd) | Windows (Task Scheduler) |
+|---|---|---|---|
+| Job files | `~/Library/LaunchAgents/com.madbomber.asgard.<project>.<name>.plist` | `~/.config/systemd/user/asgard.<project>.<name>.{service,timer}` | task `sgard<project><name>`, defined by `%LOCALAPPDATA%sgard	askssgard.<project>.<name>.xml` |
+| Logs | `~/Library/Logs/asgard/` | `~/.local/state/asgard/` (honors `XDG_STATE_HOME`) | `%LOCALAPPDATA%sgardlogs` |
+| Stop | `launchctl disable` | `systemctl --user disable --now` | `schtasks /Change /DISABLE` |
+| Caveats | runs only while you're logged in | runs only while you're logged in unless `loginctl enable-linger`; needs systemd 240+ | runs only while you're logged on; `every:` must be whole minutes, up to 31 days; an argument containing `"` is refused |
 
-Other platforms aren't supported. The `schedule` subcommands there exit with an error.
+### cron
+
+cron is the fallback for machines without launchd or systemd. It is never chosen automatically; select it with `ASGARD_SCHEDULER=cron` (also `launchd`, `systemd` or `windows`, to override the platform default). Each entry becomes a marked block in your crontab, and nothing outside the markers is touched:
+
+```
+# asgard:begin myproject.sync
+30 17 * * 1,2,3,4,5 cd /path/to/myproject && env PATH=... /usr/local/bin/asgard sync >> ~/.local/state/asgard/asgard.myproject.sync.log 2>&1
+# asgard:end myproject.sync
+```
+
+`stop` comments the block's job lines out (`#~ `) so `install` keeps it stopped. Compared with the other two backends, cron:
+
+- skips a run missed while the machine was off or asleep;
+- cannot report a job's last exit status (the `list` column shows `n/a`);
+- follows the clock for `every:`, so only whole minutes that divide an hour (`300`, `900`) or whole hours that divide a day (`21600`) are accepted; anything else, such as `every: 90`, is refused at install time.
+
+Entries made with one scheduler are not visible to the others, so `list --all` shows only the selected scheduler's entries.
+
+### Windows
+
+On Windows (RubyInstaller or any mingw/mswin Ruby) each entry is a Task Scheduler task under the `\asgard\<project>` folder, registered with `schtasks` from an XML definition that `preview` shows. Task Scheduler cannot capture a task's output, so the task runs `cmd.exe /c`, sets the job's `PATH` and `env:` variables, and appends the job's output to the log. Tasks are `StartWhenAvailable`, so a run missed while the machine was off happens at the next boot, and `list` shows the task's last result.
+
+Other platforms aren't supported without `ASGARD_SCHEDULER=cron`; the `schedule` subcommands there exit with an error.
 
 ---
 

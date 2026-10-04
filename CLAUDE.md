@@ -72,6 +72,8 @@ Do not define `_`-prefixed methods in user `.loki` files — that namespace is r
 
 `exhale dry` (run by `asgard exhale_check`) fails on duplicated code unless the Contract keeps it. `contract/schedule_backend/duplication.md` declares the four scheduler backends (`Launchd`, `Systemd`, `Cron`, `Windows`) parallel on purpose: they share shapes (`initialize`, `run!`, `installed_entries`, `installed_directory`) but stay independent so a fix for one scheduler never touches another. Anything platform-neutral belongs in `declaration.rb`, not a shared base class. A clause naming code that no longer exists, or keeping nothing, fails the gate, so update the Contract when a backend is renamed or removed.
 
+`Archspec.rb` (`asgard archspec_check`) enforces the same obligations statically: each backend is its own component that must implement the backend API, may not reference `Open3` or call `system`/`spawn`/`capture*`, and may not reference another backend or the CLI. Two cycles are deliberately excluded from `no_cycles` and documented there (Tasks and the schedule CLI; the backend factory in `declaration.rb` and the backends). Add a new backend to the `BACKENDS` hash in `Archspec.rb` and to the Contract.
+
 ### DSL Mechanics (`lib/asgard/base.rb`)
 
 **`depends_on`** stores stages in `@_pending_deps`. On `method_added`, those stages are popped and stored in `@_deps[method_name]`. Bare symbols are sequential stages; arrays within a `depends_on` call are parallel stages:

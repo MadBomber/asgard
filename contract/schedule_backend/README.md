@@ -21,6 +21,11 @@ caller.
   building the job's argv, the `list` columns) lives in `declaration.rb`.
   What stays in a backend is what that scheduler alone needs.
 
+B1, B2 and the independence half of B3 are checked statically by
+`Archspec.rb` (`archspec check`): every backend must implement the API,
+may not reference `Open3` or call `system`-style methods, and may not
+reference another backend or the CLI.
+
 ```covers
 Asgard::Schedule::Launchd
 Asgard::Schedule::Systemd

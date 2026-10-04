@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scheduler backends parallel on purpose, so `exhale dry` keeps their shared
   shapes (`initialize`, `run!`, `installed_entries`, `installed_directory`)
   instead of failing the gate; the reason is written next to the clause.
+- `Archspec.rb` now covers the scheduler: components for the neutral core,
+  the `schedule` CLI and each backend; every backend must implement the
+  documented API, shell out only through the injected runner, and reference
+  neither another backend nor the CLI.
 
 ## [0.4.1] - 2026-10-02
 

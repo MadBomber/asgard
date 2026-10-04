@@ -1904,8 +1904,8 @@
 </tr>
 <tr>
 <td><code>backend_class</code></td>
-<td><code>Asgard::Schedule.backend_class(platform = RUBY_PLATFORM)</code></td>
-<td><code>Launchd</code> on darwin, <code>Systemd</code> on linux; raises <code>Asgard::Schedule::Error</code> elsewhere.</td>
+<td><code>Asgard::Schedule.backend_class(platform = RUBY_PLATFORM, scheduler: ENV["ASGARD_SCHEDULER"])</code></td>
+<td><code>Launchd</code> on darwin, <code>Systemd</code> on linux, <code>Windows</code> on mingw/mswin; raises <code>Asgard::Schedule::Error</code> elsewhere. <code>scheduler:</code> (<code>launchd</code>, <code>systemd</code>, <code>cron</code> or <code>windows</code>) overrides the platform.</td>
 </tr>
 <tr>
 <td><code>runner</code> / <code>runner=</code></td>
@@ -1914,7 +1914,7 @@
 </tr>
 </tbody>
 </table>
-<p>Both backends, <code>Asgard::Schedule::Launchd</code> and <code>Asgard::Schedule::Systemd</code>, implement the same instance API: <code>files</code>, <code>install</code>, <code>uninstall</code>, <code>start</code>, <code>stop</code>, <code>trigger</code>, <code>installed_names</code>, <code>status</code>, <code>log_path</code>, <code>notes</code>. Each class also exposes the pure helpers that build its job files (<code>Launchd.plist</code>, <code>Systemd.service_unit</code>, <code>Systemd.timer_unit</code>, ...), so they can be tested without a scheduler.</p>
+<p>All four backends, <code>Asgard::Schedule::Launchd</code>, <code>Asgard::Schedule::Systemd</code>, <code>Asgard::Schedule::Cron</code> and <code>Asgard::Schedule::Windows</code>, implement the same instance API: <code>files</code>, <code>install</code>, <code>uninstall</code>, <code>start</code>, <code>stop</code>, <code>trigger</code>, <code>installed_names</code>, <code>status</code>, <code>log_path</code>, <code>notes</code>. Each class also exposes the pure helpers that build its job files (<code>Launchd.plist</code>, <code>Systemd.service_unit</code>, <code>Systemd.timer_unit</code>, ...), so they can be tested without a scheduler.</p>
 <hr />
 <h2 id="asgardbase-internal-class-methods"><code>Asgard::Base</code> Internal Class Methods<a class="headerlink" href="#asgardbase-internal-class-methods" title="Permanent link">&para;</a></h2>
 <p>These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.</p>

@@ -976,6 +976,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How Jobs Run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1200,6 +1228,34 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="How Jobs Run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cron" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cron
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1390,6 +1446,7 @@ entry wins a bare name).</p>
 <th></th>
 <th>macOS (launchd)</th>
 <th>Linux (systemd)</th>
+<th>Windows (Task Scheduler)</th>
 </tr>
 </thead>
 <tbody>
@@ -1397,25 +1454,44 @@ entry wins a bare name).</p>
 <td>Job files</td>
 <td><code>~/Library/LaunchAgents/com.madbomber.asgard.&lt;project&gt;.&lt;name&gt;.plist</code></td>
 <td><code>~/.config/systemd/user/asgard.&lt;project&gt;.&lt;name&gt;.{service,timer}</code></td>
+<td>task <code>sgard&lt;project&gt;&lt;name&gt;</code>, defined by <code>%LOCALAPPDATA%sgard  askssgard.&lt;project&gt;.&lt;name&gt;.xml</code></td>
 </tr>
 <tr>
 <td>Logs</td>
 <td><code>~/Library/Logs/asgard/</code></td>
 <td><code>~/.local/state/asgard/</code> (honors <code>XDG_STATE_HOME</code>)</td>
+<td><code>%LOCALAPPDATA%sgardlogs</code></td>
 </tr>
 <tr>
 <td>Stop</td>
 <td><code>launchctl disable</code></td>
 <td><code>systemctl --user disable --now</code></td>
+<td><code>schtasks /Change /DISABLE</code></td>
 </tr>
 <tr>
 <td>Caveats</td>
 <td>runs only while you're logged in</td>
 <td>runs only while you're logged in unless <code>loginctl enable-linger</code>; needs systemd 240+</td>
+<td>runs only while you're logged on; <code>every:</code> must be whole minutes, up to 31 days; an argument containing <code>"</code> is refused</td>
 </tr>
 </tbody>
 </table>
-<p>Other platforms aren't supported. The <code>schedule</code> subcommands there exit with an error.</p>
+<h3 id="cron">cron<a class="headerlink" href="#cron" title="Permanent link">&para;</a></h3>
+<p>cron is the fallback for machines without launchd or systemd. It is never chosen automatically; select it with <code>ASGARD_SCHEDULER=cron</code> (also <code>launchd</code>, <code>systemd</code> or <code>windows</code>, to override the platform default). Each entry becomes a marked block in your crontab, and nothing outside the markers is touched:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># asgard:begin myproject.sync
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>30 17 * * 1,2,3,4,5 cd /path/to/myproject &amp;&amp; env PATH=... /usr/local/bin/asgard sync &gt;&gt; ~/.local/state/asgard/asgard.myproject.sync.log 2&gt;&amp;1
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a># asgard:end myproject.sync
+</span></code></pre></div>
+<p><code>stop</code> comments the block's job lines out (<code>#~</code>) so <code>install</code> keeps it stopped. Compared with the other two backends, cron:</p>
+<ul>
+<li>skips a run missed while the machine was off or asleep;</li>
+<li>cannot report a job's last exit status (the <code>list</code> column shows <code>n/a</code>);</li>
+<li>follows the clock for <code>every:</code>, so only whole minutes that divide an hour (<code>300</code>, <code>900</code>) or whole hours that divide a day (<code>21600</code>) are accepted; anything else, such as <code>every: 90</code>, is refused at install time.</li>
+</ul>
+<p>Entries made with one scheduler are not visible to the others, so <code>list --all</code> shows only the selected scheduler's entries.</p>
+<h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
+<p>On Windows (RubyInstaller or any mingw/mswin Ruby) each entry is a Task Scheduler task under the <code>\asgard\&lt;project&gt;</code> folder, registered with <code>schtasks</code> from an XML definition that <code>preview</code> shows. Task Scheduler cannot capture a task's output, so the task runs <code>cmd.exe /c</code>, sets the job's <code>PATH</code> and <code>env:</code> variables, and appends the job's output to the log. Tasks are <code>StartWhenAvailable</code>, so a run missed while the machine was off happens at the next boot, and <code>list</code> shows the task's last result.</p>
+<p>Other platforms aren't supported without <code>ASGARD_SCHEDULER=cron</code>; the <code>schedule</code> subcommands there exit with an error.</p>
 <hr />
 <h2 id="name-collisions">Name Collisions<a class="headerlink" href="#name-collisions" title="Permanent link">&para;</a></h2>
 <p>The built-in command is registered as <code>_schedule</code> and mapped to <code>schedule</code>, following Asgard's <code>_</code> convention for gem-owned tasks. If your <code>.loki</code> defines its own <code>schedule</code> task, <code>asgard schedule</code> still dispatches to the built-in command.</p>

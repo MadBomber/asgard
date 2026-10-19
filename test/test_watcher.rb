@@ -910,6 +910,7 @@ class TestWatchCommands < Minitest::Test
     Commands._reset_ran!
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[watcher list]) } }
     assert_match "No watches declared for proj", out
+    assert_match "asgard watcher list --all", out
     out, = capture_io { Commands.start(%w[help]) }
     assert_match " watcher start", out
     refute_match(/ _watcher /, out)

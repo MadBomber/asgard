@@ -132,7 +132,8 @@ module Asgard
         def no_watches_message
           return "No watchers have been started on this machine." if list_all?
 
-          "No watches declared for #{watch_project}. Add `watch :task, paths: \"lib\"` inside class Tasks in #{watch_root}/.loki."
+          "No watches declared for #{watch_project}. Add `watch :task, paths: \"lib\"` inside class Tasks in #{watch_root}/.loki.\n" \
+            "Use `asgard watcher list --all` to see every project's watches."
         end
 
         # { title => rows } for every project, or { nil => rows } for this one; empty groups drop out.
@@ -170,7 +171,7 @@ module Asgard
         end
       end
 
-      desc "list", "Show this project's watches, whether the watcher is running, and each entry's last run"
+      desc "list", "Show this project's watches, whether the watcher is running, and each entry's last run (--all: every project's)"
       method_option :all, aliases: "-a", type: :boolean, desc: "List every project's watches, not just this one's"
       def list
         groups = list_groups

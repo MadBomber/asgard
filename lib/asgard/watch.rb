@@ -8,6 +8,7 @@ require_relative "watch/reporter"
 require_relative "watch/dispatcher"
 require_relative "watch/state"
 require_relative "watch/daemon"
+require_relative "watch/commands"
 
 module Asgard
   # Runs asgard tasks when watched files change. Declare entries at class

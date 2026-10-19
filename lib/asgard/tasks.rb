@@ -48,4 +48,9 @@ class Tasks < Asgard::Base
   subcommand "_schedule", Asgard::Schedule::Commands
   map "schedule" => :_schedule
   Asgard::Schedule::Commands.commands.each_value { |command| command.ancestor_name = "schedule" }
+
+  desc "watcher SUBCOMMAND", "Run and manage the file watcher declared with `watch :task, paths: ...`"
+  subcommand "_watcher", Asgard::Watch::Commands
+  map "watcher" => :_watcher
+  Asgard::Watch::Commands.commands.each_value { |command| command.ancestor_name = "watcher" }
 end

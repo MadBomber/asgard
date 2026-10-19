@@ -44,6 +44,10 @@ module Asgard
         end
 
         def read_json(path) = File.exist?(path) ? JSON.parse(File.read(path), symbolize_names: true) : nil
+
+        # Whether an entry record describes a task still running: no exit
+        # recorded and its pid alive.
+        def running?(entry) = !entry.key?(:finished) && Reporter.alive?(entry[:pid])
       end
 
       # base: is the directory every project's state lives under.
@@ -92,6 +96,9 @@ module Asgard
 
       # Every entry's latest record, keyed by entry name.
       def entries = Dir.glob(File.join(entries_dir, "*.json")).to_h { |file| [File.basename(file, ".json"), State.read_json(file)] }
+
+      # The records of tasks still running.
+      def running_entries = entries.values.select { |entry| State.running?(entry) }
     end
   end
 end

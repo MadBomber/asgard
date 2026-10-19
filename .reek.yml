@@ -121,6 +121,7 @@ detectors:
       - Asgard::Schedule::Commands#schedules           # Thor no_commands helpers: reads of the registry / CWD shared by the subcommands
       - Asgard::Schedule::Commands#schedule_root
       - Asgard::Schedule::Commands#schedule_summary
+      - Asgard::Watch::Commands#watches                # same: the Watch registry read by every subcommand
 
   # Asgard::Schedule: the backends implement a fixed API (see
   # lib/asgard/schedule/declaration.rb) plus pure, separately tested helpers,
@@ -137,6 +138,7 @@ detectors:
       - Asgard::Watch#normalize                     # the `watch` DSL keywords
       - Asgard::Schedule#describe
       - Asgard::Schedule#program_arguments
+      - Asgard::Schedule::Table#self.draw            # rows plus the title, io and headers the caller chooses
       - Asgard::Schedule::Launchd#self.plist        # one keyword per plist field
       - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
       - Asgard::Schedule::Systemd#self.timer_unit
@@ -151,6 +153,7 @@ detectors:
   TooManyMethods:
     exclude:
       - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
+      - Asgard::Watch::Commands                     # same
       - Asgard::Schedule::Launchd                   # backend API + pure helpers
       - Asgard::Schedule::Systemd
       - Asgard::Watch::State                        # one reader/writer pair per file it keeps

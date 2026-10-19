@@ -828,3 +828,184 @@ class TestWatchDaemon < Minitest::Test
     thread&.join
   end
 end
+
+# Drives `asgard watcher ...` end to end in a temp project, with HOME, PATH
+# and XDG_STATE_HOME pointed at temp dirs and a fake asgard on PATH that
+# records what it was asked to run.
+class TestWatchCommands < Minitest::Test
+  Commands = Asgard::Watch::Commands
+
+  def setup
+    @saved   = ENV.to_h.slice("HOME", "PATH", "XDG_STATE_HOME", "ASGARD_TEST_SECRET")
+    @cwd     = Dir.pwd
+    @tmp     = File.realpath(Dir.mktmpdir)
+    @project = File.join(@tmp, "proj")
+    @bin     = File.join(@tmp, "bin")
+    FileUtils.mkdir_p [File.join(@project, "lib"), @bin]
+    File.write(File.join(@project, ".loki"), "")
+    # As the daemon: sleep until stopped. As a task: record the call.
+    File.write(File.join(@bin, "asgard"), <<~SH)
+      #!/bin/sh
+      if [ "$1" = "watcher" ]; then exec /bin/sleep 30; fi
+      echo "$* modified=$ASGARD_MODIFIED added=$ASGARD_ADDED" >> "$ASGARD_WATCH_ROOT/ran.txt"
+    SH
+    File.chmod(0o755, File.join(@bin, "asgard"))
+    ENV["HOME"] = @tmp
+    ENV["PATH"] = @bin
+    ENV["XDG_STATE_HOME"] = File.join(@tmp, "state")
+    ENV["ASGARD_TEST_SECRET"] = "leak"
+    Asgard::Watch.declarations.clear
+    @saved_traps = %w[INT TERM].to_h { |signal| [signal, trap(signal, "DEFAULT")] }
+  end
+
+  def teardown
+    @saved_traps.each { |signal, handler| trap(signal, handler) }
+    Dir.chdir(@cwd)
+    pid = state.running_pid
+    Process.kill("TERM", pid) if pid && pid != Process.pid # a detached fake daemon, never ourselves
+    @saved.each { |key, value| ENV[key] = value }
+    ENV.delete("ASGARD_TEST_SECRET") unless @saved.key?("ASGARD_TEST_SECRET")
+    Asgard::Watch.declarations.clear
+    FileUtils.rm_rf(@tmp)
+  end
+
+  # Each call stands for a separate `asgard watcher ...` process.
+  def watcher(*argv)
+    Commands._reset_ran!
+    Dir.chdir(@project) { Commands.start(argv) }
+  end
+
+  def state = Asgard::Watch::State.new(project: "proj", root: @project, base: File.join(@tmp, "state", "asgard", "watch"))
+
+  def wait_until(seconds = 10)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+    sleep 0.05 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    assert yield, "condition not met within #{seconds}s"
+  end
+
+  def test_describe_and_last_run
+    spec = Asgard::Watch.normalize(:tree, paths: %w[lib test], events: %i[added removed])
+    assert_equal "lib test [added, removed]", Commands.describe(spec)
+    assert_equal "lib/**/*.rb", Commands.describe(Asgard::Watch.normalize(:tree, paths: "lib/**/*.rb"))
+    assert_equal "never", Commands.last_run(nil)
+    assert_equal "running (pid 41)", Commands.last_run({ pid: 41 })
+    finished = Time.new(2026, 10, 18, 9, 30, 2).iso8601
+    assert_equal "3 (2.5s, 2026-10-18 09:30:02)", Commands.last_run({ pid: 41, finished:, status: 3, seconds: 2.5 })
+  end
+
+  def test_asgard_watcher_maps_to_the_subcommand_and_help_hides_the_underscore
+    Commands._reset_ran!
+    out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[watcher list]) } }
+    assert_match "No watches declared for proj", out
+    out, = capture_io { Commands.start(%w[help]) }
+    assert_match " watcher start", out
+    refute_match(/ _watcher /, out)
+    assert Asgard.machine_wide?(%w[watcher list])
+    refute Asgard.machine_wide?(%w[watcher start])
+  end
+
+  def test_start_and_run_require_declared_known_tasks
+    _, err = capture_io { assert_raises(SystemExit) { watcher("start") } }
+    assert_match "No watches declared", err
+    Tasks.watch :no_such_task, paths: "lib"
+    _, err = capture_io { assert_raises(SystemExit) { watcher("run") } }
+    assert_match "no such task(s): no_such_task", err
+  end
+
+  def test_start_list_stop_round_trip
+    Tasks.watch :tree, paths: "lib/**/*.rb"
+    out, = capture_io { watcher("start") }
+    assert_match(/started watcher for proj \(pid \d+\)/, out)
+    pid = state.running_pid
+    assert pid
+    assert_equal [{ name: "tree", task: "tree", paths: ["lib/**/*.rb"], events: %w[changed added removed] }], state.read_declarations
+
+    _, err = capture_io { assert_raises(SystemExit) { watcher("start") } }
+    assert_match "already running for proj (pid #{pid})", err
+
+    out, = capture_io { watcher("list") }
+    assert_match(/NAME\s+│\s*TASK\s+│\s*WATCHES\s+│\s*DAEMON\s+│\s*LAST RUN/, out)
+    assert_match(%r{│ tree\s+│ asgard tree\s+│ lib/\*\*/\*\.rb\s+│ running\s+│ never}, out)
+    assert_match(/^Logs: .*asgard watcher log/, out)
+
+    out, = capture_io { watcher("stop") }
+    assert_match "stopped watcher for proj", out
+    assert_nil state.running_pid
+    refute Asgard::Watch::Reporter.alive?(pid)
+
+    out, = capture_io { watcher("list") }
+    assert_match(%r{│ tree\s+│ asgard tree\s+│ lib/\*\*/\*\.rb\s+│ stopped\s+│ never}, out)
+    _, err = capture_io { assert_raises(SystemExit) { watcher("stop") } }
+    assert_match "not running for proj", err
+  end
+
+  def test_list_shows_last_runs_and_every_project_with_all
+    Tasks.watch :tree, paths: "lib"
+    state.prepare.write_entry("tree", { entry: "tree", task: "tree", pid: 1, started: Time.now.iso8601,
+                                        finished: Time.new(2026, 10, 18, 9, 30, 2).iso8601, status: 3, seconds: 2.5 })
+    other = Asgard::Watch::State.new(project: "elsewhere", root: "/elsewhere", base: File.join(@tmp, "state", "asgard", "watch"))
+    other.prepare.write_declarations([Asgard::Watch.normalize(:docs, paths: "docs", events: :added)])
+    other.write_entry("docs", { entry: "docs", task: "docs", pid: Process.pid, started: Time.now.iso8601 })
+
+    out, = capture_io { watcher("list") }
+    assert_match(/│ tree\s+│ asgard tree\s+│ lib\s+│ stopped\s+│ 3 \(2\.5s, 2026-10-18 09:30:02\)/, out)
+    refute_match "elsewhere", out
+
+    out, = capture_io { watcher("list", "--all") }
+    assert_equal ["Project: elsewhere (/elsewhere)", "Project: proj (#{@project})"], out.lines.grep(/^Project:/).map(&:chomp)
+    assert_match(/│ docs\s+│ asgard docs\s+│ docs \[added\]\s+│ stopped\s+│ running \(pid #{Process.pid}\)/, out)
+
+    File.delete(File.join(@project, ".loki"))
+    out, = capture_io { watcher("list") }
+    assert_match "Project: elsewhere", out
+    FileUtils.rm_rf(File.join(@tmp, "state"))
+    out, = capture_io { watcher("list") }
+    assert_match "No watchers have been started", out
+  end
+
+  def test_preview_shows_argv_and_the_isolated_environment
+    Tasks.watch :tree, paths: "lib", env: { BUILD: "dev" }
+    out, = capture_io { watcher("preview") }
+    assert_match "# tree: #{@bin}/asgard tree  (lib)", out
+    assert_match "ASGARD_WATCH=tree", out
+    assert_match "ASGARD_WATCH_ROOT=#{@project}", out
+    assert_match "BUILD=dev", out
+    assert_match "PATH=#{@bin}", out
+    refute_match "ASGARD_TEST_SECRET", out
+  end
+
+  def test_log_prints_the_log_or_says_there_is_none
+    _, err = capture_io { watcher("log") }
+    assert_match "no watcher log yet", err
+    state.prepare
+    File.write(state.log_path, "line one\n")
+    out, = capture_io { watcher("log") }
+    assert_equal "line one\n", out
+  end
+
+  def test_run_watches_for_real_and_runs_the_task_on_a_change
+    Tasks.watch :tree, paths: "lib/**/*.rb", debounce: 0.1
+    Dir.chdir(@project)
+    Commands._reset_ran!
+    thread = Thread.new { capture_io { Commands.start(["run"]) } }
+    wait_until { state.running_pid }
+    sleep 1 # let the adapter settle
+
+    File.write(File.join(@project, "lib", "a.rb"), "# change\n")
+    ran = File.join(@project, "ran.txt")
+    wait_until(15) { File.exist?(ran) }
+    assert_equal "tree modified= added=lib/a.rb\n", File.read(ran)
+    wait_until { state.read_entry("tree")&.key?(:finished) }
+    assert_equal 0, state.read_entry("tree")[:status]
+
+    Process.kill("TERM", Process.pid) # the daemon's own trap stops it
+    thread.join
+    assert_nil state.read_pid
+    assert_includes File.read(state.log_path), "spawn tree"
+  ensure
+    if thread&.alive?
+      Process.kill("TERM", Process.pid)
+      thread.join(10)
+    end
+  end
+end

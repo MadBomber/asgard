@@ -1087,6 +1087,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#doloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        do.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        confirm.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1209,6 +1231,28 @@
     <span class="md-ellipsis">
       
         concurrent.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#doloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        do.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        confirm.loki
       
     </span>
   </a>
@@ -1368,6 +1412,48 @@
 <p>Execution order: <code>start</code> → <code>worker_a ∥ worker_b ∥ worker_c</code> → <code>finish</code></p>
 <p>This example is also useful as a test harness for verifying that parallel execution is working correctly on a given system.</p>
 <hr />
+<h2 id="doloki"><code>do.loki</code><a class="headerlink" href="#doloki" title="Permanent link">&para;</a></h2>
+<p><strong>Path:</strong> <code>examples/do.loki</code></p>
+<p>A plain user task that runs other tasks in sequence, the way <code>rake a b c</code> or <code>just a b c</code> does. No gem changes needed:</p>
+<ul>
+<li>Steps are comma-separated, so each step can carry its own arguments and options; with no commas, every word is a task of its own</li>
+<li>Each step is parsed by Thor as if it were typed on the command line</li>
+<li>The sequence stops at the first failure (a failing <code>sh</code>, or a step returning <code>:fail</code>)</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>greet<span class="w"> </span>finish
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>hello<span class="w"> </span>Alice,<span class="w"> </span>farewell<span class="w"> </span>Bob<span class="w"> </span>--formal
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># Hello, Alice!</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Goodbye, Bob.</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Every task runs at most once per <code>asgard</code> invocation, so <code>asgard do hello Alice, hello Bob</code> greets only Alice. The same rule makes a dependency shared by several steps run once.</p>
+</div>
+<hr />
+<h2 id="confirmloki"><code>confirm.loki</code><a class="headerlink" href="#confirmloki" title="Permanent link">&para;</a></h2>
+<p><strong>Path:</strong> <code>examples/confirm.loki</code></p>
+<p>A guard task. List <code>confirm</code> first in a dangerous task's <code>depends_on</code>, and the task runs only after the user answers yes:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:confirm</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Drop and recreate the database"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">reset_database</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails db:reset"</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>asgard<span class="w"> </span>reset_database
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Really run `asgard reset_database`? [y/N] n</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># asgard: aborted `asgard reset_database`      (exit 1)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nv">ASGARD_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>asgard<span class="w"> </span>reset_database<span class="w">             </span><span class="c1"># no question, for scripts and CI</span>
+</span></code></pre></div>
+<ul>
+<li>Answering no <strong>raises</strong> <code>Asgard::Error</code>, which stops the dependent task. Returning <code>:fail</code> would not: a dependency's return value never stops the task that depends on it</li>
+<li>A dependency doesn't know which task asked for it, so the question shows the whole command line</li>
+<li>With no terminal (a schedule, the watcher, a pipe) it refuses unless <code>ASGARD_YES</code> is set</li>
+<li><code>confirm</code> is declared with <code>hide: true</code>, so it stays out of <code>asgard help</code></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>confirm</code> runs at most once per <code>asgard</code> invocation, so <code>asgard do reset_database, drop_cache</code> asks once for the whole line. Keep it in its own first stage: in <code>depends_on [:confirm, :backup]</code>, <code>backup</code> runs while the question waits.</p>
+</div>
+<hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1392,6 +1478,14 @@
 <tr>
 <td><code>concurrent.loki</code></td>
 <td>Parallel task execution, thread concurrency demonstration</td>
+</tr>
+<tr>
+<td><code>do.loki</code></td>
+<td>Running several tasks in sequence from one command line</td>
+</tr>
+<tr>
+<td><code>confirm.loki</code></td>
+<td>A guard dependency that asks before a dangerous task runs</td>
 </tr>
 </tbody>
 </table>

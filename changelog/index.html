@@ -1090,6 +1090,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1130,7 +1141,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1180,7 +1191,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1230,7 +1241,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1274,7 +1285,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1506,7 +1517,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1680,6 +1691,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1720,7 +1742,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1770,7 +1792,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1820,7 +1842,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1864,7 +1886,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2096,7 +2118,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2270,6 +2292,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <code>empty?</code>); every list is empty when the task is run by hand.</li>
 <li><strong><code>Asgard::Watch::Error</code></strong> (subclass of <code>Asgard::Error</code>) — raised when a
   <code>watch</code> names a task the project does not define.</li>
+<li><strong><code>examples/do.loki</code></strong> — <code>asgard do lint test build</code> runs tasks in
+  sequence, with comma-separated steps for arguments and options
+  (<code>asgard do hello Alice, farewell Bob --formal</code>). A plain user task, not
+  a built-in; it stops at the first failure.</li>
+<li><strong><code>examples/confirm.loki</code></strong> — a hidden <code>confirm</code> task to list first in a
+  dangerous task's <code>depends_on</code>; answering anything but y/yes aborts with
+  exit 1. Refuses without a terminal unless <code>ASGARD_YES</code> is set.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2281,6 +2310,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   reuse it; a <code>running</code> state renders green.</li>
 <li><code>Asgard.machine_wide?</code> is true for <code>watcher list</code> as well as
   <code>schedule list</code>, so both work from a directory with no <code>.loki</code> above it.</li>
+</ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Usage errors exit 1</strong> — a missing argument, an unknown command, or a bad
+  subcommand (<code>asgard greet</code> with no NAME, <code>asgard nope</code>) printed Thor's
+  error but exited 0, so CI and scripts saw success. <code>Asgard::Base</code> now
+  defines <code>exit_on_failure?</code> as true.</li>
 </ul>
 <h2 id="041-2026-10-02"><a href="https://github.com/MadBomber/asgard/compare/v0.4.0...v0.4.1">0.4.1</a> - 2026-10-02<a class="headerlink" href="#041-2026-10-02" title="Permanent link">&para;</a></h2>
 <h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
@@ -2314,7 +2350,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li>The not-installed messages from <code>stop</code>, <code>start</code>, <code>trigger</code> and <code>log</code> point at
   <code>asgard schedule list --all</code>.</li>
 </ul>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Scheduled entries were invisible outside the directory tree of the project
   that installed them: <code>list</code> and every per-entry command were scoped to the
@@ -2350,7 +2386,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <code>test/test_*.rb</code> in one process, so coverage is measured across the whole
   suite.</li>
 </ul>
-<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>asgard &lt;task&gt;</code> now exits 1 when the task returns <code>:fail</code></strong> — quality-gate
   tasks (<code>*_check</code>) signal failure by returning <code>:fail</code>; previously that result
@@ -2397,7 +2433,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong><code>--version</code> reimplemented as a <code>class_option</code></strong> — the flag now appears in the "Options" section of <code>asgard help</code> alongside <code>--debug</code> and <code>--verbose</code>, rather than as a listed command. The <code>_version</code> method and its <code>map "--version" =&gt; :_version</code> registration have been removed. The actual early-exit behaviour still lives in <code>Asgard.run!</code> (before the <code>.loki</code> file is required), so <code>--version</code> works even when no <code>.loki</code> file exists. <code>no_negate :version</code> suppresses the spurious <code>[--no-version]</code> / <code>[--skip-version]</code> variants.</li>
 <li><strong><code>loki_up</code> returns <code>Pathname</code> instead of <code>String</code></strong> — the return value is now a <code>Pathname</code> instance (or <code>nil</code> when not found). <code>Pathname</code> is accepted everywhere <code>loki_up</code>'s result is used: <code>import</code>, <code>dotenv</code>, <code>load</code>, and standard Ruby file methods all accept <code>Pathname</code> via <code>to_path</code> / <code>to_s</code>. Code that passes the result directly to those methods is unaffected; code that performs string operations on the path should call <code>.to_s</code> first.</li>
 </ul>
-<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Help output showed <code>tasks</code> prefix before every command</strong> — <code>asgard help</code> displayed <code>asgard tasks build</code> instead of <code>asgard build</code>. The cause was a keyword-vs-positional mismatch in the <code>Asgard::Base#help</code> override: declaring <code>subcommand: false</code> as a keyword argument caused Ruby's <code>super</code> to forward it as the hash <code>{subcommand: false}</code>. Thor's <code>banner</code> method received this hash as the positional <code>subcommand</code> argument, treated it as truthy, and prepended the class namespace (<code>tasks</code>) to every command name. Fixed by changing the override signature to match Thor's positional signature: <code>def help(command = nil, subcommand = false)</code>.</li>
 </ul>
@@ -2436,7 +2472,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong><code>validate_deps!</code> decomposed into focused private helpers</strong> — the method was performing four unrelated validations in one body (orphaned <code>depends_on</code> check, undefined dep name check, dep arity check, cycle detection). Each concern is now a dedicated <code>_</code>-prefixed private method (<code>_check_orphaned_deps!</code>, <code>_check_undefined_deps!</code>, <code>_check_dep_arities!</code>, <code>_build_and_sort_graph</code>). <code>validate_deps!</code> is now a sequencer of ~8 lines. Flog score dropped from 87.3 to 24.4.</li>
 <li><strong><code>invoke_command</code> dispatch helpers made private with descriptive names</strong> — the dispatch hook was decomposed into focused helpers. Those helpers (<code>acquire_run_token</code>, <code>run_deps_for</code>, <code>run_dep_group</code>, <code>signal_done</code>, <code>run_dep</code>) are now declared <code>private</code> on <code>Asgard::Base</code> rather than wrapped in <code>no_commands</code>. The <code>_</code> prefix was dropped — the underscore convention is reserved for gem-owned methods on <code>Tasks</code>; <code>private</code> is sufficient to exclude instance methods from Thor's command registry. <code>invoke_command</code> itself stays in <code>no_commands</code> so Thor does not warn about an undescribed public method.</li>
 </ul>
-<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Multiple parallel dep failures now all surfaced</strong> — when two or more parallel deps raised, only the first exception was re-raised; the rest were silently discarded. All errors are now printed to stderr via <code>warn</code> before a general <code>Asgard::Error</code> is raised. When only one dep fails, its exception is re-raised directly as before.</li>
 <li><strong>Subcommand deps not validated at startup</strong> — <code>run!</code> only called <code>Tasks.validate_deps!</code>, so circular dependencies and undefined dep names in subcommand groups were silently ignored. <code>run!</code> now snapshots <code>Asgard::Base.subclasses</code> before loading task files and validates every newly defined subclass alongside <code>Tasks</code>.</li>
@@ -2547,7 +2583,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><code>db_subcommands.loki</code> — subcommand group for database management with <code>depends_on</code> chaining</li>
 <li>README sections: Helper methods, Subcommands, Thor wrapper callout</li>
 </ul>
-<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Replaced <code>warn</code>/<code>exit 1</code> with <code>abort</code> throughout <code>run!</code> — <code>Kernel#warn</code> is silenced when <code>$VERBOSE = nil</code>, which is the default in Ruby 4.0; <code>abort</code> writes to <code>$stderr</code> regardless</li>
 </ul>

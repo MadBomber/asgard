@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.0] - Unreleased
 
+### Added
+
+- **Watched files, built in** — `watch :task, paths: "lib/**/*.rb"` at class
+  level in a `.loki` declares that a task runs when matching files change,
+  with `only:`, `ignore:`, `events:`, `debounce:`, `env:` and `as:` keywords.
+  `asgard watcher start|stop|list|preview|log|run` manages the watcher: one
+  background process per project that runs each trigger as `asgard <task>`
+  from the project root, with a fixed environment (a whitelist of the
+  daemon's variables, the entry's `env:`, `.envrc` through `direnv exec`) plus
+  the changed paths in `ASGARD_MODIFIED`, `ASGARD_ADDED` and `ASGARD_REMOVED`.
+  Different tasks run concurrently; the same task never overlaps itself, and a
+  trigger that arrives while its task runs is queued behind it. Saving a
+  `.loki` file restarts the watcher with the new declarations. `stop` lets a
+  running task finish. `list` shows each entry's last run; `--all` covers
+  every project. State and logs live under `~/.local/state/asgard/watch/`.
+  The command is registered as the gem-owned `_watcher` and mapped to
+  `watcher`. See [Watched Files](https://madbomber.github.io/asgard/watch/).
+- **`changes`** Kernel method — inside a task, the `Asgard::Changes` the
+  watcher triggered it with (`modified`, `added`, `removed`, `all`,
+  `empty?`); every list is empty when the task is run by hand.
+- **`Asgard::Watch::Error`** (subclass of `Asgard::Error`) — raised when a
+  `watch` names a task the project does not define.
+
+### Changed
+
+- New runtime dependencies: `listen` (file events) and `ractor_queue` (the
+  queue between the daemon and its worker Ractors). `ractor_queue` is a
+  native extension, so `gem install asgard` now compiles and needs a C++17
+  compiler; Asgard was pure Ruby before.
+- `Asgard::Schedule::Table.draw` takes `headers:` so `watcher list` can
+  reuse it; a `running` state renders green.
+- `Asgard.machine_wide?` is true for `watcher list` as well as
+  `schedule list`, so both work from a directory with no `.loki` above it.
+
 ## [0.4.1] - 2026-10-02
 
 ### Added

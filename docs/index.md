@@ -19,6 +19,7 @@
 <li><strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories</li>
 <li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
 <li><strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code></li>
+<li><strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code></li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, <code>--verbose</code>, and <code>--doctor</code> available on every task</li>
 </ul>
 </td>

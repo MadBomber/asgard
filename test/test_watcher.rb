@@ -912,6 +912,19 @@ class TestWatchCommands < Minitest::Test
     assert_match "no such task(s): no_such_task", err
   end
 
+  def test_run_refuses_when_another_daemon_holds_the_pidfile
+    Tasks.watch :tree, paths: "lib"
+    other = Process.spawn("/bin/sleep", "30") # PATH holds only the fake bin here
+    state.prepare.write_pid(other)
+    _, err = capture_io { assert_raises(SystemExit) { watcher("run") } }
+    assert_match "already running for proj (pid #{other})", err
+  ensure
+    if other
+      Process.kill("TERM", other)
+      Process.wait(other)
+    end
+  end
+
   def test_start_list_stop_round_trip
     Tasks.watch :tree, paths: "lib/**/*.rb"
     out, = capture_io { watcher("start") }
@@ -985,6 +998,7 @@ class TestWatchCommands < Minitest::Test
 
   def test_run_watches_for_real_and_runs_the_task_on_a_change
     Tasks.watch :tree, paths: "lib/**/*.rb", debounce: 0.1
+    state.prepare.write_pid(Process.pid) # as `start` leaves it for the child: our own pid is not "another daemon"
     Dir.chdir(@project)
     Commands._reset_ran!
     thread = Thread.new { capture_io { Commands.start(["run"]) } }

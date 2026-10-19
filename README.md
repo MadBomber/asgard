@@ -24,6 +24,7 @@
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
 - <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
+- <strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code><br>
 - <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
@@ -641,6 +642,42 @@ Jobs run `asgard <task> [options]` from the directory holding `.loki`, with
 the `PATH` captured at install time; a project `.envrc` is loaded at run time
 through `direnv exec`. See [Scheduled Tasks](https://madbomber.github.io/asgard/schedule/)
 for every keyword, entry naming, and file locations.
+
+## Watched files
+
+Any task can run when files change. Declare what each task watches at class
+level in `.loki`:
+
+```ruby
+class Tasks
+  watch :lint, paths: "lib/**/*.rb"
+  watch :test, paths: %w[lib test], only: /\.rb\z/
+  watch :reindex, paths: "data/**/*.json", events: %i[added removed]
+
+  desc "lint", "Lint whatever changed"
+  def lint
+    files = changes.modified + changes.added   # empty when run by hand
+    sh "rubocop #{files.shelljoin}" unless files.empty?
+  end
+end
+```
+
+Then manage the watcher with the built-in `watcher` command:
+
+```bash
+asgard watcher start        # watch this project in the background
+asgard watcher stop         # stop it; a task already running finishes first
+asgard watcher list         # watches, daemon state, each entry's last run (--all: every project's)
+asgard watcher preview      # the command and environment each watch would run
+asgard watcher log [-f]     # print (or follow) the watcher's log
+```
+
+Each trigger runs `asgard <task>` from the project root with a fixed
+environment plus the changed paths in `ASGARD_MODIFIED`, `ASGARD_ADDED` and
+`ASGARD_REMOVED`. Different tasks run concurrently; the same task never
+overlaps itself. Saving a `.loki` file restarts the watcher with the new
+declarations. See [Watched Files](https://madbomber.github.io/asgard/watch/)
+for every keyword, the environment, and file locations.
 
 ## `method_option` types reference
 

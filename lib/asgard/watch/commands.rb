@@ -79,6 +79,13 @@ module Asgard
           pid = state.running_pid
           abort "watcher is already running for #{watch_project} (pid #{pid}); `asgard watcher stop` first." if pid
         end
+
+        # `start` records the child's pid before the child reaches here, so a
+        # pidfile naming this very process is ours, not another daemon's.
+        def refuse_if_another_running
+          pid = state.running_pid
+          abort "watcher is already running for #{watch_project} (pid #{pid}); `asgard watcher stop` first." if pid && pid != Process.pid
+        end
       end
 
       # Thor reserves `run` as a method name, so the command is `daemon`
@@ -87,7 +94,7 @@ module Asgard
       map "run" => :daemon
       def daemon
         specs = declared_watches
-        refuse_if_running
+        refuse_if_another_running
         config = Daemon::Config.new(declarations: specs, root: watch_root, state:, context: spawn_context, tasks: Tasks.all_commands.keys)
         Daemon.new(config).run
       end

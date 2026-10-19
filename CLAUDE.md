@@ -47,6 +47,14 @@ Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fal
 | `lib/asgard/schedule/declaration.rb` | Pure declaration validation + the backend API contract |
 | `lib/asgard/schedule/launchd.rb`, `systemd.rb` | Platform backends; shell out through an injectable runner |
 | `lib/asgard/schedule/commands.rb` | `asgard schedule ...` subcommands (registered as `_schedule`, mapped to `schedule`) |
+| `lib/asgard/watch.rb` | `Asgard::Watch` — the `watch` DSL registry; requires the files below |
+| `lib/asgard/watch/declaration.rb` | Pure declaration validation: globs to directories plus `only:` Regexps, events, ignores |
+| `lib/asgard/watch/changes.rb` | `Asgard::Changes` (the trigger's path lists) and `Watch.filter_events` |
+| `lib/asgard/watch/spawn.rb` | Pure: the frozen, Ractor-shareable description of one task run (argv, whitelisted env) |
+| `lib/asgard/watch/worker.rb` | One Ractor per task; runs its triggers serially and reports each spawn and exit |
+| `lib/asgard/watch/reporter.rb`, `dispatcher.rb` | Single writer of log and entry records; batch routing to worker queues |
+| `lib/asgard/watch/state.rb`, `daemon.rb` | Pidfile, log and records under XDG state; the foreground `watcher run` process |
+| `lib/asgard/watch/commands.rb` | `asgard watcher ...` subcommands (registered as `_watcher`, mapped to `watcher`) |
 
 ### Naming Convention for Gem-Owned Methods
 
@@ -98,6 +106,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 | Method | Description |
 |--------|-------------|
 | `env(name, default = nil)` | Fetch a system environment variable by symbol or string; name is upcased automatically. Raises `KeyError` when missing and no default given. |
+| `changes` | The `Asgard::Changes` a watcher trigger passed in (`modified`, `added`, `removed`, `all`, `empty?`); every list is empty when the task is run by hand. |
 | `loki_up(name = ".loki")` | Walk CWD and ancestors for a file by name; returns absolute path or `nil`. |
 | `import(path)` | Load a `.loki` file or glob of `.loki` files, idempotently. |
 | `import_up(name = ".loki")` | Combine `loki_up` and `import` — find and load in one call. |
@@ -106,7 +115,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 
 ## Testing
 
-Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
+Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. Watcher tests are in `test/test_watcher.rb`: pure functions directly, the worker and reporter loops in threads with recording stand-ins, and a few real-process tests (a real Ractor worker, a real daemon with a fake Listen, one real Listen run) with no mocks. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
 
 Key test patterns: tests frequently subclass `Asgard::Base` directly (not `Tasks`) to test the engine in isolation, and use `capture_io` for output assertions.
 

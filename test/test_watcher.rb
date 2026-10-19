@@ -2,6 +2,8 @@
 
 require "test_helper"
 require "tmpdir"
+require "fileutils"
+require "ractor_queue"
 
 class TestWatchDeclaration < Minitest::Test
   W = Asgard::Watch
@@ -318,5 +320,151 @@ class TestWatchSpawn < Minitest::Test
     when Array then value.all? { |item| plain?(item) }
     else [String, Symbol, NilClass].include?(value.class)
     end
+  end
+end
+
+class TestWatchWorker < Minitest::Test
+  Worker  = Asgard::Watch::Worker
+  Spawner = Worker::Spawner
+
+  # Stands in for Spawner: hands out pids, and each fake child stays
+  # "running" in wait until the test releases it with an exit code.
+  class RecordingSpawner
+    attr_reader :spawned
+
+    def initialize
+      @spawned  = []
+      @gates    = {}
+      @next_pid = 100
+      @mutex    = Mutex.new
+    end
+
+    def spawn(description)
+      @mutex.synchronize do
+        pid = @next_pid += 1
+        @spawned << [description[:entry], pid]
+        @gates[pid] = Queue.new
+        pid
+      end
+    end
+
+    def wait(pid) = gate(pid).pop
+
+    def release(pid, code = 0) = gate(pid).push(code)
+
+    private
+
+    def gate(pid) = @mutex.synchronize { @gates.fetch(pid) }
+  end
+
+  # Wall clock stands still; the monotonic clock advances one second per reading.
+  class FakeClock
+    def initialize = @tick = 0.0
+
+    def clock_gettime(kind) = kind == Process::CLOCK_REALTIME ? 1_700_000_000.0 : (@tick += 1.0)
+  end
+
+  def setup
+    @dir = Dir.mktmpdir
+    @log = File.join(@dir, "watcher.log")
+  end
+
+  def teardown = FileUtils.rm_rf(@dir)
+
+  def description(entry, *argv, env: {})
+    Ractor.make_shareable(
+      { entry:, task: entry, argv: argv.empty? ? ["true"] : argv, env: { "PATH" => ENV.fetch("PATH") }.merge(env),
+        root: @dir, log: @log, changes: { modified: ["#{entry}.rb"], added: [], removed: [] } }
+    )
+  end
+
+  def start_thread(queue, reports, spawner)
+    Thread.new { Worker.new(queue, reports, spawner:, clock: FakeClock.new).run }
+  end
+
+  def test_run_serializes_one_tasks_triggers_and_reports_each
+    queue = Queue.new
+    reports = Queue.new
+    spawner = RecordingSpawner.new
+    thread = start_thread(queue, reports, spawner)
+    2.times { queue.push(description("test")) }
+
+    first = reports.pop
+    assert_equal(
+      { kind: :spawn, entry: "test", pid: 101, at: 1_700_000_000.0, changes: { modified: ["test.rb"], added: [], removed: [] } }, first
+    )
+    sleep 0.05
+    assert_equal [["test", 101]], spawner.spawned, "second trigger must wait for the first child"
+
+    spawner.release(101, 3)
+    assert_equal({ kind: :exit, entry: "test", pid: 101, at: 1_700_000_000.0, status: 3, seconds: 1.0 }, reports.pop)
+    assert_equal 102, reports.pop[:pid]
+    spawner.release(102)
+    assert_equal 0, reports.pop[:status]
+
+    queue.push(nil)
+    thread.join
+  end
+
+  def test_two_workers_run_different_tasks_at_once
+    reports = Queue.new
+    spawner = RecordingSpawner.new
+    queues  = [Queue.new, Queue.new]
+    threads = queues.map { |queue| start_thread(queue, reports, spawner) }
+    queues[0].push(description("lint"))
+    queues[1].push(description("docs"))
+
+    started = Array.new(2) { reports.pop }
+    assert_equal %w[docs lint], started.map { |report| report[:entry] }.sort, "both spawned before either child exited"
+
+    spawner.spawned.map(&:last).each { |pid| spawner.release(pid) }
+    2.times { reports.pop }
+    queues.each { |queue| queue.push(nil) }
+    threads.each(&:join)
+  end
+
+  def test_reports_are_shareable
+    queue = Queue.new
+    reports = Queue.new
+    spawner = RecordingSpawner.new
+    thread = start_thread(queue, reports, spawner)
+    queue.push(description("x"))
+    assert Ractor.shareable?(reports.pop)
+    spawner.release(101)
+    assert Ractor.shareable?(reports.pop)
+    queue.push(nil)
+    thread.join
+  end
+
+  def test_spawner_runs_the_task_isolated_and_logs_its_output
+    ENV["ASGARD_TEST_SECRET"] = "leak"
+    spec = description("echo", "sh", "-c", "echo out=$ASGARD_TEST_SECRET$ASGARD_WATCH; echo err >&2; pwd",
+                       env: { "ASGARD_WATCH" => "echo" })
+    pid  = Spawner.spawn(spec)
+    assert_equal 0, Spawner.wait(pid)
+    assert_equal ["out=echo", "err", File.realpath(@dir)], File.readlines(@log, chomp: true)
+  ensure
+    ENV.delete("ASGARD_TEST_SECRET")
+  end
+
+  def test_spawner_exit_codes_for_failures_and_signals
+    assert_equal 3,   Spawner.wait(Spawner.spawn(description("f", "sh", "-c", "exit 3")))
+    assert_equal 137, Spawner.wait(Spawner.spawn(description("k", "sh", "-c", "kill -9 $$")))
+  end
+
+  def test_start_runs_real_processes_in_a_ractor
+    queue   = RactorQueue.new(capacity: 16)
+    reports = RactorQueue.new(capacity: 16)
+    Worker.start(queue, reports)
+    queue.push(description("ok"))
+    queue.push(description("bad", "sh", "-c", "echo hi; exit 3"))
+    queue.push(nil)
+
+    received = Array.new(4) { reports.pop(timeout: 10) }
+    assert_equal(%i[spawn exit spawn exit], received.map { |report| report[:kind] })
+    assert_equal(%w[ok ok bad bad],         received.map { |report| report[:entry] })
+    assert_equal([0, 3],                    received.select { |report| report[:kind] == :exit }.map { |report| report[:status] })
+    assert_equal received[0][:pid], received[1][:pid]
+    assert_includes File.read(@log), "hi"
   end
 end

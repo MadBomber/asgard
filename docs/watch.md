@@ -76,7 +76,7 @@ The watcher watches its own `.loki` files too. Save one, and the running watcher
 
 ## How Tasks Run
 
-A trigger runs `asgard <task>` from the project root as a separate process. Different tasks run concurrently. The same task never overlaps itself: a trigger that arrives while its task is still running waits, and the log says `queued behind pid N`. Save three times during a long test run and three more runs follow, one at a time.
+A trigger runs `asgard <task>` from the project root as a separate process, using the very `asgard` executable that started the watcher, by absolute path, so a different version installed elsewhere on `PATH` is never picked up. Different tasks run concurrently. The same task never overlaps itself: a trigger that arrives while its task is still running waits, and the log says `queued behind pid N`. Save three times during a long test run and three more runs follow, one at a time.
 
 Two declarations for the same task that both match a file run that task twice, back to back. A task's own `depends_on` runs inside its process as usual; the watcher does not collapse dependencies across entries.
 

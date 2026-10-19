@@ -69,7 +69,7 @@ module Asgard
             $stderr.puts "watcher: .envrc found but direnv is not on PATH; its variables will not be loaded"
         end
 
-        def watch_asgard = Schedule.which("asgard", ENV.fetch("PATH", nil)) || abort("watcher: asgard is not on PATH")
+        def watch_asgard = Spawn.executable || abort("watcher: asgard is not on PATH")
 
         def spawn_context
           Spawn::Context.new(root: watch_root, log: state.log_path, base: Spawn.base_env, asgard: watch_asgard, direnv: watch_direnv)

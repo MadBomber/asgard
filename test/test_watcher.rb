@@ -292,8 +292,21 @@ class TestWatchSpawn < Minitest::Test
   end
 
   def test_argv_with_and_without_direnv
-    assert_equal %w[/bin/asgard lint],                  S.argv(spec, context)
-    assert_equal %w[/bin/direnv exec /proj asgard lint], S.argv(spec, context(direnv: "/bin/direnv"))
+    assert_equal %w[/bin/asgard lint],                       S.argv(spec, context)
+    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], S.argv(spec, context(direnv: "/bin/direnv"))
+  end
+
+  def test_executable_prefers_the_running_asgard_over_path
+    checkout = File.expand_path("../bin/asgard", __dir__)
+    assert_equal checkout, S.executable(checkout, "/nowhere")
+    assert_equal checkout, S.executable("bin/asgard", "/nowhere") if Dir.pwd == File.dirname(checkout, 2)
+    Dir.mktmpdir do |bin|
+      File.write(File.join(bin, "asgard"), "")
+      File.chmod(0o755, File.join(bin, "asgard"))
+      assert_equal File.join(bin, "asgard"), S.executable("-e", bin), "not an executable named asgard: fall back to PATH"
+      assert_equal File.join(bin, "asgard"), S.executable(File.join(bin, "ruby"), bin)
+    end
+    assert_nil S.executable("-e", "/nowhere")
   end
 
   def test_description_is_complete_and_shareable
@@ -301,7 +314,7 @@ class TestWatchSpawn < Minitest::Test
     assert Ractor.shareable?(description)
     assert_equal "lint-lib", description[:entry]
     assert_equal "lint",     description[:task]
-    assert_equal %w[/bin/direnv exec /proj asgard lint], description[:argv]
+    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], description[:argv]
     assert_equal "/proj",              description[:root]
     assert_equal "/state/watcher.log", description[:log]
     assert_equal "/proj",              description[:env]["ASGARD_WATCH_ROOT"]

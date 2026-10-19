@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   running task finish. `list` shows each entry's last run; `--all` covers
   every project. State and logs live under `~/.local/state/asgard/watch/`.
   The command is registered as the gem-owned `_watcher` and mapped to
-  `watcher`. See [Watched Files](https://madbomber.github.io/asgard/watch/).
+  `watcher`. The daemon and every trigger run the same `asgard` executable
+  that started the watcher, by absolute path, even under `direnv exec`.
+  See [Watched Files](https://madbomber.github.io/asgard/watch/).
 - **`changes`** Kernel method — inside a task, the `Asgard::Changes` the
   watcher triggered it with (`modified`, `added`, `removed`, `all`,
   `empty?`); every list is empty when the task is run by hand.

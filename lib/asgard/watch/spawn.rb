@@ -33,10 +33,26 @@ module Asgard
         context.base.merge(spec[:env], { "ASGARD_WATCH" => spec[:name], "ASGARD_WATCH_ROOT" => context.root }, changes.to_env)
       end
 
-      # The task's argv, as a scheduled job's: direnv exec when available so
-      # .envrc loads in the task's process, else the asgard executable.
+      # The task's argv: the context's asgard executable by absolute path, so
+      # a trigger runs the very asgard that started the watcher whatever PATH
+      # says, wrapped in direnv exec when available so .envrc loads in the
+      # task's process.
       def argv(spec, context)
-        Schedule.program_arguments(spec[:task], [], root: context.root, asgard: context.asgard, direnv: context.direnv)
+        direnv  = context.direnv
+        wrapper = direnv ? [direnv, "exec", context.root] : []
+        [*wrapper, context.asgard, spec[:task]]
+      end
+
+      # The asgard executable to run: the one running now when it is an
+      # executable file named asgard (bin/asgard in a checkout, a gem
+      # binstub when installed), else the first on path. A PATH scan could
+      # find a different installed version than the one that started the
+      # watcher.
+      def executable(program = $PROGRAM_NAME, path = ENV.fetch("PATH", nil))
+        running = File.expand_path(program)
+        return running if File.basename(running) == "asgard" && File.file?(running) && File.executable?(running)
+
+        Schedule.which("asgard", path)
       end
 
       # Everything a worker needs to run one trigger, deep-frozen and

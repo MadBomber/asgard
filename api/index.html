@@ -689,6 +689,8 @@
       
         
       
+        
+      
     
     
     
@@ -859,6 +861,34 @@
     
   
     Scheduled Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../watch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Watched Files
   
 
     
@@ -1118,6 +1148,17 @@
     <span class="md-ellipsis">
       
         Asgard::Schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asgardwatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Watch
       
     </span>
   </a>
@@ -1420,6 +1461,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#asgardwatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Watch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#asgardbase-internal-class-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1579,6 +1631,12 @@
 <td><code>import_up(name = ".loki") → true, false</code></td>
 <td><code>true</code> if any file newly loaded</td>
 <td>Combines <code>loki_up</code> and <code>import</code>. Walks ancestors to find the file or glob match, then loads it. Returns <code>false</code> if nothing is found.</td>
+</tr>
+<tr>
+<td><code>changes</code></td>
+<td><code>changes → Asgard::Changes</code></td>
+<td><code>Asgard::Changes</code></td>
+<td>The files the watcher saw change when it triggered this task: <code>modified</code>, <code>added</code>, <code>removed</code>, <code>all</code>, <code>empty?</code>. Read once per process from <code>ASGARD_MODIFIED</code>, <code>ASGARD_ADDED</code> and <code>ASGARD_REMOVED</code>; every list is empty when the task is run by hand. See <a href="#asgardwatch"><code>Asgard::Watch</code></a>.</td>
 </tr>
 <tr>
 <td><code>debug?</code></td>
@@ -1794,6 +1852,16 @@
 <td>subcommand</td>
 <td><code>asgard schedule SUBCOMMAND</code>, backed by <code>Asgard::Schedule::Commands</code>. <code>map "schedule" =&gt; :_schedule</code> keeps the typed name <code>schedule</code>, and a user task named <code>schedule</code> cannot shadow it.</td>
 </tr>
+<tr>
+<td><code>watch</code></td>
+<td>class method (DSL)</td>
+<td><code>watch :task, paths: ...</code> — declares a watched entry. Extended from <code>Asgard::Watch::DSL</code>; see <a href="#asgardwatch"><code>Asgard::Watch</code></a>.</td>
+</tr>
+<tr>
+<td><code>_watcher</code></td>
+<td>subcommand</td>
+<td><code>asgard watcher SUBCOMMAND</code>, backed by <code>Asgard::Watch::Commands</code>. <code>map "watcher" =&gt; :_watcher</code> keeps the typed name <code>watcher</code>.</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -1904,8 +1972,8 @@
 </tr>
 <tr>
 <td><code>backend_class</code></td>
-<td><code>Asgard::Schedule.backend_class(platform = RUBY_PLATFORM, scheduler: ENV["ASGARD_SCHEDULER"])</code></td>
-<td><code>Launchd</code> on darwin, <code>Systemd</code> on linux, <code>Windows</code> on mingw/mswin; raises <code>Asgard::Schedule::Error</code> elsewhere. <code>scheduler:</code> (<code>launchd</code>, <code>systemd</code>, <code>cron</code> or <code>windows</code>) overrides the platform.</td>
+<td><code>Asgard::Schedule.backend_class(platform = RUBY_PLATFORM)</code></td>
+<td><code>Launchd</code> on darwin, <code>Systemd</code> on linux; raises <code>Asgard::Schedule::Error</code> elsewhere.</td>
 </tr>
 <tr>
 <td><code>runner</code> / <code>runner=</code></td>
@@ -1914,7 +1982,43 @@
 </tr>
 </tbody>
 </table>
-<p>All four backends, <code>Asgard::Schedule::Launchd</code>, <code>Asgard::Schedule::Systemd</code>, <code>Asgard::Schedule::Cron</code> and <code>Asgard::Schedule::Windows</code>, implement the same instance API: <code>files</code>, <code>install</code>, <code>uninstall</code>, <code>start</code>, <code>stop</code>, <code>trigger</code>, <code>installed_names</code>, <code>status</code>, <code>log_path</code>, <code>notes</code>. Each class also exposes the pure helpers that build its job files (<code>Launchd.plist</code>, <code>Systemd.service_unit</code>, <code>Systemd.timer_unit</code>, ...), so they can be tested without a scheduler.</p>
+<p>Both backends, <code>Asgard::Schedule::Launchd</code> and <code>Asgard::Schedule::Systemd</code>, implement the same instance API: <code>files</code>, <code>install</code>, <code>uninstall</code>, <code>start</code>, <code>stop</code>, <code>trigger</code>, <code>installed_names</code>, <code>status</code>, <code>log_path</code>, <code>notes</code>. Each class also exposes the pure helpers that build its job files (<code>Launchd.plist</code>, <code>Systemd.service_unit</code>, <code>Systemd.timer_unit</code>, ...), so they can be tested without a scheduler.</p>
+<hr />
+<h2 id="asgardwatch"><code>Asgard::Watch</code><a class="headerlink" href="#asgardwatch" title="Permanent link">&para;</a></h2>
+<p>Watched files. The user-facing guide is <a href="../watch/">Watched Files</a>; this section covers the Ruby API.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>declare</code></td>
+<td><code>Asgard::Watch.declare(task, **settings) → Hash</code></td>
+<td>What <code>Tasks.watch</code> calls. Validates via <code>normalize</code> and records the entry. Redeclaring an identical entry is a no-op; a different entry under the same name raises <code>ArgumentError</code>.</td>
+</tr>
+<tr>
+<td><code>declarations</code></td>
+<td><code>Asgard::Watch.declarations → Hash</code></td>
+<td>Declared entries for this run, keyed by entry name.</td>
+</tr>
+<tr>
+<td><code>normalize</code></td>
+<td><code>Asgard::Watch.normalize(task, paths:, only: nil, ignore: nil, events: :all, debounce: 0.5, env: {}, as: nil) → Hash</code></td>
+<td>Validates one declaration and returns <code>{ name:, task:, paths:, dirs:, only:, ignore:, events:, debounce:, env: }</code>: the directories listen watches and one <code>only:</code> Regexp (or nil) built from the globs and the declared filter. Pure, as are its helpers <code>split_glob</code>, <code>glob_regexp</code>, <code>combine_only</code> and <code>normalize_events</code>.</td>
+</tr>
+<tr>
+<td><code>filter_events</code></td>
+<td><code>Asgard::Watch.filter_events(batch, events) → Asgard::Changes, nil</code></td>
+<td>A listener batch narrowed to the entry's <code>events:</code>; <code>nil</code> when nothing is left.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Asgard::Changes</code> is a <code>Data</code> class with <code>modified</code>, <code>added</code> and <code>removed</code> path lists, <code>all</code>, <code>empty?</code>, <code>to_env</code> (the three trigger variables) and <code>Changes.from_env(env = ENV)</code>. <code>Changes.current</code> is the per-process memo behind the <code>changes</code> Kernel method; <code>Changes.forget</code> clears it.</p>
+<p>The daemon is assembled from small classes, each testable alone: <code>Spawn</code> builds the frozen, Ractor-shareable description of one run (argv, whitelisted environment, root, log, changes); <code>Worker</code> runs one task's triggers serially in its own Ractor and reports every spawn and exit; <code>Dispatcher</code> routes listener batches to the worker queues; <code>Reporter</code> is the single writer of the log and the per-entry records and tracks in-flight pids; <code>State</code> owns the pidfile, log, recorded declarations and entry records under the XDG state directory; <code>Daemon</code> wires them to listen and handles signals and reloads.</p>
 <hr />
 <h2 id="asgardbase-internal-class-methods"><code>Asgard::Base</code> Internal Class Methods<a class="headerlink" href="#asgardbase-internal-class-methods" title="Permanent link">&para;</a></h2>
 <p>These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.</p>
@@ -1978,6 +2082,11 @@
 <td><code>Asgard::Schedule::Error</code></td>
 <td><code>Asgard::Error</code></td>
 <td>Raised when a <code>launchctl</code>/<code>systemctl</code> command fails, or on an unsupported platform. <code>run!</code> reports it as <code>asgard: &lt;message&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>Asgard::Watch::Error</code></td>
+<td><code>Asgard::Error</code></td>
+<td>Raised when the watcher cannot run: a <code>watch</code> names a task the project does not define. <code>run!</code> reports it as <code>asgard: &lt;message&gt;</code>.</td>
 </tr>
 <tr>
 <td><code>Asgard::CircularDependencyError</code></td>

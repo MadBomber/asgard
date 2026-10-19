@@ -1,0 +1,45 @@
+# frozen_string_literal: true
+# Demonstrates a plain user task that runs other tasks in sequence — the
+# `rake a b c` / `just a b c` style, which Thor's one-command dispatch
+# doesn't offer on its own.
+#
+# Steps are comma-separated so a step can carry its own arguments and
+# options; with no commas, every word is a task of its own.
+#
+# Run with:
+#   asgard do greet finish
+#   asgard do hello Alice, farewell Bob --formal, finish
+#
+# Behavior:
+#   - Each step is parsed by Thor exactly as if typed on the command line,
+#     so its arguments and options work as usual.
+#   - The sequence stops at the first failure: a failing `sh` exits the
+#     process, and a step returning :fail makes `do` return :fail (exit 1).
+#   - Every task runs at most once per asgard invocation, so
+#     `asgard do hello Alice, hello Bob` greets only Alice, and a dependency
+#     shared by several steps runs once.
+
+require "shellwords"
+
+class Tasks
+  # Not a Thor command (a class method), so it can be tested on its own:
+  #   Tasks.do_steps("lint, hello Alice") #=> [["lint"], ["hello", "Alice"]]
+  def self.do_steps(line)
+    line.include?(",") ? line.split(",").map { |step| Shellwords.split(step) }.reject(&:empty?)
+                       : Shellwords.split(line).map { |word| [word] }
+  end
+
+  desc "do STEPS...", "Run several tasks in sequence, e.g. `asgard do hello Alice, farewell Bob --formal`"
+  stop_on_unknown_option! :do
+  def do(*words)
+    steps = self.class.do_steps(words.join(" "))
+    raise Asgard::Error, "do: no tasks given" if steps.empty?
+
+    steps.each do |name, *args|
+      raise Asgard::Error, "do: unknown task '#{name}'" if name == "do" || !self.class.all_commands.key?(name)
+      # dispatch with nil options is what Tasks.start does: Thor parses this
+      # step's argv itself. (invoke would reuse the options parsed for `do`.)
+      return :fail if self.class.send(:dispatch, nil, [name, *args], nil, shell: shell) == :fail
+    end
+  end
+end

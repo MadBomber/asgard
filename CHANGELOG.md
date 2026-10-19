@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `empty?`); every list is empty when the task is run by hand.
 - **`Asgard::Watch::Error`** (subclass of `Asgard::Error`) — raised when a
   `watch` names a task the project does not define.
+- **`examples/do.loki`** — `asgard do lint test build` runs tasks in
+  sequence, with comma-separated steps for arguments and options
+  (`asgard do hello Alice, farewell Bob --formal`). A plain user task, not
+  a built-in; it stops at the first failure.
 
 ### Changed
 

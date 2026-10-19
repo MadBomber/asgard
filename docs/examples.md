@@ -130,6 +130,28 @@ This example is also useful as a test harness for verifying that parallel execut
 
 ---
 
+## `do.loki`
+
+**Path:** `examples/do.loki`
+
+A plain user task that runs other tasks in sequence, the way `rake a b c` or `just a b c` does. No gem changes needed:
+
+- Steps are comma-separated, so each step can carry its own arguments and options; with no commas, every word is a task of its own
+- Each step is parsed by Thor as if it were typed on the command line
+- The sequence stops at the first failure (a failing `sh`, or a step returning `:fail`)
+
+```bash
+asgard do greet finish
+asgard do hello Alice, farewell Bob --formal
+# Hello, Alice!
+# Goodbye, Bob.
+```
+
+!!! note
+    Every task runs at most once per `asgard` invocation, so `asgard do hello Alice, hello Bob` greets only Alice. The same rule makes a dependency shared by several steps run once.
+
+---
+
 ## Summary
 
 | File | Primary Focus |
@@ -138,3 +160,4 @@ This example is also useful as a test harness for verifying that parallel execut
 | `server_subcommands.loki` | Subcommand groups, per-command options, depends_on in subcommands |
 | `db_subcommands.loki` | Multi-step depends_on chains, enum validation, long_desc in subcommands |
 | `concurrent.loki` | Parallel task execution, thread concurrency demonstration |
+| `do.loki` | Running several tasks in sequence from one command line |

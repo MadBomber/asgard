@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "schedule"
+require_relative "watch"
 
 # Tasks is the single conventional entry point for all .loki files.
 # It is pre-defined by the gem so .loki files never need to declare a class.
@@ -37,6 +38,9 @@ class Tasks < Asgard::Base
 
   # Class-level `schedule :task, at: "HH:MM"` declarations (see Asgard::Schedule).
   extend Asgard::Schedule::DSL
+
+  # Class-level `watch :task, paths: "lib"` declarations (see Asgard::Watch).
+  extend Asgard::Watch::DSL
 
   # Gem-owned, so the command is _schedule; the map keeps `asgard schedule`
   # as the name users type, and ancestor_name keeps it in subcommand help.

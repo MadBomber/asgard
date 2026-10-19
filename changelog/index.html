@@ -2262,7 +2262,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   running task finish. <code>list</code> shows each entry's last run; <code>--all</code> covers
   every project. State and logs live under <code>~/.local/state/asgard/watch/</code>.
   The command is registered as the gem-owned <code>_watcher</code> and mapped to
-  <code>watcher</code>. See <a href="https://madbomber.github.io/asgard/watch/">Watched Files</a>.</li>
+  <code>watcher</code>. The daemon and every trigger run the same <code>asgard</code> executable
+  that started the watcher, by absolute path, even under <code>direnv exec</code>.
+  See <a href="https://madbomber.github.io/asgard/watch/">Watched Files</a>.</li>
 <li><strong><code>changes</code></strong> Kernel method — inside a task, the <code>Asgard::Changes</code> the
   watcher triggered it with (<code>modified</code>, <code>added</code>, <code>removed</code>, <code>all</code>,
   <code>empty?</code>); every list is empty when the task is run by hand.</li>

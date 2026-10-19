@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "watch/declaration"
+
 module Asgard
   # Runs asgard tasks when watched files change. Declare entries at class
   # level in a .loki file:
@@ -17,10 +19,16 @@ module Asgard
         @declarations ||= {}
       end
 
-      # Records one declaration. Validation and normalization arrive with
-      # the declaration slice; for now the raw settings are stored as given.
+      # Records one declaration. Redeclaring an identical entry is a no-op
+      # (a .loki file loaded twice); a different entry under the same name
+      # is an error.
       def declare(task, **settings)
-        declarations[task] = { task: task, **settings }
+        spec  = normalize(task, **settings)
+        name  = spec[:name]
+        taken = declarations[name]
+        raise ArgumentError, "watch: #{name.inspect} is already declared; give one a distinct as: name" if taken && taken != spec
+
+        declarations[name] = spec
       end
     end
 

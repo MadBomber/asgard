@@ -6,6 +6,8 @@ require_relative "watch/spawn"
 require_relative "watch/worker"
 require_relative "watch/reporter"
 require_relative "watch/dispatcher"
+require_relative "watch/state"
+require_relative "watch/daemon"
 
 module Asgard
   # Runs asgard tasks when watched files change. Declare entries at class
@@ -18,6 +20,9 @@ module Asgard
   #
   # then manage the watcher with `asgard watcher run|start|stop|list|...`.
   module Watch
+    # A watcher could not run: an unknown task, a daemon already running.
+    class Error < Asgard::Error; end
+
     class << self
       # Declared entries for this run, keyed by entry name.
       def declarations

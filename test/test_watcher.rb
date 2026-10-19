@@ -644,3 +644,187 @@ class TestWatchDispatcher < Minitest::Test
     assert_equal 3, @reports.size
   end
 end
+
+class TestWatchState < Minitest::Test
+  State = Asgard::Watch::State
+
+  def setup
+    @home  = Dir.mktmpdir
+    @base  = State.base_dir(home: @home, env: {})
+    @state = State.new(project: "My Proj", root: "/proj", base: @base)
+  end
+
+  def teardown = FileUtils.rm_rf(@home)
+
+  def test_paths_live_under_the_state_home
+    dir = File.join(@home, ".local", "state", "asgard", "watch", "my-proj")
+    assert_equal dir, @state.dir
+    assert_equal File.join(dir, "watcher.pid"),        @state.pid_path
+    assert_equal File.join(dir, "watcher.log"),        @state.log_path
+    assert_equal File.join(dir, "entries", "lint.json"), @state.entry_path("lint")
+    assert_equal "/xdg/asgard/watch", State.base_dir(home: @home, env: { "XDG_STATE_HOME" => "/xdg" })
+    assert_equal File.join(Dir.home, ".local", "state", "asgard", "watch"), State.base_dir(env: {})
+  end
+
+  def test_prepare_records_the_root_and_all_finds_it
+    @state.prepare
+    assert_equal "/proj\n", File.read(@state.root_path)
+    State.new(project: "other", root: "/other", base: @base).prepare
+    assert_equal [["my-proj", "/proj"], ["other", "/other"]], State.all(base: @base)
+  end
+
+  def test_pidfile_round_trip_and_liveness
+    @state.prepare
+    assert_nil @state.read_pid
+    assert_nil @state.running_pid
+    @state.write_pid(Process.pid)
+    assert_equal Process.pid, @state.read_pid
+    assert_equal Process.pid, @state.running_pid
+    dead = Process.spawn("true")
+    Process.wait(dead)
+    @state.write_pid(dead)
+    assert_nil @state.running_pid, "a stale pidfile is not a running daemon"
+    @state.clear
+    assert_nil @state.read_pid
+  end
+
+  def test_entries_round_trip_through_json
+    record = { entry: "lint", task: "lint", pid: 41, started: "2026-10-18T09:30:00-05:00",
+               changes: { modified: ["a.rb"], added: [], removed: [] } }
+    assert_nil @state.read_entry("lint")
+    @state.write_entry("lint", record)
+    assert_equal record, @state.read_entry("lint")
+    @state.write_entry("docs", record.merge(entry: "docs", status: 0))
+    assert_equal %w[docs lint], @state.entries.keys
+    assert_equal 0, @state.entries["docs"][:status]
+    assert_empty Dir.glob(File.join(@state.entries_dir, "asgard*")), "no tempfile left behind"
+  end
+
+  def test_declarations_round_trip
+    specs = [Asgard::Watch.normalize(:lint, paths: "lib/**/*.rb", events: :added)]
+    assert_empty @state.read_declarations
+    @state.write_declarations(specs)
+    assert_equal [{ name: "lint", task: "lint", paths: ["lib/**/*.rb"], events: ["added"] }], @state.read_declarations
+  end
+end
+
+# Stands in for Listen: records each `to` call and exposes the callbacks.
+class FakeListen
+  Listener = Struct.new(:dirs, :options, :callback, :started) do
+    def start = self.started = true
+    def stop  = self.started = false
+  end
+
+  attr_reader :listeners
+
+  def initialize = @listeners = []
+
+  def to(*dirs, **options, &callback) = Listener.new(dirs, options, callback, false).tap { |listener| @listeners << listener }
+end
+
+class TestWatchDaemon < Minitest::Test
+  Daemon = Asgard::Watch::Daemon
+
+  def setup
+    @cwd  = Dir.pwd
+    @tmp  = Dir.mktmpdir
+    @root = File.join(File.realpath(@tmp), "proj")
+    FileUtils.mkdir_p(@root)
+    @home = File.join(@tmp, "home")
+    @asgard = File.join(@tmp, "asgard")
+    File.write(@asgard, <<~SH)
+      #!/bin/sh
+      echo "ran $1 modified=$ASGARD_MODIFIED"
+      until [ -f "$ASGARD_WATCH_ROOT/go" ]; do sleep 0.02; done
+      exit 4
+    SH
+    File.chmod(0o755, @asgard)
+    @state   = Asgard::Watch::State.new(project: "proj", root: @root, base: Asgard::Watch::State.base_dir(home: @home, env: {}))
+    @context = Asgard::Watch::Spawn::Context.new(root: @root, log: @state.log_path, base: { "PATH" => ENV.fetch("PATH") },
+                                                 asgard: @asgard, direnv: nil)
+    @listen  = FakeListen.new
+    @execs   = []
+    @out     = StringIO.new
+    @saved_traps = %w[INT TERM].to_h { |signal| [signal, trap(signal, "DEFAULT")] }
+  end
+
+  def teardown
+    @saved_traps&.each { |signal, handler| trap(signal, handler) }
+    Dir.chdir(@cwd)
+    FileUtils.rm_rf(@tmp)
+  end
+
+  def daemon(declarations, tasks: %w[lint docs])
+    config = Daemon::Config.new(declarations:, root: @root, state: @state, context: @context, tasks:)
+    Daemon.new(config, listen: @listen, exec: ->(*argv) { @execs << argv }, out: @out)
+  end
+
+  def declarations
+    { "lint" => Asgard::Watch.normalize(:lint, paths: "lib/**/*.rb", debounce: 0.1),
+      "docs" => Asgard::Watch.normalize(:docs, paths: "docs", only: /\.md\z/, events: :added) }
+  end
+
+  def wait_until(seconds = 5)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+    sleep 0.02 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    assert yield, "condition not met within #{seconds}s"
+  end
+
+  def test_listen_options_and_unknown_tasks
+    assert_equal({ only: /\.md\z/, ignore: Asgard::Watch::DEFAULT_IGNORES, wait_for_delay: 0.5, relative: true },
+                 Daemon.listen_options(declarations["docs"]))
+    refute_includes Daemon.listen_options(Asgard::Watch.normalize(:t, paths: "lib")).keys, :only
+    assert_equal ["docs"], Daemon.unknown_tasks(declarations, %w[lint])
+    error = assert_raises(Asgard::Watch::Error) { daemon(declarations, tasks: ["lint"]).run }
+    assert_includes error.message, "docs"
+  end
+
+  def test_run_watches_each_declaration_runs_a_task_and_stops_after_it_exits
+    watcher = daemon(declarations)
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+
+    assert_equal 3, @listen.listeners.size
+    lint, docs, loki = @listen.listeners
+    assert_equal ["lib"],   lint.dirs
+    assert_equal ["docs"],  docs.dirs
+    assert_equal [@root],   loki.dirs
+    assert_equal(/\.loki\z/, loki.options[:only])
+    assert_equal 0.1, lint.options[:wait_for_delay]
+    assert @listen.listeners.all?(&:started)
+    assert_equal @root, Dir.pwd
+
+    lint.callback.call(["lib/a.rb"], [], [])
+    wait_until { @state.read_entry("lint")&.key?(:pid) }
+    refute @state.read_entry("lint").key?(:finished)
+
+    watcher.stop
+    sleep 0.3
+    assert thread.alive?, "shutdown waits for the running task"
+    assert File.exist?(@state.pid_path)
+    refute @listen.listeners.any?(&:started)
+
+    FileUtils.touch(File.join(@root, "go"))
+    thread.join
+    refute File.exist?(@state.pid_path)
+    assert_equal 4, @state.read_entry("lint")[:status]
+    assert_includes File.read(@state.log_path), "ran lint modified=lib/a.rb"
+    assert_includes @out.string, "waiting for pid"
+    assert_includes @out.string, "stopped"
+  ensure
+    FileUtils.touch(File.join(@root, "go"))
+    thread&.join
+  end
+
+  def test_loki_change_reloads_by_exec
+    watcher = daemon(declarations)
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+    @listen.listeners.last.callback.call([".loki"], [], [])
+    assert_equal [[@asgard, "watcher", "run"]], @execs
+    refute @listen.listeners.any?(&:started)
+  ensure
+    watcher&.stop
+    thread&.join
+  end
+end

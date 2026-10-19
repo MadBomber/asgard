@@ -21,6 +21,8 @@ detectors:
   # Default is 4 — Doctor legitimately tracks several pieces of diagnostic state.
   TooManyInstanceVariables:
     max_instance_variables: 6
+    exclude:
+      - Asgard::Watch::Daemon  # wires reporter, dispatcher, listeners, inbox and the stop flag for one run
 
   # Accept standard Ruby short-name conventions for limited-scope variables.
   UncommunicativeVariableName:
@@ -140,6 +142,7 @@ detectors:
       - Asgard::Schedule::Systemd#self.timer_unit
       - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
       - Asgard::Watch::Dispatcher#initialize        # injectable worker starter and clock for tests
+      - Asgard::Watch::Daemon#initialize            # injectable listen/exec/out for tests
 
   RepeatedConditional:
     exclude:
@@ -150,6 +153,7 @@ detectors:
       - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
       - Asgard::Schedule::Launchd                   # backend API + pure helpers
       - Asgard::Schedule::Systemd
+      - Asgard::Watch::State                        # one reader/writer pair per file it keeps
 
 
 exclude_paths:

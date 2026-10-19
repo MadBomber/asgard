@@ -180,3 +180,79 @@ class TestWatchRegistry < Minitest::Test
     assert_equal %w[tree tree-test], Asgard::Watch.declarations.keys
   end
 end
+
+class TestWatchChanges < Minitest::Test
+  C = Asgard::Changes
+
+  def setup
+    C.forget
+    C::VARIABLES.each_value { |variable| ENV.delete(variable) }
+  end
+  alias teardown setup
+
+  def test_defaults_to_empty_lists
+    changes = C.new
+    assert_empty changes.modified
+    assert_empty changes.all
+    assert_predicate changes, :empty?
+  end
+
+  def test_from_env_and_to_env_round_trip
+    env = { "ASGARD_MODIFIED" => "lib/a.rb\nlib/b c.rb", "ASGARD_ADDED" => "docs/new file.md", "ASGARD_REMOVED" => "" }
+    changes = C.from_env(env)
+    assert_equal ["lib/a.rb", "lib/b c.rb"], changes.modified
+    assert_equal ["docs/new file.md"],      changes.added
+    assert_empty changes.removed
+    assert_equal env, changes.to_env
+    assert_equal changes, C.from_env(changes.to_env)
+  end
+
+  def test_from_env_tolerates_missing_variables
+    changes = C.from_env({})
+    assert_predicate changes, :empty?
+    assert_equal({ "ASGARD_MODIFIED" => "", "ASGARD_ADDED" => "", "ASGARD_REMOVED" => "" }, changes.to_env)
+  end
+
+  def test_all_is_the_deduplicated_union_in_order
+    changes = C.new(modified: %w[b a], added: %w[c a], removed: ["b"])
+    assert_equal %w[b a c], changes.all
+    refute_predicate changes, :empty?
+  end
+
+  def test_paths_are_strings_and_frozen
+    changes = C.new(modified: [Pathname.new("lib/a.rb")])
+    assert_equal ["lib/a.rb"], changes.modified
+    assert_predicate changes.modified, :frozen?
+  end
+
+  def test_filter_events_keeps_only_the_declared_kinds
+    batch  = { modified: ["m.rb"], added: ["a.rb"], removed: ["r.rb"] }
+    events = Asgard::Watch.normalize_events(%i[added removed])
+    changes = Asgard::Watch.filter_events(batch, events)
+    assert_empty changes.modified
+    assert_equal ["a.rb"], changes.added
+    assert_equal ["r.rb"], changes.removed
+    assert_equal batch.values.flatten, Asgard::Watch.filter_events(batch, Asgard::Watch.normalize_events(:all)).all
+  end
+
+  def test_filter_events_is_nil_when_nothing_is_left
+    batch = { modified: ["m.rb"], added: [], removed: [] }
+    assert_nil Asgard::Watch.filter_events(batch, Asgard::Watch.normalize_events(:added))
+    assert_nil Asgard::Watch.filter_events({}, Asgard::Watch.normalize_events(:all))
+  end
+
+  def test_kernel_changes_reads_the_trigger_variables_once
+    ENV["ASGARD_ADDED"] = "x.rb"
+    first = changes
+    assert_equal ["x.rb"], first.added
+    ENV["ASGARD_ADDED"] = "y.rb"
+    assert_same first, changes
+    C.forget
+    assert_equal ["y.rb"], changes.added
+  end
+
+  def test_kernel_changes_is_empty_outside_the_watcher
+    assert_predicate changes, :empty?
+    assert_predicate Kernel.changes, :empty?
+  end
+end

@@ -16,6 +16,12 @@ module Kernel
   end
   module_function :env
 
+  # The files the watcher saw change when it triggered this task, as an
+  # Asgard::Changes (modified, added, removed, all). Every list is empty
+  # when the task is run by hand.
+  def changes = Asgard::Changes.current
+  module_function :changes
+
   def loki_up(name = ".loki")
     dir = Pathname.new(Dir.pwd)
     loop do

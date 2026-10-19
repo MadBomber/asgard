@@ -127,6 +127,7 @@ detectors:
   DataClump:
     exclude:
       - Asgard::Schedule                            # at:/on: and task/args are the declaration's vocabulary
+      - Asgard::Watch::Spawn                        # spec + context are the two inputs of every spawn function
 
   LongParameterList:
     exclude:

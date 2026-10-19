@@ -256,3 +256,67 @@ class TestWatchChanges < Minitest::Test
     assert_predicate Kernel.changes, :empty?
   end
 end
+
+class TestWatchSpawn < Minitest::Test
+  S = Asgard::Watch::Spawn
+
+  def spec    = Asgard::Watch.normalize(:lint, paths: "lib/**/*.rb", env: { BUILD: "dev", PATH: "/override" }, as: "lint-lib")
+  def changes = Asgard::Changes.new(modified: ["lib/a.rb"], added: ["lib/b c.rb"])
+
+  def context(direnv: nil)
+    S::Context.new(root: "/proj", log: "/state/watcher.log", base: { "PATH" => "/bin", "HOME" => "/h" },
+                   asgard: "/bin/asgard", direnv:)
+  end
+
+  def test_base_env_keeps_only_the_whitelist_and_locale_variables
+    env = { "PATH" => "/bin", "HOME" => "/h", "LC_ALL" => "C", "LANG" => "en", "SECRET" => "x", "RAILS_ENV" => "dev" }
+    assert_equal({ "PATH" => "/bin", "HOME" => "/h", "LC_ALL" => "C", "LANG" => "en" }, S.base_env(env))
+    assert_equal ENV.fetch("PATH"), S.base_env["PATH"]
+    refute_includes S.base_env.keys, "SECRET"
+  end
+
+  def test_environment_layers_base_declared_and_trigger_variables
+    env = S.environment(spec, changes, context)
+    assert_equal "/override", env["PATH"]
+    assert_equal "/h",        env["HOME"]
+    assert_equal "dev",       env["BUILD"]
+    assert_equal "lint-lib",  env["ASGARD_WATCH"]
+    assert_equal "/proj",     env["ASGARD_WATCH_ROOT"]
+    assert_equal "lib/a.rb",  env["ASGARD_MODIFIED"]
+    assert_equal "lib/b c.rb", env["ASGARD_ADDED"]
+    assert_equal "",          env["ASGARD_REMOVED"]
+    assert_equal changes, Asgard::Changes.from_env(env)
+  end
+
+  def test_argv_with_and_without_direnv
+    assert_equal %w[/bin/asgard lint],                  S.argv(spec, context)
+    assert_equal %w[/bin/direnv exec /proj asgard lint], S.argv(spec, context(direnv: "/bin/direnv"))
+  end
+
+  def test_description_is_complete_and_shareable
+    description = S.description(spec, changes, context(direnv: "/bin/direnv"))
+    assert Ractor.shareable?(description)
+    assert_equal "lint-lib", description[:entry]
+    assert_equal "lint",     description[:task]
+    assert_equal %w[/bin/direnv exec /proj asgard lint], description[:argv]
+    assert_equal "/proj",              description[:root]
+    assert_equal "/state/watcher.log", description[:log]
+    assert_equal "/proj",              description[:env]["ASGARD_WATCH_ROOT"]
+    assert_equal({ modified: ["lib/a.rb"], added: ["lib/b c.rb"], removed: [] }, description[:changes])
+    assert_equal %i[entry task argv env root log changes], description.keys
+  end
+
+  def test_description_holds_only_plain_values
+    assert plain?(S.description(spec, Asgard::Changes.new, context))
+  end
+
+  # Strings, Symbols, nil, and Arrays and Hashes of those: what a worker
+  # Ractor can be handed without surprises.
+  def plain?(value)
+    case value
+    when Hash  then value.all? { |key, item| plain?(key) && plain?(item) }
+    when Array then value.all? { |item| plain?(item) }
+    else [String, Symbol, NilClass].include?(value.class)
+    end
+  end
+end

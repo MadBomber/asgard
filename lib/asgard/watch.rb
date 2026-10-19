@@ -2,6 +2,7 @@
 
 require_relative "watch/declaration"
 require_relative "watch/changes"
+require_relative "watch/spawn"
 
 module Asgard
   # Runs asgard tasks when watched files change. Declare entries at class

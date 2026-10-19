@@ -4,6 +4,7 @@ require "test_helper"
 require "tmpdir"
 require "fileutils"
 require "ractor_queue"
+require "stringio"
 
 class TestWatchDeclaration < Minitest::Test
   W = Asgard::Watch
@@ -391,13 +392,14 @@ class TestWatchWorker < Minitest::Test
 
     first = reports.pop
     assert_equal(
-      { kind: :spawn, entry: "test", pid: 101, at: 1_700_000_000.0, changes: { modified: ["test.rb"], added: [], removed: [] } }, first
+      { kind: :spawn, entry: "test", task: "test", pid: 101, at: 1_700_000_000.0,
+        changes: { modified: ["test.rb"], added: [], removed: [] } }, first
     )
     sleep 0.05
     assert_equal [["test", 101]], spawner.spawned, "second trigger must wait for the first child"
 
     spawner.release(101, 3)
-    assert_equal({ kind: :exit, entry: "test", pid: 101, at: 1_700_000_000.0, status: 3, seconds: 1.0 }, reports.pop)
+    assert_equal({ kind: :exit, entry: "test", task: "test", pid: 101, at: 1_700_000_000.0, status: 3, seconds: 1.0 }, reports.pop)
     assert_equal 102, reports.pop[:pid]
     spawner.release(102)
     assert_equal 0, reports.pop[:status]
@@ -466,5 +468,179 @@ class TestWatchWorker < Minitest::Test
     assert_equal([0, 3],                    received.select { |report| report[:kind] == :exit }.map { |report| report[:status] })
     assert_equal received[0][:pid], received[1][:pid]
     assert_includes File.read(@log), "hi"
+  end
+end
+
+# Stands in for Watch::State: keeps the latest record per entry in memory.
+class MemoryState
+  attr_reader :entries
+
+  def initialize = @entries = {}
+
+  def write_entry(name, record) = @entries[name] = record
+end
+
+class TestWatchReporter < Minitest::Test
+  Reporter = Asgard::Watch::Reporter
+  AT       = Time.new(2026, 10, 18, 9, 30, 0).to_f
+  CHANGES  = { modified: ["lib/a.rb"], added: ["new file.rb"], removed: [] }.freeze
+
+  def setup
+    @dir   = Dir.mktmpdir
+    @log   = File.join(@dir, "watcher.log")
+    @state = MemoryState.new
+    @queue = Queue.new
+    @reporter = Reporter.new(@queue, log: @log, state: @state)
+  end
+
+  def teardown = FileUtils.rm_rf(@dir)
+
+  def trigger(entry = "lint", task = entry) = { kind: :trigger, entry:, task:, at: AT, changes: CHANGES }
+  def spawn(pid, entry = "lint", task = entry) = { kind: :spawn, entry:, task:, pid:, at: AT, changes: CHANGES }
+
+  def exit_report(pid, status = 0, entry = "lint", task = entry)
+    { kind: :exit, entry:, task:, pid:, at: AT + 2.5, status:, seconds: 2.5 }
+  end
+
+  def test_log_lines
+    assert_equal "2026-10-18 09:30:00 trigger lint task=lint lib/a.rb new file.rb", Reporter.log_line(trigger)
+    assert_equal "2026-10-18 09:30:00 trigger lint task=lint lib/a.rb new file.rb (queued behind pid 41)",
+                 Reporter.log_line(trigger, behind: 41)
+    assert_equal "2026-10-18 09:30:00 spawn lint task=lint pid=41 lib/a.rb new file.rb", Reporter.log_line(spawn(41))
+    assert_equal "2026-10-18 09:30:02 exit lint task=lint pid=41 status=3 seconds=2.50", Reporter.log_line(exit_report(41, 3))
+  end
+
+  def test_entry_record_starts_on_spawn_and_completes_on_exit
+    started = Reporter.entry_record(spawn(41))
+    assert_equal({ entry: "lint", task: "lint", pid: 41, started: Time.at(AT).iso8601, changes: CHANGES }, started)
+    finished = Reporter.entry_record(exit_report(41, 3), started)
+    assert_equal started.merge(finished: Time.at(AT + 2.5).iso8601, status: 3, seconds: 2.5), finished
+    orphan = Reporter.entry_record(exit_report(41))
+    assert_equal %i[entry task pid finished status seconds], orphan.keys
+  end
+
+  def test_handle_writes_the_log_and_entry_and_tracks_pids
+    @reporter.handle(trigger)
+    @reporter.handle(spawn(41))
+    assert_equal [41], @reporter.running
+    assert_equal 41, @reporter.running_for("lint")
+    assert_nil @reporter.running_for("docs")
+    refute @state.entries["lint"].key?(:finished)
+
+    @reporter.handle(trigger)
+    @reporter.handle(exit_report(41, 2))
+    assert_empty @reporter.running
+    assert_equal 2, @state.entries["lint"][:status]
+
+    lines = File.readlines(@log, chomp: true)
+    assert_equal 4, lines.size
+    assert_match(/queued behind pid 41\)\z/, lines[2])
+    refute_match(/queued/, lines[0])
+  end
+
+  def test_run_handles_until_nil
+    thread = @reporter.start
+    @queue.push(spawn(7, "a"))
+    @queue.push(spawn(8, "b"))
+    @queue.push(nil)
+    thread.join
+    assert_equal [7, 8], @reporter.running
+    assert_equal %w[a b], @state.entries.keys
+  end
+
+  def test_drain_waits_for_the_exit_report
+    @reporter.handle(spawn(41))
+    thread = @reporter.start
+    Thread.new do
+      sleep 0.05
+      @queue.push(exit_report(41))
+      @queue.push(nil)
+    end
+    out = StringIO.new
+    @reporter.drain(interval: 0.01, out: out)
+    assert_empty @reporter.running
+    assert_includes out.string, "waiting for pid 41"
+  ensure
+    thread&.join
+  end
+
+  def test_drain_forgets_a_pid_that_is_gone
+    dead = Process.spawn("true")
+    Process.wait(dead)
+    @reporter.handle(spawn(dead))
+    @reporter.handle(spawn(Process.pid, "me"))
+    helper = Thread.new do
+      sleep 0.05
+      @reporter.handle(exit_report(Process.pid, 0, "me"))
+    end
+    @reporter.drain(interval: 0.01, out: StringIO.new)
+    assert_empty @reporter.running
+    refute Reporter.alive?(dead)
+    assert Reporter.alive?(Process.pid)
+  ensure
+    helper&.join
+  end
+end
+
+class TestWatchDispatcher < Minitest::Test
+  Dispatcher = Asgard::Watch::Dispatcher
+
+  def setup
+    @started = []
+    @reports = Queue.new
+    @context = Asgard::Watch::Spawn::Context.new(root: "/proj", log: "/log", base: { "PATH" => "/bin" }, asgard: "/bin/asgard", direnv: nil)
+    @declarations = {
+      "lint"     => Asgard::Watch.normalize(:lint, paths: "lib/**/*.rb"),
+      "lint-doc" => Asgard::Watch.normalize(:lint, paths: "docs/**/*.md", as: "lint-doc", events: :added),
+      "test"     => Asgard::Watch.normalize(:test, paths: "test/**/*.rb")
+    }
+    start = lambda do |queue, reports|
+      @started << [queue, reports]
+      :ractor
+    end
+    @dispatcher = Dispatcher.new(@declarations, @context, reports: @reports, start:)
+  end
+
+  def batch(**lists) = { modified: [], added: [], removed: [] }.merge(lists)
+
+  def test_one_worker_per_task_shared_by_declarations_of_the_same_task
+    assert_equal %w[lint test], @dispatcher.workers.keys
+    assert_equal %w[lint lint-doc test], @dispatcher.dispatch.keys
+    assert_equal 2, @started.size
+    assert_equal @dispatcher.workers["lint"][:queue], @started[0][0]
+    assert_same @reports, @started[0][1]
+    assert_equal :ractor, @dispatcher.workers["test"][:ractor]
+    assert_predicate @dispatcher.workers, :frozen?
+  end
+
+  def test_route_builds_the_description_reports_the_trigger_and_queues_it
+    description = @dispatcher.route("lint-doc", batch(added: ["docs/x.md"]))
+    assert_equal "lint-doc", description[:entry]
+    assert_equal "lint",     description[:task]
+    assert_equal ["docs/x.md"], description[:changes][:added]
+    assert_same description, @dispatcher.workers["lint"][:queue].pop
+    report = @reports.pop
+    assert_equal %i[kind entry task at changes], report.keys
+    assert_equal [:trigger, "lint-doc", "lint"], report.values_at(:kind, :entry, :task)
+    assert Ractor.shareable?(report)
+  end
+
+  def test_route_skips_a_batch_filtered_to_nothing
+    assert_nil @dispatcher.route("lint-doc", batch(modified: ["docs/x.md"]))
+    assert_empty @reports
+    assert_predicate @dispatcher.workers["lint"][:queue], :empty?
+  end
+
+  def test_run_routes_until_nil_without_waiting_on_workers
+    inbox  = Queue.new
+    thread = @dispatcher.start(inbox)
+    inbox.push(["lint", batch(modified: ["lib/a.rb"])])
+    inbox.push(["test", batch(modified: ["test/b.rb"])])
+    inbox.push(["lint", batch(modified: ["lib/c.rb"])])
+    inbox.push(nil)
+    thread.join
+    assert_equal 2, @dispatcher.workers["lint"][:queue].size
+    assert_equal 1, @dispatcher.workers["test"][:queue].size
+    assert_equal 3, @reports.size
   end
 end

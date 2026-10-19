@@ -139,6 +139,7 @@ detectors:
       - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
       - Asgard::Schedule::Systemd#self.timer_unit
       - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
+      - Asgard::Watch::Dispatcher#initialize        # injectable worker starter and clock for tests
 
   RepeatedConditional:
     exclude:

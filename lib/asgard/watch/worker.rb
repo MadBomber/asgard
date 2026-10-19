@@ -55,13 +55,13 @@ module Asgard
       end
 
       def run_one(description)
-        entry = description[:entry]
-        pid   = @spawner.spawn(description)
+        entry, task = description.values_at(:entry, :task)
+        pid = @spawner.spawn(description)
         started_at, started = stamp
-        report(kind: :spawn, entry:, pid:, at: started_at, changes: description[:changes])
+        report(kind: :spawn, entry:, task:, pid:, at: started_at, changes: description[:changes])
         status = @spawner.wait(pid)
         finished_at, finished = stamp
-        report(kind: :exit, entry:, pid:, at: finished_at, status:, seconds: finished - started)
+        report(kind: :exit, entry:, task:, pid:, at: finished_at, status:, seconds: finished - started)
       end
 
       private

@@ -35,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sequence, with comma-separated steps for arguments and options
   (`asgard do hello Alice, farewell Bob --formal`). A plain user task, not
   a built-in; it stops at the first failure.
+- **`examples/confirm.loki`** — a hidden `confirm` task to list first in a
+  dangerous task's `depends_on`; answering anything but y/yes aborts with
+  exit 1. Refuses without a terminal unless `ASGARD_YES` is set.
 
 ### Changed
 
@@ -46,6 +49,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reuse it; a `running` state renders green.
 - `Asgard.machine_wide?` is true for `watcher list` as well as
   `schedule list`, so both work from a directory with no `.loki` above it.
+
+### Fixed
+
+- **Usage errors exit 1** — a missing argument, an unknown command, or a bad
+  subcommand (`asgard greet` with no NAME, `asgard nope`) printed Thor's
+  error but exited 0, so CI and scripts saw success. `Asgard::Base` now
+  defines `exit_on_failure?` as true.
 
 ## [0.4.1] - 2026-10-02
 

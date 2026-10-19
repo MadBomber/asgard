@@ -131,6 +131,31 @@ class TestAsgardRun < Minitest::Test
   end
 end
 
+class TestAsgardExitOnFailure < Minitest::Test
+  def klass
+    Class.new(Asgard::Base) do
+      desc "greet NAME", "Greet NAME"
+      define_method(:greet) { |name| name }
+    end
+  end
+
+  def test_missing_argument_exits_nonzero
+    _, err = capture_io do
+      error = assert_raises(SystemExit) { klass.start(["greet"]) }
+      refute error.success?
+    end
+    assert_match "was called with no arguments", err
+  end
+
+  def test_unknown_command_exits_nonzero
+    _, err = capture_io do
+      error = assert_raises(SystemExit) { klass.start(["nope"]) }
+      refute error.success?
+    end
+    assert_match "Could not find command", err
+  end
+end
+
 class TestAsgardTasks < Minitest::Test
   def test_tasks_is_defined
     assert defined?(Tasks), "Tasks should be defined by the gem"

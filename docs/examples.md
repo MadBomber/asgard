@@ -130,6 +130,58 @@ This example is also useful as a test harness for verifying that parallel execut
 
 ---
 
+## `do.loki`
+
+**Path:** `examples/do.loki`
+
+A plain user task that runs other tasks in sequence, the way `rake a b c` or `just a b c` does. No gem changes needed:
+
+- Steps are comma-separated, so each step can carry its own arguments and options; with no commas, every word is a task of its own
+- Each step is parsed by Thor as if it were typed on the command line
+- The sequence stops at the first failure (a failing `sh`, or a step returning `:fail`)
+
+```bash
+asgard do greet finish
+asgard do hello Alice, farewell Bob --formal
+# Hello, Alice!
+# Goodbye, Bob.
+```
+
+!!! note
+    Every task runs at most once per `asgard` invocation, so `asgard do hello Alice, hello Bob` greets only Alice. The same rule makes a dependency shared by several steps run once.
+
+---
+
+## `confirm.loki`
+
+**Path:** `examples/confirm.loki`
+
+A guard task. List `confirm` first in a dangerous task's `depends_on`, and the task runs only after the user answers yes:
+
+```ruby
+depends_on :confirm
+desc "Drop and recreate the database"
+def reset_database = sh "bin/rails db:reset"
+```
+
+```bash
+asgard reset_database
+# Really run `asgard reset_database`? [y/N] n
+# asgard: aborted `asgard reset_database`      (exit 1)
+
+ASGARD_YES=1 asgard reset_database             # no question, for scripts and CI
+```
+
+- Answering no **raises** `Asgard::Error`, which stops the dependent task. Returning `:fail` would not: a dependency's return value never stops the task that depends on it
+- A dependency doesn't know which task asked for it, so the question shows the whole command line
+- With no terminal (a schedule, the watcher, a pipe) it refuses unless `ASGARD_YES` is set
+- `confirm` is declared with `hide: true`, so it stays out of `asgard help`
+
+!!! note
+    `confirm` runs at most once per `asgard` invocation, so `asgard do reset_database, drop_cache` asks once for the whole line. Keep it in its own first stage: in `depends_on [:confirm, :backup]`, `backup` runs while the question waits.
+
+---
+
 ## Summary
 
 | File | Primary Focus |
@@ -138,3 +190,5 @@ This example is also useful as a test harness for verifying that parallel execut
 | `server_subcommands.loki` | Subcommand groups, per-command options, depends_on in subcommands |
 | `db_subcommands.loki` | Multi-step depends_on chains, enum validation, long_desc in subcommands |
 | `concurrent.loki` | Parallel task execution, thread concurrency demonstration |
+| `do.loki` | Running several tasks in sequence from one command line |
+| `confirm.loki` | A guard dependency that asks before a dangerous task runs |

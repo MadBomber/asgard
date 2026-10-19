@@ -18,6 +18,10 @@ module Asgard
     include Dispatch
 
     class << self
+      # A usage error (missing argument, unknown command or option) exits 1,
+      # so CI and `asgard do` sequences see the failure. Thor's default is 0.
+      def exit_on_failure? = true
+
       def header(text = nil)
         return @_header if text.nil?
         (@_header ||= []) << text

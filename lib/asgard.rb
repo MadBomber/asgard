@@ -15,9 +15,9 @@ module Asgard
     loki_up
   end
 
-  # `asgard schedule list` reports every project's scheduled entries, so it
-  # works from a directory with no .loki above it.
-  def self.machine_wide?(argv) = argv.first(2) == %w[schedule list]
+  # `asgard schedule list` and `asgard watcher list` report every project's
+  # entries, so they work from a directory with no .loki above it.
+  def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list]].include?(argv.first(2))
 
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)

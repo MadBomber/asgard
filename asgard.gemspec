@@ -39,6 +39,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor",    "~> 1.0"
   spec.add_dependency "dotenv",  "~> 3.0"
   spec.add_dependency "tty-table", "~> 0.12"
+  spec.add_dependency "ractor_queue", "~> 0.2"
+  spec.add_dependency "listen", "~> 3.9"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://guides.rubygems.org/make-your-own-gem/

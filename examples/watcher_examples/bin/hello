@@ -1,0 +1,3 @@
+#!/bin/sh
+# Edit this file while the watcher runs: the lint-bin entry picks it up.
+echo "hello from bin/"

@@ -1,0 +1,48 @@
+# frozen_string_literal: true
+# Demonstrates a guard task: list `confirm` first in a dangerous task's
+# depends_on and the task only runs after the user answers yes.
+#
+# Run with:
+#   asgard reset_database                  # asks, runs only on y/yes
+#   ASGARD_YES=1 asgard reset_database     # no question (scripts, CI)
+#
+# Behavior:
+#   - A dependency doesn't know which task asked for it, so the question
+#     shows the whole command line: "Really run `asgard reset_database`?"
+#   - Answering no raises Asgard::Error, which stops everything that
+#     hasn't run yet; asgard prints "asgard: aborted ..." and exits 1.
+#     Returning :fail would NOT work: a dependency's return value never
+#     stops the task that depends on it.
+#   - With no terminal to ask (a schedule, the watcher, a pipe) it refuses
+#     unless ASGARD_YES is set, rather than hanging or guessing.
+#   - It runs at most once per asgard invocation, so
+#     `asgard do reset_database, drop_cache` asks once for the whole line.
+#   - Put confirm in its own first stage. In a parallel group,
+#     `depends_on [:confirm, :backup]`, backup runs while the question waits.
+
+class Tasks
+  # Not a Thor command (a class method), so it can be tested on its own:
+  #   Tasks.confirmed?("y", yes_env: nil) #=> true
+  def self.confirmed?(answer, yes_env:)
+    return true if yes_env && !yes_env.empty?
+
+    %w[y yes].include?(answer.to_s.strip.downcase)
+  end
+
+  desc "Ask before running the task that depends on this", hide: true
+  def confirm
+    command = "asgard #{ARGV.join(' ')}"
+    yes_env = env(:asgard_yes, "")
+    return if self.class.confirmed?(nil, yes_env:)
+    raise Asgard::Error, "refusing `#{command}`: no terminal to confirm on (set ASGARD_YES=1)" unless $stdin.tty?
+
+    answer = ask("Really run `#{command}`? [y/N]")
+    raise Asgard::Error, "aborted `#{command}`" unless self.class.confirmed?(answer, yes_env:)
+  end
+
+  depends_on :confirm
+  desc "Pretend to drop and recreate the database (demo for confirm)"
+  def reset_database
+    puts "Database reset."
+  end
+end

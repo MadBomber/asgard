@@ -21,6 +21,8 @@ detectors:
   # Default is 4 — Doctor legitimately tracks several pieces of diagnostic state.
   TooManyInstanceVariables:
     max_instance_variables: 6
+    exclude:
+      - Asgard::Watch::Daemon  # wires reporter, dispatcher, listeners, inbox and the stop flag for one run
 
   # Accept standard Ruby short-name conventions for limited-scope variables.
   UncommunicativeVariableName:
@@ -57,6 +59,7 @@ detectors:
       - Asgard::Shell#sh
       - Asgard::Shell#shebang
       - Asgard::Schedule#entry_name                 # as: is the user's explicit override of the derived name
+      - Asgard::Watch#normalize                     # same: as: overrides the task name as the entry name
 
   DuplicateMethodCall:
     exclude:
@@ -114,9 +117,11 @@ detectors:
       - Asgard::Base::Dispatch#with_dep_results        # same: stashes results on Thread.current, not self
       - Asgard::Shell#shell_argv                       # extracted pure on purpose so it's testable without invoking system/exec
       - Asgard::Schedule::DSL#schedule                 # class-level DSL delegating to the Schedule registry
+      - Asgard::Watch::DSL#watch                       # same, for the Watch registry
       - Asgard::Schedule::Commands#schedules           # Thor no_commands helpers: reads of the registry / CWD shared by the subcommands
       - Asgard::Schedule::Commands#schedule_root
       - Asgard::Schedule::Commands#schedule_summary
+      - Asgard::Watch::Commands#watches                # same: the Watch registry read by every subcommand
 
   # Asgard::Schedule: the backends implement a fixed API (see
   # lib/asgard/schedule/declaration.rb) plus pure, separately tested helpers,
@@ -125,16 +130,21 @@ detectors:
   DataClump:
     exclude:
       - Asgard::Schedule                            # at:/on: and task/args are the declaration's vocabulary
+      - Asgard::Watch::Spawn                        # spec + context are the two inputs of every spawn function
 
   LongParameterList:
     exclude:
       - Asgard::Schedule#normalize                  # the `schedule` DSL keywords
+      - Asgard::Watch#normalize                     # the `watch` DSL keywords
       - Asgard::Schedule#describe
       - Asgard::Schedule#program_arguments
+      - Asgard::Schedule::Table#self.draw            # rows plus the title, io and headers the caller chooses
       - Asgard::Schedule::Launchd#self.plist        # one keyword per plist field
       - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
       - Asgard::Schedule::Systemd#self.timer_unit
       - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
+      - Asgard::Watch::Dispatcher#initialize        # injectable worker starter and clock for tests
+      - Asgard::Watch::Daemon#initialize            # injectable listen/exec/out for tests
 
   RepeatedConditional:
     exclude:
@@ -143,8 +153,10 @@ detectors:
   TooManyMethods:
     exclude:
       - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
+      - Asgard::Watch::Commands                     # same
       - Asgard::Schedule::Launchd                   # backend API + pure helpers
       - Asgard::Schedule::Systemd
+      - Asgard::Watch::State                        # one reader/writer pair per file it keeps
 
 
 exclude_paths:

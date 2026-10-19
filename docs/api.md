@@ -40,6 +40,7 @@ These methods are defined as `module_function` on `Kernel` and are therefore ava
 | `loki_up` | `loki_up(name = ".loki") → Pathname, nil` | `Pathname` or `nil` | Searches `Dir.pwd` and each ancestor directory for a file named `name`. Returns a `Pathname` for the first match, or `nil` if not found. Exact filenames only — does not expand globs. |
 | `import` | `import(path) → true, false` | `true` if any file newly loaded | Loads one `.loki` file or a glob of `.loki` files. Relative paths resolve relative to the caller's file (like `require_relative`). Idempotent via `$LOADED_FEATURES`. Raises `ArgumentError` if `path` does not end with `.loki`. Raises `LoadError` if a non-glob path does not exist. |
 | `import_up` | `import_up(name = ".loki") → true, false` | `true` if any file newly loaded | Combines `loki_up` and `import`. Walks ancestors to find the file or glob match, then loads it. Returns `false` if nothing is found. |
+| `changes` | `changes → Asgard::Changes` | `Asgard::Changes` | The files the watcher saw change when it triggered this task: `modified`, `added`, `removed`, `all`, `empty?`. Read once per process from `ASGARD_MODIFIED`, `ASGARD_ADDED` and `ASGARD_REMOVED`; every list is empty when the task is run by hand. See [`Asgard::Watch`](#asgardwatch). |
 | `debug?` | `debug? → true, false` | `$DEBUG` | Returns the current value of `$DEBUG`. Set to `true` by `--debug` on the CLI or directly via `$DEBUG = true`. |
 | `verbose?` | `verbose? → true, false` | `$VERBOSE` | Returns the current value of `$VERBOSE`. Set to `true` by `--verbose` on the CLI or directly via `$VERBOSE = true`. |
 | `env` | `env(name, default = nil) → String, nil` | `ENV` value or default | Fetches an environment variable by symbol or string name. The name is upcased automatically. Raises `KeyError` when the variable is missing and no default is given. |
@@ -202,6 +203,8 @@ See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form)
 | `verbose?` | Kernel module function | Returns `$VERBOSE`. Available everywhere via `Kernel`. |
 | `schedule` | class method (DSL) | `schedule :task, at:/every:, ...` — declares a scheduled entry. Extended from `Asgard::Schedule::DSL`; see [`Asgard::Schedule`](#asgardschedule). |
 | `_schedule` | subcommand | `asgard schedule SUBCOMMAND`, backed by `Asgard::Schedule::Commands`. `map "schedule" => :_schedule` keeps the typed name `schedule`, and a user task named `schedule` cannot shadow it. |
+| `watch` | class method (DSL) | `watch :task, paths: ...` — declares a watched entry. Extended from `Asgard::Watch::DSL`; see [`Asgard::Watch`](#asgardwatch). |
+| `_watcher` | subcommand | `asgard watcher SUBCOMMAND`, backed by `Asgard::Watch::Commands`. `map "watcher" => :_watcher` keeps the typed name `watcher`. |
 
 ---
 
@@ -287,6 +290,23 @@ Both backends, `Asgard::Schedule::Launchd` and `Asgard::Schedule::Systemd`, impl
 
 ---
 
+## `Asgard::Watch`
+
+Watched files. The user-facing guide is [Watched Files](watch.md); this section covers the Ruby API.
+
+| Method | Signature | Description |
+|---|---|---|
+| `declare` | `Asgard::Watch.declare(task, **settings) → Hash` | What `Tasks.watch` calls. Validates via `normalize` and records the entry. Redeclaring an identical entry is a no-op; a different entry under the same name raises `ArgumentError`. |
+| `declarations` | `Asgard::Watch.declarations → Hash` | Declared entries for this run, keyed by entry name. |
+| `normalize` | `Asgard::Watch.normalize(task, paths:, only: nil, ignore: nil, events: :all, debounce: 0.5, env: {}, as: nil) → Hash` | Validates one declaration and returns `{ name:, task:, paths:, dirs:, only:, ignore:, events:, debounce:, env: }`: the directories listen watches and one `only:` Regexp (or nil) built from the globs and the declared filter. Pure, as are its helpers `split_glob`, `glob_regexp`, `combine_only` and `normalize_events`. |
+| `filter_events` | `Asgard::Watch.filter_events(batch, events) → Asgard::Changes, nil` | A listener batch narrowed to the entry's `events:`; `nil` when nothing is left. |
+
+`Asgard::Changes` is a `Data` class with `modified`, `added` and `removed` path lists, `all`, `empty?`, `to_env` (the three trigger variables) and `Changes.from_env(env = ENV)`. `Changes.current` is the per-process memo behind the `changes` Kernel method; `Changes.forget` clears it.
+
+The daemon is assembled from small classes, each testable alone: `Spawn` builds the frozen, Ractor-shareable description of one run (argv, whitelisted environment, root, log, changes); `Worker` runs one task's triggers serially in its own Ractor and reports every spawn and exit; `Dispatcher` routes listener batches to the worker queues; `Reporter` is the single writer of the log and the per-entry records and tracks in-flight pids; `State` owns the pidfile, log, recorded declarations and entry records under the XDG state directory; `Daemon` wires them to listen and handles signals and reloads.
+
+---
+
 ## `Asgard::Base` Internal Class Methods
 
 These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.
@@ -319,6 +339,7 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 |---|---|---|
 | `Asgard::Error` | `StandardError` | Base error class for all Asgard errors. |
 | `Asgard::Schedule::Error` | `Asgard::Error` | Raised when a `launchctl`/`systemctl` command fails, or on an unsupported platform. `run!` reports it as `asgard: <message>`. |
+| `Asgard::Watch::Error` | `Asgard::Error` | Raised when the watcher cannot run: a `watch` names a task the project does not define. `run!` reports it as `asgard: <message>`. |
 | `Asgard::CircularDependencyError` | `Asgard::Error` | Raised by `validate_deps!` when a cycle is detected in the dependency graph. `run!` catches this and calls `abort` with a clean message. |
 
 ```ruby

@@ -159,6 +159,7 @@ nav:
       - Shell Helpers: shell.md
       - Environment: environment.md
       - Scheduled Tasks: schedule.md
+      - Watched Files: watch.md
   - Task Files: task-files.md
   - API Reference: api.md
   - Examples: examples.md

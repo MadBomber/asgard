@@ -19,6 +19,9 @@ class Tasks
   @@project      ||= "asgard".freeze
   @@project_desc ||= "CLI-task runner"
 
+  # Dogfood: `asgard watcher start` reruns the tests whenever a Ruby file changes.
+  watch :test_check, paths: %w[lib test], only: /\.rb\z/
+
   desc "xyzzy"
   def xyzzy = puts "everything in Ruby metaprogramming is magic"
 

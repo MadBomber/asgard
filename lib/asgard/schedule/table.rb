@@ -23,16 +23,17 @@ module Asgard
       end
 
       # rows rendered for the terminal, under title when given: colored when io
-      # is a tty and NO_COLOR is unset.
-      def self.draw(rows, title: nil, io: $stdout)
-        table = new(rows, color: io.tty? && !ENV.key?("NO_COLOR"), width: terminal_width(io)).render
+      # is a tty and NO_COLOR is unset. headers: relabels the five columns.
+      def self.draw(rows, title: nil, io: $stdout, headers: HEADERS)
+        table = new(rows, color: io.tty? && !ENV.key?("NO_COLOR"), width: terminal_width(io), headers:).render
         [title, table].compact.join("\n")
       end
 
       # color: styles the header, state and last exit with ANSI codes.
-      def initialize(rows, color:, width:)
+      def initialize(rows, color:, width:, headers: HEADERS)
         require "pastel"
 
+        @headers = headers
         @cells  = rows.map { |row| row.values_at(:name, :command, :schedule, :state, :last_exit) }
         @pastel = Pastel.new(enabled: color)
         @width  = width
@@ -43,7 +44,7 @@ module Asgard
       def render
         require "tty-table"
 
-        grid = TTY::Table.new(header: HEADERS.map { |text| @pastel.bold(text) }, rows: @cells.map { |cells| styled(cells) })
+        grid = TTY::Table.new(header: @headers.map { |text| @pastel.bold(text) }, rows: @cells.map { |cells| styled(cells) })
         grid.render(:unicode, multiline: true, resize: true, width: total_width, column_widths:, padding: [0, 1]).to_s
       end
 
@@ -57,7 +58,7 @@ module Asgard
 
       private
 
-      def natural_widths = [HEADERS, *@cells].transpose.map { |column| column.max_by(&:length).length + EXTRA }
+      def natural_widths = [@headers, *@cells].transpose.map { |column| column.max_by(&:length).length + EXTRA }
 
       def overflowing? = total_width > @width
 
@@ -69,8 +70,8 @@ module Asgard
 
       def styled(cells)
         *lead, state, last_exit = cells
-        state_color = { "active" => :green, "stopped" => :yellow }.fetch(state, :red)
-        exit_color  = last_exit.match?(/\A[1-9]\d*\z/) ? :red : :dim
+        state_color = { "active" => :green, "running" => :green, "stopped" => :yellow }.fetch(state, :red)
+        exit_color  = last_exit.match?(/\A[1-9]\d*\b/) ? :red : :dim
         [*lead, @pastel.decorate(state, state_color), @pastel.decorate(last_exit, exit_color)]
       end
     end

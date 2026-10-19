@@ -1,0 +1,54 @@
+# examples/watcher_examples/.loki
+# A small project whose tasks run when its files change.
+#
+# `watch :task, paths: ...` at class level says which files a task cares
+# about. `asgard watcher start` runs one background process for this
+# project that listens for changes and runs the matching tasks, each as a
+# separate `asgard <task>` process started from this directory. The task
+# reads what changed through `changes`.
+#
+# Run with (from this directory):
+#   asgard watcher start      # background; log and state under ~/.local/state/asgard/watch/
+#   asgard watcher list       # the four entries, daemon state, each entry's last run
+#   # ... edit lib/greeter.rb, docs/index.md, add or remove a data/*.json ...
+#   asgard watcher log        # one line per trigger, spawn and exit, plus each task's output
+#   asgard watcher stop       # a task still running finishes first
+#
+# Each task also runs by hand (`asgard lint`), when `changes` is empty.
+# See README.md here for a walkthrough with expected output.
+
+class Tasks
+  # A glob: watches lib/ and keeps the paths that match, like a shell would.
+  watch :lint, paths: "lib/**/*.rb"
+
+  # A directory with filters. only: narrows to Markdown; ignore: silences
+  # the drafts folder; env: adds a variable the task can read with env().
+  watch :docs, paths: "docs", only: /\.md\z/, ignore: %r{\Adrafts/}, env: { BUILD_ENV: "demo" }
+
+  # events: picks which kinds of change count. Editing a data file does
+  # nothing; creating or deleting one triggers a reindex. debounce: waits
+  # a full second after the last event, so a batch of files lands at once.
+  watch :reindex, paths: "data/**/*.json", events: %i[added removed], debounce: 1
+
+  # The same task watched from a second declaration needs its own entry
+  # name. Both entries share one worker, so lint never overlaps itself.
+  watch :lint, paths: "bin/**/*", as: "lint-bin"
+
+  desc "lint", "Report the Ruby files that changed"
+  def lint
+    files = changes.modified + changes.added
+    return puts "lint: nothing changed (run by hand), so linting everything under lib/" if files.empty?
+
+    files.each { |file| puts "lint: #{file} (#{File.foreach(file).count} lines) triggered by #{env(:asgard_watch, 'nothing')}" }
+  end
+
+  desc "docs", "Rebuild the documentation"
+  def docs
+    puts "docs: building for #{env(:build_env, 'development')}; changed: #{changes.all.join(', ')}"
+  end
+
+  desc "reindex", "Rebuild the data index"
+  def reindex
+    puts "reindex: #{changes.added.size} added, #{changes.removed.size} removed; #{Dir['data/**/*.json'].size} data file(s) now"
+  end
+end

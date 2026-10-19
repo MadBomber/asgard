@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-19
+
+### Added
+
+- **Watched files, built in** — `watch :task, paths: "lib/**/*.rb"` at class
+  level in a `.loki` declares that a task runs when matching files change,
+  with `only:`, `ignore:`, `events:`, `debounce:`, `env:` and `as:` keywords.
+  `asgard watcher start|stop|list|preview|log|run` manages the watcher: one
+  background process per project that runs each trigger as `asgard <task>`
+  from the project root, with a fixed environment (a whitelist of the
+  daemon's variables, the entry's `env:`, `.envrc` through `direnv exec`) plus
+  the changed paths in `ASGARD_MODIFIED`, `ASGARD_ADDED` and `ASGARD_REMOVED`.
+  Different tasks run concurrently; the same task never overlaps itself, and a
+  trigger that arrives while its task runs is queued behind it. Saving a
+  `.loki` file restarts the watcher with the new declarations. `stop` lets a
+  running task finish. `list` shows each entry's last run; `--all` covers
+  every project. State and logs live under `~/.local/state/asgard/watch/`.
+  The command is registered as the gem-owned `_watcher` and mapped to
+  `watcher`. The daemon and every trigger run the same `asgard` executable
+  that started the watcher, by absolute path, even under `direnv exec`.
+  See [Watched Files](https://madbomber.github.io/asgard/watch/).
+- **`changes`** Kernel method — inside a task, the `Asgard::Changes` the
+  watcher triggered it with (`modified`, `added`, `removed`, `all`,
+  `empty?`); every list is empty when the task is run by hand.
+- **`Asgard::Watch::Error`** (subclass of `Asgard::Error`) — raised when a
+  `watch` names a task the project does not define.
+- **`examples/do.loki`** — `asgard do lint test build` runs tasks in
+  sequence, with comma-separated steps for arguments and options
+  (`asgard do hello Alice, farewell Bob --formal`). A plain user task, not
+  a built-in; it stops at the first failure.
+- **`examples/confirm.loki`** — a hidden `confirm` task to list first in a
+  dangerous task's `depends_on`; answering anything but y/yes aborts with
+  exit 1. Refuses without a terminal unless `ASGARD_YES` is set.
+
+### Changed
+
+- New runtime dependencies: `listen` (file events) and `ractor_queue` (the
+  queue between the daemon and its worker Ractors). `ractor_queue` is a
+  native extension, so `gem install asgard` now compiles and needs a C++17
+  compiler; Asgard was pure Ruby before.
+- `Asgard::Schedule::Table.draw` takes `headers:` so `watcher list` can
+  reuse it; a `running` state renders green.
+- `Asgard.machine_wide?` is true for `watcher list` as well as
+  `schedule list`, so both work from a directory with no `.loki` above it.
+
+### Fixed
+
+- **Usage errors exit 1** — a missing argument, an unknown command, or a bad
+  subcommand (`asgard greet` with no NAME, `asgard nope`) printed Thor's
+  error but exited 0, so CI and scripts saw success. `Asgard::Base` now
+  defines `exit_on_failure?` as true.
+
 ## [0.4.1] - 2026-10-02
 
 ### Added
@@ -331,6 +383,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
+[0.5.0]: https://github.com/MadBomber/asgard/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/MadBomber/asgard/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/MadBomber/asgard/compare/v0.3.3...v0.4.0
 [0.3.3]: https://github.com/MadBomber/asgard/compare/v0.2.0...v0.3.3
 [0.2.0]: https://github.com/MadBomber/asgard/compare/v0.1.2...v0.2.0

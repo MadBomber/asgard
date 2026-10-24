@@ -57,12 +57,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   first word is the executable and the rest precede `args:` (a String or
   an Array); `ext:` defaults by the executable's basename. Pin a path with
   `shell :bash, "/opt/homebrew/bin/bash"` so scheduled and watched tasks,
-  whose `PATH` lacks Homebrew, run the same bash as the terminal. An
-  unregistered name still runs as itself from `PATH` with `.tmp`.
+  whose `PATH` lacks Homebrew, run the same bash as the terminal. A
+  `Pathname` path is the executable whole, never split, so a directory
+  with a space in it needs no quoting. The name may be left out: `shell
+  "/usr/local/bin/bash -c -w"` registers `:bash`, named after the
+  executable, with the options parsed into `args`, and `shell :zsh` alone
+  registers zsh from `PATH`. `shell` returns the name. The executable is
+  checked as the `.loki` loads: a path with a directory part must be an
+  executable file, a bare name must be on `PATH`, else `ArgumentError`
+  naming the shell, rather than an exit 127 the first time a task runs.
+  An unregistered name still runs as itself from `PATH` with `.tmp`.
 - **`default_shell`** — `default_shell :strict` at class level picks the
   registry entry that `sh`, and `shebang` called with a script alone, run;
-  it starts as `:bash` and reads back with no argument. `sh` and `shebang`
-  return `true` on success.
+  it starts as `:bash` and reads back with no argument. A bare Symbol only
+  selects and never changes the registry. Every other form registers
+  through `shell` first, then selects: `default_shell "/usr/local/bin/bash
+  -c -w"` pins and picks `:bash` in one line, `default_shell :strict,
+  "bash", args: "-eu -o pipefail"` declares and selects `:strict`, and the
+  path is the name when only `args:` or `ext:` are given. `sh` and
+  `shebang` return `true` on success.
 
 ### Fixed
 

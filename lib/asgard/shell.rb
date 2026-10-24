@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
 require "English"
+require "pathname"
 require "shellwords"
 require "tempfile"
+require_relative "schedule/declaration"
 
 module Asgard
   # `shebang` is the one way a task runs something that isn't Ruby. The script
@@ -54,12 +56,13 @@ module Asgard
         @default_shell = nil
       end
 
-      # Build a normalized entry. +path+ is split with Shellwords: the first
-      # word is the executable, the rest are arguments and come before +args+,
-      # which may be a String (also Shellwords-split) or an Array. +ext+ is
-      # derived from the executable's basename when omitted.
+      # Build a normalized entry. A String +path+ is split with Shellwords:
+      # the first word is the executable, the rest are arguments and come
+      # before +args+, which may be a String (also Shellwords-split) or an
+      # Array. A Pathname +path+ is the executable as is, spaces and all.
+      # +ext+ is derived from the executable's basename when omitted.
       def entry(path, args: nil, ext: nil)
-        words = Shellwords.split(path.to_s)
+        words = path_words(path)
         raise ArgumentError, "shell path is empty" if words.empty?
 
         executable = words.shift
@@ -76,6 +79,39 @@ module Asgard
         when String then Shellwords.split(args)
         else             Array(args).map(&:to_s)
         end
+      end
+
+      # The executable and any leading arguments a path gives: a Pathname
+      # names one file and is never split; anything else is a String with
+      # shell quoting.
+      def path_words(path)
+        return path.to_s.empty? ? [] : [path.to_s] if path.is_a?(Pathname)
+
+        Shellwords.split(path.to_s)
+      end
+
+      # The name a bare path registers under: the executable's basename.
+      # "/usr/local/bin/bash -c -w" is :bash, "uv run --script" is :uv.
+      def name_for(entry) = File.basename(entry[:path]).to_sym
+
+      # The file an entry's executable names, or nil: a path with a
+      # directory part must be an executable file as given (no ~ or PATH
+      # expansion, since none happens when it runs); a bare name must be
+      # found on +env_path+.
+      def resolve(executable, env_path = ENV.fetch("PATH", nil))
+        return Schedule.which(executable, env_path) unless executable.include?(File::SEPARATOR)
+
+        executable if File.file?(executable) && File.executable?(executable)
+      end
+
+      # +entry+ when its executable resolves; ArgumentError naming the
+      # shell otherwise, so a .loki fails as it loads rather than with an
+      # exit 127 the first time a task runs.
+      def validate!(name, entry, env_path = ENV.fetch("PATH", nil))
+        return entry if resolve(entry[:path], env_path)
+
+        problem = entry[:path].include?(File::SEPARATOR) ? "is not an executable file" : "is not an executable on PATH"
+        raise ArgumentError, "shell #{name.inspect}: #{entry[:path]} #{problem}"
       end
 
       # The entry for +name+, or a bare fallback that runs +name+ itself as
@@ -97,14 +133,50 @@ module Asgard
     module ClassMethods
       def shells = Shell.shells
 
-      # `default_shell :zsh` sets the shell `sh` runs; with no argument,
-      # returns it.
-      def default_shell(name = nil) = Shell.default_shell(name)
+      # `default_shell :zsh` selects the shell `sh` runs, leaving the
+      # registry alone; with no argument it returns the current name. Any
+      # other form registers first, through `shell`, then selects:
+      #
+      #   default_shell "/usr/local/bin/bash -c -w"           # :bash
+      #   default_shell :strict, "bash", args: "-eu -o pipefail"
+      #   default_shell :zsh, args: "-f"                      # path is the name
+      def default_shell(name_or_path = nil, path = nil, args: nil, ext: nil)
+        return Shell.default_shell unless name_or_path
 
-      # Register +name+: `shell :strict, "bash -eu -o pipefail"`,
-      # `shell :uv, "uv run --script", ext: ".py"`.
-      def shell(name, path, args: nil, ext: nil)
-        Shell.shells[name.to_sym] = Shell.entry(path, args:, ext:)
+        selecting = name_or_path.is_a?(Symbol) && !(path || args || ext)
+        Shell.default_shell(selecting ? name_or_path : shell(name_or_path, path, args:, ext:))
+      end
+
+      # Register a shell and return its name. With a Symbol first:
+      #
+      #   shell :strict, "bash -eu -o pipefail"
+      #   shell :uv, "uv run --script", ext: ".py"
+      #   shell :fish                          # fish from PATH, defaults
+      #
+      # With a bare path (String or Pathname) the name is the executable's
+      # basename, and any options in the string are parsed into args:
+      #
+      #   shell "/usr/local/bin/bash -c -w"    # :bash, args ["-c", "-w"]
+      #
+      # The executable must exist: an executable file at that path, or a
+      # bare name found on PATH. Otherwise ArgumentError, as the .loki loads.
+      def shell(name_or_path, path = nil, args: nil, ext: nil)
+        name, path = split_shell_args(name_or_path, path)
+        entry      = Shell.entry(path, args:, ext:)
+        name     ||= Shell.name_for(entry)
+        Shell.shells[name] = Shell.validate!(name, entry)
+        name
+      end
+
+      private
+
+      # The [name, path] of a `shell` call: a Symbol first is the name, and
+      # its path defaults to the name itself; a String or Pathname first is
+      # the path, and the name comes from the entry.
+      def split_shell_args(name_or_path, path)
+        return [nil, name_or_path] unless name_or_path.is_a?(Symbol)
+
+        [name_or_path, path || name_or_path.to_s]
       end
     end
 

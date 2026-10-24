@@ -473,6 +473,8 @@ class Tasks
 end
 ```
 
+The name may be left out: `shell "/usr/local/bin/bash -c -w"` registers `:bash`, named after the executable, with the options as its `args`. `default_shell` registers and selects in one line the same way: `default_shell "/usr/local/bin/bash -c -w"`, or `default_shell :strict, "bash", args: "-eu -o pipefail"`. A bare `default_shell :bash` only selects and leaves a pinned entry alone.
+
 Pass `silent: true` to both `sh` and `shebang` to suppress the script echo:
 
 ```ruby

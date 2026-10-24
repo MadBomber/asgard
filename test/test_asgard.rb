@@ -1472,6 +1472,124 @@ class TestAsgardShell < Minitest::Test
 
   def test_entry_rejects_an_empty_path
     assert_raises(ArgumentError) { Asgard::Shell.entry("  ") }
+    assert_raises(ArgumentError) { Asgard::Shell.entry(Pathname.new("")) }
+  end
+
+  def test_entry_takes_a_pathname_whole_without_splitting_it
+    entry = Asgard::Shell.entry(Pathname.new("/Applications/Some App/bin/bash"), args: "-eu")
+    assert_equal({ path: "/Applications/Some App/bin/bash", args: ["-eu"], ext: ".sh" }, entry)
+  end
+
+  # A directory of executable stand-ins named +names+, so registration
+  # tests exercise real files without depending on what this machine has.
+  def with_executables(*names)
+    Dir.mktmpdir("asgard_shells") do |dir|
+      names.each do |name|
+        file = File.join(dir, name)
+        File.write(file, "#!/bin/sh\nexit 0\n")
+        File.chmod(0o755, file)
+      end
+      yield dir
+    end
+  end
+
+  def test_shell_with_a_bare_path_names_the_entry_after_the_executable_and_parses_its_options
+    with_executables("bash", "fish") do |dir|
+      assert_equal :bash, Tasks.shell("#{dir}/bash -c -w")
+      assert_equal({ path: "#{dir}/bash", args: %w[-c -w], ext: ".sh" }, Tasks.shells[:bash])
+
+      assert_equal :fish, Tasks.shell(Pathname.new(dir).join("fish"))
+      assert_equal({ path: "#{dir}/fish", args: [], ext: ".fish" }, Tasks.shells[:fish])
+    end
+
+    assert_equal :ruby, Tasks.shell("ruby -w", ext: ".rbx")
+    assert_equal({ path: "ruby", args: %w[-w], ext: ".rbx" }, Tasks.shells[:ruby])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_with_a_symbol_alone_registers_that_name_from_path
+    Tasks.shells.delete(:ruby)
+    assert_equal :ruby, Tasks.shell(:ruby)
+    assert_equal({ path: "ruby", args: [], ext: ".rb" }, Tasks.shells[:ruby])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_rejects_a_path_that_is_not_an_executable_file
+    with_executables("bash") do |dir|
+      File.write(File.join(dir, "notes.txt"), "")
+      missing = assert_raises(ArgumentError) { Tasks.shell "#{dir}/zsh -f" }
+      assert_equal "shell :zsh: #{dir}/zsh is not an executable file", missing.message
+      plain = assert_raises(ArgumentError) { Tasks.shell :notes, "#{dir}/notes.txt" }
+      assert_equal "shell :notes: #{dir}/notes.txt is not an executable file", plain.message
+    end
+    refute Tasks.shells.key?(:zsh)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_rejects_a_bare_name_that_is_not_on_path
+    error = assert_raises(ArgumentError) { Tasks.shell :missing, "no_such_interpreter_xyz --flag" }
+    assert_equal "shell :missing: no_such_interpreter_xyz is not an executable on PATH", error.message
+    assert_raises(ArgumentError) { Tasks.shell :no_such_interpreter_xyz }
+    assert_raises(ArgumentError) { Tasks.default_shell "no_such_interpreter_xyz" }
+    assert_equal :bash, Tasks.default_shell
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_resolve_checks_a_path_as_a_file_and_a_bare_name_on_the_given_path
+    with_executables("bash") do |dir|
+      assert_equal "#{dir}/bash", Asgard::Shell.resolve("#{dir}/bash")
+      assert_nil Asgard::Shell.resolve("#{dir}/zsh")
+      assert_equal "#{dir}/bash", Asgard::Shell.resolve("bash", dir)
+      assert_nil Asgard::Shell.resolve("zsh", dir)
+      assert_nil Asgard::Shell.resolve("bash", "")
+    end
+  end
+
+  def test_default_shell_with_a_bare_path_registers_then_selects_and_a_bare_name_only_selects
+    with_executables("bash", "zsh") do |dir|
+      Tasks.shell "#{dir}/bash -c -w"
+      Tasks.default_shell :bash
+      thing = Tasks.default_shell
+      assert_equal :bash, thing
+      assert_equal({ path: "#{dir}/bash", args: %w[-c -w], ext: ".sh" }, Tasks.shells[:bash],
+                   "selecting by name must not re-register the pinned entry")
+
+      assert_equal :zsh, Tasks.default_shell("#{dir}/zsh -f")
+      assert_equal :zsh, Tasks.default_shell
+      assert_equal({ path: "#{dir}/zsh", args: ["-f"], ext: ".sh" }, Tasks.shells[:zsh])
+    end
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_default_shell_registers_and_selects_in_one_call
+    Tasks.default_shell :strict, "bash", args: "-eu -o pipefail"
+    assert_equal :strict, Tasks.default_shell
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" }, Tasks.shells[:strict])
+
+    Tasks.default_shell :traced, Pathname.new("/bin/bash"), args: %w[-x]
+    assert_equal({ path: "/bin/bash", args: ["-x"], ext: ".sh" }, Tasks.shells[:traced])
+
+    Tasks.default_shell :ruby, args: "-w"
+    assert_equal :ruby, Tasks.default_shell
+    assert_equal({ path: "ruby", args: ["-w"], ext: ".rb" }, Tasks.shells[:ruby])
+
+    Tasks.default_shell :python3 # a bare name only selects
+    assert_equal({ path: "python3", args: [], ext: ".py" }, Tasks.shells[:python3])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_sh_runs_a_shell_declared_by_default_shell_in_one_call
+    Tasks.default_shell :traced, Pathname.new("/bin/bash"), args: "-x"
+    _, err = capture_subprocess_io { sh "echo one_call_marker", silent: true }
+    assert_match(/^\+ echo one_call_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
   end
 
   def test_shell_for_falls_back_to_the_bare_name_on_path
@@ -1486,7 +1604,7 @@ class TestAsgardShell < Minitest::Test
 
   def test_default_shell_starts_as_bash_and_is_set_at_class_level
     assert_equal :bash, Tasks.default_shell
-    Tasks.default_shell "zsh"
+    Tasks.default_shell :zsh
     assert_equal :zsh, Tasks.default_shell
     assert_equal :zsh, Class.new(Tasks).default_shell
   ensure

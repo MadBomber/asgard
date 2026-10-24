@@ -140,7 +140,21 @@ A bare `path` is looked up on `PATH` each time the script runs, exactly as the k
 
 ### `shell` — Add or Replace an Entry
 
-`shell name, path, args: nil, ext: nil` at class level registers a shell. The path string is split with shell quoting rules: the first word is the executable and any remaining words become arguments. `args:` may be a String, also split, or an Array; it follows the words from the path. When `ext:` is omitted it is derived from the executable's basename, falling back to `.tmp`.
+`shell name, path, args: nil, ext: nil` at class level registers a shell and returns its name. A String path is split with shell quoting rules: the first word is the executable and any remaining words become arguments. A `Pathname` is one executable, taken whole, so a directory with a space in it needs no quoting. `args:` may be a String, also split, or an Array; it follows the words from the path. When `ext:` is omitted it is derived from the executable's basename, falling back to `.tmp`.
+
+The executable is checked as the `.loki` loads. A path with a directory part must be an existing executable file, exactly as written, since nothing expands `~` or searches `PATH` for it later; a bare name must be found on `PATH` as an executable. A failing check raises `ArgumentError` naming the shell, so the problem shows at the declaration rather than as an exit 127 the first time a task runs. The seeded entries are not checked, which is why `shebang :perl` on a machine without perl fails only when it runs.
+
+The name may be left out. A bare path registers under the executable's basename, with any options in the string parsed into `args:`, and a Symbol alone registers that name as itself from `PATH`:
+
+```ruby
+class Tasks
+  shell "/usr/local/bin/bash -c -w"                  # :bash => { path: "/usr/local/bin/bash", args: ["-c", "-w"], ext: ".sh" }
+  shell Pathname.new("/opt/homebrew/bin/fish")       # :fish
+  shell :zsh                                         # :zsh  => { path: "zsh", args: [], ext: ".sh" }
+end
+```
+
+With a name:
 
 ```ruby
 class Tasks
@@ -150,6 +164,7 @@ class Tasks
   shell :strict, "bash", args: %w[-eu -o pipefail]   # same entry
   shell :uv,     "uv run --script", ext: ".py"       # a wrapper, not just a binary
   shell :tool,   "'/Applications/Some App/bin/tool' -q"
+  shell :tool,   Pathname.new("/Applications/Some App/bin/tool"), args: "-q"   # same entry
 
   desc "Deploy under strict bash"
   def deploy = shebang :strict, <<~BASH
@@ -167,7 +182,20 @@ There is one registry for every `Tasks` subclass, so a `shell` declared in `.lok
 
 ### `default_shell` — What `sh` Runs
 
-`default_shell name` at class level picks the registry entry that `sh`, and `shebang` called without a name, run. It starts as `:bash`. With no argument it returns the current value.
+`default_shell name` at class level picks the registry entry that `sh`, and `shebang` called without a name, run. It starts as `:bash`. With no argument it returns the current name. A bare Symbol only selects; it never changes the registry, so a path pinned earlier with `shell` stays pinned.
+
+Any other form registers first, exactly as `shell` would, then selects what it registered. A bare path registers under the executable's basename; a name with a path, `args:` or `ext:` registers that name, and the path is the name itself when only `args:` or `ext:` are given.
+
+```ruby
+class Tasks
+  default_shell "/usr/local/bin/bash -c -w"                # register :bash with those options, select it
+  default_shell :strict, "bash", args: "-eu -o pipefail"   # register :strict, select it
+  default_shell :zsh, args: "-f"                           # path defaults to "zsh"
+  default_shell :bash5, Pathname.new("/opt/homebrew/bin/bash")
+end
+```
+
+Which is the same as:
 
 ```ruby
 class Tasks

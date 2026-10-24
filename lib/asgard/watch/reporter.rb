@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "open3"
 require "time"
+require_relative "../pid"
 
 module Asgard
   module Watch
@@ -11,10 +11,6 @@ module Asgard
     # keeps the latest record per entry on disk through the state, and
     # tracks which pids are in flight so shutdown can wait for them.
     class Reporter
-      # ps by absolute path: a scheduled or watched task's PATH may not
-      # hold it.
-      PS = %w[/bin/ps /usr/bin/ps].find { |path| File.executable?(path) } || "ps"
-
       class << self
         # One log line for a report. behind: is the pid a trigger is queued
         # behind when its task is still running.
@@ -44,36 +40,17 @@ module Asgard
         def paths(report) = report.fetch(:changes) { {} }.values.flatten.join(" ")
 
         # Whether a process exists; one we may not signal still exists.
-        def alive?(pid)
-          Process.kill(0, pid)
-          true
-        rescue Errno::ESRCH
-          false
-        rescue Errno::EPERM
-          true
-        end
+        def alive?(pid) = Pid.alive?(pid)
 
-        # The command line of a live process as `ps` prints it, or nil when
-        # there is no such process. ps is the one way that works unchanged
-        # on macOS and Linux.
-        def command_line(pid)
-          out, status = Open3.capture2(PS, "-o", "command=", "-p", pid.to_s)
-          status.success? ? out.strip : nil
-        rescue SystemCallError
-          nil
-        end
+        # The command line of a live process, or nil (see Asgard::Pid).
+        def command_line(pid) = Pid.command_line(pid)
 
         # Whether pid is alive and is an asgard process whose command line
         # carries every word: ("watcher", "run") for a daemon, a task name
         # for a trigger. The current process always counts. A pidfile left
         # by a crash or a reboot can name a pid that an unrelated process
         # now holds, which a bare liveness check would call ours.
-        def asgard_process?(pid, *words, command: nil)
-          return true if pid == Process.pid
-
-          command ||= command_line(pid)
-          !command.nil? && ["asgard", *words].all? { |word| command.include?(word) }
-        end
+        def asgard_process?(pid, *words, command: nil) = Pid.matches?(pid, "asgard", *words, command:)
       end
 
       # state: responds to write_entry(name, record).

@@ -835,6 +835,17 @@ class TestScheduleTable < Minitest::Test
     assert_equal 90, tight.total_width
   end
 
+  def test_table_draws_a_one_row_table_at_its_natural_widths
+    headers = %w[JOB TASK PID STATUS STARTED COMMAND]
+    keys    = %i[name task pid state started command]
+    row     = { name: "jtdb", task: "jobs_test_db", pid: 63_962, state: "running", started: "2026-10-24 15:55:48", command: "sleep 30" }
+    table   = SD::Table.new([row], color: false, width: 120, headers:, keys:, flexible: [5])
+    out     = table.render
+    assert_equal [6, 14, 7, 9, 21, 10], table.column_widths, "content plus a space either side"
+    assert_equal 5, out.lines.size, "nothing wraps: top, header, rule, one row, bottom"
+    assert_match(/│ jtdb │ jobs_test_db │ 63962 │ running │ 2026-10-24 15:55:48 │ sleep 30 │/, out)
+  end
+
   def test_table_colors_only_on_request
     rows = [{ name: "a", command: "c", schedule: "s", state: "active", last_exit: "1" }]
     assert_includes SD::Table.new(rows, color: true, width: 100).render, "\e[31m1"

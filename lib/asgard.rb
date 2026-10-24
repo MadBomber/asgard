@@ -15,9 +15,14 @@ module Asgard
     loki_up
   end
 
-  # `asgard schedule list` and `asgard watcher list` report every project's
-  # entries, so they work from a directory with no .loki above it.
-  def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list]].include?(argv.first(2))
+  # The directory of the nearest .loki, or the current directory without
+  # one: where the watcher and background jobs file their state.
+  def self.project_root = File.realpath((find_task_file&.dirname || Dir.pwd).to_s)
+
+  # `asgard schedule list`, `asgard watcher list` and `asgard jobs list`
+  # report every project's entries, so they work from a directory with no
+  # .loki above it.
+  def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list], %w[jobs list]].include?(argv.first(2))
 
   # The root .loki is loaded directly rather than through `import`, so
   # record it the way import would. Otherwise an `import_up` in a child

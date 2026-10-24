@@ -2,6 +2,7 @@
 
 require_relative "schedule"
 require_relative "watch"
+require_relative "jobs"
 
 # Tasks is the single conventional entry point for all .loki files.
 # It is pre-defined by the gem so .loki files never need to declare a class.
@@ -53,4 +54,9 @@ class Tasks < Asgard::Base
   subcommand "_watcher", Asgard::Watch::Commands
   map "watcher" => :_watcher
   Asgard::Watch::Commands.commands.each_value { |command| command.ancestor_name = "watcher" }
+
+  desc "jobs SUBCOMMAND", "List, stop and restart the background jobs started with `sh ..., background: true`"
+  subcommand "_jobs", Asgard::Jobs::Commands
+  map "jobs" => :_jobs
+  Asgard::Jobs::Commands.commands.each_value { |command| command.ancestor_name = "jobs" }
 end

@@ -61,7 +61,7 @@ module Asgard
         result = nil
         begin
           resolved_deps = run_deps_for(target)
-          result = with_dep_results(resolved_deps) { command.run(self, *) }
+          result = with_dep_results(resolved_deps) { in_task_frame(target) { command.run(self, *) } }
         ensure
           signal_done(target, result)
         end
@@ -78,7 +78,36 @@ module Asgard
         dep_results[task.to_sym]
       end
 
+      # One running task body: its name and how many background jobs it has
+      # started so far. Frames live on a thread-local stack, so a task
+      # running as a dependency in a parallel stage sees itself, not the
+      # task the user typed.
+      TaskFrame = Struct.new(:task, :jobs)
+
+      # The task whose body is running on this thread, or nil outside one
+      # (a helper called at .loki top level).
+      def current_task = task_frames.last&.task
+
+      # The next sequence number for a background job of the current task:
+      # 1 on the first call of each run of the body, then 2, 3, ...
+      def next_job_sequence
+        frame = task_frames.last
+        raise Asgard::Error, "no task is running on this thread" unless frame
+
+        frame.jobs += 1
+      end
+
       private
+
+      def task_frames = Thread.current[:asgard_task_frames] ||= []
+
+      def in_task_frame(task)
+        frames = task_frames
+        frames.push(TaskFrame.new(task, 0))
+        yield
+      ensure
+        frames.pop
+      end
 
       def with_dep_results(results)
         thread   = Thread.current

@@ -29,7 +29,7 @@ module Asgard
     # The extension a declaration gets when `ext:` is omitted, keyed by the
     # basename of its executable. Node needs `.js` to load ES modules.
     DEFAULT_EXTENSIONS = {
-      "bash" => ".sh", "sh" => ".sh", "zsh" => ".sh", "fish" => ".fish",
+      "bash" => ".sh", "sh" => ".sh", "zsh" => ".sh", "fish" => ".fish", "csh" => ".csh", "tcsh" => ".csh",
       "python3" => ".py", "python" => ".py",
       "node" => ".js", "ruby" => ".rb", "perl" => ".pl"
     }.freeze
@@ -197,14 +197,36 @@ module Asgard
     # Write +script+ to a tempfile and run it with the shell registered as
     # +name+, or with the default shell when only the script is given.
     # Returns true; exits with the command's status code on failure.
-    def shebang(name_or_script, script = nil, silent: false)
+    #
+    # background: true starts the script as a job named after the calling
+    # task (`doc_server-1`); a Symbol or String names the job itself. The
+    # call returns a Jobs::Job at once and the job outlives asgard; see
+    # `asgard jobs`.
+    def shebang(name_or_script, script = nil, silent: false, background: nil)
       name, script = script ? [name_or_script, script] : [Shell.default_shell, name_or_script]
       run = Run.new(name:, shell: Shell.shell_for(name), script: script.strip)
+      job = background_job_name(background)
       $stdout.puts run.script unless silent
-      run_script(run)
+      job ? start_job(run, job, silent:) : run_script(run)
     end
 
     private
+
+    # The job name a background: value asks for; only `true` consumes a
+    # sequence number, and only inside a task body.
+    def background_job_name(background)
+      return nil unless background
+
+      task     = current_task
+      sequence = next_job_sequence if background == true && task
+      Jobs.job_name(background, task:, sequence:)
+    end
+
+    def start_job(run, name, silent:)
+      root  = Asgard.project_root
+      state = Jobs::State.new(project: Schedule.project_slug(root), root:)
+      Jobs::Launcher.start(run, name:, task: current_task, state:, silent:)
+    end
 
     def run_script(run)
       Tempfile.create(["asgard_", run.ext]) do |f|

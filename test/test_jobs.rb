@@ -1,0 +1,621 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "tmpdir"
+require "fileutils"
+require "stringio"
+
+# The pure rules: naming, records, resolution, status.
+class TestJobsDeclaration < Minitest::Test
+  J = Asgard::Jobs
+
+  def test_job_name_table
+    assert_nil J.job_name(nil, task: :build)
+    assert_nil J.job_name(false, task: :build)
+    assert_equal :'servers-1', J.job_name(true, task: :servers, sequence: 1)
+    assert_equal :api,  J.job_name(:api, task: :servers)
+    assert_equal :api,  J.job_name(" api ", task: nil), "a String is stripped and symbolized, and needs no task"
+    assert_equal :web_2, J.job_name("web_2", task: :servers)
+  end
+
+  def test_job_name_rejects_what_the_requirements_rule_out
+    error = assert_raises(ArgumentError) { J.job_name(true, task: nil, sequence: 1) }
+    assert_match(/must be called from a task body/, error.message)
+    ["api-1", "my api", "", :'x.y'].each do |bad|
+      error = assert_raises(ArgumentError) { J.job_name(bad, task: :t) }
+      assert_match(/not a job name/, error.message)
+    end
+    error = assert_raises(ArgumentError) { J.job_name(42, task: :t) }
+    assert_match(/must be true, a Symbol or a String/, error.message)
+  end
+
+  def test_summary_is_the_first_non_blank_line
+    assert_equal "mkdocs serve", J.summary("\n\n  mkdocs serve  \n  --strict\n")
+    assert_equal "", J.summary("  \n")
+  end
+
+  def test_record_shape
+    record = J.record(name: :api, task: :servers, pid: 7, pgid: 7, cwd: "/p", script: "/s/api.sh", log: "/s/api.log",
+                      command: "rails s", started: "2026-10-24T10:00:00+00:00")
+    assert_equal %i[name task pid pgid started cwd script log command], record.keys
+    assert_equal "api",     record[:name]
+    assert_equal "servers", record[:task]
+  end
+
+  def test_closure_walks_every_stage_without_repeating
+    deps = { servers: [[:db], %i[api web]], api: [[:db]], web: [[:assets]] }
+    assert_equal %i[servers db api web assets], J.closure(:servers, deps)
+    assert_equal %i[db], J.closure("db", deps)
+    assert_equal %i[nothing], J.closure(:nothing, {})
+  end
+
+  def test_resolve_prefers_job_names_then_tasks_then_the_closure
+    records = [{ name: "servers-1", task: "servers" }, { name: "api", task: "api" }, { name: "db-1", task: "db" }]
+    found, unknown = J.resolve(%w[api], records)
+    assert_equal [records[1]], found
+    assert_empty unknown
+    found, = J.resolve(%w[db], records)
+    assert_equal [records[2]], found, "a task name finds the jobs it started"
+    closure = ->(task) { task == "servers" ? %i[servers api db] : [task.to_sym] }
+    found, unknown = J.resolve(%w[servers nope], records, closure:)
+    assert_equal records, found
+    assert_equal %w[nope], unknown
+    found, = J.resolve(%w[servers servers-1], records, closure:)
+    assert_equal records, found, "the same record is never listed twice"
+  end
+
+  def test_status_and_its_description
+    assert_equal :running,     J.status(exit_code: nil, verified: true)
+    assert_equal :gone,        J.status(exit_code: nil, verified: false)
+    assert_equal [:exited, 3], J.status(exit_code: 3, verified: false)
+    assert_equal "running",         J.describe_status(:running)
+    assert_equal "gone",            J.describe_status(:gone)
+    assert_equal "exited 3 (2.5s)", J.describe_status([:exited, 3], seconds: 2.5)
+    assert_equal "exited 0",        J.describe_status([:exited, 0])
+  end
+end
+
+# Shared scaffolding for the tests that start real processes: HOME and
+# XDG_STATE_HOME under a temp dir, a temp project with a .loki, and every
+# job's process group killed afterwards.
+module JobsSandbox
+  def setup
+    @saved   = ENV.to_h.slice("HOME", "XDG_STATE_HOME", "PYTHONUNBUFFERED")
+    @cwd     = Dir.pwd
+    @tmp     = File.realpath(Dir.mktmpdir)
+    @project = File.join(@tmp, "proj")
+    FileUtils.mkdir_p(@project)
+    File.write(File.join(@project, ".loki"), "")
+    ENV["HOME"] = @tmp
+    ENV["XDG_STATE_HOME"] = File.join(@tmp, "state")
+    ENV.delete("PYTHONUNBUFFERED")
+    @slug = Asgard::Schedule.project_slug(@project)
+    Dir.chdir(@project)
+  end
+
+  def teardown
+    Dir.chdir(@cwd)
+    kill_jobs
+    @saved.each { |key, value| ENV[key] = value }
+    ENV.delete("PYTHONUNBUFFERED") unless @saved.key?("PYTHONUNBUFFERED")
+    Asgard::Shell.reset_shells!
+    FileUtils.rm_rf(@tmp)
+  end
+
+  # Only a job that still verifies as ours is signalled, and only through
+  # Stopper.signal_group, which refuses anything that is not a group id
+  # above 1. Fixture records carry pgid 1, and kill(2) reads -1 as every
+  # process the user owns: a bare Process.kill here once killed every
+  # program on the machine.
+  def kill_jobs
+    Dir.glob(File.join(@tmp, "state", "asgard", "jobs", "*", "*.json")).each do |file|
+      record = Asgard::StateDir.read_json(file)
+      next unless Asgard::Jobs::State.verified?(record)
+
+      Asgard::Jobs::Stopper.signal_group("KILL", record[:pgid])
+    rescue Errno::EPERM, ArgumentError
+      nil
+    end
+  end
+
+  def state = @state ||= Asgard::Jobs::State.new(project: @slug, root: @project)
+
+  def run_for(script, shell = :bash) = Asgard::Shell::Run.new(name: shell, shell: Asgard::Shell.shell_for(shell), script: script.strip)
+
+  def wait_until(seconds = 10, message = "condition not met")
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+    sleep 0.05 until yield || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    assert yield, "#{message} within #{seconds}s"
+  end
+
+  def wait_for_status(name)
+    wait_until(10, "no status for #{name}") { state.exit_code(name) }
+    state.exit_code(name)
+  end
+
+  # Until the job's process group holds a process running +word+: the
+  # trampoline has exec'd the job's shell and that shell its command. A
+  # TERM sent earlier can land between the trampoline's fork and its
+  # exec, where the inherited trap swallows it and the job lives on.
+  def wait_for_job_command(record, word = "sleep")
+    wait_until(10, "#{record[:name]} never started #{word}") do
+      `pgrep -g #{record[:pgid]}`.split.map(&:to_i).any? { |pid| Asgard::Pid.command_line(pid).to_s.include?(word) }
+    end
+  end
+end
+
+class TestJobsState < Minitest::Test
+  include JobsSandbox
+
+  def test_paths_live_under_the_jobs_state_home
+    dir = File.join(@tmp, "state", "asgard", "jobs", @slug)
+    assert_equal dir, state.dir
+    assert_equal File.join(dir, "api.json"),   state.record_path("api")
+    assert_equal File.join(dir, "api.sh"),     state.script_path("api", ".sh")
+    assert_equal File.join(dir, "api.log"),    state.log_path("api")
+    assert_equal File.join(dir, "api.status"), state.status_path("api")
+    assert_equal File.join(@tmp, "state", "asgard", "jobs"), Asgard::Jobs::State.base_dir
+  end
+
+  def test_prepare_records_the_root_and_all_finds_it
+    assert_equal [], state.records, "no directory yet is no records"
+    state.prepare
+    assert_equal [[@slug, @project]], Asgard::Jobs::State.all
+  end
+
+  def test_records_round_trip_in_start_order_and_skip_tempfiles
+    state.prepare
+    state.write_record({ name: "b", task: "t", pid: 2, started: "2026-10-24T10:00:02+00:00" })
+    state.write_record({ name: "a", task: "t", pid: 1, started: "2026-10-24T10:00:01+00:00" })
+    File.write(File.join(state.dir, ".asgard-tmp-1.json"), "{")
+    assert_equal(%w[a b], state.records.map { |record| record[:name] })
+    assert_equal 2, state.read_record("b")[:pid]
+    assert_nil state.read_record("c")
+  end
+
+  def test_exit_code_and_remove
+    state.prepare
+    name = "api"
+    state.write_record({ name:, task: "t", pid: 1, started: "2026-10-24T10:00:01+00:00" })
+    File.write(state.script_path(name, ".sh"), "x")
+    File.write(state.log_path(name), "some output")
+    assert_nil state.exit_code(name)
+    assert_nil state.exit_time(name)
+    File.write(state.status_path(name), "3\n")
+    assert_equal 3, state.exit_code(name)
+    assert_in_delta Time.now, state.exit_time(name), 5
+    state.remove(name)
+    assert_equal ["api.log"], Dir.children(state.dir) - ["root"]
+    assert_equal "", File.read(state.log_path(name)), "the log stays, emptied"
+    state.remove(name, keep_log: false)
+    assert_equal [], Dir.children(state.dir) - ["root"]
+    state.remove("never_started")
+  end
+
+  def test_verified_needs_the_script_path_in_the_command_line
+    state.prepare
+    script = state.script_path("api", ".sh")
+    # Two commands, as in the trampoline, so sh keeps its argv instead of
+    # exec'ing sleep away; the script path rides along as $0.
+    child  = Process.spawn("/bin/sh", "-c", "sleep 30; :", script)
+    other  = Process.spawn("/bin/sleep", "30")
+    wait_until { state.verified?({ pid: child, script: }) }
+    refute state.verified?({ pid: other, script: }), "a live process without the script is not ours"
+    Process.kill("TERM", child)
+    Process.wait(child)
+    refute state.verified?({ pid: child, script: })
+  ensure
+    Process.kill("TERM", other)
+    Process.wait(other)
+  end
+end
+
+class TestJobsLauncher < Minitest::Test
+  include JobsSandbox
+
+  Launcher = Asgard::Jobs::Launcher
+
+  def test_argv_environment_and_spawn_options_are_pure
+    argv = Launcher.argv(%w[bash /s/api.sh])
+    assert_equal "/bin/sh", argv.first
+    assert_equal %w[asgard-job bash /s/api.sh], argv.last(3)
+    assert_includes argv[2], 'trap ":" TERM INT HUP;'
+    assert_includes argv[2], '"$@"; echo $? > "$ASGARD_JOB_STATUS"'
+    env = Launcher.environment(:api, "/s/api.status", {})
+    assert_equal({ "ASGARD_JOB" => "api", "ASGARD_JOB_STATUS" => "/s/api.status", "PYTHONUNBUFFERED" => "1" }, env)
+    assert_equal %w[ASGARD_JOB ASGARD_JOB_STATUS], Launcher.environment(:api, "/s", { "PYTHONUNBUFFERED" => "0" }).keys
+    assert_equal({ in: File::NULL, %i[out err] => ["/s/api.log", "a"] }, Launcher.spawn_options("/s/api.log"))
+  end
+
+  def start(script, name: :api, task: :servers, shell: :bash, silent: true, out: StringIO.new)
+    Launcher.start(run_for(script, shell), name:, task:, state:, silent:, out:)
+  end
+
+  def test_start_runs_the_job_in_its_own_session_with_output_in_the_log
+    out = StringIO.new
+    job = start("echo hello; sleep 30", silent: false, out:)
+    assert_equal :api, job.name
+    assert_equal :servers, job.task
+    assert_equal "started api (pid #{job.pid}), log: #{job.log}\n", out.string
+    assert_equal job.pid, Process.getpgid(job.pid), "the job leads its process group"
+    assert_equal job.pid, Process.getsid(job.pid),  "and its session"
+    record = state.read_record("api")
+    assert_equal({ name: "api", task: "servers", pid: job.pid, pgid: job.pid, cwd: @project, command: "echo hello; sleep 30" },
+                 record.slice(:name, :task, :pid, :pgid, :cwd, :command))
+    assert_equal state.script_path("api", ".sh"), record[:script]
+    assert_equal "echo hello; sleep 30\n", File.read(record[:script])
+    assert_in_delta Time.now, Time.iso8601(record[:started]), 5
+    wait_until { File.read(job.log).include?("hello") }
+    assert state.verified?(record)
+    assert_equal :running, Asgard::Jobs.status(exit_code: state.exit_code("api"), verified: true)
+    Process.kill("TERM", -job.pid)
+    assert_equal 143, wait_for_status("api"), "the trap lets the trampoline record a signal exit"
+    wait_until { !state.verified?(record) }
+  end
+
+  def test_an_exit_code_is_recorded_and_the_environment_reaches_the_job
+    job = start("echo job=$ASGARD_JOB py=$PYTHONUNBUFFERED; exit 3")
+    assert_equal 3, wait_for_status("api")
+    wait_until { File.read(job.log).include?("job=api py=1") }
+    assert_equal [:exited, 3], Asgard::Jobs.status(exit_code: state.exit_code("api"), verified: state.verified?(state.read_record("api")))
+  end
+
+  def test_start_twice_returns_the_running_job_and_starts_nothing
+    first = start("sleep 30")
+    out   = StringIO.new
+    again = start("sleep 30", out:)
+    assert_equal first.pid, again.pid
+    assert_equal first, again
+    assert_match(/\Aapi already running \(pid #{first.pid}, started by servers\), log: #{Regexp.escape(first.log)}\n\z/, out.string)
+  end
+
+  def test_a_new_start_of_an_ended_job_replaces_its_record_and_truncates_the_log
+    first = start("echo one; exit 1")
+    assert_equal 1, wait_for_status("api")
+    wait_until { File.read(first.log).include?("one") }
+    second = start("echo two; sleep 30")
+    refute_equal first.pid, second.pid
+    assert_nil state.exit_code("api"), "the old status is gone"
+    wait_until { File.read(second.log).include?("two") }
+    refute_includes File.read(second.log), "one"
+  end
+
+  def test_the_job_is_shell_independent
+    jobs = { ruby: "$stdout.sync = true; puts 'from ruby'" }
+    jobs[:python3] = 'print("from python")' if Asgard::Schedule.which("python3", ENV.fetch("PATH", nil))
+    jobs[:zsh]     = "echo from zsh" if Asgard::Schedule.which("zsh", ENV.fetch("PATH", nil))
+    jobs.each do |shell, script|
+      job = start(script, name: shell, shell:)
+      assert_equal 0, wait_for_status(shell), "#{shell} should run to completion"
+      wait_until { File.read(job.log).include?("from ") }
+      ext = shell == :zsh ? ".tmp" : Asgard::Shell.shell_for(shell)[:ext]
+      assert_equal state.script_path(shell, ext), state.read_record(shell.to_s)[:script], "#{shell}: an unregistered name gets .tmp"
+    end
+  end
+
+  def test_exec_in_the_script_keeps_the_trampoline_verifiable
+    job = start("exec sleep 30")
+    wait_until { Asgard::Pid.command_line(job.pid) }
+    assert state.verified?(state.read_record("api"))
+    refute_includes Asgard::Pid.command_line(job.pid), "sleep", "the recorded pid is the trampoline, not the exec'd command"
+  end
+
+  def test_a_missing_shell_exits_127_before_anything_is_started
+    _, err = capture_io { assert_raises(SystemExit) { start("echo x", shell: :no_such_shell_xyz) }.tap { |e| assert_equal 127, e.status } }
+    assert_match(/shell :no_such_shell_xyz not found/, err)
+    assert_nil state.read_record("api")
+  end
+end
+
+# The `background:` keyword, end to end from a task body.
+class TestJobsBackgroundKeyword < Minitest::Test
+  include JobsSandbox
+
+  def setup
+    super
+    jobs = @jobs = {}
+    @klass = Class.new(Asgard::Base) do
+      desc "db", "db"
+      define_method(:db) { jobs[:db] = sh("sleep 30", background: true, silent: true) }
+
+      depends_on :db
+      desc "servers", "servers"
+      define_method(:servers) do
+        jobs[:one]   = sh("sleep 30", background: true, silent: true)
+        jobs[:named] = shebang(:bash, "sleep 30", background: :api, silent: true)
+        jobs[:two]   = sh("sleep 30", background: "two_ ", silent: true)
+        jobs[:three] = sh("sleep 30", background: true, silent: true)
+      end
+
+      desc "bad", "bad"
+      define_method(:bad) { sh("sleep 30", background: "no good") }
+
+      desc "fg", "fg"
+      define_method(:fg) { jobs[:fg] = sh("true", silent: true) }
+    end
+  end
+
+  def test_sequence_numbers_belong_to_the_calling_task_and_named_jobs_take_none
+    capture_io { @klass.new([], {}, {}).invoke(:servers) }
+    assert_equal :'db-1',      @jobs[:db].name, "a dependency names its jobs after itself"
+    assert_equal :'servers-1', @jobs[:one].name
+    assert_equal :api,         @jobs[:named].name
+    assert_equal :two_,        @jobs[:two].name
+    assert_equal :'servers-2', @jobs[:three].name, "named jobs do not consume a sequence number"
+    assert_equal %w[api db-1 servers-1 servers-2 two_], state.records.map { |record| record[:name] }.sort
+    assert_equal "servers", state.read_record("api")[:task]
+    assert_equal true, @jobs[:fg].nil?
+  end
+
+  def test_foreground_is_unchanged_and_a_bad_name_raises_before_the_echo
+    out, = capture_io { @klass.new([], {}, {}).invoke(:fg) }
+    assert_equal "", out
+    assert_equal true, @jobs[:fg]
+    out, = capture_io { assert_raises(ArgumentError) { @klass.new([], {}, {}).invoke(:bad) } }
+    assert_equal "", out, "nothing is echoed for a call that cannot start"
+    assert_empty state.records
+  end
+
+  def test_the_echo_and_the_started_line
+    klass = Class.new(Asgard::Base) do
+      desc "serve", "serve"
+      def serve = sh "sleep 30", background: true
+    end
+    out, = capture_io { klass.new([], {}, {}).invoke(:serve) }
+    pid = state.read_record("serve-1")[:pid]
+    assert_equal "sleep 30\nstarted serve-1 (pid #{pid}), log: #{state.log_path('serve-1')}\n", out
+    @klass._reset_ran!
+    klass._reset_ran!
+    out, = capture_io { klass.new([], {}, {}).invoke(:serve) }
+    assert_equal "sleep 30\nserve-1 already running (pid #{pid}, started by serve), log: #{state.log_path('serve-1')}\n", out
+  end
+
+  def test_background_true_outside_a_task_is_an_error
+    error = assert_raises(ArgumentError) { @klass.new([], {}, {}).sh("sleep 30", background: true) }
+    assert_match(/must be called from a task body/, error.message)
+  end
+
+  def test_csh_scripts_get_their_own_extension
+    assert_equal ".csh", Asgard::Shell.entry("csh")[:ext]
+    assert_equal ".csh", Asgard::Shell.entry("/bin/tcsh")[:ext]
+  end
+end
+
+class TestJobsStopper < Minitest::Test
+  include JobsSandbox
+
+  Stopper = Asgard::Jobs::Stopper
+
+  RECORD = { name: "api", pid: 42, pgid: 42 }.freeze
+
+  # A fake job alive for +ticks+ liveness checks after each signal it is
+  # sent, with every signal and sleep recorded.
+  def stopper(term_survives:, kill_survives: 0, timeout: 1)
+    @signals = []
+    @sleeps  = []
+    left     = { nil => term_survives, "TERM" => term_survives, "KILL" => kill_survives }
+    current  = nil
+    alive    = lambda do |_record|
+      next true if left[current].positive? && (left[current] -= 1) >= 0
+
+      left[current].positive?
+    end
+    signal = lambda { |name, pgid|
+      @signals << [name, pgid]
+      current = name
+    }
+    Stopper.new(timeout:, out: @out = StringIO.new, alive:, signal:, sleeper: ->(seconds) { @sleeps << seconds })
+  end
+
+  def test_term_ends_the_job_within_the_grace_period
+    assert_equal :stopped, stopper(term_survives: 2).stop(RECORD)
+    assert_equal [["TERM", 42]], @signals
+    assert_equal [0.2, 0.2], @sleeps
+    assert_equal "", @out.string
+  end
+
+  def test_kill_follows_when_the_grace_period_runs_out
+    stop = stopper(term_survives: 100, kill_survives: 1)
+    assert_equal :killed, stop.stop_and_report(RECORD)
+    assert_equal [["TERM", 42], ["KILL", 42]], @signals
+    assert_equal 6, @sleeps.size, "five polls over a one-second grace period, one after KILL"
+    assert_equal "waiting for api (pid 42)\nkilled api (pid 42) after 1s\n", @out.string
+  end
+
+  def test_a_job_that_is_not_running_is_reported_as_such
+    stop = stopper(term_survives: 0)
+    assert_equal :not_running, stop.stop_and_report(RECORD)
+    assert_empty @signals
+    assert_equal "api is not running\n", @out.string
+    assert_equal "stopped api (pid 42)", stop.report_line(:stopped, RECORD)
+  end
+
+  def test_signal_group_refuses_anything_but_a_real_group_id
+    [nil, 0, 1, -1, -42, "42", 42.0].each do |bad|
+      error = assert_raises(ArgumentError, "pgid #{bad.inspect} must be refused") { Stopper.signal_group("TERM", bad) }
+      assert_match(/refusing to signal process group/, error.message)
+    end
+  end
+
+  def test_signal_group_ignores_a_group_that_is_already_gone
+    child = Process.spawn("true", pgroup: true)
+    Process.wait(child)
+    assert_nil Stopper.signal_group("TERM", child)
+  end
+
+  def test_a_real_job_and_its_child_stop_together
+    job    = Asgard::Jobs::Launcher.start(run_for("sleep 30"), name: :api, task: :t, state:, silent: true)
+    record = state.read_record("api")
+    wait_until { Asgard::Pid.command_line(job.pid) }
+    sleeper = `pgrep -g #{job.pid}`.split.map(&:to_i) - [job.pid]
+    refute_empty sleeper, "the shell and its sleep belong to the job's group"
+    out = StringIO.new
+    assert_equal :stopped, Stopper.new(out:).stop_and_report(record)
+    assert_equal "stopped api (pid #{job.pid})\n", out.string
+    refute state.verified?(record)
+    wait_until { sleeper.none? { |pid| Asgard::Pid.alive?(pid) } }
+    assert_equal 143, wait_for_status("api")
+  end
+end
+
+# `asgard jobs ...` end to end in a temp project.
+class TestJobsCommands < Minitest::Test
+  include JobsSandbox
+
+  Commands = Asgard::Jobs::Commands
+
+  def setup
+    super
+    Tasks.class_eval do
+      desc "jobs_test_db", "db"
+      def jobs_test_db = sh "sleep 30", background: :jtdb, silent: true
+
+      depends_on :jobs_test_db
+      desc "jobs_test_servers", "servers"
+      def jobs_test_servers = sh "sleep 30", background: true, silent: true
+    end
+  end
+
+  def teardown
+    super
+    %i[jobs_test_db jobs_test_servers].each do |task|
+      Tasks.remove_command(task)
+      Tasks._deps.delete(task)
+      Tasks.send(:remove_method, task) if Tasks.method_defined?(task)
+    end
+  end
+
+  # Each call stands for a separate `asgard jobs ...` process.
+  def jobs(*argv)
+    Commands._reset_ran!
+    Commands.start(argv)
+  end
+
+  def start_servers
+    Tasks._reset_ran!
+    capture_io { Tasks.start(%w[jobs_test_servers]) }
+    state.records.to_h { |record| [record[:name], record] }.each_value { |record| wait_for_job_command(record) }
+  end
+
+  def test_asgard_jobs_maps_to_the_subcommand_and_lists_by_default
+    Tasks._reset_ran!
+    out, = capture_io { Tasks.start(%w[jobs]) }
+    assert_match "No jobs recorded for #{@slug}", out
+    assert_match "asgard jobs list --all", out
+    out, = capture_io { Commands.start(%w[help]) }
+    assert_match " jobs stop", out
+    refute_match(/ _jobs /, out)
+    assert Asgard.machine_wide?(%w[jobs list])
+    refute Asgard.machine_wide?(%w[jobs stop])
+  end
+
+  def test_rows_describe_each_record
+    state.prepare
+    started = Time.new(2026, 10, 24, 9, 30, 0).iso8601
+    state.write_record({ name: "gone", task: "t", pid: 1, pgid: 1, started:, script: "/none", command: "sleep 30" })
+    state.write_record({ name: "done", task: "t", pid: 1, pgid: 1, started:, script: "/none", command: "exit 3" })
+    File.write(state.status_path("done"), "3\n")
+    rows = Commands.rows(state).to_h { |row| [row[:name], row] }
+    assert_equal "gone", rows["gone"][:state]
+    assert_match(/\Aexited 3 \(\d+\.\ds\)\z/, rows["done"][:state])
+    assert_equal({ task: "t", pid: 1, started: "2026-10-24 09:30:00", command: "exit 3" },
+                 rows["done"].slice(:task, :pid, :started, :command))
+    assert_equal %w[tail -n +1 -f /l], Commands.tail_argv("/l")
+  end
+
+  def test_list_renders_this_project_or_every_project
+    records = start_servers
+    out, = capture_io { jobs("list") }
+    assert_match(/jtdb\s+│\s+jobs_test_db\s+│\s+#{records['jtdb'][:pid]}\s+│\s+running/, out)
+    assert_match "jobs_test_servers-1", out
+    assert_match "State: #{Asgard::Jobs::State.base_dir}", out
+    refute_match "Project:", out
+    other = Asgard::Jobs::State.new(project: "other-00000000", root: "/nowhere").prepare
+    other.write_record({ name: "x", task: "t", pid: 1, pgid: 1, started: Time.now.iso8601, script: "/none", command: "c" })
+    out, = capture_io { jobs("list", "--all") }
+    assert_match "Project: #{@slug} (#{@project})", out
+    assert_match "Project: other-00000000 (/nowhere) [root missing]", out
+    assert_match(/x\s+│\s+t\s+│\s+1\s+│\s+gone/, out)
+    Dir.mktmpdir do |elsewhere|
+      Dir.chdir(elsewhere) { out, = capture_io { jobs("list") } }
+      assert_match "Project:", out, "with no .loki above, list covers every project"
+    end
+  end
+
+  def test_stop_by_job_name_task_name_and_closure
+    records = start_servers
+    out, = capture_io { jobs("stop", "jtdb") }
+    assert_equal "stopped jtdb (pid #{records['jtdb'][:pid]})\n", out
+    assert_equal 143, wait_for_status("jtdb")
+    out, = capture_io { jobs("stop", "jobs_test_servers") }
+    assert_equal "stopped jobs_test_servers-1 (pid #{records['jobs_test_servers-1'][:pid]})\njtdb is not running\n", out,
+                 "a task name reaches its own jobs and, through depends_on, its dependencies'"
+    assert_equal 2, state.records.size, "stop removes nothing"
+    out, = capture_io { jobs("stop") }
+    assert_equal "jobs_test_servers-1 is not running\njtdb is not running\n", out
+  end
+
+  def test_stop_with_nothing_recorded_or_an_unknown_name
+    out, = capture_io { jobs("stop") }
+    assert_equal "No jobs recorded for #{@slug}.\n", out
+    _, err = capture_io { assert_raises(SystemExit) { jobs("stop", "nope") }.tap { |e| assert_equal 1, e.status } }
+    assert_equal "jobs: no such job or task: nope\n", err
+  end
+
+  def test_stop_kills_a_job_that_ignores_term_and_exits_nonzero
+    Tasks._reset_ran!
+    klass = Class.new(Asgard::Base) do
+      desc "stubborn", "stubborn"
+      def stubborn = sh "trap '' TERM; sleep 30", background: :stubborn, silent: true
+    end
+    capture_io { klass.new([], {}, {}).invoke(:stubborn) }
+    record = state.read_record("stubborn")
+    wait_until { `pgrep -g #{record[:pid]}`.split.size >= 3 }
+    out, = capture_io { assert_raises(SystemExit) { jobs("stop", "stubborn", "--timeout", "1") }.tap { |e| assert_equal 1, e.status } }
+    assert_match(/\Awaiting for stubborn \(pid #{record[:pid]}\)\nkilled stubborn \(pid #{record[:pid]}\) after 1s\n\z/, out)
+    refute state.verified?(record)
+  end
+
+  def test_stop_all_covers_every_project_newest_first
+    start_servers
+    out, = capture_io { jobs("stop", "--all") }
+    assert_equal(%w[jobs_test_servers-1 jtdb], out.lines.map { |line| line[/stopped (\S+)/, 1] })
+  end
+
+  def test_log_prints_the_log_and_complains_about_unknown_jobs
+    records = start_servers
+    wait_until { File.exist?(records["jtdb"][:log]) }
+    File.write(records["jtdb"][:log], "line one\n")
+    out, = capture_io { jobs("log", "jtdb") }
+    assert_equal "line one\n", out
+    _, err = capture_io { assert_raises(SystemExit) { jobs("log", "nope") } }
+    assert_match "no such job: nope", err
+    File.delete(records["jtdb"][:log])
+    _, err = capture_io { jobs("log", "jtdb") }
+    assert_match "jtdb has no log yet", err
+  end
+
+  def test_restart_stops_the_job_and_runs_its_task_again
+    records = start_servers
+    out, = capture_io { jobs("restart", "jtdb") }
+    assert_match "stopped jtdb (pid #{records['jtdb'][:pid]})", out
+    fresh = state.read_record("jtdb")
+    refute_equal records["jtdb"][:pid], fresh[:pid]
+    assert state.verified?(fresh)
+    state.write_record({ name: "manual", task: "", pid: 1, pgid: 1, started: Time.now.iso8601, script: "/none" })
+    _, err = capture_io { assert_raises(SystemExit) { jobs("restart", "manual") } }
+    assert_match "was not started from a task", err
+  end
+
+  def test_clean_forgets_only_what_is_not_running
+    records = start_servers
+    Process.kill("TERM", -records["jtdb"][:pgid])
+    wait_for_status("jtdb")
+    out, = capture_io { jobs("clean") }
+    assert_equal "removed jtdb\n", out
+    assert_equal(%w[jobs_test_servers-1], state.records.map { |record| record[:name] })
+    assert_equal [], Dir.children(state.dir).grep(/\Ajtdb\./), "record, script, status and log all go"
+    out, = capture_io { jobs("clean") }
+    assert_equal "Nothing to clean for #{@slug}.\n", out
+  end
+end

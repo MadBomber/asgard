@@ -1086,3 +1086,52 @@ class TestWatchProcessIdentity < Minitest::Test
     refute Reporter.asgard_process?(stranger, "watcher", "run")
   end
 end
+
+# The pieces the watcher and background jobs share, tested on their own.
+class TestPidAndStateDir < Minitest::Test
+  Pid      = Asgard::Pid
+  StateDir = Asgard::StateDir
+
+  def test_matches_checks_every_word_against_a_real_child
+    child = Process.spawn("/bin/sleep", "30")
+    # ps shows the parent's argv until the child has exec'd, so give it a moment.
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+    sleep 0.02 until Pid.matches?(child, "sleep", "30") || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    assert Pid.matches?(child, "sleep", "30")
+    assert Pid.matches?(child, :sleep), "words may be symbols"
+    refute Pid.matches?(child, "sleep", "31")
+    refute Pid.matches?(child, "asgard")
+    assert Pid.matches?(Process.pid, "anything at all"), "the current process always counts"
+    assert Pid.matches?(4242, "x", "y", command: "x and y"), "command: stands in for ps"
+    Process.kill("TERM", child)
+    Process.wait(child)
+    refute Pid.matches?(child, "sleep")
+    assert_nil Pid.command_line(child)
+    refute Pid.alive?(child)
+  end
+
+  def test_all_lists_one_kind_at_a_time
+    Dir.mktmpdir do |home|
+      watch = StateDir.base_dir("watch", home:, env: {})
+      jobs  = StateDir.base_dir("jobs",  home:, env: {})
+      assert_equal File.join(home, ".local", "state", "asgard", "jobs"), jobs
+      assert_equal "/xdg/asgard/jobs", StateDir.base_dir(:jobs, home:, env: { "XDG_STATE_HOME" => "/xdg" })
+      StateDir.record_root(File.join(watch, "a-1"), "/a")
+      StateDir.record_root(File.join(jobs, "b-2"), "/b")
+      StateDir.record_root(File.join(jobs, "c-3"), "/c")
+      assert_equal [["a-1", "/a"]],                 StateDir.all(base: watch)
+      assert_equal [["b-2", "/b"], ["c-3", "/c"]], StateDir.all(base: jobs)
+      assert_equal [], StateDir.all(base: File.join(home, "none"))
+    end
+  end
+
+  def test_json_round_trip_symbolizes_keys_and_creates_the_directory
+    Dir.mktmpdir do |home|
+      path = File.join(home, "deep", "er", "record.json")
+      assert_nil StateDir.read_json(path)
+      StateDir.write_json(path, { "name" => "api", pid: 42 })
+      assert_equal({ name: "api", pid: 42 }, StateDir.read_json(path))
+      assert_equal ["record.json"], Dir.children(File.dirname(path)), "no tempfile is left behind"
+    end
+  end
+end

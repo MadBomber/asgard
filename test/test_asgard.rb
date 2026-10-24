@@ -2097,3 +2097,45 @@ class TestAsgardReviewFixes < Minitest::Test
     end
   end
 end
+
+class TestAsgardCurrentTask < Minitest::Test
+  def setup
+    @seen  = {}
+    seen   = @seen
+    mutex  = Mutex.new
+    @klass = Class.new(Asgard::Base) do
+      desc "db", "db"
+      define_method(:db) { mutex.synchronize { seen[:db] = [current_task, next_job_sequence, next_job_sequence] } }
+
+      desc "api", "api"
+      define_method(:api) { mutex.synchronize { seen[:api] = [current_task, next_job_sequence] } }
+
+      depends_on %i[db api]
+      desc "servers", "servers"
+      define_method(:servers) { mutex.synchronize { seen[:servers] = [current_task, next_job_sequence] } }
+    end
+  end
+
+  def test_each_task_body_sees_its_own_name_even_in_a_parallel_stage
+    @klass.new([], {}, {}).invoke(:servers)
+    assert_equal [:db, 1, 2], @seen[:db]
+    assert_equal [:api, 1],   @seen[:api]
+    assert_equal [:servers, 1], @seen[:servers]
+  end
+
+  def test_the_sequence_starts_over_on_each_run_and_the_frame_is_popped
+    runner = @klass.new([], {}, {})
+    runner.invoke(:api)
+    @klass._reset_ran!
+    runner.invoke(:api)
+    assert_equal [:api, 1], @seen[:api], "a new run of the body counts from 1 again"
+    assert_nil runner.current_task, "no task is running once invoke returns"
+  end
+
+  def test_outside_a_task_there_is_no_current_task_and_no_sequence
+    runner = @klass.new([], {}, {})
+    assert_nil runner.current_task
+    error = assert_raises(Asgard::Error) { runner.next_job_sequence }
+    assert_match(/no task is running/, error.message)
+  end
+end

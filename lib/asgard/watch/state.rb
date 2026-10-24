@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require "json"
-require "tempfile"
+require_relative "../state_dir"
 
 module Asgard
   module Watch
@@ -13,37 +12,23 @@ module Asgard
     # default ~/.local/state), with a file naming the project root so
     # `watcher list --all` can find every project without loading it.
     class State
-      ROOT_FILE = "root"
+      ROOT_FILE = StateDir::ROOT_FILE
 
       attr_reader :dir, :root
 
       class << self
-        def base_dir(home: Dir.home, env: ENV)
-          File.join(env["XDG_STATE_HOME"] || File.join(home, ".local", "state"), "asgard", "watch")
-        end
+        def base_dir(home: Dir.home, env: ENV) = StateDir.base_dir("watch", home:, env:)
 
         # Every project with a state directory under base, as [slug, root] pairs.
-        def all(base: base_dir)
-          Dir.glob(File.join(base, "*", ROOT_FILE)).map do |file|
-            [File.basename(File.dirname(file)), File.read(file).strip]
-          end
-        end
+        def all(base: base_dir) = StateDir.all(base:)
 
         # What `list` needs of a declaration, with the events Set as an Array.
         def declaration_record(spec) = spec.slice(:name, :task, :paths).merge(events: spec[:events].to_a)
 
         # Written whole then renamed, so a reader never sees a partial file.
-        def write_json(path, value)
-          dir = File.dirname(path)
-          FileUtils.mkdir_p(dir)
-          Tempfile.create(["asgard", ".json"], dir) do |file|
-            file.write(JSON.pretty_generate(value))
-            file.flush
-            File.rename(file.path, path)
-          end
-        end
+        def write_json(path, value) = StateDir.write_json(path, value)
 
-        def read_json(path) = File.exist?(path) ? JSON.parse(File.read(path), symbolize_names: true) : nil
+        def read_json(path) = StateDir.read_json(path)
 
         # Whether pid is a watcher daemon, not merely a live process.
         def daemon?(pid) = Reporter.asgard_process?(pid, "watcher", "run")
@@ -68,8 +53,8 @@ module Asgard
 
       # Creates the directories and records the root.
       def prepare
+        StateDir.record_root(dir, root)
         FileUtils.mkdir_p(entries_dir)
-        File.write(root_path, "#{root}\n")
         self
       end
 

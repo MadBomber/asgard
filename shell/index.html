@@ -712,6 +712,8 @@
       
         
       
+        
+      
     
     
     
@@ -994,6 +996,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#background-jobs-three-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background Jobs: Three Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#combining-sh-and-shebang" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1084,6 +1097,34 @@
     
   
     Watched Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs
   
 
     
@@ -1379,6 +1420,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#background-jobs-three-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background Jobs: Three Modes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#combining-sh-and-shebang" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1472,7 +1524,7 @@
 
 <h1 id="shell-helpers">Shell Helpers<a class="headerlink" href="#shell-helpers" title="Permanent link">&para;</a></h1>
 <p><code>shebang</code> is the one way a task runs something that isn't Ruby. It writes the script to a tempfile and hands the file to an interpreter from the <code>shells</code> registry. Called with a script alone it uses the <code>default_shell</code>, and <code>sh script</code> is the same call. Both are provided by <code>Asgard::Shell</code> and mixed into every <code>Tasks</code> instance.</p>
-<p>Both return <code>true</code> and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept <code>silent: true</code> to suppress the script echo.</p>
+<p>Both return <code>true</code> and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept <code>silent: true</code> to suppress the script echo, and <code>background:</code> to start the script as a <a href="../jobs/">managed background job</a> instead of waiting for it.</p>
 <hr />
 <h2 id="sh-run-a-script-in-the-default-shell"><code>sh</code> — Run a Script in the Default Shell<a class="headerlink" href="#sh-run-a-script-in-the-default-shell" title="Permanent link">&para;</a></h2>
 <p><code>sh script</code> is <code>shebang script</code>: the script runs under the <code>default_shell</code>, which is bash until a <code>.loki</code> says otherwise. One line or many take the same path:</p>
@@ -1698,22 +1750,73 @@
 <p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0; see <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</p>
 </div>
 <hr />
+<h2 id="background-jobs-three-modes">Background Jobs: Three Modes<a class="headerlink" href="#background-jobs-three-modes" title="Permanent link">&para;</a></h2>
+<p>A script runs in one of three modes. Only the first two are asgard's.</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>How you ask for it</th>
+<th>The task</th>
+<th>When asgard exits</th>
+<th><code>asgard jobs</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Foreground</td>
+<td><code>sh "rake build"</code></td>
+<td>Waits for the script before its next statement; a failure exits asgard</td>
+<td>The script has already finished</td>
+<td>Nothing to manage</td>
+</tr>
+<tr>
+<td>Managed background</td>
+<td><code>sh "mkdocs serve", background: true</code></td>
+<td>Continues at once with a <code>Job</code> in hand</td>
+<td>The job keeps running</td>
+<td>Lists, stops, restarts and cleans it</td>
+</tr>
+<tr>
+<td>Detached</td>
+<td><code>sh "mkdocs serve &amp;"</code></td>
+<td>Continues at once with <code>true</code>; the shell has already exited</td>
+<td>The process keeps running</td>
+<td>Knows nothing about it</td>
+</tr>
+</tbody>
+</table>
+<p><code>background: true</code> names the job after the calling task and a counter (<code>doc_server-1</code>); a Symbol or String names it outright (<code>background: :api</code>). The job starts in its own session with its output in a log, its pid and task are recorded, and <code>asgard jobs list|stop|log|restart|clean</code> manage it from then on, in this asgard run or any later one:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation server startup"</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Bring up the development stack"</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">servers</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"docker compose up postgres"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w">    </span><span class="c1"># servers-1</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails server"</span><span class="p">,</span><span class="w">            </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:api</span><span class="w">   </span><span class="c1"># api</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>A trailing <code>&amp;</code> in the script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal; you stop it yourself with <code>ps</code> and <code>kill</code>. Use <code>background:</code> for anything you expect to come back to. The whole story, naming rules, the commands and the files on disk are on the <a href="../jobs/">Background Jobs</a> page.</p>
+<hr />
 <h2 id="combining-sh-and-shebang">Combining <code>sh</code> and <code>shebang</code><a class="headerlink" href="#combining-sh-and-shebang" title="Permanent link">&para;</a></h2>
 <p>Mix both freely in the same task:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell + Python pipeline"</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="sh">      import subprocess</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="sh">      print(result.stdout)</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="dl">    PYTHON</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>
-</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
-</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell + Python pipeline"</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="sh">      import subprocess</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="sh">      print(result.stdout)</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="dl">    PYTHON</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="k">end</span>
 </span></code></pre></div>
 
 

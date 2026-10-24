@@ -710,6 +710,8 @@
       
         
       
+        
+      
     
     
     
@@ -908,6 +910,34 @@
     
   
     Watched Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs
   
 
     
@@ -1178,6 +1208,17 @@
     <span class="md-ellipsis">
       
         Asgard::Watch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#asgardjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Jobs
       
     </span>
   </a>
@@ -1518,6 +1559,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#asgardjobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asgard::Jobs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#asgardbase-internal-class-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1783,12 +1835,12 @@
 </tr>
 <tr>
 <td><code>sh</code></td>
-<td><code>sh(script, silent: false)</code></td>
-<td>Instance method. <code>shebang script</code> — one line or many runs under the <code>default_shell</code>. Returns <code>true</code>; exits with the command's status on failure. The <code>exec:</code> keyword was removed in 0.6.0 — see <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</td>
+<td><code>sh(script, silent: false, background: nil)</code></td>
+<td>Instance method. <code>shebang script</code> — one line or many runs under the <code>default_shell</code>. Returns <code>true</code>; exits with the command's status on failure. <code>background: true</code> or <code>background: :name</code> starts the script as a job and returns a <code>Jobs::Job</code> at once; see <a href="../jobs/">Background Jobs</a>. The <code>exec:</code> keyword was removed in 0.6.0 — see <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</td>
 </tr>
 <tr>
 <td><code>shebang</code></td>
-<td><code>shebang(name = default_shell, script, silent: false)</code></td>
+<td><code>shebang(name = default_shell, script, silent: false, background: nil)</code></td>
 <td>Instance method. Write <code>script</code> to a tempfile and run it with the shell registered as <code>name</code>, or the <code>default_shell</code> when only the script is given; an unregistered name runs as itself from <code>PATH</code> with a <code>.tmp</code> extension. Returns <code>true</code>. A missing executable prints the name and exits 127. See the <a href="../shell/">Shell Helpers</a> page.</td>
 </tr>
 <tr>
@@ -1922,6 +1974,11 @@
 <td><code>_watcher</code></td>
 <td>subcommand</td>
 <td><code>asgard watcher SUBCOMMAND</code>, backed by <code>Asgard::Watch::Commands</code>. <code>map "watcher" =&gt; :_watcher</code> keeps the typed name <code>watcher</code>.</td>
+</tr>
+<tr>
+<td><code>_jobs</code></td>
+<td>subcommand</td>
+<td><code>asgard jobs SUBCOMMAND</code>, backed by <code>Asgard::Jobs::Commands</code>. <code>map "jobs" =&gt; :_jobs</code> keeps the typed name <code>jobs</code>; <code>list</code> is the default. See <a href="#asgardjobs"><code>Asgard::Jobs</code></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -2081,6 +2138,53 @@
 <p><code>Asgard::Changes</code> is a <code>Data</code> class with <code>modified</code>, <code>added</code> and <code>removed</code> path lists, <code>all</code>, <code>empty?</code>, <code>to_env</code> (the three trigger variables) and <code>Changes.from_env(env = ENV)</code>. <code>Changes.current</code> is the per-process memo behind the <code>changes</code> Kernel method; <code>Changes.forget</code> clears it.</p>
 <p>The daemon is assembled from small classes, each testable alone: <code>Spawn</code> builds the frozen, Ractor-shareable description of one run (argv, whitelisted environment, root, log, changes); <code>Worker</code> runs one task's triggers serially in its own Ractor and reports every spawn and exit; <code>Dispatcher</code> routes listener batches to the worker queues; <code>Reporter</code> is the single writer of the log and the per-entry records and tracks in-flight pids; <code>State</code> owns the pidfile, log, recorded declarations and entry records under the XDG state directory; <code>Daemon</code> wires them to listen and handles signals and reloads.</p>
 <hr />
+<h2 id="asgardjobs"><code>Asgard::Jobs</code><a class="headerlink" href="#asgardjobs" title="Permanent link">&para;</a></h2>
+<p>Background jobs. The user-facing guide is <a href="../jobs/">Background Jobs</a>; this section covers the Ruby API. <code>Asgard::Jobs</code> itself holds the pure rules, all module functions with no I/O:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Signature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>job_name</code></td>
+<td><code>Asgard::Jobs.job_name(background, task:, sequence: nil) → Symbol, nil</code></td>
+<td>The name a <code>background:</code> value asks for: <code>nil</code>/<code>false</code> → <code>nil</code>; <code>true</code> → <code>:"&lt;task&gt;-&lt;sequence&gt;"</code>, <code>ArgumentError</code> when <code>task</code> is nil; a Symbol or String stripped, symbolized and checked against <code>/\A\w+\z/</code>; anything else <code>ArgumentError</code>.</td>
+</tr>
+<tr>
+<td><code>record</code></td>
+<td><code>Asgard::Jobs.record(name:, task:, pid:, pgid:, cwd:, script:, log:, command:, started:) → Hash</code></td>
+<td>The record written to disk.</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>Asgard::Jobs.summary(script) → String</code></td>
+<td>The first non-blank line of a script, for the listing.</td>
+</tr>
+<tr>
+<td><code>closure</code></td>
+<td><code>Asgard::Jobs.closure(task, deps) → Array&lt;Symbol&gt;</code></td>
+<td>The task plus every task reachable through a <code>_deps</code> Hash of stage lists, in discovery order.</td>
+</tr>
+<tr>
+<td><code>resolve</code></td>
+<td><code>Asgard::Jobs.resolve(names, records, closure: nil) → [records, unknown]</code></td>
+<td>Exact job names first, then every record whose task is the name or in its closure.</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>Asgard::Jobs.status(exit_code:, verified:) → :running, [:exited, code], :gone</code></td>
+<td>What a record's job is doing now; <code>describe_status</code> renders it for the STATUS column.</td>
+</tr>
+</tbody>
+</table>
+<p><code>Asgard::Jobs::Job</code> is a <code>Data</code> with <code>name</code>, <code>task</code>, <code>pid</code> and <code>log</code>, returned by <code>sh ..., background:</code>.</p>
+<p>The rest is small classes, each testable alone: <code>Jobs::State</code> owns one project's directory under <code>StateDir.base_dir("jobs")</code> (record, script, log and status paths, <code>records</code>, <code>exit_code</code>, <code>remove</code>, and <code>verified?</code>, which asks <code>Asgard::Pid.matches?</code> whether the pid still runs the trampoline carrying the script path); <code>Jobs::Launcher</code> builds the <code>/bin/sh</code> trampoline <code>argv</code>, the <code>environment</code> and the <code>spawn_options</code> as pure functions, <code>launch</code>es with <code>fork</code>, <code>setsid</code> and <code>exec</code>, and <code>start</code>s a job or returns the one already running; <code>Jobs::Stopper</code> sends <code>TERM</code> to the process group, polls, and <code>KILL</code>s after the timeout, with the signal sender, liveness check and sleep injectable, and <code>Stopper.signal_group</code> refusing any pgid that is not an Integer above 1; <code>Jobs::Commands</code> is the <code>asgard jobs</code> subcommand.</p>
+<p><code>Asgard::Pid</code> (<code>alive?</code>, <code>command_line</code>, <code>matches?</code>) and <code>Asgard::StateDir</code> (<code>base_dir(kind)</code>, <code>all</code>, <code>write_json</code>, <code>read_json</code>, <code>record_root</code>) are shared with the watcher.</p>
+<hr />
 <h2 id="asgardbase-internal-class-methods"><code>Asgard::Base</code> Internal Class Methods<a class="headerlink" href="#asgardbase-internal-class-methods" title="Permanent link">&para;</a></h2>
 <p>These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.</p>
 <table>
@@ -2148,6 +2252,11 @@
 <td><code>Asgard::Watch::Error</code></td>
 <td><code>Asgard::Error</code></td>
 <td>Raised when the watcher cannot run: a <code>watch</code> names a task the project does not define. <code>run!</code> reports it as <code>asgard: &lt;message&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>Asgard::Jobs::Error</code></td>
+<td><code>Asgard::Error</code></td>
+<td>A background job could not be managed. <code>run!</code> reports it as <code>asgard: &lt;message&gt;</code>. A bad <code>background:</code> value raises <code>ArgumentError</code> instead, like any other DSL argument.</td>
 </tr>
 <tr>
 <td><code>Asgard::CircularDependencyError</code></td>

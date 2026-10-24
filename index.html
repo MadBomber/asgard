@@ -801,6 +801,8 @@
       
         
       
+        
+      
     
     
     
@@ -999,6 +1001,34 @@
     
   
     Watched Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs
   
 
     
@@ -1288,6 +1318,7 @@
 <li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
 <li><strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code></li>
 <li><strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code></li>
+<li><strong>Background Jobs</strong> — <code>sh "mkdocs serve", background: true</code> starts a job that outlives asgard; <code>asgard jobs</code> lists, stops, restarts and cleans them</li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, <code>--verbose</code>, and <code>--doctor</code> available on every task</li>
 </ul>
 </td>
@@ -1363,6 +1394,18 @@
 <tr>
 <td><a href="environment/">Environment</a></td>
 <td>Loading <code>.env</code> files with <code>dotenv</code></td>
+</tr>
+<tr>
+<td><a href="schedule/">Scheduled Tasks</a></td>
+<td>Run tasks on a timer under launchd or systemd</td>
+</tr>
+<tr>
+<td><a href="watch/">Watched Files</a></td>
+<td>Run tasks when files change</td>
+</tr>
+<tr>
+<td><a href="jobs/">Background Jobs</a></td>
+<td><code>background:</code>, the three ways a script runs, <code>asgard jobs</code></td>
 </tr>
 <tr>
 <td><a href="task-files/">Task Files</a></td>

@@ -708,6 +708,8 @@
       
         
       
+        
+      
     
     
     
@@ -906,6 +908,34 @@
     
   
     Watched Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs
   
 
     
@@ -2457,6 +2487,31 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>Background jobs: <code>sh ..., background:</code> and <code>asgard jobs</code></strong> — <code>sh
+  "mkdocs serve", background: true</code> starts the script as a job that
+  outlives asgard: a new session under a <code>/bin/sh</code> trampoline that
+  records the exit status, stdin from <code>/dev/null</code>, stdout and stderr
+  appended to a log. <code>true</code> names the job after the calling task and a
+  per-run counter (<code>doc_server-1</code>, <code>servers-2</code>); a Symbol or String names
+  it outright (<code>background: :api</code>) and takes no number. The call echoes
+  the script, prints <code>started &lt;name&gt; (pid N), log: &lt;path&gt;</code> and returns a
+  <code>Jobs::Job</code> (<code>name</code>, <code>task</code>, <code>pid</code>, <code>log</code>) at once; a job of that name
+  already running is returned instead of started. <code>shebang</code> takes the
+  same keyword, so a job may run under any registered shell. <code>asgard jobs
+  list</code> shows each job as running, <code>exited N (duration)</code> or <code>gone</code>
+  (<code>--all</code> across projects); <code>stop [NAME...]</code> resolves job names, task
+  names and the <code>depends_on</code> closure, sends TERM to each job's process
+  group newest first and KILL after <code>--timeout</code> (default 10s); <code>log NAME
+  [-f]</code> prints or follows the log; <code>restart NAME</code> stops the job and runs
+  its task again; <code>clean</code> forgets every job that is not running. Records
+  live under <code>$XDG_STATE_HOME/asgard/jobs/&lt;slug&gt;/</code> and a pid is trusted
+  only while its command line still carries the job's script, so a pid
+  reused after a reboot shows as <code>gone</code>. A trailing <code>&amp;</code> in a script is
+  still the shell's detached mode: asgard reports success and keeps no
+  record. <code>Asgard::Pid</code> and <code>Asgard::StateDir</code> are lifted out of the
+  watcher and shared; <code>Schedule::Table</code> takes <code>headers:</code>, <code>keys:</code> and
+  <code>flexible:</code> and hands tty-table exact content widths, which also stops
+  it squeezing a one-row table. <code>csh</code> and <code>tcsh</code> scripts get <code>.csh</code>.</li>
 <li><strong><code>shells</code> registry and <code>shell</code> DSL</strong> — <code>Tasks.shells</code> maps a name to
   <code>{ path:, args:, ext: }</code>, seeded with <code>:bash</code>, <code>:sh</code>, <code>:python3</code>,
   <code>:python</code>, <code>:node</code>, <code>:ruby</code> and <code>:perl</code>. <code>shell :strict, "bash -eu -o

@@ -1793,13 +1793,13 @@
 </tr>
 <tr>
 <td><code>default_shell</code></td>
-<td><code>default_shell(name = nil)</code></td>
-<td>The shell <code>sh</code> and a nameless <code>shebang</code> run. Starts as <code>:bash</code>; <code>default_shell :zsh</code> sets it, no argument returns it. One value for every <code>Tasks</code> subclass.</td>
+<td><code>default_shell(name_or_path = nil, path = nil, args: nil, ext: nil)</code></td>
+<td>The shell <code>sh</code> and a nameless <code>shebang</code> run. Starts as <code>:bash</code>; a bare Symbol selects without touching the registry, no argument returns the current name. Every other form registers through <code>shell</code> first, then selects: a bare path (String or <code>Pathname</code>) registers under the executable's basename; a name with a path, <code>args:</code> or <code>ext:</code> registers that name, the path being the name when only <code>args:</code> or <code>ext:</code> are given. One value for every <code>Tasks</code> subclass.</td>
 </tr>
 <tr>
 <td><code>shell</code></td>
-<td><code>shell(name, path, args: nil, ext: nil)</code></td>
-<td>Register a shell for <code>shebang</code>. <code>path</code> is split with shell quoting; its first word is the executable and the rest precede <code>args:</code> (String or Array). <code>ext:</code> defaults by executable basename, else <code>.tmp</code>. One registry for every <code>Tasks</code> subclass.</td>
+<td><code>shell(name_or_path, path = nil, args: nil, ext: nil)</code></td>
+<td>Register a shell for <code>shebang</code> and return its name. A String path is split with shell quoting; its first word is the executable and the rest precede <code>args:</code> (String or Array). A <code>Pathname</code> is the executable whole, never split. A bare path, with no name, registers under the executable's basename; a Symbol alone registers that name as itself from <code>PATH</code>. The executable must exist, as an executable file at a path with a directory part or on <code>PATH</code> for a bare name, else <code>ArgumentError</code> as the <code>.loki</code> loads. <code>ext:</code> defaults by executable basename, else <code>.tmp</code>. One registry for every <code>Tasks</code> subclass.</td>
 </tr>
 <tr>
 <td><code>shells</code></td>

@@ -2464,12 +2464,25 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   first word is the executable and the rest precede <code>args:</code> (a String or
   an Array); <code>ext:</code> defaults by the executable's basename. Pin a path with
   <code>shell :bash, "/opt/homebrew/bin/bash"</code> so scheduled and watched tasks,
-  whose <code>PATH</code> lacks Homebrew, run the same bash as the terminal. An
-  unregistered name still runs as itself from <code>PATH</code> with <code>.tmp</code>.</li>
+  whose <code>PATH</code> lacks Homebrew, run the same bash as the terminal. A
+  <code>Pathname</code> path is the executable whole, never split, so a directory
+  with a space in it needs no quoting. The name may be left out: <code>shell
+  "/usr/local/bin/bash -c -w"</code> registers <code>:bash</code>, named after the
+  executable, with the options parsed into <code>args</code>, and <code>shell :zsh</code> alone
+  registers zsh from <code>PATH</code>. <code>shell</code> returns the name. The executable is
+  checked as the <code>.loki</code> loads: a path with a directory part must be an
+  executable file, a bare name must be on <code>PATH</code>, else <code>ArgumentError</code>
+  naming the shell, rather than an exit 127 the first time a task runs.
+  An unregistered name still runs as itself from <code>PATH</code> with <code>.tmp</code>.</li>
 <li><strong><code>default_shell</code></strong> — <code>default_shell :strict</code> at class level picks the
   registry entry that <code>sh</code>, and <code>shebang</code> called with a script alone, run;
-  it starts as <code>:bash</code> and reads back with no argument. <code>sh</code> and <code>shebang</code>
-  return <code>true</code> on success.</li>
+  it starts as <code>:bash</code> and reads back with no argument. A bare Symbol only
+  selects and never changes the registry. Every other form registers
+  through <code>shell</code> first, then selects: <code>default_shell "/usr/local/bin/bash
+  -c -w"</code> pins and picks <code>:bash</code> in one line, <code>default_shell :strict,
+  "bash", args: "-eu -o pipefail"</code> declares and selects <code>:strict</code>, and the
+  path is the name when only <code>args:</code> or <code>ext:</code> are given. <code>sh</code> and
+  <code>shebang</code> return <code>true</code> on success.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>

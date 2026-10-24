@@ -36,11 +36,12 @@ Gem::Specification.new do |spec|
   spec.executables = ["asgard"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "thor",    "~> 1.0"
-  spec.add_dependency "dotenv",  "~> 3.0"
-  spec.add_dependency "tty-table", "~> 0.12"
-  spec.add_dependency "ractor_queue", "~> 0.2"
-  spec.add_dependency "listen", "~> 3.9"
+  spec.add_dependency "thor"          # Thor is a toolkit for building powerful command-line interfaces.
+  spec.add_dependency "dotenv"        # Loads environment variables from `.env`.
+  spec.add_dependency "tty-table"     # A flexible and intuitive table generator
+  spec.add_dependency "ractor_queue"  # Ractor-shareable bounded queue for Ruby parallel workloads
+  spec.add_dependency "listen"        # Listen to file modifications
+  spec.add_dependency "tsort"         # Topological sorting using Tarjan's algorithm
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://guides.rubygems.org/make-your-own-gem/

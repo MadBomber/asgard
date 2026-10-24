@@ -1738,12 +1738,27 @@
 <tr>
 <td><code>sh</code></td>
 <td><code>sh(script, silent: false, exec: false)</code></td>
-<td>Instance method. Run a shell command or multiline heredoc. Single-line → <code>system(script)</code>; multiline → <code>system("bash", "-c", script)</code>. Exits with the command's status on failure. With <code>exec: true</code>, replaces the asgard process via <code>Kernel.exec</code> instead of forking — see <a href="../shell/#handing-off-with-exec">Shell Helpers</a>.</td>
+<td>Instance method. <code>shebang script</code> — one line or many runs under the <code>default_shell</code>. Returns <code>true</code>; exits with the command's status on failure. With <code>exec: true</code>, replaces the asgard process via <code>Kernel.exec</code> instead of forking — see <a href="../shell/#handing-off-with-exec">Shell Helpers</a>.</td>
 </tr>
 <tr>
 <td><code>shebang</code></td>
-<td><code>shebang(interpreter, script, silent: false)</code></td>
-<td>Instance method. Write <code>script</code> to a tempfile and execute it with <code>interpreter</code>. See the <a href="../shell/">Shell Helpers</a> page for the full interpreter table.</td>
+<td><code>shebang(name = default_shell, script, silent: false, exec: false)</code></td>
+<td>Instance method. Write <code>script</code> to a tempfile and run it with the shell registered as <code>name</code>, or the <code>default_shell</code> when only the script is given; an unregistered name runs as itself from <code>PATH</code> with a <code>.tmp</code> extension. Returns <code>true</code>. A missing executable prints the name and exits 127. See the <a href="../shell/">Shell Helpers</a> page.</td>
+</tr>
+<tr>
+<td><code>default_shell</code></td>
+<td><code>default_shell(name = nil)</code></td>
+<td>The shell <code>sh</code> and a nameless <code>shebang</code> run. Starts as <code>:bash</code>; <code>default_shell :zsh</code> sets it, no argument returns it. One value for every <code>Tasks</code> subclass.</td>
+</tr>
+<tr>
+<td><code>shell</code></td>
+<td><code>shell(name, path, args: nil, ext: nil)</code></td>
+<td>Register a shell for <code>shebang</code>. <code>path</code> is split with shell quoting; its first word is the executable and the rest precede <code>args:</code> (String or Array). <code>ext:</code> defaults by executable basename, else <code>.tmp</code>. One registry for every <code>Tasks</code> subclass.</td>
+</tr>
+<tr>
+<td><code>shells</code></td>
+<td><code>Tasks.shells</code></td>
+<td>The registry Hash: <code>name =&gt; { path:, args:, ext: }</code>, seeded with <code>:bash</code>, <code>:sh</code>, <code>:python3</code>, <code>:python</code>, <code>:node</code>, <code>:ruby</code>, <code>:perl</code>.</td>
 </tr>
 <tr>
 <td><code>validate_deps!</code></td>

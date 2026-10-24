@@ -23,9 +23,9 @@ module Asgard
       no_commands do
         def schedules = Schedule.declarations
 
-        def schedule_root = (Asgard.find_task_file&.dirname || Pathname.pwd).to_s
+        def schedule_root = @schedule_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
 
-        def schedule_project = File.basename(schedule_root)
+        def schedule_project = @schedule_project ||= Schedule.project_slug(schedule_root)
 
         def scheduler
           @scheduler ||= Schedule.backend_class.new(project: schedule_project, root: schedule_root)
@@ -102,7 +102,9 @@ module Asgard
           return [scheduler, name] if scheduler.installed_names.include?(name)
 
           project, entry = name.include?("/") ? name.split("/", 2) : [nil, name]
-          matches = scheduler.installed_entries.select { |slug, found| found == entry && (project.nil? || slug == project) }
+          matches = scheduler.installed_entries.select do |slug, found|
+            found == entry && (project.nil? || Schedule.project_match?(slug, project))
+          end
           abort "#{name} is in several projects (#{matches.map(&:first).join(', ')}); name one as project/#{entry}." if matches.size > 1
 
           matches.first&.then { |slug, found| [backend_for(slug), found] }
@@ -144,13 +146,15 @@ module Asgard
           by_project.to_h { |slug, entries| [project_title(slug, entries.first.last), entry_rows(entries)] }
         end
 
-        # "Project: slug (/full/path)", the path read from one of the project's job files.
+        # "Project: slug (/full/path)", the path read from one of the project's
+        # job files, flagged when the directory is gone (the project moved or
+        # was deleted, and its jobs with it should be).
         def project_title(slug, name)
           dir = slug == current_slug ? schedule_root : backend_for(slug).installed_directory(name)
-          ["Project: #{slug}", ("(#{dir})" if dir)].compact.join(" ")
+          ["Project: #{slug}", ("(#{dir})" if dir), ("[root missing]" if dir && !File.directory?(dir))].compact.join(" ")
         end
 
-        def current_slug = Asgard.find_task_file && Schedule.slug(schedule_project)
+        def current_slug = Asgard.find_task_file && schedule_project
 
         def backend_for(slug) = Schedule.backend_class.new(project: slug, root: schedule_root)
 
@@ -222,7 +226,7 @@ module Asgard
 
         path = backend.log_path(entry)
         return $stderr.puts "#{name} has no log yet (#{path}); it is created on the first run." unless File.exist?(path)
-        return sh("tail -n +1 -f #{path.shellescape}", silent: true, exec: true) if options[:follow]
+        return sh("tail -n +1 -f #{path.shellescape}", silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
       end

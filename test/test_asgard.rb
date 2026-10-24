@@ -2,8 +2,6 @@
 
 require "test_helper"
 require "tempfile"
-require "open3"
-require "rbconfig"
 
 class TestAsgardVersion < Minitest::Test
   def test_version_is_defined
@@ -1538,42 +1536,11 @@ class TestAsgardShell < Minitest::Test
     assert_match "shell :nonexistent_interpreter_xyz not found: nonexistent_interpreter_xyz ...", err
   end
 
-  def test_sh_exec_true_replaces_process_for_single_line_script
-    ruby_pid, shell_pid = exec_replacement_check("echo $$ > SHELL_PID_FILE")
-    assert_equal ruby_pid, shell_pid
-  end
-
-  def test_sh_exec_true_replaces_process_for_multiline_script
-    ruby_pid, shell_pid = exec_replacement_check("echo $$ > SHELL_PID_FILE\ntrue")
-    assert_equal ruby_pid, shell_pid
-  end
-
-  def test_sh_exec_true_reads_the_script_from_an_unlinked_descriptor
-    _, script_name = exec_replacement_check("echo $0 > SHELL_PID_FILE")
-    assert_match %r{\A/dev/fd/\d+\z}, script_name
-  end
-
-  def test_shebang_exec_true_replaces_process_for_other_interpreters
-    ruby_pid, child_pid = exec_replacement_check("File.write('SHELL_PID_FILE', Process.pid.to_s)", shell: :ruby)
-    assert_equal ruby_pid, child_pid
-  end
-
-  def test_shebang_exec_true_names_a_missing_shell_and_exits_127
-    out, status = run_child_script(<<~RUBY)
-      require "asgard/shell"
-      $stderr.reopen($stdout)
-      Object.new.extend(Asgard::Shell).shebang :nonexistent_interpreter_xyz, "echo hi", exec: true, silent: true
-    RUBY
-    assert_equal 127, status.exitstatus
-    assert_match "shell :nonexistent_interpreter_xyz not found", out
-  end
-
-  def test_sh_exec_true_prints_command_when_not_silent
-    out, = run_child_script(<<~RUBY)
-      require "asgard/shell"
-      Object.new.extend(Asgard::Shell).sh "true", exec: true
-    RUBY
-    assert_match "true", out
+  # Removed in 0.6.0: the shell is the unit of work, so there is nothing for
+  # exec: to hand the process to.
+  def test_sh_and_shebang_no_longer_accept_exec
+    assert_raises(ArgumentError) { sh "true", exec: true }
+    assert_raises(ArgumentError) { shebang :bash, "true", exec: true }
   end
 
   def test_shebang_runs_ruby_script
@@ -1608,40 +1575,6 @@ class TestAsgardShell < Minitest::Test
     assert_raises(SystemExit) do
       shebang :nonexistent_interpreter_xyz, "echo hi", silent: true
     end
-  end
-
-  private
-
-  # Runs +script+ (containing the placeholder SHELL_PID_FILE) in a real child
-  # process via sh(script, exec: true), and returns [ruby_pid, shell_pid].
-  # If exec: true genuinely replaced the process image (instead of forking),
-  # the pid the child ruby process recorded for itself and the pid the
-  # exec'd shell command sees ($$) are the same process — proving no
-  # separate asgard process was left resident alongside the command.
-  def exec_replacement_check(script, shell: :bash)
-    ruby_pid_file  = Tempfile.new("asgard_exec_ruby_pid")
-    shell_pid_file = Tempfile.new("asgard_exec_shell_pid")
-    ruby_pid_file.close
-    shell_pid_file.close
-
-    resolved_script = script.sub("SHELL_PID_FILE", shell_pid_file.path)
-    run_child_script(<<~RUBY)
-      require "asgard/shell"
-      File.write(#{ruby_pid_file.path.inspect}, Process.pid.to_s)
-      Object.new.extend(Asgard::Shell).shebang(#{shell.inspect}, #{resolved_script.inspect}, exec: true, silent: true)
-    RUBY
-
-    [File.read(ruby_pid_file.path), File.read(shell_pid_file.path).strip]
-  ensure
-    ruby_pid_file.unlink
-    shell_pid_file.unlink
-  end
-
-  # Runs +ruby_code+ in a fresh ruby process with this gem's lib/ on the load
-  # path, and returns [stdout, status] — a real subprocess, not a mock.
-  def run_child_script(ruby_code)
-    lib_dir = File.expand_path("../lib", __dir__)
-    Open3.capture2(RbConfig.ruby, "-I#{lib_dir}", "-e", ruby_code)
   end
 end
 

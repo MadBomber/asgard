@@ -108,7 +108,7 @@ Every list is empty when the task is run from the command line, so one task body
 
 ## Files and Logs
 
-The watcher keeps its state outside the repository under `~/.local/state/asgard/watch/<project>/` (honors `XDG_STATE_HOME`): the pidfile, `watcher.log` with one line per trigger, spawn and exit plus every task's output, the declarations recorded at `start`, and one JSON record per entry with its last run. `asgard watcher list --all` reads those records for every project without loading any `.loki`.
+The watcher keeps its state outside the repository under `~/.local/state/asgard/watch/<slug>/` (honors `XDG_STATE_HOME`), where `<slug>` is the project directory's name plus a short hash of its full path, `api-9f3a1c2b`, as for scheduled tasks: the pidfile, `watcher.log` with one line per trigger, spawn and exit plus every task's output, the declarations recorded at `start`, and one JSON record per entry with its last run. `asgard watcher list --all` reads those records for every project without loading any `.loki`.
 
 Running the watcher as a launchd or systemd service is not yet built in; `asgard watcher run` is the foreground process a service would keep alive.
 

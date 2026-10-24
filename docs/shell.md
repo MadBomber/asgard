@@ -2,7 +2,7 @@
 
 `shebang` is the one way a task runs something that isn't Ruby. It writes the script to a tempfile and hands the file to an interpreter from the `shells` registry. Called with a script alone it uses the `default_shell`, and `sh script` is the same call. Both are provided by `Asgard::Shell` and mixed into every `Tasks` instance.
 
-Both return `true` and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept `silent: true` to suppress the script echo and `exec: true` to replace the asgard process instead of forking — see [Handing Off with `exec`](#handing-off-with-exec).
+Both return `true` and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept `silent: true` to suppress the script echo.
 
 ---
 
@@ -201,32 +201,25 @@ shell :bash, %w[/opt/homebrew/bin/bash /usr/local/bin/bash /bin/bash].find { Fil
 
 ---
 
-## Handing Off with `exec`
+## Long-Running Commands
 
-Pass `exec: true` to hand the command the asgard process itself instead of forking a child. Under the hood this calls `Kernel.exec` rather than `system`, which replaces the running ruby process image with the command — asgard doesn't stick around waiting on it.
-
-Use this for a task's final, long-running command — a dev server, a REPL, anything meant to take over the terminal — so there's no idle ruby process sitting in memory alongside it, and Ctrl-C is handled directly by the command instead of unwinding back through asgard:
+A dev server or a REPL needs nothing special. The shell and the script it runs are one unit: when the script finishes the shell exits, and Ctrl-C reaches asgard, the shell and the command together, because all three share the terminal's process group.
 
 ```ruby
 class Tasks
   desc "Documentation server startup"
   depends_on :doc_builder
-  def doc_server = sh "mkdocs serve", exec: true
+  def doc_server = sh "mkdocs serve"
 
-  desc "Start a REPL — never returns to asgard"
-  def console
-    sh "bundle exec pry", exec: true
-    puts "unreachable"
-  end
+  desc "Start a REPL"
+  def console = sh "bundle exec pry"
 end
 ```
 
-Since the process is replaced, nothing after the call ever runs, and `depends_on` chains upstream of it must already have finished (they have — dependencies run before the task body).
-
-No process survives an `exec` to delete the tempfile, so asgard unlinks it before the hand-off and passes the interpreter the still-open descriptor as `/dev/fd/N`. Nothing is left behind in the temp directory. The one consequence is that the interpreter sees no file extension, so a Node script written as an ES module should not use `exec: true`.
+Asgard waits for the shell and exits with its status, so a command that ends on a signal exits 128 plus the signal number, the same as a shell would report.
 
 !!! note
-    `exec: true` only makes sense for a command meant to run for the lifetime of the process. Don't use it for a step with more work queued after it in the same task.
+    Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0; see [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed).
 
 ---
 

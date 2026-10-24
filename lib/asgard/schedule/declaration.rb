@@ -2,6 +2,7 @@
 
 require "open3"
 require "shellwords"
+require "zlib"
 
 module Asgard
   # Scheduled asgard tasks, run by the platform's own scheduler: launchd on
@@ -114,6 +115,20 @@ module Asgard
     end
 
     def slug(name) = name.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")
+
+    # The slug a project's jobs and watcher state are filed under: the
+    # basename of its root plus the CRC32 of the real path in hex
+    # ("api-9f3a1c2b"), so two projects in directories of the same name
+    # never share labels, units or state. Symlinked paths to one project
+    # agree, since the real path is hashed.
+    def project_slug(root)
+      real = File.realpath(root.to_s)
+      "#{slug(File.basename(real))}-#{format('%08x', Zlib.crc32(real))}"
+    end
+
+    # Whether +slug+ is the project the user named: the whole slug, or its
+    # basename alone when that is enough to pick it out.
+    def project_match?(slug, name) = slug == name || slug.sub(/-\h{8}\z/, "") == name
 
     # For display: the command line the job runs.
     def command_line(task, args = []) = Shellwords.join(["asgard", task.to_s, *args])

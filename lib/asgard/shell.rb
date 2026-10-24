@@ -125,21 +125,11 @@ module Asgard
     # Write +script+ to a tempfile and run it with the shell registered as
     # +name+, or with the default shell when only the script is given.
     # Returns true; exits with the command's status code on failure.
-    #
-    # Pass exec: true to replace the current process instead of forking —
-    # useful for a task's final, long-running command (e.g. a dev server)
-    # so the asgard/ruby process doesn't sit resident in memory alongside it.
-    def shebang(name_or_script, script = nil, silent: false, exec: false)
+    def shebang(name_or_script, script = nil, silent: false)
       name, script = script ? [name_or_script, script] : [Shell.default_shell, name_or_script]
       run = Run.new(name:, shell: Shell.shell_for(name), script: script.strip)
       $stdout.puts run.script unless silent
-
-      if exec
-        $stdout.flush
-        exec_script(run)
-      else
-        run_script(run)
-      end
+      run_script(run)
     end
 
     private
@@ -155,22 +145,7 @@ module Asgard
       end
     end
 
-    # No process survives an exec to delete the tempfile, so unlink it first
-    # and hand the interpreter the still-open descriptor instead.
-    def exec_script(run)
-      f = Tempfile.create(["asgard_", run.ext])
-      f.write(run.script)
-      f.flush
-      f.rewind
-      File.unlink(f.path)
-      fd = f.fileno
-      Kernel.exec(*run.argv("/dev/fd/#{fd}"), fd => f)
-    rescue SystemCallError
-      shell_missing!(run)
-    end
-
-    # $stderr.puts, not warn: a failed Kernel.exec leaves $VERBOSE nil, which
-    # silences warn.
+    # $stderr.puts, not warn: warn is silent under -W0 and this must show.
     def shell_missing!(run)
       $stderr.puts run.missing_message # rubocop:disable Style/StderrPuts
       exit 127

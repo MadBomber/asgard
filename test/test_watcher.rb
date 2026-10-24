@@ -856,10 +856,12 @@ class TestWatchCommands < Minitest::Test
     @bin     = File.join(@tmp, "bin")
     FileUtils.mkdir_p [File.join(@project, "lib"), @bin]
     File.write(File.join(@project, ".loki"), "")
-    # As the daemon: sleep until stopped. As a task: record the call.
+    @slug    = Asgard::Schedule.project_slug(@project)
+    # As the daemon: sleep until stopped, without exec, so the pid keeps an
+    # "asgard watcher run" command line. As a task: record the call.
     File.write(File.join(@bin, "asgard"), <<~SH)
       #!/bin/sh
-      if [ "$1" = "watcher" ]; then exec /bin/sleep 30; fi
+      if [ "$1" = "watcher" ]; then /bin/sleep 30; exit; fi
       echo "$* modified=$ASGARD_MODIFIED added=$ASGARD_ADDED" >> "$ASGARD_WATCH_ROOT/ran.txt"
     SH
     File.chmod(0o755, File.join(@bin, "asgard"))
@@ -888,7 +890,7 @@ class TestWatchCommands < Minitest::Test
     Dir.chdir(@project) { Commands.start(argv) }
   end
 
-  def state = Asgard::Watch::State.new(project: "proj", root: @project, base: File.join(@tmp, "state", "asgard", "watch"))
+  def state = Asgard::Watch::State.new(project: @slug, root: @project, base: File.join(@tmp, "state", "asgard", "watch"))
 
   def wait_until(seconds = 10)
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
@@ -909,7 +911,7 @@ class TestWatchCommands < Minitest::Test
   def test_asgard_watcher_maps_to_the_subcommand_and_help_hides_the_underscore
     Commands._reset_ran!
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[watcher list]) } }
-    assert_match "No watches declared for proj", out
+    assert_match "No watches declared for #{@slug}", out
     assert_match "asgard watcher list --all", out
     out, = capture_io { Commands.start(%w[help]) }
     assert_match " watcher start", out
@@ -928,10 +930,10 @@ class TestWatchCommands < Minitest::Test
 
   def test_run_refuses_when_another_daemon_holds_the_pidfile
     Tasks.watch :tree, paths: "lib"
-    other = Process.spawn("/bin/sleep", "30") # PATH holds only the fake bin here
+    other = Process.spawn(File.join(@bin, "asgard"), "watcher", "run") # another fake daemon
     state.prepare.write_pid(other)
     _, err = capture_io { assert_raises(SystemExit) { watcher("run") } }
-    assert_match "already running for proj (pid #{other})", err
+    assert_match "already running for #{@slug} (pid #{other})", err
   ensure
     if other
       Process.kill("TERM", other)
@@ -939,16 +941,31 @@ class TestWatchCommands < Minitest::Test
     end
   end
 
+  def test_a_pidfile_naming_a_stranger_is_not_a_running_daemon
+    Tasks.watch :tree, paths: "lib"
+    stranger = Process.spawn("/bin/sleep", "30")
+    state.prepare.write_pid(stranger)
+    assert_nil state.running_pid
+    _, err = capture_io { assert_raises(SystemExit) { watcher("stop") } }
+    assert_match "not running for #{@slug}", err
+    assert Asgard::Watch::Reporter.alive?(stranger), "stop must not signal a process that is not the daemon"
+  ensure
+    if stranger
+      Process.kill("TERM", stranger)
+      Process.wait(stranger)
+    end
+  end
+
   def test_start_list_stop_round_trip
     Tasks.watch :tree, paths: "lib/**/*.rb"
     out, = capture_io { watcher("start") }
-    assert_match(/started watcher for proj \(pid \d+\)/, out)
+    assert_match(/started watcher for #{@slug} \(pid \d+\)/, out)
     pid = state.running_pid
     assert pid
     assert_equal [{ name: "tree", task: "tree", paths: ["lib/**/*.rb"], events: %w[changed added removed] }], state.read_declarations
 
     _, err = capture_io { assert_raises(SystemExit) { watcher("start") } }
-    assert_match "already running for proj (pid #{pid})", err
+    assert_match "already running for #{@slug} (pid #{pid})", err
 
     out, = capture_io { watcher("list") }
     assert_match(/NAME\s+│\s*TASK\s+│\s*WATCHES\s+│\s*DAEMON\s+│\s*LAST RUN/, out)
@@ -956,14 +973,14 @@ class TestWatchCommands < Minitest::Test
     assert_match(/^Logs: .*asgard watcher log/, out)
 
     out, = capture_io { watcher("stop") }
-    assert_match "stopped watcher for proj", out
+    assert_match "stopped watcher for #{@slug}", out
     assert_nil state.running_pid
     refute Asgard::Watch::Reporter.alive?(pid)
 
     out, = capture_io { watcher("list") }
     assert_match(%r{│ tree\s+│ asgard tree\s+│ lib/\*\*/\*\.rb\s+│ stopped\s+│ never}, out)
     _, err = capture_io { assert_raises(SystemExit) { watcher("stop") } }
-    assert_match "not running for proj", err
+    assert_match "not running for #{@slug}", err
   end
 
   def test_list_shows_last_runs_and_every_project_with_all
@@ -979,7 +996,8 @@ class TestWatchCommands < Minitest::Test
     refute_match "elsewhere", out
 
     out, = capture_io { watcher("list", "--all") }
-    assert_equal ["Project: elsewhere (/elsewhere)", "Project: proj (#{@project})"], out.lines.grep(/^Project:/).map(&:chomp)
+    assert_equal ["Project: elsewhere (/elsewhere) [root missing]", "Project: #{@slug} (#{@project})"],
+                 out.lines.grep(/^Project:/).map(&:chomp)
     assert_match(/│ docs\s+│ asgard docs\s+│ docs \[added\]\s+│ stopped\s+│ running \(pid #{Process.pid}\)/, out)
 
     File.delete(File.join(@project, ".loki"))
@@ -1035,5 +1053,36 @@ class TestWatchCommands < Minitest::Test
       Process.kill("TERM", Process.pid)
       thread.join(10)
     end
+  end
+end
+
+# Identifying the process behind a recorded pid: a pidfile left by a crash
+# or a reboot can name a pid that an unrelated process now holds.
+class TestWatchProcessIdentity < Minitest::Test
+  Reporter = Asgard::Watch::Reporter
+  State    = Asgard::Watch::State
+
+  def test_asgard_process_matches_every_word_of_the_command_line
+    assert Reporter.asgard_process?(4242, "watcher", "run", command: "ruby /usr/local/bin/asgard watcher run")
+    assert Reporter.asgard_process?(4242, "lint", command: "/opt/homebrew/bin/direnv exec /proj /usr/local/bin/asgard lint")
+    refute Reporter.asgard_process?(4242, "watcher", "run", command: "/bin/sleep 30")
+    refute Reporter.asgard_process?(4242, "watcher", "run", command: "ruby /usr/local/bin/asgard lint")
+  end
+
+  def test_the_current_process_always_counts_as_asgard
+    assert Reporter.asgard_process?(Process.pid, "anything")
+    assert State.daemon?(Process.pid)
+    assert State.running?({ pid: Process.pid, task: "docs" })
+  end
+
+  def test_command_line_reads_a_live_process_and_is_nil_for_a_dead_one
+    stranger = Process.spawn("/bin/sleep", "30")
+    assert_includes Reporter.command_line(stranger), "sleep"
+    refute State.daemon?(stranger), "a live process that is not asgard is not the daemon"
+    refute State.running?({ pid: stranger, task: "docs" })
+    Process.kill("TERM", stranger)
+    Process.wait(stranger)
+    assert_nil Reporter.command_line(stranger)
+    refute Reporter.asgard_process?(stranger, "watcher", "run")
   end
 end

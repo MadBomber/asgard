@@ -9,16 +9,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: project slugs carry a hash of the path** — schedule labels,
+  systemd unit names and the watcher's state directory were filed under
+  the basename of the project directory alone, so two projects in
+  directories of the same name shared them: `schedule install` in one
+  removed the other's jobs, and their watchers fought over one pidfile.
+  The slug is now the basename plus the CRC32 of the real path in hex,
+  `api-9f3a1c2b`. Nothing migrates. Entries installed by an earlier
+  version stay under the old slug, keep running, and show up in
+  `schedule list --all` and `watcher list --all` as another project. Run
+  `asgard schedule remove` and `asgard watcher stop` in each project
+  before upgrading, then reinstall and restart afterwards. A leftover
+  schedule entry can still be stopped as `oldslug/name`; a leftover
+  watcher is stopped with `kill $(cat ~/.local/state/asgard/watch/<old
+  slug>/watcher.pid)`, and its state directory deleted. In `project/name`
+  arguments the directory name alone now matches when it is unambiguous,
+  and `list --all` flags a project whose directory no longer exists with
+  `[root missing]`. The step-by-step guide is
+  [Upgrading to 0.6.0](https://madbomber.github.io/asgard/upgrading-0.6/).
 - **`sh` always runs bash** — a one-line `sh` script used to go through
   `/bin/sh` (dash on Debian and Ubuntu) while a heredoc went through `bash`,
   so bash syntax failed or passed depending on line count. `sh` is now
   `shebang :bash`: one line or many is written to a tempfile and run by the
   `:bash` entry of the `shells` registry. Fixes #1.
+- **BREAKING: `exec:` removed from `sh` and `shebang`** — `sh "cmd",
+  exec: true` replaced the asgard process with the command through
+  `Kernel.exec`. Since `sh` is `shebang :bash` and every script runs as a
+  file under its shell, the keyword no longer did what it promised: bash
+  stayed as the parent and the command ran as its child, so a `kill` of
+  the pid stopped bash and orphaned the command. The shell is the unit of
+  work: the script ends, the shell ends, and Ctrl-C reaches asgard, the
+  shell and the command together. Passing `exec:` now raises
+  `ArgumentError (unknown keyword: :exec)`; delete it from the call. See
+  [Upgrading to 0.6.0](https://madbomber.github.io/asgard/upgrading-0.6/#sh-and-shebang-exec-removed).
 - **`shebang` is the one engine** — every non-Ruby script takes the same
-  path through `Kernel#system`, or `Kernel.exec` with `exec: true`, which
-  `shebang` now accepts too. With `exec: true` the tempfile is unlinked
-  before the hand-off and the interpreter reads it from `/dev/fd/N`, so
-  nothing is left behind in the temp directory.
+  path through `Kernel#system`; `sh` is `shebang` with the default shell.
 - **A missing interpreter is reported** — `shebang :lua` with no `lua`
   on `PATH` prints `asgard: shell :lua not found: lua ...` and exits 127
   instead of exiting 127 silently.
@@ -70,6 +95,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **The gem's own `doc_tasks.loki` ran without direnv** — it built paths
   from `ENV['RR']`, which only the repository's `.envrc` sets, so a fresh
   clone crashed on `asgard help`. It now finds the root through `loki_up`.
+- **The watcher no longer trusts a pid it cannot identify** — a pidfile
+  left by a crash or a reboot can name a pid that an unrelated process now
+  holds; `list` called it running, `start` refused, and `stop` sent TERM
+  to it. The daemon's pid, and each entry's, must now belong to an
+  `asgard` process with the expected command line (`watcher run`, or the
+  task's name), read through `ps`. A stale pidfile is simply not running,
+  and `start` replaces it.
 
 ## [0.5.1] - 2026-10-19
 

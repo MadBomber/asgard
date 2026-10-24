@@ -550,6 +550,7 @@ class TestScheduleCommands < Minitest::Test
     @bin     = File.join(@tmp, "bin")
     FileUtils.mkdir_p [@project, @bin]
     File.write(File.join(@project, ".loki"), "")
+    @slug    = Asgard::Schedule.project_slug(@project)
     File.write(File.join(@bin, "asgard"), "")
     File.chmod(0o755, File.join(@bin, "asgard"))
     ENV["HOME"] = @tmp
@@ -576,12 +577,12 @@ class TestScheduleCommands < Minitest::Test
     Dir.chdir(@project) { Asgard::Schedule::Commands.start(argv) }
   end
 
-  def backend = Asgard::Schedule.backend_class.new(project: "proj", root: File.realpath(@project))
+  def backend = Asgard::Schedule.backend_class.new(project: @slug, root: File.realpath(@project))
 
   def test_asgard_schedule_maps_to_the_subcommand
     Asgard::Schedule::Commands._reset_ran! # each task runs once per process; an earlier test may have run `list`
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[schedule list]) } }
-    assert_match "No scheduled tasks installed for proj", out
+    assert_match "No scheduled tasks installed for #{@slug}", out
     assert_match "asgard schedule list --all", out
   end
 
@@ -644,9 +645,10 @@ class TestScheduleCommands < Minitest::Test
     refute_match "elsewhere", out
 
     out, = capture_io { schedule("list", "--all") }
-    assert_equal ["Project: elsewhere (#{@tmp})", "Project: proj (#{File.realpath(@project)})"], out.lines.grep(/^Project:/).map(&:chomp)
+    assert_equal ["Project: elsewhere (#{@tmp})", "Project: #{@slug} (#{File.realpath(@project)})"],
+                 out.lines.grep(/^Project:/).map(&:chomp)
     assert_match(/^Project: elsewhere .*\n┌.*?│ nightly\s+│ asgard tree\s+│ every 60s/m, out)
-    assert_match(/^Project: proj .*\n┌.*?│ tree\s+│ asgard tree/m, out)
+    assert_match(/^Project: #{@slug} .*\n┌.*?│ tree\s+│ asgard tree/m, out)
     assert_equal 1, out.scan(/^Logs:/).size
 
     File.delete(File.join(@project, ".loki"))
@@ -741,10 +743,28 @@ class TestScheduleCommands < Minitest::Test
     Asgard::Schedule.declarations.clear
 
     assert_match "stopped tree", capture_io { schedule("stop", "tree") }.first # this project wins a bare name
-    assert disabled?("asgard.proj.tree")
+    assert disabled?("asgard.#{@slug}.tree")
     refute disabled?("asgard.elsewhere.tree")
     assert_match "stopped elsewhere/tree", capture_io { schedule("stop", "elsewhere/tree") }.first
     assert disabled?("asgard.elsewhere.tree")
+  end
+
+  def test_the_project_basename_alone_names_this_project_in_a_prefixed_argument
+    install_elsewhere(also_here: true)
+    Asgard::Schedule.declarations.clear
+
+    assert_match "stopped proj/tree", capture_io { schedule("stop", "proj/tree") }.first
+    assert disabled?("asgard.#{@slug}.tree")
+    refute disabled?("asgard.elsewhere.tree")
+  end
+
+  def test_list_all_flags_a_project_whose_directory_is_gone
+    spec = Asgard::Schedule.normalize(:tree, every: 60)
+    gone = File.join(@tmp, "gone")
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone).install(spec, asgard: File.join(@bin, "asgard"), direnv: nil)
+    out, = capture_io { schedule("list", "--all") }
+    assert_match "Project: gone (#{gone}) [root missing]", out
+    refute_match "#{@slug} (#{File.realpath(@project)}) [root missing]", out
   end
 
   def test_a_bare_name_found_in_several_other_projects_is_ambiguous
@@ -770,7 +790,7 @@ class TestScheduleCommands < Minitest::Test
 
   def test_remove_with_nothing_installed
     out, = capture_io { schedule("remove") }
-    assert_match "No scheduled tasks installed for proj.", out
+    assert_match "No scheduled tasks installed for #{@slug}.", out
   end
 end
 
@@ -825,5 +845,40 @@ class TestScheduleTable < Minitest::Test
     assert_equal 120, SD::Table.terminal_width(io, env: {})
     assert_equal 90,  SD::Table.terminal_width(io, env: { "COLUMNS" => "90" })
     assert_equal 120, SD::Table.terminal_width(io, env: { "COLUMNS" => "wide" })
+  end
+end
+
+# Project slugs: the basename plus a hash of the real path, and the matching
+# that lets a `project/name` argument name a project by basename alone.
+class TestScheduleProjectSlug < Minitest::Test
+  def test_project_slug_is_the_basename_plus_a_hash_of_the_real_path
+    Dir.mktmpdir do |dir|
+      real = File.realpath(dir)
+      slug = Asgard::Schedule.project_slug(dir)
+      assert_match(/\A#{Regexp.escape(File.basename(real).downcase)}-\h{8}\z/, slug)
+      assert_equal slug, Asgard::Schedule.project_slug(real), "the same path, however spelled, gives one slug"
+      Dir.mktmpdir do |other|
+        link = File.join(other, "link")
+        File.symlink(real, link)
+        assert_equal slug, Asgard::Schedule.project_slug(link), "a symlink to the project gives the project's slug"
+      end
+    end
+  end
+
+  def test_same_basename_in_two_directories_gives_two_slugs
+    Dir.mktmpdir do |a|
+      Dir.mktmpdir do |b|
+        FileUtils.mkdir_p [File.join(a, "api"), File.join(b, "api")]
+        refute_equal Asgard::Schedule.project_slug(File.join(a, "api")), Asgard::Schedule.project_slug(File.join(b, "api"))
+      end
+    end
+  end
+
+  def test_project_match_takes_the_whole_slug_or_the_basename
+    assert Asgard::Schedule.project_match?("api-9f3a1c2b", "api-9f3a1c2b")
+    assert Asgard::Schedule.project_match?("api-9f3a1c2b", "api")
+    refute Asgard::Schedule.project_match?("api-9f3a1c2b", "ap")
+    refute Asgard::Schedule.project_match?("api-9f3a1c2b", "api-9f3a1c2c")
+    assert Asgard::Schedule.project_match?("elsewhere", "elsewhere"), "an entry from before the hash still matches by its slug"
   end
 end

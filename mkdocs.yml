@@ -163,4 +163,5 @@ nav:
   - Task Files: task-files.md
   - API Reference: api.md
   - Examples: examples.md
+  - Upgrading to 0.6.0: upgrading-0.6.md
   - Changelog: changelog.md

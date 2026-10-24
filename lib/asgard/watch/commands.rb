@@ -49,7 +49,7 @@ module Asgard
 
         def watch_root = @watch_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
 
-        def watch_project = File.basename(watch_root)
+        def watch_project = @watch_project ||= Schedule.project_slug(watch_root)
 
         def state = @state ||= State.new(project: watch_project, root: watch_root)
 
@@ -115,7 +115,7 @@ module Asgard
       def stop
         pid = state.running_pid or abort("watcher is not running for #{watch_project}.")
         Process.kill("TERM", pid)
-        while Reporter.alive?(pid)
+        while State.daemon?(pid)
           running = state.running_entries.map { |entry| "#{entry[:entry]} (pid #{entry[:pid]})" }
           puts "watcher: waiting for #{running.join(', ')}" unless running.empty?
           sleep STOP_WAIT
@@ -151,7 +151,8 @@ module Asgard
           State.all.to_h do |slug, root|
             other = State.new(project: slug, root:)
             own   = Asgard.find_task_file && root == watch_root
-            ["Project: #{slug} (#{root})", Commands.project_rows(other, own ? declared_records : other.read_declarations)]
+            title = ["Project: #{slug} (#{root})", ("[root missing]" unless File.directory?(root))].compact.join(" ")
+            [title, Commands.project_rows(other, own ? declared_records : other.read_declarations)]
           end
         end
       end
@@ -201,7 +202,7 @@ module Asgard
       def log
         path = state.log_path
         return $stderr.puts "#{watch_project} has no watcher log yet (#{path}); it is created on the first start." unless File.exist?(path)
-        return sh("tail -n +1 -f #{path.shellescape}", silent: true, exec: true) if options[:follow]
+        return sh("tail -n +1 -f #{path.shellescape}", silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
       end

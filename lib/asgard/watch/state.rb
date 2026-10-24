@@ -45,9 +45,12 @@ module Asgard
 
         def read_json(path) = File.exist?(path) ? JSON.parse(File.read(path), symbolize_names: true) : nil
 
+        # Whether pid is a watcher daemon, not merely a live process.
+        def daemon?(pid) = Reporter.asgard_process?(pid, "watcher", "run")
+
         # Whether an entry record describes a task still running: no exit
-        # recorded and its pid alive.
-        def running?(entry) = !entry.key?(:finished) && Reporter.alive?(entry[:pid])
+        # recorded and its pid still that task's asgard process.
+        def running?(entry) = !entry.key?(:finished) && Reporter.asgard_process?(entry[:pid], entry[:task].to_s)
       end
 
       # base: is the directory every project's state lives under.
@@ -75,10 +78,11 @@ module Asgard
       def read_pid = File.exist?(pid_path) ? File.read(pid_path).to_i : nil
 
       # The daemon's pid when one is running, else nil. A pidfile left by a
-      # crash counts as not running.
+      # crash counts as not running, even when another process has since
+      # been given its pid.
       def running_pid
         pid = read_pid
-        pid if pid&.positive? && Reporter.alive?(pid)
+        pid if pid&.positive? && State.daemon?(pid)
       end
 
       def clear = FileUtils.rm_f(pid_path)

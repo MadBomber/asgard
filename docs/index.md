@@ -77,6 +77,7 @@ The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_d
 | [Task Files](task-files.md) | `.loki` root marker, `import`, multi-file layout |
 | [API Reference](api.md) | Module methods, DSL methods, error classes |
 | [Examples](examples.md) | Working `.loki` files for every feature |
+| [Upgrading to 0.6.0](upgrading-0.6.md) | Stop and restart scheduled tasks and watchers so they take the new project slug |
 | [Changelog](changelog.md) | Release history |
 
 ---

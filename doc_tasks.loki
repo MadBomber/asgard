@@ -18,6 +18,6 @@ class Tasks
 
     desc "Documentation server startup"
     depends_on :doc_builder
-    def doc_server = sh "mkdocs serve", exec: true
+    def doc_server = sh "mkdocs serve"
   end
 end

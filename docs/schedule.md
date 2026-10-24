@@ -88,11 +88,11 @@ Each entry runs `asgard <task> [options]` from the directory that holds `.loki`,
 
 If the project has a `.envrc`, the job runs under `direnv exec`, so API keys and other secrets load from `.envrc` at run time and are never copied into the job files. If `direnv` isn't on your `PATH`, `install` warns that `.envrc` will not be loaded.
 
-Entries are scoped to the project (the name of the directory holding `.loki`), so `list`, `install` and `remove` only touch this project's jobs.
+Entries are scoped to the project. Its slug is the name of the directory holding `.loki` plus a short hash of that directory's full path, `api-9f3a1c2b`, so two projects in directories of the same name never share jobs. `list`, `install` and `remove` only touch this project's. `stop`, `start`, `trigger` and `log` reach another project's entry as `project/name`, where `project` is its slug, or just its directory name when that is enough to pick it out. `list --all` marks a project whose directory no longer exists with `[root missing]`; its jobs are left over from a move or a delete and can be stopped the same way.
 
 | | macOS (launchd) | Linux (systemd) |
 |---|---|---|
-| Job files | `~/Library/LaunchAgents/com.madbomber.asgard.<project>.<name>.plist` | `~/.config/systemd/user/asgard.<project>.<name>.{service,timer}` |
+| Job files | `~/Library/LaunchAgents/com.madbomber.asgard.<slug>.<name>.plist` | `~/.config/systemd/user/asgard.<slug>.<name>.{service,timer}` |
 | Logs | `~/Library/Logs/asgard/` | `~/.local/state/asgard/` (honors `XDG_STATE_HOME`) |
 | Stop | `launchctl disable` | `systemctl --user disable --now` |
 | Caveats | runs only while you're logged in | runs only while you're logged in unless `loginctl enable-linger`; needs systemd 240+ |

@@ -28,7 +28,7 @@ asgard watcher start
 ```
 
 ```
-started watcher for watcher_examples (pid 12345); log: ~/.local/state/asgard/watch/watcher-examples/watcher.log
+started watcher for watcher-examples-5e1d0c3a (pid 12345); log: ~/.local/state/asgard/watch/watcher-examples-5e1d0c3a/watcher.log
 ```
 
 Now make some changes and watch the log fill up:

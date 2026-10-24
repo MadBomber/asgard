@@ -1912,3 +1912,137 @@ class TestDoctor < Minitest::Test
     $LOADED_FEATURES.delete_if { |f| f.end_with?("sibling.loki") }
   end
 end
+
+# The six problems from notes/review_20261024.md, each pinned by a test.
+class TestAsgardReviewFixes < Minitest::Test
+  include Asgard::Shell
+
+  def teardown
+    Tasks._reset_ran!
+    %i[iu_root iu_child].each do |name|
+      Tasks.class_eval { remove_method(name) rescue nil }
+      Tasks.commands.delete(name.to_s)
+      Tasks._method_log.delete(name)
+    end
+  end
+
+  # A project whose child file pulls the root in with import_up: the root
+  # was never recorded as loaded, so the two files imported each other
+  # until the stack overflowed.
+  def with_import_up_project
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      Dir.mkdir(File.join(dir, "sub"))
+      File.write(File.join(dir, "sub", "child.loki"), <<~RUBY)
+        import_up
+        class Tasks; desc "iu_child", "child"; def iu_child = nil; end
+      RUBY
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        import "sub/*.loki"
+        class Tasks; desc "iu_root", "root"; def iu_root = nil; end
+      RUBY
+      yield dir
+    ensure
+      $LOADED_FEATURES.delete_if { |f| f.start_with?(dir) }
+    end
+  end
+
+  def test_import_up_from_an_imported_file_loads_the_root_once
+    with_import_up_project do |dir|
+      capture_io { Dir.chdir(dir) { Asgard.run!(["help"]) } }
+      assert Tasks.method_defined?(:iu_child)
+      assert_equal 1, Tasks._method_log[:iu_root].size, "the root .loki should load exactly once"
+    end
+  end
+
+  def test_doctor_survives_import_up_from_an_imported_file
+    with_import_up_project do |dir|
+      out, = capture_io { Dir.chdir(dir) { Asgard::Doctor.new(dir).run } }
+      refute_match "load failed", out
+      assert_match "iu_child", out
+    end
+  end
+
+  def test_sh_reports_a_signalled_child_as_128_plus_the_signal
+    e = assert_raises(SystemExit) { sh "kill -9 $$", silent: true }
+    assert_equal 137, e.status
+  end
+
+  def test_shell_exit_code_prefers_the_status_and_falls_back_to_the_signal
+    exited   = Struct.new(:exitstatus, :termsig).new(3, nil)
+    killed   = Struct.new(:exitstatus, :termsig).new(nil, 15)
+    assert_equal 3,   Asgard::Shell.exit_code(exited)
+    assert_equal 143, Asgard::Shell.exit_code(killed)
+  end
+
+  def parallel_group(first_body, &second_body)
+    completed = []
+    mu        = Mutex.new
+    klass     = Class.new(Asgard::Base) do
+      desc "first", "first"
+      define_method(:first, &first_body)
+
+      desc "second", "second"
+      define_method(:second) do
+        sleep 0.05
+        mu.synchronize { completed << :second }
+        second_body&.call
+      end
+
+      depends_on %i[first second]
+      desc "target", "target"
+      define_method(:target) {}
+    end
+    [klass, completed]
+  end
+
+  def test_a_failing_sh_in_a_parallel_group_waits_for_its_siblings
+    klass, completed = parallel_group(-> { exit 7 })
+    e = assert_raises(SystemExit) { klass.new([], {}, {}).invoke(:target) }
+    assert_equal 7, e.status
+    assert_includes completed, :second
+  end
+
+  def test_a_raising_parallel_dep_does_not_print_a_thread_report
+    klass, = parallel_group(-> { raise "boom" })
+    _, err = capture_io { assert_raises(RuntimeError) { klass.new([], {}, {}).invoke(:target) } }
+    refute_match(/terminated with exception/, err)
+  end
+
+  def test_several_failing_parallel_deps_are_each_named
+    klass, = parallel_group(-> { exit 3 }) { raise "boom" }
+    error  = nil
+    _, err = capture_io { error = assert_raises(Asgard::Error) { klass.new([], {}, {}).invoke(:target) } }
+    assert_equal "parallel dependencies failed: first, second", error.message
+    assert_match "dependency 'first' failed: exit 3", err
+    assert_match "dependency 'second' failed: RuntimeError: boom", err
+  end
+
+  def test_a_task_named_after_a_thor_internal_is_rejected_with_its_location
+    e = assert_raises(Asgard::Error) do
+      Class.new(Asgard::Base) do
+        desc "args", "args"
+        define_method(:args) {}
+      end
+    end
+    assert_match(/'args' at .*test_asgard\.rb:\d+ is a name Thor reserves/, e.message)
+  end
+
+  def test_a_helper_named_after_a_thor_reserved_word_is_rejected
+    e = assert_raises(Asgard::Error) do
+      Class.new(Asgard::Base) { no_commands { define_method(:shell) {} } }
+    end
+    assert_match "'shell' at", e.message
+  end
+
+  def test_run_reports_a_reserved_task_name_as_an_asgard_error
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "class Tasks; desc 'args', 'x'; def args = nil; end")
+      _, err = capture_io { assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["help"]) } } }
+      assert_match "asgard: 'args' at #{dir}/.loki:1 is a name Thor reserves", err
+    ensure
+      $LOADED_FEATURES.delete_if { |f| f.start_with?(dir) }
+    end
+  end
+end

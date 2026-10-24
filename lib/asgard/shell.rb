@@ -88,6 +88,10 @@ module Asgard
       def argv(shell, file)
         [shell[:path], *shell[:args], file]
       end
+
+      # A process's exit code as a shell reports it: its status, or 128
+      # plus the signal number when a signal ended it.
+      def exit_code(status) = status.exitstatus || (128 + status.termsig)
     end
 
     module ClassMethods
@@ -146,7 +150,7 @@ module Asgard
         f.flush
         success = system(*run.argv(f.path))
         shell_missing!(run) if success.nil?
-        exit($CHILD_STATUS.exitstatus) unless success
+        exit(Shell.exit_code($CHILD_STATUS)) unless success
         true
       end
     end

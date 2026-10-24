@@ -1,15 +1,18 @@
-# dev/doc_tasks.loki
+# doc_tasks.loki — documentation tasks, imported by .loki
 
 # TODO: create common tasks for documentation management
 class Tasks
+  # The project root, wherever asgard was run from: .loki is the marker, so
+  # its directory is the root. Not an environment variable, which only a
+  # direnv shell would have set.
+  root = loki_up.dirname
 
-  if File.exist?(ENV['RR']+'/.config/tocer/configuration.yml')
+  if root.join(".config", "tocer", "configuration.yml").exist?
     desc "Management table of contents"
     def tocer = sh "tocer help"
   end
 
-
-  if File.exist?(ENV['RR']+'/mkdocs.yml')
+  if root.join("mkdocs.yml").exist?
     desc "Documentation builder"
     def doc_builder = sh "mkdocs build"
 
@@ -17,5 +20,4 @@ class Tasks
     depends_on :doc_builder
     def doc_server = sh "mkdocs serve", exec: true
   end
-
 end

@@ -30,7 +30,7 @@ module Asgard
         end
 
         # A signalled child reports 128 + the signal number, as shells do.
-        def exit_code(status) = status.exitstatus || (128 + status.termsig)
+        def exit_code(status) = Shell.exit_code(status)
       end
 
       # The worker loop in its own Ractor. The Ractor is handed the two

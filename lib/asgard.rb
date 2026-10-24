@@ -19,6 +19,16 @@ module Asgard
   # entries, so they work from a directory with no .loki above it.
   def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list]].include?(argv.first(2))
 
+  # The root .loki is loaded directly rather than through `import`, so
+  # record it the way import would. Otherwise an `import_up` in a child
+  # file finds the root, reloads it, and the two import each other without
+  # end.
+  def self.load_root(path)
+    path = File.expand_path(path.to_s)
+    $LOADED_FEATURES << path unless $LOADED_FEATURES.include?(path)
+    load path
+  end
+
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     first = argv.first
@@ -34,7 +44,7 @@ module Asgard
     task_file = find_task_file
     abort "asgard: no .loki file found in #{Dir.pwd}" unless task_file || machine_wide?(argv)
     before = Asgard::Base.subclasses.dup
-    load task_file if task_file
+    load_root(task_file) if task_file
     newly_defined = Asgard::Base.subclasses - before
     (newly_defined + [Tasks]).uniq.each(&:validate_deps!)
     Tasks._reset_ran!

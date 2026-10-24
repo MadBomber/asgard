@@ -39,6 +39,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it starts as `:bash` and reads back with no argument. `sh` and `shebang`
   return `true` on success.
 
+### Fixed
+
+- **`import_up` from an imported file no longer recurses** — the root
+  `.loki` is loaded directly, not through `import`, so it was never
+  recorded as loaded; a child file's `import_up` found it, reloaded it,
+  and the two imported each other until the stack overflowed. `asgard
+  --doctor` died the same way. The root is now recorded before it loads.
+- **A child ended by a signal no longer crashes `sh`** — `exit` was given
+  the nil exit status of a signalled process and raised a TypeError. `sh`
+  and `shebang` now exit with 128 plus the signal number, as a shell
+  would, through `Asgard::Shell.exit_code`, which the watcher's worker
+  shares.
+- **A failing parallel dependency waits for its siblings** — the first
+  failure in a `depends_on [:a, :b]` group used to end the process at once,
+  leaving the other tasks' subprocesses running detached. Every thread in
+  the group is now joined first. When more than one fails, each is named
+  on stderr (`asgard: dependency 'lint' failed: exit 1`) and the error
+  lists them.
+- **A raising parallel dependency no longer prints Ruby's thread report**
+  — the full "terminated with exception" backtrace preceded asgard's own
+  message. Dependency threads now run with `report_on_exception` off; the
+  error still reaches the top level and is reported once.
+- **Task and helper names Thor relies on are rejected at load time** — a
+  task named `args` broke every command with an arity error pointing at
+  Thor, and names on Thor's own reserved list (`shell`, `options`,
+  `invoke`, ...) raised a bare RuntimeError. Defining any of them, as a
+  task or inside `no_commands`, now raises `Asgard::Error` with the file
+  and line, which `asgard --doctor` reports as a load failure.
+- **The gem's own `doc_tasks.loki` ran without direnv** — it built paths
+  from `ENV['RR']`, which only the repository's `.envrc` sets, so a fresh
+  clone crashed on `asgard help`. It now finds the root through `loki_up`.
+
 ## [0.5.1] - 2026-10-19
 
 ### Added

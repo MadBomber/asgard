@@ -123,24 +123,59 @@ module Asgard
       def run_dep_group(group)
         return { group.first => run_dep(group.first) } unless group.size > 1
 
-        threads = group.map { |task| [task, Thread.new { run_dep(task) }] }
-        errors  = []
+        threads = group.map { |task| [task, dep_thread(task)] }
+        errors  = {}
         results = {}
+        # Join every thread before raising, so one failure never ends the
+        # process while the other tasks' subprocesses run on, orphaned.
         threads.each do |task, t|
           results[task] = t.value
-        rescue => e
-          errors << e
+        rescue StandardError, ScriptError => e
+          errors[task] = e
         end
 
-        if errors.size == 1
-          raise errors.first
-        elsif errors.any?
-          errors.each { |e| warn "asgard: #{e.message}" }
-          raise Asgard::Error, "#{errors.size} parallel dependencies failed"
-        end
+        raise_dep_failure(errors.values.first) if errors.size == 1
+        raise_group_failure(errors) if errors.any?
 
         results
       end
+
+      # A SystemExit that ended a dependency thread (a failing `sh`, an
+      # `abort`), carried out of the thread as an ordinary error. Ruby
+      # re-raises an unhandled SystemExit from any thread in the main
+      # thread, which would end the process in the middle of the join.
+      class DepExit < StandardError
+        attr_reader :status
+
+        def initialize(status)
+          @status = status
+          super("exit #{status}")
+        end
+      end
+
+      # Ruby's own report would print the full backtrace to stderr before
+      # the error reaches asgard's handler; the joiner re-raises it anyway.
+      def dep_thread(task)
+        Thread.new do
+          Thread.current.report_on_exception = false
+          run_dep(task)
+        rescue SystemExit => e
+          raise DepExit, e.status
+        end
+      end
+
+      # One failure: a dependency that exited ends asgard with its status,
+      # as it would have on its own; anything else propagates unchanged.
+      def raise_dep_failure(error)
+        error.is_a?(DepExit) ? exit(error.status) : raise(error)
+      end
+
+      def raise_group_failure(errors)
+        errors.each { |task, e| $stderr.puts "asgard: dependency '#{task}' failed: #{describe_failure(e)}" } # rubocop:disable Style/StderrPuts
+        raise Asgard::Error, "parallel dependencies failed: #{errors.keys.join(', ')}"
+      end
+
+      def describe_failure(error) = error.is_a?(DepExit) ? error.message : "#{error.class}: #{error.message}"
 
       def signal_done(target, result)
         klass = self.class

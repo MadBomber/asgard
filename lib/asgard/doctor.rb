@@ -83,7 +83,7 @@ module Asgard
       @loaded_files << @marker
 
       before = Asgard::Base.subclasses.dup
-      load @marker
+      Asgard.load_root(@marker)
       @new_subclasses = (Asgard::Base.subclasses - before + [Tasks]).uniq
     rescue StandardError, ScriptError => e
       @findings << Finding.new(level: :error, message: "load failed: #{e.class}: #{e.message}")

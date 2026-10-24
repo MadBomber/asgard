@@ -20,6 +20,12 @@ module Asgard
     THOR_LIB   = File.dirname(Thor.method(:subcommand).source_location.first)
     ASGARD_LIB = File.expand_path("..", __dir__)
 
+    # Names Thor's machinery relies on: its reserved words plus the readers
+    # dispatch calls on every instance, which Thor itself does not guard.
+    # A task or helper by one of these names breaks every command, with
+    # nothing in the failure pointing at the cause.
+    RESERVED_NAMES = (Thor::THOR_RESERVED_WORDS + %w[args parent_options]).map(&:to_sym).freeze
+
     class << self
       # A usage error (missing argument, unknown command or option) exits 1,
       # so CI and `asgard do` sequences see the failure. Thor's default is 0.
@@ -54,7 +60,17 @@ module Asgard
         !thor_generated?(path) && !path.start_with?(ASGARD_LIB)
       end
 
+      def _check_reserved_name!(method_name)
+        return unless RESERVED_NAMES.include?(method_name)
+
+        file, line = instance_method(method_name).source_location
+        remove_method(method_name) # leave Thor's own method in place, so the class still dispatches
+        raise Asgard::Error,
+              "'#{method_name}' at #{file}:#{line} is a name Thor reserves and cannot be a task or helper; rename it"
+      end
+
       def method_added(method_name)
+        _check_reserved_name!(method_name)
         name           = method_name.to_s
         private_method = name.start_with?("_")
 

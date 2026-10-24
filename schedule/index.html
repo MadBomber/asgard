@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -33,10 +33,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -361,6 +361,25 @@
     
   
   Examples
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../upgrading-0.6/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Upgrading to 0.6.0
 
       </a>
     </li>
@@ -1123,6 +1142,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../upgrading-0.6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading to 0.6.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../changelog/" class="md-nav__link">
         
   
@@ -1413,7 +1459,7 @@ entry wins a bare name).</p>
 <h2 id="how-jobs-run">How Jobs Run<a class="headerlink" href="#how-jobs-run" title="Permanent link">&para;</a></h2>
 <p>Each entry runs <code>asgard &lt;task&gt; [options]</code> from the directory that holds <code>.loki</code>, so installing from any subdirectory gives the same result. The job gets the <code>PATH</code> that was current when you ran <code>install</code>, plus any <code>env:</code> variables.</p>
 <p>If the project has a <code>.envrc</code>, the job runs under <code>direnv exec</code>, so API keys and other secrets load from <code>.envrc</code> at run time and are never copied into the job files. If <code>direnv</code> isn't on your <code>PATH</code>, <code>install</code> warns that <code>.envrc</code> will not be loaded.</p>
-<p>Entries are scoped to the project (the name of the directory holding <code>.loki</code>), so <code>list</code>, <code>install</code> and <code>remove</code> only touch this project's jobs.</p>
+<p>Entries are scoped to the project. Its slug is the name of the directory holding <code>.loki</code> plus a short hash of that directory's full path, <code>api-9f3a1c2b</code>, so two projects in directories of the same name never share jobs. <code>list</code>, <code>install</code> and <code>remove</code> only touch this project's. <code>stop</code>, <code>start</code>, <code>trigger</code> and <code>log</code> reach another project's entry as <code>project/name</code>, where <code>project</code> is its slug, or just its directory name when that is enough to pick it out. <code>list --all</code> marks a project whose directory no longer exists with <code>[root missing]</code>; its jobs are left over from a move or a delete and can be stopped the same way.</p>
 <table>
 <thead>
 <tr>
@@ -1425,8 +1471,8 @@ entry wins a bare name).</p>
 <tbody>
 <tr>
 <td>Job files</td>
-<td><code>~/Library/LaunchAgents/com.madbomber.asgard.&lt;project&gt;.&lt;name&gt;.plist</code></td>
-<td><code>~/.config/systemd/user/asgard.&lt;project&gt;.&lt;name&gt;.{service,timer}</code></td>
+<td><code>~/Library/LaunchAgents/com.madbomber.asgard.&lt;slug&gt;.&lt;name&gt;.plist</code></td>
+<td><code>~/.config/systemd/user/asgard.&lt;slug&gt;.&lt;name&gt;.{service,timer}</code></td>
 </tr>
 <tr>
 <td>Logs</td>
@@ -1623,10 +1669,10 @@ entry wins a bare name).</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.path", "navigation.indexes", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

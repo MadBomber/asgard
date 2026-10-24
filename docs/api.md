@@ -119,8 +119,8 @@ import_up "*.loki"                 # find the nearest ancestor with *.loki files
 | `header` | `header(text)` | Append a line of text shown above the commands list in `asgard help`. Each call adds another line. No-op for per-command help. |
 | `footer` | `footer(text)` | Prepend a line of text shown below the options block in `asgard help`. Each call inserts above the previous lines. No-op for per-command help. |
 | `no_negate` | `no_negate(*names)` | Suppress `[--no-name]` / `[--skip-name]` help entries for one or more boolean class options. Call after the `class_option` declaration. |
-| `sh` | `sh(script, silent: false)` | Instance method. `shebang script` — one line or many runs under the `default_shell`. Returns `true`; exits with the command's status on failure. The `exec:` keyword was removed in 0.6.0 — see [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed). |
-| `shebang` | `shebang(name = default_shell, script, silent: false)` | Instance method. Write `script` to a tempfile and run it with the shell registered as `name`, or the `default_shell` when only the script is given; an unregistered name runs as itself from `PATH` with a `.tmp` extension. Returns `true`. A missing executable prints the name and exits 127. See the [Shell Helpers](shell.md) page. |
+| `sh` | `sh(script, silent: false, background: nil)` | Instance method. `shebang script` — one line or many runs under the `default_shell`. Returns `true`; exits with the command's status on failure. `background: true` or `background: :name` starts the script as a job and returns a `Jobs::Job` at once; see [Background Jobs](jobs.md). The `exec:` keyword was removed in 0.6.0 — see [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed). |
+| `shebang` | `shebang(name = default_shell, script, silent: false, background: nil)` | Instance method. Write `script` to a tempfile and run it with the shell registered as `name`, or the `default_shell` when only the script is given; an unregistered name runs as itself from `PATH` with a `.tmp` extension. Returns `true`. A missing executable prints the name and exits 127. See the [Shell Helpers](shell.md) page. |
 | `default_shell` | `default_shell(name_or_path = nil, path = nil, args: nil, ext: nil)` | The shell `sh` and a nameless `shebang` run. Starts as `:bash`; a bare Symbol selects without touching the registry, no argument returns the current name. Every other form registers through `shell` first, then selects: a bare path (String or `Pathname`) registers under the executable's basename; a name with a path, `args:` or `ext:` registers that name, the path being the name when only `args:` or `ext:` are given. One value for every `Tasks` subclass. |
 | `shell` | `shell(name_or_path, path = nil, args: nil, ext: nil)` | Register a shell for `shebang` and return its name. A String path is split with shell quoting; its first word is the executable and the rest precede `args:` (String or Array). A `Pathname` is the executable whole, never split. A bare path, with no name, registers under the executable's basename; a Symbol alone registers that name as itself from `PATH`. The executable must exist, as an executable file at a path with a directory part or on `PATH` for a bare name, else `ArgumentError` as the `.loki` loads. `ext:` defaults by executable basename, else `.tmp`. One registry for every `Tasks` subclass. |
 | `shells` | `Tasks.shells` | The registry Hash: `name => { path:, args:, ext: }`, seeded with `:bash`, `:sh`, `:python3`, `:python`, `:node`, `:ruby`, `:perl`. |
@@ -208,6 +208,7 @@ See [Dynamic Dependencies](dependencies.md#dynamic-dependencies-proc-block-form)
 | `_schedule` | subcommand | `asgard schedule SUBCOMMAND`, backed by `Asgard::Schedule::Commands`. `map "schedule" => :_schedule` keeps the typed name `schedule`, and a user task named `schedule` cannot shadow it. |
 | `watch` | class method (DSL) | `watch :task, paths: ...` — declares a watched entry. Extended from `Asgard::Watch::DSL`; see [`Asgard::Watch`](#asgardwatch). |
 | `_watcher` | subcommand | `asgard watcher SUBCOMMAND`, backed by `Asgard::Watch::Commands`. `map "watcher" => :_watcher` keeps the typed name `watcher`. |
+| `_jobs` | subcommand | `asgard jobs SUBCOMMAND`, backed by `Asgard::Jobs::Commands`. `map "jobs" => :_jobs` keeps the typed name `jobs`; `list` is the default. See [`Asgard::Jobs`](#asgardjobs). |
 
 ---
 
@@ -310,6 +311,27 @@ The daemon is assembled from small classes, each testable alone: `Spawn` builds 
 
 ---
 
+## `Asgard::Jobs`
+
+Background jobs. The user-facing guide is [Background Jobs](jobs.md); this section covers the Ruby API. `Asgard::Jobs` itself holds the pure rules, all module functions with no I/O:
+
+| Method | Signature | Description |
+|---|---|---|
+| `job_name` | `Asgard::Jobs.job_name(background, task:, sequence: nil) → Symbol, nil` | The name a `background:` value asks for: `nil`/`false` → `nil`; `true` → `:"<task>-<sequence>"`, `ArgumentError` when `task` is nil; a Symbol or String stripped, symbolized and checked against `/\A\w+\z/`; anything else `ArgumentError`. |
+| `record` | `Asgard::Jobs.record(name:, task:, pid:, pgid:, cwd:, script:, log:, command:, started:) → Hash` | The record written to disk. |
+| `summary` | `Asgard::Jobs.summary(script) → String` | The first non-blank line of a script, for the listing. |
+| `closure` | `Asgard::Jobs.closure(task, deps) → Array<Symbol>` | The task plus every task reachable through a `_deps` Hash of stage lists, in discovery order. |
+| `resolve` | `Asgard::Jobs.resolve(names, records, closure: nil) → [records, unknown]` | Exact job names first, then every record whose task is the name or in its closure. |
+| `status` | `Asgard::Jobs.status(exit_code:, verified:) → :running, [:exited, code], :gone` | What a record's job is doing now; `describe_status` renders it for the STATUS column. |
+
+`Asgard::Jobs::Job` is a `Data` with `name`, `task`, `pid` and `log`, returned by `sh ..., background:`.
+
+The rest is small classes, each testable alone: `Jobs::State` owns one project's directory under `StateDir.base_dir("jobs")` (record, script, log and status paths, `records`, `exit_code`, `remove`, and `verified?`, which asks `Asgard::Pid.matches?` whether the pid still runs the trampoline carrying the script path); `Jobs::Launcher` builds the `/bin/sh` trampoline `argv`, the `environment` and the `spawn_options` as pure functions, `launch`es with `fork`, `setsid` and `exec`, and `start`s a job or returns the one already running; `Jobs::Stopper` sends `TERM` to the process group, polls, and `KILL`s after the timeout, with the signal sender, liveness check and sleep injectable, and `Stopper.signal_group` refusing any pgid that is not an Integer above 1; `Jobs::Commands` is the `asgard jobs` subcommand.
+
+`Asgard::Pid` (`alive?`, `command_line`, `matches?`) and `Asgard::StateDir` (`base_dir(kind)`, `all`, `write_json`, `read_json`, `record_root`) are shared with the watcher.
+
+---
+
 ## `Asgard::Base` Internal Class Methods
 
 These are implementation details exposed for extensibility. Prefer the DSL methods above in normal use.
@@ -343,6 +365,7 @@ These are implementation details exposed for extensibility. Prefer the DSL metho
 | `Asgard::Error` | `StandardError` | Base error class for all Asgard errors. |
 | `Asgard::Schedule::Error` | `Asgard::Error` | Raised when a `launchctl`/`systemctl` command fails, or on an unsupported platform. `run!` reports it as `asgard: <message>`. |
 | `Asgard::Watch::Error` | `Asgard::Error` | Raised when the watcher cannot run: a `watch` names a task the project does not define. `run!` reports it as `asgard: <message>`. |
+| `Asgard::Jobs::Error` | `Asgard::Error` | A background job could not be managed. `run!` reports it as `asgard: <message>`. A bad `background:` value raises `ArgumentError` instead, like any other DSL argument. |
 | `Asgard::CircularDependencyError` | `Asgard::Error` | Raised by `validate_deps!` when a cycle is detected in the dependency graph. `run!` catches this and calls `abort` with a clean message. |
 
 ```ruby

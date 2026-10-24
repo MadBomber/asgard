@@ -20,6 +20,7 @@
 <li><strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files loaded via <code>import</code></li>
 <li><strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code></li>
 <li><strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code></li>
+<li><strong>Background Jobs</strong> — <code>sh "mkdocs serve", background: true</code> starts a job that outlives asgard; <code>asgard jobs</code> lists, stops, restarts and cleans them</li>
 <li><strong>Built-in Flags</strong> — <code>--version</code>, <code>--debug</code>, <code>--verbose</code>, and <code>--doctor</code> available on every task</li>
 </ul>
 </td>
@@ -74,6 +75,9 @@ The full Thor DSL is available: `desc`, `method_option`, `class_option`, `long_d
 | [Subcommands](subcommands.md) | Grouping tasks under a namespace |
 | [Shell Helpers](shell.md) | `sh`, `shebang`, and supported interpreters |
 | [Environment](environment.md) | Loading `.env` files with `dotenv` |
+| [Scheduled Tasks](schedule.md) | Run tasks on a timer under launchd or systemd |
+| [Watched Files](watch.md) | Run tasks when files change |
+| [Background Jobs](jobs.md) | `background:`, the three ways a script runs, `asgard jobs` |
 | [Task Files](task-files.md) | `.loki` root marker, `import`, multi-file layout |
 | [API Reference](api.md) | Module methods, DSL methods, error classes |
 | [Examples](examples.md) | Working `.loki` files for every feature |

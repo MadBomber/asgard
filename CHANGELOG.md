@@ -50,6 +50,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Background jobs: `sh ..., background:` and `asgard jobs`** — `sh
+  "mkdocs serve", background: true` starts the script as a job that
+  outlives asgard: a new session under a `/bin/sh` trampoline that
+  records the exit status, stdin from `/dev/null`, stdout and stderr
+  appended to a log. `true` names the job after the calling task and a
+  per-run counter (`doc_server-1`, `servers-2`); a Symbol or String names
+  it outright (`background: :api`) and takes no number. The call echoes
+  the script, prints `started <name> (pid N), log: <path>` and returns a
+  `Jobs::Job` (`name`, `task`, `pid`, `log`) at once; a job of that name
+  already running is returned instead of started. `shebang` takes the
+  same keyword, so a job may run under any registered shell. `asgard jobs
+  list` shows each job as running, `exited N (duration)` or `gone`
+  (`--all` across projects); `stop [NAME...]` resolves job names, task
+  names and the `depends_on` closure, sends TERM to each job's process
+  group newest first and KILL after `--timeout` (default 10s); `log NAME
+  [-f]` prints or follows the log; `restart NAME` stops the job and runs
+  its task again; `clean` forgets every job that is not running. Records
+  live under `$XDG_STATE_HOME/asgard/jobs/<slug>/` and a pid is trusted
+  only while its command line still carries the job's script, so a pid
+  reused after a reboot shows as `gone`. A trailing `&` in a script is
+  still the shell's detached mode: asgard reports success and keeps no
+  record. `Asgard::Pid` and `Asgard::StateDir` are lifted out of the
+  watcher and shared; `Schedule::Table` takes `headers:`, `keys:` and
+  `flexible:` and hands tty-table exact content widths, which also stops
+  it squeezing a one-row table. `csh` and `tcsh` scripts get `.csh`.
 - **`shells` registry and `shell` DSL** — `Tasks.shells` maps a name to
   `{ path:, args:, ext: }`, seeded with `:bash`, `:sh`, `:python3`,
   `:python`, `:node`, `:ruby` and `:perl`. `shell :strict, "bash -eu -o

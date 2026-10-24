@@ -25,6 +25,7 @@
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
 - <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
 - <strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code><br>
+- <strong>Background Jobs</strong> — <code>sh "mkdocs serve", background: true</code> starts a job that outlives asgard; <code>asgard jobs</code> lists, stops, restarts and cleans them<br>
 - <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
@@ -689,6 +690,44 @@ environment plus the changed paths in `ASGARD_MODIFIED`, `ASGARD_ADDED` and
 overlaps itself. Saving a `.loki` file restarts the watcher with the new
 declarations. See [Watched Files](https://madbomber.github.io/asgard/watch/)
 for every keyword, the environment, and file locations.
+
+## Background jobs
+
+A script runs in one of three modes. `sh "rake build"` is the foreground:
+the task waits for it and a failure exits asgard. `sh "mkdocs serve",
+background: true` starts a managed job: the task continues at once, the
+job runs on in its own session with its output in a log, it is still
+running when asgard exits, and `asgard jobs` manages it from then on. A
+trailing `&` in the script is the third mode, detached: the shell exits,
+asgard reports success and keeps no record, and the process is yours to
+find and kill by hand.
+
+```ruby
+class Tasks
+  desc "doc_server", "Serve the documentation"
+  def doc_server = sh "mkdocs serve", background: true   # job doc_server-1
+
+  desc "servers", "Bring up the development stack"
+  def servers
+    sh "docker compose up postgres", background: true    # servers-1
+    sh "bin/rails server",            background: :api   # api
+  end
+end
+```
+
+```bash
+asgard jobs list            # running, exited with a status, or gone (--all: every project's)
+asgard jobs stop servers    # by job name, or by task and the tasks it depends on
+asgard jobs log api -f      # print (or follow) one job's log
+asgard jobs restart api     # stop it, then run its owning task again
+asgard jobs clean           # forget every job that is no longer running
+```
+
+`stop` sends TERM to the job's whole process group and KILL after a
+timeout. A job's pid is verified against its command line before anything
+trusts it, so a pid reused after a reboot shows as `gone`, never as
+running. See [Background Jobs](https://madbomber.github.io/asgard/jobs/)
+for naming, the trampoline, and file locations.
 
 ## `method_option` types reference
 

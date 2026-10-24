@@ -2,7 +2,7 @@
 
 `shebang` is the one way a task runs something that isn't Ruby. It writes the script to a tempfile and hands the file to an interpreter from the `shells` registry. Called with a script alone it uses the `default_shell`, and `sh script` is the same call. Both are provided by `Asgard::Shell` and mixed into every `Tasks` instance.
 
-Both return `true` and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept `silent: true` to suppress the script echo.
+Both return `true` and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept `silent: true` to suppress the script echo, and `background:` to start the script as a [managed background job](jobs.md) instead of waiting for it.
 
 ---
 
@@ -248,6 +248,36 @@ Asgard waits for the shell and exits with its status, so a command that ends on 
 
 !!! note
     Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0; see [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed).
+
+---
+
+## Background Jobs: Three Modes
+
+A script runs in one of three modes. Only the first two are asgard's.
+
+| Mode | How you ask for it | The task | When asgard exits | `asgard jobs` |
+|---|---|---|---|---|
+| Foreground | `sh "rake build"` | Waits for the script before its next statement; a failure exits asgard | The script has already finished | Nothing to manage |
+| Managed background | `sh "mkdocs serve", background: true` | Continues at once with a `Job` in hand | The job keeps running | Lists, stops, restarts and cleans it |
+| Detached | `sh "mkdocs serve &"` | Continues at once with `true`; the shell has already exited | The process keeps running | Knows nothing about it |
+
+`background: true` names the job after the calling task and a counter (`doc_server-1`); a Symbol or String names it outright (`background: :api`). The job starts in its own session with its output in a log, its pid and task are recorded, and `asgard jobs list|stop|log|restart|clean` manage it from then on, in this asgard run or any later one:
+
+```ruby
+class Tasks
+  desc "Documentation server startup"
+  depends_on :doc_builder
+  def doc_server = sh "mkdocs serve", background: true
+
+  desc "Bring up the development stack"
+  def servers
+    sh "docker compose up postgres", background: true    # servers-1
+    sh "bin/rails server",            background: :api   # api
+  end
+end
+```
+
+A trailing `&` in the script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal; you stop it yourself with `ps` and `kill`. Use `background:` for anything you expect to come back to. The whole story, naming rules, the commands and the files on disk are on the [Background Jobs](jobs.md) page.
 
 ---
 

@@ -160,6 +160,7 @@ nav:
       - Environment: environment.md
       - Scheduled Tasks: schedule.md
       - Watched Files: watch.md
+      - Background Jobs: jobs.md
   - Task Files: task-files.md
   - API Reference: api.md
   - Examples: examples.md

@@ -17,6 +17,9 @@ module Asgard
     extend TaskDSL
     include Dispatch
 
+    THOR_LIB   = File.dirname(Thor.method(:subcommand).source_location.first)
+    ASGARD_LIB = File.expand_path("..", __dir__)
+
     class << self
       # A usage error (missing argument, unknown command or option) exits 1,
       # so CI and `asgard do` sequences see the failure. Thor's default is 0.
@@ -32,13 +35,28 @@ module Asgard
         (@_footer ||= []).unshift(text)
       end
 
+      # A method Thor generates (a `subcommand` dispatcher, a subcommand
+      # class's string-eval'd `help`) reports a source_location inside Thor.
+      # Credit it to the first caller frame outside Thor and asgard — the
+      # .loki line that called `subcommand` — so Doctor lists it there.
+      def definition_site(loc, callers)
+        return loc unless thor_generated?(loc.first)
+
+        site = callers.find { |c| !thor_generated?(c.path) && !c.path.start_with?(ASGARD_LIB) }
+        site ? [site.path, site.lineno] : loc
+      end
+
+      def thor_generated?(path)
+        path.start_with?("(eval", THOR_LIB)
+      end
+
       def method_added(method_name)
         name           = method_name.to_s
         private_method = name.start_with?("_")
 
         unless private_method
           loc = instance_method(method_name).source_location
-          _method_log[method_name] << loc if loc
+          _method_log[method_name] << definition_site(loc, caller_locations) if loc
         end
 
         if @_pending_single_desc && !no_commands?

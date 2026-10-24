@@ -123,7 +123,7 @@ module Asgard
         loc    = caller_locations(1, 1).first
         before = $LOADED_FEATURES.dup
         result = super(path, from: loc)
-        added  = $LOADED_FEATURES - before
+        added  = ImportTracer.loki_files($LOADED_FEATURES - before)
         ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import", path, added), added) unless
           loc&.absolute_path&.end_with?("kernel_methods.rb")
         result
@@ -132,9 +132,15 @@ module Asgard
       def import_up(name = ".loki")
         before = $LOADED_FEATURES.dup
         result = super
-        added  = $LOADED_FEATURES - before
+        added  = ImportTracer.loki_files($LOADED_FEATURES - before)
         ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import_up", name, added), added)
         result
+      end
+
+      # $LOADED_FEATURES also grows with every `require` a .loki file runs
+      # (net/http, uri, ...); only .loki paths were brought in by import.
+      def self.loki_files(added)
+        added.select { |f| f.end_with?(".loki") }
       end
 
       def self.trace_message(verb, arg, added)

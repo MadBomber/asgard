@@ -1726,6 +1726,58 @@ class TestDoctor < Minitest::Test
     Tasks._reset_ran!
   end
 
+  def test_import_tracer_keeps_only_loki_files
+    added = ["/a/x.loki", "/gems/uri.rb", "/ruby/socket.bundle", "/a/y.loki"]
+    assert_equal ["/a/x.loki", "/a/y.loki"], Asgard::Doctor::ImportTracer.loki_files(added)
+  end
+
+  def test_definition_site_keeps_a_normal_location
+    loc = ["/proj/.loki", 12]
+    assert_equal loc, Asgard::Base.definition_site(loc, caller_locations)
+  end
+
+  def test_definition_site_credits_thor_generated_methods_to_the_caller
+    thor_loc = [File.join(Asgard::Base::THOR_LIB, "thor.rb"), 334]
+    eval_loc = ["(eval at #{thor_loc.first}:643)", 2]
+    here     = caller_locations(0, 1).first
+    assert_equal [here.path, here.lineno + 1], Asgard::Base.definition_site(thor_loc, caller_locations(0))
+    assert_equal [here.path, here.lineno + 2], Asgard::Base.definition_site(eval_loc, caller_locations(0))
+  end
+
+  def test_requires_and_subcommands_do_not_pollute_the_report
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "helper_lib.rb"), "DOCTOR_HELPER_LIB = true")
+      File.write(File.join(dir, "sub.loki"), <<~RUBY)
+        require_relative "helper_lib"
+        class DoctorSubCommands < Asgard::Base
+          desc "go", "go"
+          def go = nil
+        end
+        class Tasks
+          desc "doctor_test_sub", "sub"
+          subcommand "doctor_test_sub", DoctorSubCommands
+        end
+      RUBY
+      File.write(File.join(dir, ".loki"), 'import "*.loki"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}\e/, out)
+      refute_match "helper_lib.rb", out
+      refute_match "thor", out
+      assert_match "doctor_test_sub  sub.loki:8", out
+      assert_match "help  sub.loki:8", out
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("sub.loki", "helper_lib.rb") }
+    Tasks.class_eval { remove_method(:doctor_test_sub) rescue nil }
+    Tasks._method_log.delete(:doctor_test_sub)
+    Tasks.subcommands.delete("doctor_test_sub")
+    Tasks.subcommand_classes.delete("doctor_test_sub")
+    Tasks.commands.delete("doctor_test_sub")
+    Tasks._reset_ran!
+  end
+
   def test_relative_import_still_resolves_against_the_loki_file_not_doctor
     # Regression guard: Doctor's import tracer prepends `import` and calls
     # `super`, which used to shift `caller_locations` by one frame and break

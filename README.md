@@ -429,7 +429,7 @@ end
 
 ## Shell helpers
 
-`sh` runs any shell command or multiline heredoc. `shebang` writes a script body to a tempfile and executes it with the given interpreter. Both exit with the command's status code on failure.
+`shebang` writes a script body to a tempfile and runs it with a registered interpreter; given a script alone it uses the `default_shell` (bash), and `sh` is the same call, for one line or a heredoc. Both return `true` and exit with the command's status code on failure.
 
 ```ruby
 class Tasks
@@ -462,7 +462,16 @@ class Tasks
 end
 ```
 
-Supported interpreters: `:python3`, `:python`, `:node`, `:ruby`, `:perl`, `:bash`, `:sh`. Any other symbol is passed directly to `system` with a `.tmp` extension.
+Registered shells: `:bash`, `:sh`, `:python3`, `:python`, `:node`, `:ruby`, `:perl`. Any other symbol runs as itself from `PATH` with a `.tmp` extension. Register your own, with a pinned path or options in front of the script, with `shell`:
+
+```ruby
+class Tasks
+  shell :bash,   "/opt/homebrew/bin/bash"      # what sh and shebang :bash run
+  shell :strict, "bash -eu -o pipefail"
+  shell :uv,     "uv run --script", ext: ".py"
+  default_shell :strict                         # what sh and a nameless shebang run
+end
+```
 
 Pass `silent: true` to both `sh` and `shebang` to suppress the script echo:
 

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - Unreleased
+
+### Changed
+
+- **`sh` always runs bash** — a one-line `sh` script used to go through
+  `/bin/sh` (dash on Debian and Ubuntu) while a heredoc went through `bash`,
+  so bash syntax failed or passed depending on line count. `sh` is now
+  `shebang :bash`: one line or many is written to a tempfile and run by the
+  `:bash` entry of the `shells` registry. Fixes #1.
+- **`shebang` is the one engine** — every non-Ruby script takes the same
+  path through `Kernel#system`, or `Kernel.exec` with `exec: true`, which
+  `shebang` now accepts too. With `exec: true` the tempfile is unlinked
+  before the hand-off and the interpreter reads it from `/dev/fd/N`, so
+  nothing is left behind in the temp directory.
+- **A missing interpreter is reported** — `shebang :lua` with no `lua`
+  on `PATH` prints `asgard: shell :lua not found: lua ...` and exits 127
+  instead of exiting 127 silently.
+
+### Added
+
+- **`shells` registry and `shell` DSL** — `Tasks.shells` maps a name to
+  `{ path:, args:, ext: }`, seeded with `:bash`, `:sh`, `:python3`,
+  `:python`, `:node`, `:ruby` and `:perl`. `shell :strict, "bash -eu -o
+  pipefail"` registers a shell: the path string is Shellwords-split, its
+  first word is the executable and the rest precede `args:` (a String or
+  an Array); `ext:` defaults by the executable's basename. Pin a path with
+  `shell :bash, "/opt/homebrew/bin/bash"` so scheduled and watched tasks,
+  whose `PATH` lacks Homebrew, run the same bash as the terminal. An
+  unregistered name still runs as itself from `PATH` with `.tmp`.
+- **`default_shell`** — `default_shell :strict` at class level picks the
+  registry entry that `sh`, and `shebang` called with a script alone, run;
+  it starts as `:bash` and reads back with no argument. `sh` and `shebang`
+  return `true` on success.
+
 ## [0.5.1] - 2026-10-19
 
 ### Added

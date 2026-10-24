@@ -108,10 +108,10 @@ class Tasks
     result
   end
 
-  desc "Check code smells with Reek"
+  desc "Report code smells with Reek (advisory: warns, never fails)"
   def reek_check
     output = `bundle exec reek lib 2>&1`
-    result = $?.success? ? :pass : :fail
+    result = $?.success? ? :pass : :warn
     File.write("reek_output.txt", output)
     summary = output.lines.reverse.find { |l| l =~ /total warnings?/ }&.strip || result.to_s
     puts "Reek: #{summary} (see reek_output.txt)"

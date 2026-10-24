@@ -42,12 +42,16 @@ module Asgard
       def definition_site(loc, callers)
         return loc unless thor_generated?(loc.first)
 
-        site = callers.find { |c| !thor_generated?(c.path) && !c.path.start_with?(ASGARD_LIB) }
+        site = callers.find { |frame| user_frame?(frame.path) }
         site ? [site.path, site.lineno] : loc
       end
 
       def thor_generated?(path)
         path.start_with?("(eval", THOR_LIB)
+      end
+
+      def user_frame?(path)
+        !thor_generated?(path) && !path.start_with?(ASGARD_LIB)
       end
 
       def method_added(method_name)

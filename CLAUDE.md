@@ -96,8 +96,9 @@ depends_on :a, [:b, :c], :d   # stages: [[:a], [:b, :c], [:d]]
 
 ### Shell Helpers
 
-- `sh(script, silent: false)` — single-line strings use `system(script)`; multi-line strings pipe through `bash -c`; exits with the command's status on failure
-- `shebang(interpreter, script)` — writes script to a tempfile and executes with the named interpreter (`:python3`, `:node`, `:ruby`, `:perl`, `:bash`, etc.)
+- `shebang(name, script, silent: false, exec: false)` — writes the script to a tempfile and runs it with the shell registered as `name` in `Tasks.shells` (`name => { path:, args:, ext: }`); an unregistered name runs as itself from `PATH` with `.tmp`; a missing executable prints the name and exits 127; `exec: true` unlinks the tempfile and execs on `/dev/fd/N`
+- `shebang(script, ...)` with no name, and `sh(script, ...)` — run the `default_shell` (`:bash` until a `.loki` calls `default_shell :name`); one line or many take the same path (issue #1); both return `true`
+- `shell(name, path, args: nil, ext: nil)` — class-level DSL that registers a shell; `path` is Shellwords-split, first word is the executable, the rest precede `args:`; `ext:` defaults by executable basename
 
 ### Kernel Methods
 

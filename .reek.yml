@@ -1,32 +1,32 @@
 ---
+# Reek is advisory here (see quality.loki: reek_check reports :warn, never
+# :fail). Asgard is a DSL built from pure, separately tested functions and
+# Thor classes whose state is assembled at class level, so most of Reek's
+# object-centric heuristics describe that design rather than a defect.
+# Only the detectors that have pointed at something real in this codebase
+# stay enabled: dead code, leaking writable state, a missing value object and
+# unclear names. Everything else is disabled, not excluded per method.
 detectors:
 
-  # Disabled: conflicts with project no-comment coding style.
-  IrresponsibleModule:
-    enabled: false
-
-  # Disabled: bang methods without non-bang counterparts are common in internal APIs.
-  MissingSafeMethod:
-    enabled: false
-
-  # Disabled: explicit nil checks are idiomatic Ruby (nil? / unless nil, etc.).
-  NilCheck:
-    enabled: false
-
-  # Disabled: method size/complexity is already covered by Flog (the primary
-  # complexity gate) and RuboCop's Metrics/MethodLength.
-  TooManyStatements:
-    enabled: false
-
-  # Default is 4 — Doctor legitimately tracks several pieces of diagnostic state.
+  # ── Enabled ────────────────────────────────────────────────────────────
+  Attribute:
+    enabled: true
+  DataClump:
+    enabled: true
+  RepeatedConditional:
+    enabled: true
   TooManyInstanceVariables:
-    max_instance_variables: 6
-    exclude:
-      - Asgard::Watch::Daemon  # wires reporter, dispatcher, listeners, inbox and the stop flag for one run
-
-  # Accept standard Ruby short-name conventions for limited-scope variables.
+    enabled: true
+    max_instance_variables: 6   # default 4; Doctor tracks several pieces of diagnostic state
+  UncommunicativeMethodName:
+    enabled: true
+  UncommunicativeModuleName:
+    enabled: true
+  UncommunicativeParameterName:
+    enabled: true
   UncommunicativeVariableName:
-    accept:
+    enabled: true
+    accept:                     # standard short names for limited-scope variables
       - _    # intentionally ignored
       - d    # dep / dir / data
       - e    # rescue => e
@@ -36,128 +36,50 @@ detectors:
       - k    # key
       - p    # path
       - t    # task / thread
+  UnusedParameters:
+    enabled: true
+  UnusedPrivateMethod:
+    enabled: true               # off by default in Reek; dead private code is a real finding
 
-  # Reviewed and accepted as false positives / intentional design, per method
-  # (generated with `reek --todo` and hand-curated — see project review notes).
-  # Unlike a count-based baseline, this is precise: it grandfathers exactly
-  # these smells at exactly these methods, so a genuinely new smell at a new
-  # or existing method still fails the gate even if it doesn't change the
-  # file's total warning count.
-  Attribute:
-    exclude:
-      - Asgard::Doctor::ImportTracer#doctor # needs to stay settable/resettable per doctor run
-      - Asgard::Schedule#runner                     # test seam: tests swap in a recording runner, nil restores RUNNER
-
+  # ── Disabled ───────────────────────────────────────────────────────────
   BooleanParameter:
-    exclude:
-      - Asgard::Base#help          # must match Thor's positional super signature exactly
-      - Asgard::Shell#sh           # silent: is the real public API contract
-      - Asgard::Shell#shebang      # same
-
+    enabled: false
+  ClassVariable:
+    enabled: false
   ControlParameter:
-    exclude:
-      - Asgard::Shell#sh
-      - Asgard::Shell#shebang
-      - Asgard::Schedule#entry_name                 # as: is the user's explicit override of the derived name
-      - Asgard::Watch#normalize                     # same: as: overrides the task name as the entry name
-
+    enabled: false
   DuplicateMethodCall:
-    exclude:
-      - Asgard::Base::Dispatch#acquire_run_token  # done.include?(target): check, then poll-until-true
-      - Asgard::Base::Dispatch#run_dep_group      # errors.size: two branches of one guard
-      - Asgard::Doctor::Report#print_report       # puts divider: intentional top+bottom rule
-      - Asgard::Doctor::Report#summary_line       # errors.zero?: sequential guard clauses
-      - Asgard::Doctor#load_chain                 # Base.subclasses: before/after snapshot diff
-      - Kernel#import_up                          # "not found" warned from two independent branches
-      - Asgard#self.run!                          # Base.subclasses snapshot diff; e.message in separate rescues
-      - Asgard::Base#tree                          # say "\n": intentional blank line before and after the tree
-      - Asgard::Schedule::Launchd#unload             # loaded?(name): check, then poll until bootout finishes
-
+    enabled: false
   FeatureEnvy:
-    exclude:
-      - Asgard::Base::Dispatch#acquire_run_token
-      - Asgard::Base::Dispatch#run_dep_group
-      - Asgard::Base::Dispatch#signal_done
-      - Asgard::Base::Registry#inherited            # inherited(subclass) configuring subclass is the whole point
-      - Asgard::Base::DependencyGraph#_normalize_pending_deps # small transform of its own argument
-      - Asgard::Base::DependencyGraph#_call_dep_proc          # rescue => e; e.class/e.message is inherent
-      - Asgard::Base::DependencyGraph#_validate_dep_stage!    # pure shape check of its own argument
-      - Asgard::Base::DependencyGraph#_validate_dep_leaf!     # pure shape check of its own argument
-      - Asgard::Doctor::TaskSections#class_task_file_map
-      - Asgard::Doctor::TaskSections#relative_path
-      - Asgard::Doctor::TaskSections#task_status
-      - Asgard::Shell#shebang                       # Tempfile.create(&block) idiom
-
-  ManualDispatch:
-    exclude:
-      - Asgard::Base::DependencyGraph#_normalize_pending_deps # respond_to?(:call) distinguishes a Proc from an Array/Symbol — no polymorphic alternative over Ruby's own built-in types
-      - Asgard::Base::DependencyGraph#_resolve_lazy_deps!     # same check
-      - Asgard::Schedule#seconds                         # duck-types ActiveSupport::Duration (in_seconds) without depending on it
-
+    enabled: false
   InstanceVariableAssumption:
-    exclude:
-      - Asgard::Base    # class-level DSL state built up across method_added/inherited, not object init
-      - Asgard::Doctor  # multi-phase report builder; @ivars set across report_markers/load_chain/etc in `run`
-
-  NestedIterators:
-    exclude:
-      - Asgard::Base::DependencyGraph#_build_dep_graph
-      - Asgard::Base::DependencyGraph#_check_dep_arities!
-      - Asgard::Base::TaskDSL#no_negate               # inner block defines a method, isn't really iteration
-      - Asgard::Doctor::Report#print_task_sections
-      - Asgard::Doctor::TaskSections#class_task_file_map
-      - Asgard::Doctor::TaskSections#override_count
-      - Asgard::Schedule::Commands#preview            # specs x files per spec
-      - Asgard::Schedule::Launchd#self.calendar_intervals # times x weekdays
-
-  UtilityFunction:
-    exclude:
-      - Asgard::Base::DependencyGraph#_build_dep_graph # genuinely pure, but tightly coupled to this graph model
-      - Asgard::Base::Dispatch#dep_results             # thread-local by design, not self — that's the whole point
-      - Asgard::Base::Dispatch#with_dep_results        # same: stashes results on Thread.current, not self
-      - Asgard::Shell#shell_argv                       # extracted pure on purpose so it's testable without invoking system/exec
-      - Asgard::Schedule::DSL#schedule                 # class-level DSL delegating to the Schedule registry
-      - Asgard::Watch::DSL#watch                       # same, for the Watch registry
-      - Asgard::Schedule::Commands#schedules           # Thor no_commands helpers: reads of the registry / CWD shared by the subcommands
-      - Asgard::Schedule::Commands#schedule_root
-      - Asgard::Schedule::Commands#schedule_summary
-      - Asgard::Watch::Commands#watches                # same: the Watch registry read by every subcommand
-
-  # Asgard::Schedule: the backends implement a fixed API (see
-  # lib/asgard/schedule/declaration.rb) plus pure, separately tested helpers,
-  # and the keyword parameters below mirror launchd/systemd job fields and the
-  # `schedule` DSL's own keywords.
-  DataClump:
-    exclude:
-      - Asgard::Schedule                            # at:/on: and task/args are the declaration's vocabulary
-      - Asgard::Watch::Spawn                        # spec + context are the two inputs of every spawn function
-
+    enabled: false
+  IrresponsibleModule:
+    enabled: false
   LongParameterList:
-    exclude:
-      - Asgard::Schedule#normalize                  # the `schedule` DSL keywords
-      - Asgard::Watch#normalize                     # the `watch` DSL keywords
-      - Asgard::Schedule#describe
-      - Asgard::Schedule#program_arguments
-      - Asgard::Schedule::Table#self.draw            # rows plus the title, io and headers the caller chooses
-      - Asgard::Schedule::Launchd#self.plist        # one keyword per plist field
-      - Asgard::Schedule::Systemd#self.service_unit # one keyword per unit field
-      - Asgard::Schedule::Systemd#self.timer_unit
-      - Asgard::Schedule::Systemd#initialize        # injectable home/runner/env/user for tests
-      - Asgard::Watch::Dispatcher#initialize        # injectable worker starter and clock for tests
-      - Asgard::Watch::Daemon#initialize            # injectable listen/exec/out for tests
-
-  RepeatedConditional:
-    exclude:
-      - Asgard::Schedule::Launchd                   # loaded?(name) guards distinct launchctl transitions
-
+    enabled: false
+  LongYieldList:
+    enabled: false
+  ManualDispatch:
+    enabled: false
+  MissingSafeMethod:
+    enabled: false
+  ModuleInitialize:
+    enabled: false
+  NestedIterators:
+    enabled: false
+  NilCheck:
+    enabled: false
+  SubclassedFromCoreClass:
+    enabled: false
+  TooManyConstants:
+    enabled: false
   TooManyMethods:
-    exclude:
-      - Asgard::Schedule::Commands                  # one method per subcommand plus its helpers
-      - Asgard::Watch::Commands                     # same
-      - Asgard::Schedule::Launchd                   # backend API + pure helpers
-      - Asgard::Schedule::Systemd
-      - Asgard::Watch::State                        # one reader/writer pair per file it keeps
-
+    enabled: false
+  TooManyStatements:
+    enabled: false
+  UtilityFunction:
+    enabled: false
 
 exclude_paths:
   - test

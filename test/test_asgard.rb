@@ -1434,12 +1434,108 @@ class TestAsgardShell < Minitest::Test
     assert_raises(SystemExit) { sh "exit 1", silent: true }
   end
 
-  def test_shell_argv_passes_single_line_script_directly
-    assert_equal ["echo hi"], send(:shell_argv, "echo hi")
+  # Issue #1: a one-line script used to go through /bin/sh (dash on Debian)
+  # while a heredoc went through bash. Both now run the :bash entry.
+  def test_sh_runs_a_single_line_script_with_bash
+    f = Tempfile.new("asgard_sh_bash")
+    sh "echo $BASH_VERSION > #{f.path}", silent: true
+    refute_empty File.read(f.path).strip
+  ensure
+    f.unlink
   end
 
-  def test_shell_argv_wraps_multiline_script_in_bash
-    assert_equal ["bash", "-c", "a\nb"], send(:shell_argv, "a\nb")
+  def test_shells_is_seeded_with_the_known_interpreters
+    assert_equal %i[bash sh python3 python node ruby perl], Asgard::Shell.shells.keys
+    assert_equal({ path: "bash", args: [], ext: ".sh" }, Asgard::Shell.shells[:bash])
+    assert_equal({ path: "node", args: [], ext: ".js" }, Asgard::Shell.shells[:node])
+  end
+
+  def test_entry_splits_path_words_into_executable_and_args
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" },
+                 Asgard::Shell.entry("bash -eu -o pipefail"))
+  end
+
+  def test_entry_accepts_args_as_a_string_or_an_array_after_the_path_words
+    expected = { path: "bash", args: %w[-eu -o pipefail -x], ext: ".sh" }
+    assert_equal expected, Asgard::Shell.entry("bash -eu", args: "-o pipefail -x")
+    assert_equal expected, Asgard::Shell.entry("bash -eu", args: %w[-o pipefail -x])
+  end
+
+  def test_entry_derives_the_extension_from_the_executable_basename
+    assert_equal ".sh",  Asgard::Shell.entry("/opt/homebrew/bin/bash")[:ext]
+    assert_equal ".py",  Asgard::Shell.entry("uv run --script", ext: ".py")[:ext]
+    assert_equal ".tmp", Asgard::Shell.entry("uv run --script")[:ext]
+  end
+
+  def test_entry_honours_shell_quoting_in_the_path
+    entry = Asgard::Shell.entry("'/Applications/Some App/bin/tool' -q")
+    assert_equal ["/Applications/Some App/bin/tool", ["-q"]], entry.values_at(:path, :args)
+  end
+
+  def test_entry_rejects_an_empty_path
+    assert_raises(ArgumentError) { Asgard::Shell.entry("  ") }
+  end
+
+  def test_shell_for_falls_back_to_the_bare_name_on_path
+    assert_equal({ path: "fish", args: [], ext: ".tmp" }, Asgard::Shell.shell_for(:fish))
+    assert_equal Asgard::Shell.shells[:ruby], Asgard::Shell.shell_for("ruby")
+  end
+
+  def test_argv_places_the_file_after_the_args
+    entry = Asgard::Shell.entry("bash -x")
+    assert_equal ["bash", "-x", "/tmp/asgard_1.sh"], Asgard::Shell.argv(entry, "/tmp/asgard_1.sh")
+  end
+
+  def test_default_shell_starts_as_bash_and_is_set_at_class_level
+    assert_equal :bash, Tasks.default_shell
+    Tasks.default_shell "zsh"
+    assert_equal :zsh, Tasks.default_shell
+    assert_equal :zsh, Class.new(Tasks).default_shell
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_without_a_name_and_sh_both_run_the_default_shell
+    Tasks.shell :traced, "bash -x"
+    Tasks.default_shell :traced
+    _, err = capture_subprocess_io do
+      shebang "echo nameless_marker", silent: true
+      sh "echo sh_marker", silent: true
+    end
+    assert_match(/^\+ echo nameless_marker/, err)
+    assert_match(/^\+ echo sh_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_returns_true_on_success
+    assert_equal true, sh("true", silent: true)
+    assert_equal true, shebang(:ruby, "exit 0", silent: true)
+  end
+
+  def test_shell_class_method_registers_an_entry_shared_by_every_tasks_subclass
+    Tasks.shell :strict, "bash -eu -o pipefail"
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" }, Tasks.shells[:strict])
+    assert_same Tasks.shells, Class.new(Tasks).shells
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_runs_a_registered_shell_with_its_args
+    Tasks.shell :traced, "bash -x"
+    _, err = capture_subprocess_io { shebang :traced, "echo traced_marker", silent: true }
+    assert_match(/^\+ echo traced_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_names_a_missing_shell_and_exits_127
+    status = nil
+    _, err = capture_io do
+      status = assert_raises(SystemExit) { shebang :nonexistent_interpreter_xyz, "echo hi", silent: true }
+    end
+    assert_equal 127, status.status
+    assert_match "shell :nonexistent_interpreter_xyz not found: nonexistent_interpreter_xyz ...", err
   end
 
   def test_sh_exec_true_replaces_process_for_single_line_script
@@ -1450,6 +1546,26 @@ class TestAsgardShell < Minitest::Test
   def test_sh_exec_true_replaces_process_for_multiline_script
     ruby_pid, shell_pid = exec_replacement_check("echo $$ > SHELL_PID_FILE\ntrue")
     assert_equal ruby_pid, shell_pid
+  end
+
+  def test_sh_exec_true_reads_the_script_from_an_unlinked_descriptor
+    _, script_name = exec_replacement_check("echo $0 > SHELL_PID_FILE")
+    assert_match %r{\A/dev/fd/\d+\z}, script_name
+  end
+
+  def test_shebang_exec_true_replaces_process_for_other_interpreters
+    ruby_pid, child_pid = exec_replacement_check("File.write('SHELL_PID_FILE', Process.pid.to_s)", shell: :ruby)
+    assert_equal ruby_pid, child_pid
+  end
+
+  def test_shebang_exec_true_names_a_missing_shell_and_exits_127
+    out, status = run_child_script(<<~RUBY)
+      require "asgard/shell"
+      $stderr.reopen($stdout)
+      Object.new.extend(Asgard::Shell).shebang :nonexistent_interpreter_xyz, "echo hi", exec: true, silent: true
+    RUBY
+    assert_equal 127, status.exitstatus
+    assert_match "shell :nonexistent_interpreter_xyz not found", out
   end
 
   def test_sh_exec_true_prints_command_when_not_silent
@@ -1502,7 +1618,7 @@ class TestAsgardShell < Minitest::Test
   # the pid the child ruby process recorded for itself and the pid the
   # exec'd shell command sees ($$) are the same process — proving no
   # separate asgard process was left resident alongside the command.
-  def exec_replacement_check(script)
+  def exec_replacement_check(script, shell: :bash)
     ruby_pid_file  = Tempfile.new("asgard_exec_ruby_pid")
     shell_pid_file = Tempfile.new("asgard_exec_shell_pid")
     ruby_pid_file.close
@@ -1512,7 +1628,7 @@ class TestAsgardShell < Minitest::Test
     run_child_script(<<~RUBY)
       require "asgard/shell"
       File.write(#{ruby_pid_file.path.inspect}, Process.pid.to_s)
-      Object.new.extend(Asgard::Shell).sh(#{resolved_script.inspect}, exec: true, silent: true)
+      Object.new.extend(Asgard::Shell).shebang(#{shell.inspect}, #{resolved_script.inspect}, exec: true, silent: true)
     RUBY
 
     [File.read(ruby_pid_file.path), File.read(shell_pid_file.path).strip]

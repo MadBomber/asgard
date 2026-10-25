@@ -73,7 +73,8 @@ module Asgard
     # pattern or a file: Listen applies one only: filter to every directory
     # it watches, and the pattern would silently filter the directory too.
     def watched(paths)
-      splits   = paths.map { |path| split_glob(path) }
+      root     = declaration_root
+      splits   = paths.map { |path| split_glob(path, root:) }
       patterns = splits.filter_map(&:last)
       if !patterns.empty? && patterns.size < splits.size
         raise ArgumentError,
@@ -89,29 +90,35 @@ module Asgard
     #   "lib/asgard.rb" => ["lib", /\Aasgard\.rb\z/]
     #   "docs"          => ["docs", nil]
     # The Regexp is matched against the path relative to the directory,
-    # which is how Listen applies only:. A plain path names a file when
-    # stat (File, or a stand-in in tests) finds one there or when it has
-    # an extension, so a file that does not exist yet can be watched.
-    def split_glob(path, stat: File)
+    # which is how Listen applies only:. A plain path is looked up under
+    # +root+ (the project root, wherever asgard runs from) with stat
+    # (File, or a stand-in in tests): a directory there is a directory,
+    # dots and all; otherwise it names a file when one is there or when it
+    # has an extension, so a file that does not exist yet can be watched.
+    def split_glob(path, stat: File, root: Dir.pwd)
       segments = path.delete_suffix("/").split("/")
       first    = segments.index { |segment| segment.match?(GLOB_CHARS) }
       return [directory(segments[0...first]), glob_regexp(segments[first..].join("/"))] if first
 
       *parents, last = segments
-      last = last.to_s
-      return [directory(segments), nil] unless stat.file?(path) || !File.extname(last).empty?
+      full = File.expand_path(path, root)
+      return [directory(segments), nil] if stat.directory?(full)
+      return [directory(segments), nil] unless stat.file?(full) || !File.extname(last.to_s).empty?
 
-      [directory(parents), /\A#{Regexp.escape(last)}\z/]
+      [directory(parents), /\A#{Regexp.escape(last.to_s)}\z/]
     end
+
+    # Where plain paths are looked up: the directory of the nearest .loki,
+    # or the current directory without one.
+    def declaration_root = (loki_up&.dirname || Dir.pwd).to_s
 
     def directory(segments) = segments.empty? ? "." : segments.join("/")
 
     # The Regexp a glob matches, shell-style: ** spans directories, * and ?
     # stay within one, {a,b} is an alternative. Anything else is literal.
-    def glob_regexp(pattern)
-      body = pattern.scan(GLOB_TOKENS).map { |token| glob_token(token) }.join
-      /\A#{body}\z/
-    end
+    def glob_regexp(pattern) = /\A#{glob_body(pattern)}\z/
+
+    def glob_body(pattern) = pattern.scan(GLOB_TOKENS).map { |token| glob_token(token) }.join
 
     def glob_token(token)
       case token
@@ -119,7 +126,7 @@ module Asgard
       when "**"  then ".*"
       when "*"   then "[^/]*"
       when "?"   then "[^/]"
-      when /\A\{(.*)\}\z/ then "(?:#{Regexp.last_match(1).split(',', -1).map { |alt| Regexp.escape(alt) }.join('|')})"
+      when /\A\{(.*)\}\z/ then "(?:#{Regexp.last_match(1).split(',', -1).map { |alt| glob_body(alt) }.join('|')})"
       else Regexp.escape(token)
       end
     end

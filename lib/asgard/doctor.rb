@@ -41,7 +41,7 @@ module Asgard
       current = Pathname.new(dir)
       loop do
         candidate = current + ".loki"
-        markers << candidate.to_s if candidate.exist?
+        markers << candidate.to_s if candidate.file?
         parent = current.parent
         break if parent == current
 
@@ -82,9 +82,9 @@ module Asgard
       ImportTracer.doctor = self
       @loaded_files << @marker
 
-      before = Asgard::Base.subclasses.dup
+      before = Asgard::Base._asgard_subclasses.dup
       Asgard.load_root(@marker)
-      @new_subclasses = (Asgard::Base.subclasses - before + [Tasks]).uniq
+      @new_subclasses = (Asgard::Base._asgard_subclasses - before + [Tasks]).uniq
     rescue StandardError, ScriptError => e
       @findings << Finding.new(level: :error, message: "load failed: #{e.class}: #{e.message}")
     ensure

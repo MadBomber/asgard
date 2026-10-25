@@ -32,10 +32,12 @@ module Asgard
       end
     end
 
+    # A task name may end in ? or !; its job name keeps to [\w-], which is
+    # what a record's file name must be for `jobs list` to find it.
     def sequenced_name(task, sequence)
       raise ArgumentError, "sh background: true must be called from a task body" unless task
 
-      :"#{task}-#{sequence}"
+      :"#{task.to_s.gsub(/[^\w-]/, '_')}-#{sequence}"
     end
 
     def chosen_name(value)

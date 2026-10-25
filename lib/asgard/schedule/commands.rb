@@ -231,12 +231,37 @@ module Asgard
         IO.copy_stream(path, $stdout)
       end
 
-      desc "remove", "Remove all of this project's installed entries"
-      def remove
+      desc "remove [NAME]", "Remove one installed entry (NAME or project/NAME), or all of this project's"
+      def remove(name = nil)
+        return remove_one(name) if name
+
         names = scheduler.installed_names
         return puts "No scheduled tasks installed for #{schedule_project}." if names.empty?
 
-        names.each { |name| schedule_uninstall(name) }
+        names.each { |entry| schedule_uninstall(entry) }
+      end
+
+      desc "prune", "Remove every project's entries whose project directory no longer exists"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Only list what would be removed"
+      def prune
+        orphans = Schedule.orphaned_entries(scheduler.installed_entries,
+                                            directory_of: ->(slug, name) { backend_for(slug).installed_directory(name) })
+        return puts "Nothing to prune: every installed entry's project directory exists." if orphans.empty?
+
+        orphans.each do |slug, name|
+          next puts "would remove #{slug}/#{name}" if options[:dry_run]
+
+          backend_for(slug).uninstall(name)
+          puts "removed #{slug}/#{name}"
+        end
+      end
+
+      no_commands do
+        def remove_one(name)
+          backend, entry = resolve_installed(name)
+          backend.uninstall(entry)
+          puts "removed #{name}"
+        end
       end
     end
   end

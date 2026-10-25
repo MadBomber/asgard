@@ -98,6 +98,7 @@ module Asgard
       method_option :all, aliases: "-a", type: :boolean, desc: "Stop every project's jobs"
       method_option :timeout, aliases: "-t", type: :numeric, desc: "Seconds to wait after TERM before KILL (default #{Stopper::TIMEOUT})"
       def stop(*names)
+        abort "jobs: stop --all takes no job names; name the jobs without --all" if options[:all] && names.any?
         records, unknown = stop_targets(names)
         unknown.each { |name| $stderr.puts "jobs: no such job or task: #{name}" }
         puts "No jobs recorded for #{jobs_project}." if records.empty? && unknown.empty?
@@ -105,7 +106,7 @@ module Asgard
         exit 1 if unknown.any? || outcomes.include?(:killed)
       end
 
-      desc "log NAME", "Print one job's log (stdout and stderr, appended across restarts)"
+      desc "log NAME", "Print one job's log (stdout and stderr of its latest run; each start empties it)"
       method_option :follow, aliases: "-f", type: :boolean, desc: "Keep printing new output as it arrives (tail -f)"
       def log(name)
         path = record_for!(name)[:log]

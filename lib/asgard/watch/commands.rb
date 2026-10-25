@@ -30,14 +30,21 @@ module Asgard
         end
 
         # The LAST RUN column from an entry's record: never, still running,
-        # or its exit status with duration and finish time.
-        def last_run(entry)
+        # did not finish (no exit was recorded and its process is gone: a
+        # crash, a kill -9), or its exit status with duration and finish
+        # time. +running+ says whether an unfinished entry's task still runs.
+        def last_run(entry, running: State.method(:running?))
           return "never" unless entry
-          return "running (pid #{entry[:pid]})" unless entry.key?(:finished)
+          return "#{running.call(entry) ? 'running' : 'did not finish'} (pid #{entry[:pid]})" unless entry.key?(:finished)
 
           finished = Time.iso8601(entry[:finished]).strftime("%Y-%m-%d %H:%M:%S")
           "#{entry[:status]} (#{format('%.1fs', entry[:seconds])}, #{finished})"
         end
+
+        # How `start` launches `watcher run`: in the project root, its own
+        # process group, output to the log, and no stdin, which it would
+        # otherwise share with the terminal that ran `start`.
+        def daemon_spawn_options(root, log) = { chdir: root, pgroup: true, in: File::NULL, out: [log, "a"], err: %i[child out] }
       end
 
       desc "tree", "Print a tree of the watcher subcommands", hide: true
@@ -105,7 +112,10 @@ module Asgard
         refuse_if_running
         log = state.log_path
         state.prepare.write_declarations(specs.values)
-        pid = Process.spawn(watch_asgard, "watcher", "run", chdir: watch_root, pgroup: true, out: [log, "a"], err: %i[child out])
+        lock = state.acquire_lock or abort("watcher is already running for #{watch_project}; `asgard watcher stop` first.")
+        pid  = Process.spawn({ State::LOCK_ENV => lock.fileno.to_s }, watch_asgard, "watcher", "run",
+                             **Commands.daemon_spawn_options(watch_root, log), lock.fileno => lock.fileno)
+        lock.close # the daemon holds it now
         Process.detach(pid)
         state.write_pid(pid)
         puts "started watcher for #{watch_project} (pid #{pid}); log: #{log}"

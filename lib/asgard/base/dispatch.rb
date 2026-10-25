@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "English"
+
 module Asgard
   class Base < Thor
     # Task execution engine: resolves and runs declared dependencies (in
@@ -15,6 +17,21 @@ module Asgard
         base.extend(ClassMethods)
       end
 
+      # A finished task's outcome: :failed when its run ended in an error.
+      def self.run_state(target, done:, failed:)
+        return :failed if failed.key?(target)
+
+        done.include?(target) ? :done : :free
+      end
+
+      # A group's errors without the ones that only echo another failure:
+      # a thread that waited on a failed shared dependency. When nothing
+      # else is left, the echoes are all there is to report.
+      def self.primary_failures(errors)
+        primary = errors.reject { |_, error| error.is_a?(DepFailed) }
+        primary.empty? ? errors : primary
+      end
+
       module ClassMethods
         def _running
           @_running ||= Set.new
@@ -26,6 +43,13 @@ module Asgard
 
         def _cond
           @_cond ||= Hash.new { |h, k| h[k] = ConditionVariable.new }
+        end
+
+        # Tasks whose body raised or exited, keyed by name, with the error
+        # that ended them: a thread that waited on one re-raises instead of
+        # running its own body on a prerequisite that never finished.
+        def _failed
+          @_failed ||= {}
         end
 
         # Completed tasks' return values, keyed by task name — lets a task
@@ -46,6 +70,7 @@ module Asgard
             @_done    = Set.new
             @_cond    = Hash.new { |h, k| h[k] = ConditionVariable.new }
             @_results = {}
+            @_failed  = {}
           end
         end
       end
@@ -56,14 +81,17 @@ module Asgard
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
-        return cached_result(target) unless acquire_run_token(target)
+        case acquire_run_token(target)
+        when :done   then return cached_result(target)
+        when :failed then raise DepFailed.new(target, self.class._failed[target])
+        end
 
         result = nil
         begin
           resolved_deps = run_deps_for(target)
           result = with_dep_results(resolved_deps) { in_task_frame(target) { command.run(self, *) } }
         ensure
-          signal_done(target, result)
+          signal_done(target, result, $ERROR_INFO)
         end
         result
       end
@@ -123,6 +151,9 @@ module Asgard
         klass._ran_mutex.synchronize { klass._results[target] }
       end
 
+      # :run when this thread is to run +target+, :done when another
+      # already ran it, :failed when that run raised or exited. A thread
+      # that finds it running waits for the outcome.
       def acquire_run_token(target)
         klass   = self.class
         mutex   = klass._ran_mutex
@@ -130,15 +161,13 @@ module Asgard
         running = klass._running
 
         mutex.synchronize do
-          if done.include?(target)
-            false
-          elsif running.include?(target)
+          if running.include?(target) && !done.include?(target)
             klass._cond[target].wait(mutex) until done.include?(target)
-            false
-          else
-            running.add(target)
-            true
           end
+          next Dispatch.run_state(target, done:, failed: klass._failed) if done.include?(target)
+
+          running.add(target)
+          :run
         end
       end
 
@@ -163,6 +192,7 @@ module Asgard
           errors[task] = e
         end
 
+        errors = Dispatch.primary_failures(errors)
         raise_dep_failure(errors.values.first) if errors.size == 1
         raise_group_failure(errors) if errors.any?
 
@@ -182,21 +212,44 @@ module Asgard
         end
       end
 
+      # Raised in a thread that waited on +task+ when +task+ failed. Its
+      # +error+ is the failure itself, which some other thread reports, so
+      # the joiner counts only that one (see primary_failures).
+      class DepFailed < StandardError
+        attr_reader :task, :error
+
+        def initialize(task, error)
+          @task  = task
+          @error = error
+          super("dependency '#{task}' failed")
+        end
+      end
+
       # Ruby's own report would print the full backtrace to stderr before
       # the error reaches asgard's handler; the joiner re-raises it anyway.
+      # Each parallel task runs on its own instance (same options), so two
+      # tasks in one stage never race on an instance variable; results
+      # pass between tasks through dep_result, not through self.
       def dep_thread(task)
+        instance = parallel_instance
         Thread.new do
           Thread.current.report_on_exception = false
-          run_dep(task)
+          instance.__send__(:run_dep, task)
         rescue SystemExit => e
           raise DepExit, e.status
         end
       end
 
+      def parallel_instance = self.class.new([], options, {})
+
       # One failure: a dependency that exited ends asgard with its status,
       # as it would have on its own; anything else propagates unchanged.
       def raise_dep_failure(error)
-        error.is_a?(DepExit) ? exit(error.status) : raise(error)
+        error = error.error while error.is_a?(DepFailed) && error.error
+        case error
+        when DepExit, SystemExit then exit(error.status)
+        else raise(error)
+        end
       end
 
       def raise_group_failure(errors)
@@ -206,11 +259,12 @@ module Asgard
 
       def describe_failure(error) = error.is_a?(DepExit) ? error.message : "#{error.class}: #{error.message}"
 
-      def signal_done(target, result)
+      def signal_done(target, result, error = nil)
         klass = self.class
         klass._ran_mutex.synchronize do
           klass._done.add(target)
           klass._results[target] = result
+          klass._failed[target]  = error if error
           klass._cond[target].broadcast
         end
       end

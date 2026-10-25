@@ -834,8 +834,9 @@ end
 git clone git@github.com:MadBomber/asgard.git
 cd asgard
 bundle install
-bundle exec rake test       # run tests (95% coverage minimum enforced)
-bundle exec bin/asgard help # exercise the CLI against this gem's own .loki
+bundle exec bin/asgard test_check  # run tests (95% coverage minimum enforced)
+bundle exec bin/asgard quality     # every quality gate in parallel
+bundle exec bin/asgard help        # exercise the CLI against this gem's own .loki
 ```
 
 ## Contributing

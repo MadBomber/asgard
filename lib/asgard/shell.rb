@@ -117,7 +117,7 @@ module Asgard
       # The entry for +name+, or a bare fallback that runs +name+ itself as
       # found on PATH.
       def shell_for(name)
-        shells.fetch(name.to_sym) { { path: name.to_s, args: [].freeze, ext: ".tmp" }.freeze }
+        shells.fetch(name.to_sym) { { path: name.to_s, args: [].freeze, ext: DEFAULT_EXTENSIONS.fetch(name.to_s, ".tmp") }.freeze }
       end
 
       # The argv that runs +file+ with +shell+.
@@ -144,7 +144,7 @@ module Asgard
         return Shell.default_shell unless name_or_path
 
         selecting = name_or_path.is_a?(Symbol) && !(path || args || ext)
-        Shell.default_shell(selecting ? name_or_path : shell(name_or_path, path, args:, ext:))
+        Shell.default_shell(selecting ? selectable!(name_or_path) : shell(name_or_path, path, args:, ext:))
       end
 
       # Register a shell and return its name. With a Symbol first:
@@ -169,6 +169,15 @@ module Asgard
       end
 
       private
+
+      # +name+ when it is registered or runs as itself from PATH; otherwise
+      # ArgumentError as the .loki loads, as `shell` does for a bad path.
+      def selectable!(name)
+        return name if Shell.shells.key?(name)
+
+        Shell.validate!(name, Shell.shell_for(name))
+        name
+      end
 
       # The [name, path] of a `shell` call: a Symbol first is the name, and
       # its path defaults to the name itself; a String or Pathname first is

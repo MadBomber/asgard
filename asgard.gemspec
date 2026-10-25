@@ -11,26 +11,24 @@ Gem::Specification.new do |spec|
   spec.summary = "A powerful Ruby-based task runner"
   spec.description = <<~DESC
     A powerful Ruby-based task runner for any kind of project with task dependency tracking
-    and concurrent execution of designated tasks. Uses Thor for its rich CLI options, var
-    declarations, dotenv, sh/shebang helpers, importable task files, and scheduled
-    execution of tasks via launchd (macOS) or systemd timers (Linux).
+    and concurrent execution of designated tasks. Uses Thor for its rich CLI options, with
+    dotenv, sh/shebang helpers, importable task files, scheduled execution of tasks via
+    launchd (macOS) or systemd timers (Linux), a file watcher and background jobs.
   DESC
   spec.homepage = "https://github.com/madbomber/asgard"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage
-  spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/master/CHANGELOG.md"
+  spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  # Specify which files should be added to the gem when it is released.
-  # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
-  gemspec = File.basename(__FILE__)
+  # The library, its executable and signatures, and the three documents a
+  # user of the installed gem reads; the docs site, examples and the gem's
+  # own dev task files stay in the repository.
+  shipped = %r{\A(?:lib/|bin/asgard\z|sig/)|\A(?:README\.md|LICENSE\.txt|CHANGELOG\.md)\z}
   spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
-    ls.readlines("\x0", chomp: true).reject do |f|
-      (f == gemspec) ||
-        f.start_with?(*%w[Gemfile .gitignore test/])
-    end
+    ls.readlines("\x0", chomp: true).grep(shipped)
   end
   spec.bindir = "bin"
   spec.executables = ["asgard"]

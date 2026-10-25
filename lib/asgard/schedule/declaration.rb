@@ -28,7 +28,7 @@ module Asgard
   #   #installed_entries                  # => [[project_slug, "demo"], ...] for every project
   #   #installed_columns(name)            # => { command:, schedule: } read back from the job files, or nil
   #   #installed_directory(name)          # => the project root the job runs in, or nil
-  #   #status(name)                       # => { state: :active|:stopped|:not_loaded, last_exit: String|nil }
+  #   #status(name)                       # => { state: :active|:running|:stopped|:not_loaded, last_exit: String|nil }
   #   #log_path(name)                     # => path the job's output is appended to
   #   #notes                              # => [String] platform hints to show after install
   module Schedule
@@ -76,11 +76,7 @@ module Asgard
     # Exactly one of at: ("HH:MM" or an Array of them, with on:) or every:
     # (seconds or a Duration) is required. as: names the entry.
     def normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil)
-      task = task.to_s
-      unless task.match?(/\A[\w:-]+\z/)
-        raise ArgumentError,
-              "schedule: task name #{task.inspect} must be a single word; put its flags in options:"
-      end
+      task = task_name(task)
       raise ArgumentError, "schedule :#{task} needs either at: or every:, not both" unless at.nil? ^ every.nil?
 
       if every
@@ -94,7 +90,47 @@ module Asgard
       end
 
       args = options.is_a?(Array) ? options.map(&:to_s) : Shellwords.split(options.to_s)
-      { name: entry_name(task, args, as), task:, args:, at:, on:, every:, env: env.to_h { |key, value| [key.to_s, value.to_s] } }
+      args.each { |arg| reject_control_characters!(task, "options:", arg) }
+      { name: entry_name(task, args, as), task:, args:, at:, on:, every:, env: environment_variables(task, env) }
+    end
+
+    # The command a declaration names, as Thor dispatches it: a dash is the
+    # underscore of the method name (`asgard daily-summary` runs
+    # daily_summary). A colon would name a subcommand, which is its own
+    # command word plus arguments.
+    def task_name(task)
+      name = task.to_s
+      if name.include?(":")
+        raise ArgumentError,
+              "schedule: #{name.inspect} names a subcommand; schedule its command and pass the rest in options: " \
+              "(schedule :#{name.split(':').first}, options: #{name.split(':', 2).last.inspect}, ...)"
+      end
+      unless name.match?(/\A[\w-]+\z/)
+        raise ArgumentError, "schedule: task name #{name.inspect} must be a single word; put its flags in options:"
+      end
+
+      name.tr("-", "_")
+    end
+
+    # env: as String pairs. Names must be shell-style identifiers, and no
+    # name, value or option may hold a control character other than tab: a
+    # newline would end the line it is written on in a unit file and start
+    # another directive, and plists cannot hold most of them at all.
+    def environment_variables(task, env)
+      env.to_h do |key, value|
+        key = key.to_s
+        raise ArgumentError, "schedule :#{task} env: #{key.inspect} is not a variable name" unless key.match?(/\A[A-Za-z_]\w*\z/)
+
+        value = value.to_s
+        reject_control_characters!(task, "env: #{key}", value)
+        [key, value]
+      end
+    end
+
+    def reject_control_characters!(task, what, text)
+      return unless text.match?(/[\x00-\x08\x0a-\x1f\x7f]/)
+
+      raise ArgumentError, "schedule :#{task} #{what} holds a control character (#{text.inspect})"
     end
 
     # Integer seconds from an Integer or anything Duration-like (ActiveSupport's
@@ -157,7 +193,18 @@ module Asgard
     # The state and last-exit columns of a `list` row, from a backend's live status.
     def live_columns(backend, name)
       state, last_exit = backend.status(name).values_at(:state, :last_exit)
-      { state: state.to_s.tr("_", " "), last_exit: state == :active ? (last_exit || "never run") : "-" }
+      { state: state.to_s.tr("_", " "), last_exit: %i[active running].include?(state) ? (last_exit || "never run") : "-" }
+    end
+
+    # The [slug, name] entries whose job files name a project directory
+    # that no longer exists: the project moved or was deleted, and its jobs
+    # fire in a directory that is not there. An entry whose directory
+    # cannot be read is left alone.
+    def orphaned_entries(entries, directory_of:, exists: File.method(:directory?))
+      entries.select do |slug, name|
+        dir = directory_of.call(slug, name)
+        dir && !exists.call(dir)
+      end
     end
 
     # The command a job runs, from its program arguments: everything from
@@ -187,7 +234,7 @@ module Asgard
       return :daily unless days
 
       names = days.map { |day| DAYS.fetch(day) }
-      DAY_GROUPS.key(names) || names
+      DAY_GROUPS.find { |_group, members| members.sort == names.sort }&.first || names
     end
 
     def compact_times(times)
@@ -215,6 +262,8 @@ module Asgard
       return nil if on.to_s == "daily"
 
       names = DAY_GROUPS.fetch(on.is_a?(Array) ? nil : on.to_sym) { Array(on) }
+      raise ArgumentError, "on: needs at least one day" if names.empty?
+
       names.map do |day|
         DAYS.index(day.to_sym) or raise ArgumentError, "on: unknown day #{day.inspect}"
       end
@@ -223,11 +272,19 @@ module Asgard
     # One entry per time: [{ hour: 17, minute: 30, days: [1, 2, 3, 4, 5] }];
     # days is nil for every day.
     def calendar(at:, on: :daily)
+      raise ArgumentError, "at: needs at least one time" if Array(at).empty?
+
       days = weekdays(on)
       Array(at).map do |time|
         hour, minute = parse_time(time)
         { hour:, minute:, days: }
       end
+    end
+
+    # Writes a job file only its owner can read: it holds the env: values.
+    def write_private(path, content)
+      File.write(path, content, perm: 0o600)
+      File.chmod(0o600, path) # perm: applies only when the file is created
     end
 
     # PATH captured at install time, plus the declaration's env:.

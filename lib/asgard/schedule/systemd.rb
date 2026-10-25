@@ -31,14 +31,20 @@ module Asgard
       # systemd expands %specifiers everywhere; % must be doubled to be literal.
       def self.escape_specifiers(text) = text.to_s.gsub("%", "%%")
 
-      # A double-quoted word for ExecStart=/Environment=. $ is doubled too so
-      # ExecStart= doesn't expand it as a variable.
-      def self.quote(text)
-        %("#{escape_specifiers(text).gsub('\\') { '\\\\' }.gsub('"', '\\"').gsub('$', '$$')}")
-      end
+      # A double-quoted word for ExecStart=. $ is doubled too so ExecStart=
+      # doesn't expand it as a variable.
+      def self.quote(text) = %("#{quote_body(text).gsub('$', '$$')}")
+
+      # A double-quoted Environment= assignment. Environment= does no
+      # variable expansion, so a $ there is already literal and doubling it
+      # would leave $$ in the value (systemd.exec(5)).
+      def self.quote_env(text) = %("#{quote_body(text)}")
+
+      # % doubled, \ and " backslash-escaped: what both kinds of quoting share.
+      def self.quote_body(text) = escape_specifiers(text).gsub('\\') { '\\\\' }.gsub('"', '\\"')
 
       def self.service_unit(description:, arguments:, working_directory:, environment:, log_path:)
-        env_lines = environment.map { |key, value| "Environment=#{quote("#{key}=#{value}")}" }
+        env_lines = environment.map { |key, value| "Environment=#{quote_env("#{key}=#{value}")}" }
         log       = escape_specifiers(log_path)
         <<~UNIT
           [Unit]
@@ -144,20 +150,26 @@ module Asgard
         { service_path(name) => service, timer_path(name) => timer }
       end
 
-      # A timer that exists but is disabled was stopped on purpose; keep it so.
+      # A timer that exists but is disabled was stopped on purpose; keep it
+      # so. That is only true once an install has finished, so a first
+      # install that fails takes its unit files back out.
       def install(spec, asgard:, direnv:)
         name       = spec[:name]
         timer_file = timer_path(name)
         timer_unit = timer(name)
-        stopped    = File.exist?(timer_file) && !enabled?(name)
+        first      = !File.exist?(timer_file)
+        stopped    = !first && !enabled?(name)
         FileUtils.mkdir_p [File.dirname(timer_file), File.dirname(log_path(name))]
-        files(spec, asgard:, direnv:).each { |path, content| File.write(path, content) }
+        files(spec, asgard:, direnv:).each { |path, content| Schedule.write_private(path, content) }
         systemctl! "daemon-reload"
         return :stopped if stopped
 
         systemctl! "enable", timer_unit
         systemctl! "restart", timer_unit # picks up a changed schedule
         :active
+      rescue Error
+        FileUtils.rm_f([service_path(name), timer_file]) if first
+        raise
       end
 
       def uninstall(name)

@@ -48,6 +48,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on `PATH` prints `asgard: shell :lua not found: lua ...` and exits 127
   instead of exiting 127 silently.
 
+- **A public method without a `desc` is a hidden task** — it used to be
+  no task at all: Thor printed a warning, `asgard name` was an unknown
+  command, `depends_on :name` was an undefined task, and a `depends_on`
+  written above it silently attached to the next task that had a `desc`.
+  It is now a hidden task: it runs from the command line and as a
+  dependency, `help` leaves it out, and `--doctor` lists it as hidden.
+  `depends_on` always attaches to the very next method. A `.loki` that used
+  public `def`s as helper methods now exposes them as runnable hidden
+  tasks; make them `private`, put them in `no_commands`, or use `helper`.
+- **Parallel dependencies each run on their own instance** — tasks in one
+  `depends_on [:a, :b]` stage used to share one Thor instance and could
+  race on an instance variable. An instance variable set by a *parallel*
+  dependency is therefore no longer visible to the task that depends on
+  it (sequential dependencies still share it); pass values with
+  `dep_result`.
+- **A `.loki` that fails to load says so in one line** — a missing
+  `import`, a bad `shell` path, a syntax error or a typo used to print a
+  Ruby backtrace. Now: `asgard: /proj/.loki:2: undefined method
+  'dependz_on' for class Tasks (NoMethodError)`, exit 1. Set
+  `ASGARD_TRACE=1` for the backtrace.
+- **`--version` and `--doctor` belong to asgard only before the task
+  name** — after it they are the task's own arguments.
+- **Background job state is private** — per-project state directories
+  are created 0700 and schedule job files 0600, since logs, scripts and
+  `env:` values can hold secrets.
+
 ### Added
 
 - **Background jobs: `sh ..., background:` and `asgard jobs`** — `sh
@@ -102,6 +128,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   path is the name when only `args:` or `ext:` are given. `sh` and
   `shebang` return `true` on success.
 
+- **`asgard schedule remove [NAME]` and `asgard schedule prune
+  [--dry-run]`** — remove one entry (`project/name` reaches another
+  project's), or every project's entries whose project directory is gone.
+- **Watcher triggers that wait for a busy task merge** — three saves
+  during a long run now queue one more run with every change, not three.
+- **Watcher log rotation** — `watcher.log` moves to `watcher.log.1` once
+  it passes 10 MB (`ASGARD_LOG_MAX` bytes to change it).
+- **CI** — `.github/workflows/test.yml` runs the suite on Linux and macOS,
+  Ruby 3.4 and 4.0.
+
 ### Fixed
 
 - **`import_up` from an imported file no longer recurses** — the root
@@ -140,6 +176,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `asgard` process with the expected command line (`watcher run`, or the
   task's name), read through `ps`. A stale pidfile is simply not running,
   and `start` replaces it.
+
+- **A task waiting on a shared dependency that failed no longer runs** —
+  with `top` depending on `[b, c]` and both on `a`, a failing `a` let `c`
+  run anyway. It now stops, and asgard ends with `a`'s own exit status.
+- **`asgard jobs stop` can no longer signal asgard's own process group**
+  — a stale record whose pid had become asgard's own (pid reuse after a
+  reboot) verified as the job, and the group TERM and KILL reached asgard
+  and its pipeline.
+- **The watcher reloads on a `.loki` change** — the reload stopped its
+  own listener from the listener's thread, which Listen refuses, so the
+  daemon kept running but watched nothing. It now re-execs from the main
+  thread once running tasks finish, keeps its lock across the exec, and
+  keeps the running declarations when the edited task files do not load.
+- **A failed spawn no longer kills a watcher worker** — `E2BIG` (a huge
+  change list), a missing root or executable now report exit 127/126 and
+  the next trigger still runs. Change lists over 128 KB travel in a file
+  named by `ASGARD_CHANGES_FILE`, which `changes` reads. A full queue
+  drops the trigger instead of stalling every other watch.
+- **Watcher shutdown waits for a trigger being routed**, and leaves no
+  task running unrecorded; tasks and the daemon get `/dev/null` as stdin;
+  an idle daemon no longer spins (about 6% of a core before); two
+  `watcher start`s at once can no longer leave two daemons (`watcher.lock`);
+  signal traps are set before Listen starts; a failed start cleans up;
+  `list` shows "did not finish" for a task that died without an exit; plain
+  paths are judged in the project root and a dotted directory is a
+  directory; globs inside `{}` work; GEM_*, RUBYOPT, RUBYLIB and
+  BUNDLE(R)_* reach tasks; a report that cannot be written no longer ends
+  the reporter; only loaded and root-level `.loki` files trigger a reload;
+  a task name matches only as a whole word.
+- **Background jobs**: concurrent starts of one name start one job; a
+  start returns only once the job runs its trampoline (an immediate second
+  start used to miss it under load); TERM is re-sent during the grace
+  period; `ps -ww` keeps long command lines whole on Linux; a failed exec
+  reports and exits 127; `close_others`; a task named `ready?` gets a
+  listable job; a job whose trampoline alone died is still verified and
+  stoppable; `stop --all NAME` is refused; bare `asgard jobs` works outside
+  a project; a task that changes directory still files its jobs under its
+  project; the `log` help text says the log holds the latest run.
+- **Schedules**: a `$` in a systemd `env:` value stays one `$`; `on: []`
+  and `at: []` are rejected; "weekends" reads back as weekends; a dashed
+  task name schedules its underscored command and a `:` gets a clear
+  message; newlines and other control characters in options and env, and
+  env names that are not identifiers, are rejected; an unchanged launchd
+  install leaves a running job alone; a plist that fails `plutil` never
+  replaces the installed one; a failed first systemd install is not taken
+  for a stop; launchd `status` reports running jobs and signal exits.
+- **Core**: a `.loki` directory is not a task file; an unregistered zsh or
+  fish keeps its script extension, and `default_shell :name` checks that
+  the shell exists; `Tasks.subclasses` is Ruby's again; a corrupt state
+  record no longer crashes a listing; the gem's `release` prompt survives
+  stdin at end of input.
+- **Packaging**: the gem ships only `lib/`, `bin/asgard`, `sig/` and the
+  README, LICENSE and CHANGELOG; the description and changelog link are
+  corrected.
 
 ## [0.5.1] - 2026-10-19
 

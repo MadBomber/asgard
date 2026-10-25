@@ -140,6 +140,37 @@ class TestScheduleDeclaration < Minitest::Test
   end
 end
 
+# Phase 3 schedule regressions: declaration validation and read-back.
+class TestRegressionScheduleDeclaration < Minitest::Test
+  S = Asgard::Schedule
+
+  def test_regression_s4_empty_at_or_on_is_rejected
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", on: []) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: []) }
+  end
+
+  def test_regression_s5_weekends_reads_back_as_weekends
+    assert_equal "09:00 weekends", S.describe_calendar(S.calendar(at: "09:00", on: :weekends))
+    assert_equal :weekends, S.day_names([0, 6])
+    assert_equal :weekdays, S.day_names([5, 1, 2, 3, 4])
+  end
+
+  def test_regression_s6_a_dashed_task_is_the_underscored_command
+    spec = S.normalize(:'daily-summary', at: "09:00")
+    assert_equal "daily_summary", spec[:task]
+    error = assert_raises(ArgumentError) { S.normalize("db:migrate", at: "09:00") }
+    assert_match(/subcommand/, error.message)
+  end
+
+  def test_regression_s7_control_characters_and_bad_env_names_are_rejected
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "A" => "x\nExecStartPre=/bin/evil" }) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", options: ["--x", "a\nb"]) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "BAD-NAME" => "1" }) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "1ST" => "1" }) }
+    assert_equal({ "OK_1" => "tab\there" }, S.normalize(:t, at: "09:00", env: { OK_1: "tab\there" })[:env], "a tab is fine")
+  end
+end
+
 class TestScheduleLaunchd < Minitest::Test
   def spec(**) = Asgard::Schedule.normalize(:demo, **)
 
@@ -210,6 +241,61 @@ class TestScheduleLaunchd < Minitest::Test
       assert_equal :stopped, backend(home, runner).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       refute(runner.commands.any? { |cmd| cmd.include?("bootstrap") })
     end
+  end
+
+  # S3: reinstalling an unchanged entry must not bootout a run in progress.
+  def test_regression_s3_an_unchanged_install_leaves_the_loaded_job_alone
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      running = FakeRunner.new("launchctl print gui" => ["state = running\n", true])
+      assert_equal :active, backend(home, running).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      refute(running.commands.any? { |cmd| cmd.include?("bootout") }, running.commands.join("\n"))
+      refute(running.commands.any? { |cmd| cmd.include?("bootstrap") })
+    end
+  end
+
+  def test_regression_s3_a_changed_install_still_reloads
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      loaded = FakeRunner.new("launchctl print gui" => ["", false],
+                              "launchctl print gui/501/com.madbomber.asgard.my-app.demo" => ["", true])
+      def loaded.call(*argv)
+        super.tap { @responses.delete("launchctl print gui/501/com.madbomber.asgard.my-app.demo") if argv[1] == "bootout" }
+      end
+      assert_equal :active, backend(home, loaded).install(spec(every: 120), asgard: "/bin/asgard", direnv: nil)
+      assert(loaded.commands.any? { |cmd| cmd.include?("bootout") })
+      assert(loaded.commands.any? { |cmd| cmd.include?("bootstrap") })
+    end
+  end
+
+  # S10: a plist that fails plutil must not replace the good one on disk.
+  def test_regression_s10_a_plist_that_fails_lint_never_replaces_the_installed_one
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      good = File.read(b.plist_path("demo"))
+      failing = FakeRunner.new("launchctl print gui" => ["", false], "plutil" => ["bad plist", false])
+      assert_raises(Asgard::Schedule::Error) { backend(home, failing).install(spec(every: 120), asgard: "/bin/asgard", direnv: nil) }
+      assert_equal good, File.read(b.plist_path("demo"))
+      assert_equal [File.basename(b.plist_path("demo"))], Dir.children(File.dirname(b.plist_path("demo"))), "no temp file left"
+    end
+  end
+
+  # S8: job files carry env: values, so only their owner may read them.
+  def test_regression_s8_the_plist_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o600, File.stat(b.plist_path("demo")).mode & 0o777
+    end
+  end
+
+  # S11: a running job and a job a signal ended both show as such.
+  def test_regression_s11_status_reads_running_and_signal_exits
+    running = FakeRunner.new("launchctl print gui" => ["state = running\n\tlast exit code = 0\n", true])
+    assert_equal({ state: :running, last_exit: "0" }, backend("/h", running).status("demo"))
+    signalled = FakeRunner.new("launchctl print gui" => ["state = not running\n\tlast terminating signal = Terminated: 15\n", true])
+    assert_equal({ state: :active, last_exit: "signal 15 (Terminated)" }, backend("/h", signalled).status("demo"))
   end
 
   def test_install_raises_on_launchctl_failure
@@ -405,6 +491,17 @@ class TestScheduleSystemd < Minitest::Test
     assert_includes unit, "StandardOutput=append:/log/x.log\nStandardError=append:/log/x.log\n"
   end
 
+  # S1: Environment= does no $ expansion (systemd.exec(5)), so a $ must
+  # reach it as is; ExecStart= still needs it doubled.
+  def test_regression_s1_dollar_in_an_env_value_is_literal
+    unit = Asgard::Schedule::Systemd.service_unit(
+      description: "d", arguments: ["/bin/asgard", "pay$day"], working_directory: "/proj",
+      environment: { "PW" => %(a$b%c"d\\e) }, log_path: "/log/x.log"
+    )
+    assert_includes unit, %(Environment="PW=a$b%%c\\"d\\\\e"\n)
+    assert_includes unit, %(ExecStart="/bin/asgard" "pay$$day"\n)
+  end
+
   def test_timer_unit_calendar
     unit = Asgard::Schedule::Systemd.timer_unit(description: "d", service: "s.service",
                                                 calendar: Asgard::Schedule.calendar(at: %w[08:00 16:00], on: :friday))
@@ -492,6 +589,26 @@ class TestScheduleSystemd < Minitest::Test
 
     stopped = FakeRunner.new("systemctl --user is-active" => ["", false], "systemctl --user is-enabled" => ["", false])
     assert_equal :stopped, backend("/h", stopped).status("demo")[:state]
+  end
+
+  def test_regression_s8_unit_files_are_private
+    Dir.mktmpdir do |home|
+      b = backend(home)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      [b.service_path("demo"), b.timer_path("demo")].each { |path| assert_equal 0o600, File.stat(path).mode & 0o777, path }
+    end
+  end
+
+  # S9: a first install that fails part way must not look, next time,
+  # like a timer the user stopped on purpose.
+  def test_regression_s9_a_failed_first_install_is_not_taken_for_a_stop
+    Dir.mktmpdir do |home|
+      failing = FakeRunner.new("systemctl --user is-enabled" => ["disabled", false], "systemctl --user enable" => ["boom", false])
+      assert_raises(Asgard::Schedule::Error) { backend(home, failing).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil) }
+      refute File.exist?(backend(home).timer_path("demo")), "the half-written first install is rolled back"
+      fresh = FakeRunner.new("systemctl --user is-enabled" => ["disabled", false])
+      assert_equal :active, backend(home, fresh).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+    end
   end
 
   def test_notes_mention_linger_only_when_off
@@ -756,6 +873,44 @@ class TestScheduleCommands < Minitest::Test
     assert_match "stopped proj/tree", capture_io { schedule("stop", "proj/tree") }.first
     assert disabled?("asgard.#{@slug}.tree")
     refute disabled?("asgard.elsewhere.tree")
+  end
+
+  # S2: entries of a project that moved or was deleted keep firing; they
+  # must be removable by project/name, and prune removes them all.
+  def install_gone(name = :tree)
+    gone = File.join(@tmp, "gone")
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone)
+                    .install(Asgard::Schedule.normalize(name, every: 60), asgard: File.join(@bin, "asgard"), direnv: nil)
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone)
+  end
+
+  def test_regression_s2_remove_takes_another_projects_entry
+    gone = install_gone
+    out, = capture_io { schedule("remove", "gone/tree") }
+    assert_match "removed gone/tree", out
+    assert_empty gone.installed_names
+  end
+
+  def test_regression_s2_prune_removes_only_entries_whose_root_is_gone
+    gone = install_gone
+    install_elsewhere # its root, @tmp, exists
+    out, = capture_io { schedule("prune", "--dry-run") }
+    assert_match "would remove gone/tree", out
+    assert_equal ["tree"], gone.installed_names, "a dry run removes nothing"
+    out, = capture_io { schedule("prune") }
+    assert_match "removed gone/tree", out
+    refute_match "elsewhere", out
+    assert_empty gone.installed_names
+    assert_equal ["tree"], Asgard::Schedule.backend_class.new(project: "elsewhere", root: @tmp).installed_names
+    out, = capture_io { schedule("prune") }
+    assert_match "Nothing to prune", out
+  end
+
+  def test_regression_s2_orphaned_entries_is_pure
+    entries = [%w[a x], %w[b y], %w[c z]]
+    dirs    = { %w[a x] => "/exists", %w[b y] => "/gone", %w[c z] => nil }
+    assert_equal [%w[b y]], Asgard::Schedule.orphaned_entries(entries, directory_of: ->(slug, name) { dirs[[slug, name]] },
+                                                                          exists: ->(dir) { dir == "/exists" })
   end
 
   def test_list_all_flags_a_project_whose_directory_is_gone

@@ -26,7 +26,7 @@ module Kernel
     dir = Pathname.new(Dir.pwd)
     loop do
       candidate = dir + name
-      return candidate if candidate.exist?
+      return candidate if candidate.file? # a directory by that name is not it
       parent = dir.parent
       break if parent == dir
       dir = parent

@@ -29,6 +29,13 @@ class TestJobsDeclaration < Minitest::Test
     assert_match(/must be true, a Symbol or a String/, error.message)
   end
 
+  # J6: a task named ready? or deploy! still gives a listable job name.
+  def test_regression_j6_sequenced_names_are_file_safe
+    assert_equal :'ready_-1', J.job_name(true, task: :ready?, sequence: 1)
+    assert_equal :'deploy_-2', J.job_name(true, task: :deploy!, sequence: 2)
+    assert_match Asgard::Jobs::State::RECORD, "#{J.job_name(true, task: :ready?, sequence: 1)}.json"
+  end
+
   def test_summary_is_the_first_non_blank_line
     assert_equal "mkdocs serve", J.summary("\n\n  mkdocs serve  \n  --strict\n")
     assert_equal "", J.summary("  \n")
@@ -224,7 +231,7 @@ class TestJobsLauncher < Minitest::Test
     env = Launcher.environment(:api, "/s/api.status", {})
     assert_equal({ "ASGARD_JOB" => "api", "ASGARD_JOB_STATUS" => "/s/api.status", "PYTHONUNBUFFERED" => "1" }, env)
     assert_equal %w[ASGARD_JOB ASGARD_JOB_STATUS], Launcher.environment(:api, "/s", { "PYTHONUNBUFFERED" => "0" }).keys
-    assert_equal({ in: File::NULL, %i[out err] => ["/s/api.log", "a"] }, Launcher.spawn_options("/s/api.log"))
+    assert_equal({ in: File::NULL, %i[out err] => ["/s/api.log", "a"], close_others: true }, Launcher.spawn_options("/s/api.log"))
   end
 
   def start(script, name: :api, task: :servers, shell: :bash, silent: true, out: StringIO.new)
@@ -248,7 +255,7 @@ class TestJobsLauncher < Minitest::Test
     wait_until { File.read(job.log).include?("hello") }
     assert state.verified?(record)
     assert_equal :running, Asgard::Jobs.status(exit_code: state.exit_code("api"), verified: true)
-    Process.kill("TERM", -job.pid)
+    Asgard::Jobs::Stopper.signal_group("TERM", job.pid)
     assert_equal 143, wait_for_status("api"), "the trap lets the trampoline record a signal exit"
     wait_until { !state.verified?(record) }
   end
@@ -280,6 +287,16 @@ class TestJobsLauncher < Minitest::Test
     refute_includes File.read(second.log), "one"
   end
 
+  # J2: two starts of one name at the same moment must leave one job,
+  # never two with the second record hiding the first.
+  def test_regression_j2_concurrent_starts_of_one_name_start_one_job
+    jobs = Array.new(2) { Thread.new { start("sleep 30", out: StringIO.new) } }.map(&:value)
+    assert_equal 1, jobs.map(&:pid).uniq.size, "pids: #{jobs.map(&:pid).inspect}"
+    assert_equal jobs.first.pid, state.read_record("api")[:pid]
+  ensure
+    Array(jobs).map(&:pid).uniq.each { |pid| Asgard::Jobs::Stopper.signal_group("KILL", pid) }
+  end
+
   def test_the_job_is_shell_independent
     jobs = { ruby: "$stdout.sync = true; puts 'from ruby'" }
     jobs[:python3] = 'print("from python")' if Asgard::Schedule.which("python3", ENV.fetch("PATH", nil))
@@ -288,8 +305,8 @@ class TestJobsLauncher < Minitest::Test
       job = start(script, name: shell, shell:)
       assert_equal 0, wait_for_status(shell), "#{shell} should run to completion"
       wait_until { File.read(job.log).include?("from ") }
-      ext = shell == :zsh ? ".tmp" : Asgard::Shell.shell_for(shell)[:ext]
-      assert_equal state.script_path(shell, ext), state.read_record(shell.to_s)[:script], "#{shell}: an unregistered name gets .tmp"
+      ext = shell == :zsh ? ".sh" : Asgard::Shell.shell_for(shell)[:ext]
+      assert_equal state.script_path(shell, ext), state.read_record(shell.to_s)[:script], "#{shell}: an unregistered zsh still gets .sh"
     end
   end
 
@@ -298,6 +315,57 @@ class TestJobsLauncher < Minitest::Test
     wait_until { Asgard::Pid.command_line(job.pid) }
     assert state.verified?(state.read_record("api"))
     refute_includes Asgard::Pid.command_line(job.pid), "sleep", "the recorded pid is the trampoline, not the exec'd command"
+  end
+
+  # The pid launch returns must already run the trampoline: a check made
+  # between the child's fork and its exec sees the parent's command line,
+  # so an immediate second start would not recognise the job as running.
+  def test_regression_launch_returns_only_after_the_exec
+    pids = Array.new(30) do |i|
+      Launcher.launch({}, Launcher.argv(%w[sleep 30]), Launcher.spawn_options(File.join(@tmp, "l#{i}.log")))
+    end
+    lines = pids.map { |pid| Asgard::Pid.command_line(pid).to_s }
+    assert lines.all? { |line| line.include?("asgard-job") }, "not yet exec'd: #{lines.reject { |l| l.include?('asgard-job') }.first}"
+  ensure
+    pids&.each { |pid| Asgard::Jobs::Stopper.signal_group("KILL", pid) }
+  end
+
+  # J6: remove takes exactly one job's files, whatever the name holds.
+  def test_regression_j6_remove_touches_only_that_jobs_files
+    state.prepare
+    %w[a.json ab.json a.log].each { |file| File.write(File.join(state.dir, file), "{}") }
+    state.remove("a", keep_log: false)
+    assert_equal ["ab.json"], Dir.children(state.dir).grep_v(/\A(?:root|\..*)\z/)
+  end
+
+  # J7: an exec that fails in the job's child says why and exits 127,
+  # instead of a Ruby backtrace from inside the fork.
+  def test_regression_j7_a_failed_exec_reports_and_exits_127
+    missing = File.join(@tmp, "no", "such", "dir", "x.log")
+    _, err = capture_subprocess_io do
+      Launcher.launch({}, Launcher.argv(%w[sleep 30]), Launcher.spawn_options(missing))
+      sleep 0.5
+    end
+    assert_match(/asgard: could not start job/, err)
+    refute_match(/from .*launcher\.rb/, err)
+  end
+
+  def test_regression_j7_the_job_gets_no_stray_descriptors
+    assert_equal true, Launcher.spawn_options("/x.log")[:close_others]
+  end
+
+  # J10: a job whose trampoline alone was killed still runs; it is still
+  # verified, still stopped, and never cleaned away.
+  def test_regression_j10_a_job_without_its_trampoline_is_still_the_job
+    job    = start("sleep 30")
+    record = state.read_record("api")
+    wait_for_job_command(record)
+    Process.kill("KILL", job.pid) # the trampoline only: a pid we started, never a group
+    wait_until(5, "trampoline gone") { Asgard::Pid.command_line(job.pid).nil? }
+    assert Asgard::Jobs::State.verified?(record), "its shell still runs the script in the job's group"
+    out = StringIO.new
+    assert_equal :stopped, Asgard::Jobs::Stopper.new(out:).stop(record)
+    wait_until(5, "group gone") { !Asgard::Jobs::State.verified?(record) }
   end
 
   def test_a_missing_shell_exits_127_before_anything_is_started
@@ -430,6 +498,21 @@ class TestJobsStopper < Minitest::Test
     assert_equal "stopped api (pid 42)", stop.report_line(:stopped, RECORD)
   end
 
+  # J5: a TERM that lands between the trampoline's fork and its child's
+  # exec is swallowed by the inherited trap. A job that ignores the first
+  # TERM but obeys the second must stop, not be KILLed.
+  def test_regression_j5_term_is_sent_again_during_the_grace_period
+    sent  = []
+    alive = ->(_record) { sent.count { |name, _| name == "TERM" } < 2 }
+    stop  = Stopper.new(timeout: 3, out: StringIO.new, alive:, signal: ->(name, pgid) { sent << [name, pgid] }, sleeper: ->(_) {})
+    assert_equal :stopped, stop.stop(RECORD)
+    assert_equal [["TERM", 42], ["TERM", 42]], sent
+  end
+
+  def test_regression_j5_resend_schedule
+    assert_equal([5, 10], (0...12).select { |tick| Stopper.resend_tick?(tick, poll: 0.2) })
+  end
+
   def test_signal_group_refuses_anything_but_a_real_group_id
     [nil, 0, 1, -1, -42, "42", 42.0].each do |bad|
       error = assert_raises(ArgumentError, "pgid #{bad.inspect} must be refused") { Stopper.signal_group("TERM", bad) }
@@ -441,6 +524,44 @@ class TestJobsStopper < Minitest::Test
     child = Process.spawn("true", pgroup: true)
     Process.wait(child)
     assert_nil Stopper.signal_group("TERM", child)
+  end
+
+  # J1: a stale record whose pid is now asgard itself must never verify,
+  # or stop would signal asgard's own process group. Only the recording
+  # stand-in ever sees the signal; nothing here reaches Process.kill.
+  def test_regression_j1_a_record_naming_our_own_pid_is_not_stopped
+    sent    = []
+    record  = { name: "api", pid: Process.pid, pgid: Process.getpgrp, script: "/no/such/asgard-job-script.sh" }
+    stopper = Stopper.new(out: StringIO.new, signal: ->(name, pgid) { sent << [name, pgid] }, sleeper: ->(_) {})
+    assert_equal :not_running, stopper.stop(record)
+    assert_empty sent, "no signal may be sent to our own group"
+  end
+
+  def test_regression_j1_jobs_never_verify_against_our_own_pid
+    refute Asgard::Jobs::State.verified?({ pid: Process.pid, script: "/no/such/asgard-job-script.sh" })
+  end
+
+  def test_regression_j1_pid_matches_keeps_the_watcher_shortcut_behind_a_keyword
+    assert Asgard::Pid.matches?(Process.pid, "absent", command: "other")
+    refute Asgard::Pid.matches?(Process.pid, "absent", command: "other", self_ok: false)
+    assert Asgard::Pid.matches?(Process.pid, "here", command: "is here", self_ok: false)
+  end
+
+  def test_regression_j1_safe_group_refuses_our_group_and_a_group_the_pid_left
+    pgid_of = ->(pid) { { 50 => 50, 60 => 61 }.fetch(pid) { raise Errno::ESRCH } }
+    assert Stopper.safe_group?(50, pid: 50, own_pgrp: 7, pgid_of:)
+    refute Stopper.safe_group?(7, pid: 7, own_pgrp: 7, pgid_of: ->(_) { 7 }), "our own group"
+    refute Stopper.safe_group?(60, pid: 60, own_pgrp: 7, pgid_of:), "the pid now leads another group"
+    refute Stopper.safe_group?(70, pid: 70, own_pgrp: 7, pgid_of:), "the pid is gone"
+    [nil, 0, 1, -5, "50"].each { |bad| refute Stopper.safe_group?(bad, pid: 50, own_pgrp: 7, pgid_of:), bad.inspect }
+  end
+
+  # The id is a reaped child's, so even a wrong answer could only reach
+  # a group that no longer exists.
+  def test_regression_j1_signal_group_refuses_our_own_group
+    gone = Process.spawn("true", pgroup: true)
+    Process.wait(gone)
+    assert_equal false, Stopper.signal_group("TERM", gone, own_pgrp: gone, pgid_of: ->(_) { gone })
   end
 
   def test_a_real_job_and_its_child_stop_together
@@ -499,6 +620,7 @@ class TestJobsCommands < Minitest::Test
 
   def test_asgard_jobs_maps_to_the_subcommand_and_lists_by_default
     Tasks._reset_ran!
+    Commands._reset_ran! # an earlier test in this process may already have run `list`
     out, = capture_io { Tasks.start(%w[jobs]) }
     assert_match "No jobs recorded for #{@slug}", out
     assert_match "asgard jobs list --all", out
@@ -582,6 +704,21 @@ class TestJobsCommands < Minitest::Test
     assert_equal(%w[jobs_test_servers-1 jtdb], out.lines.map { |line| line[/stopped (\S+)/, 1] })
   end
 
+  # J3 (decision D2): the log holds only the latest run, and the help
+  # text says so. The behaviour itself is pinned by
+  # test_a_new_start_of_an_ended_job_replaces_its_record_and_truncates_the_log.
+  def test_regression_j3_log_help_describes_the_latest_run_only
+    description = Commands.commands["log"].description
+    refute_match(/append/i, description)
+    assert_match(/latest run/, description)
+  end
+
+  # J8: --all with names is a usage error, not a silent stop of everything.
+  def test_regression_j8_stop_all_with_names_is_refused
+    _, err = capture_io { assert_raises(SystemExit) { jobs("stop", "--all", "jtdb") } }
+    assert_match(/--all takes no job names/, err)
+  end
+
   def test_log_prints_the_log_and_complains_about_unknown_jobs
     records = start_servers
     wait_until { File.exist?(records["jtdb"][:log]) }
@@ -609,7 +746,7 @@ class TestJobsCommands < Minitest::Test
 
   def test_clean_forgets_only_what_is_not_running
     records = start_servers
-    Process.kill("TERM", -records["jtdb"][:pgid])
+    Asgard::Jobs::Stopper.signal_group("TERM", records["jtdb"][:pgid])
     wait_for_status("jtdb")
     out, = capture_io { jobs("clean") }
     assert_equal "removed jtdb\n", out

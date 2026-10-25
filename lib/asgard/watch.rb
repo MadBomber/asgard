@@ -3,6 +3,7 @@
 require_relative "watch/declaration"
 require_relative "watch/changes"
 require_relative "watch/spawn"
+require_relative "watch/mailbox"
 require_relative "watch/worker"
 require_relative "watch/reporter"
 require_relative "watch/dispatcher"

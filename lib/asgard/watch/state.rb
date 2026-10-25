@@ -14,6 +14,10 @@ module Asgard
     class State
       ROOT_FILE = StateDir::ROOT_FILE
 
+      # Names the inherited descriptor of the held watcher.lock, from
+      # `start` to the daemon it spawns and across a reload's exec.
+      LOCK_ENV = "ASGARD_WATCH_LOCK_FD"
+
       attr_reader :dir, :root
 
       class << self
@@ -34,8 +38,21 @@ module Asgard
         def daemon?(pid) = Reporter.asgard_process?(pid, "watcher", "run")
 
         # Whether an entry record describes a task still running: no exit
-        # recorded and its pid still that task's asgard process.
-        def running?(entry) = !entry.key?(:finished) && Reporter.asgard_process?(entry[:pid], entry[:task].to_s)
+        # recorded and its pid still that task's asgard process. The
+        # current process always counts, as for asgard_process?.
+        def running?(entry)
+          return false if entry.key?(:finished)
+
+          pid = entry[:pid]
+          pid == Process.pid || task_process?(entry[:task].to_s, command: Pid.command_line(pid))
+        end
+
+        # Whether +command+ (a command line, or nil for no process) runs
+        # asgard with +task+ as a whole word: "t" is not "test_check".
+        def task_process?(task, command:)
+          words = command.to_s.split
+          words.any? { |word| File.basename(word) == "asgard" } && words.include?(task)
+        end
       end
 
       # base: is the directory every project's state lives under.
@@ -45,6 +62,7 @@ module Asgard
       end
 
       def pid_path          = File.join(dir, "watcher.pid")
+      def lock_path         = File.join(dir, "watcher.lock")
       def log_path          = File.join(dir, "watcher.log")
       def root_path         = File.join(dir, ROOT_FILE)
       def declarations_path = File.join(dir, "declarations.json")
@@ -57,6 +75,35 @@ module Asgard
         FileUtils.mkdir_p(entries_dir)
         self
       end
+
+      # One watcher per project: whoever holds an exclusive flock on
+      # watcher.lock. The open File while held, nil when another process
+      # holds it. The lock ends when the last descriptor of this open
+      # closes, so a daemon that inherits it keeps it for its lifetime.
+      def acquire_lock
+        FileUtils.mkdir_p(dir)
+        file = File.open(lock_path, File::RDWR | File::CREAT, 0o600) # rubocop:disable Style/FileOpen -- held, not read
+        return file if file.flock(File::LOCK_EX | File::LOCK_NB)
+
+        file.close
+        nil
+      end
+
+      # The lock a parent handed down (see LOCK_ENV), or nil when none was
+      # or the descriptor is not this project's lock file.
+      def adopt_lock(env = ENV)
+        fd = Integer(env[LOCK_ENV].to_s, exception: false) or return nil
+        io = File.for_fd(fd, autoclose: false)
+        return nil unless File.exist?(lock_path) && File.identical?(io, lock_path)
+
+        io.autoclose = true
+        io.flock(File::LOCK_EX | File::LOCK_NB) ? io : nil
+      rescue Errno::EBADF, ArgumentError
+        nil
+      end
+
+      # The inherited lock, else a fresh one; nil when another holds it.
+      def lock(env = ENV) = adopt_lock(env) || acquire_lock
 
       def write_pid(pid) = File.write(pid_path, "#{pid}\n")
 
@@ -84,7 +131,13 @@ module Asgard
       def read_entry(name) = State.read_json(entry_path(name))
 
       # Every entry's latest record, keyed by entry name.
-      def entries = Dir.glob(File.join(entries_dir, "*.json")).to_h { |file| [File.basename(file, ".json"), State.read_json(file)] }
+      # A corrupt record is left out (see StateDir.read_json).
+      def entries
+        Dir.glob(File.join(entries_dir, "*.json")).filter_map do |file|
+          record = State.read_json(file)
+          [File.basename(file, ".json"), record] if record
+        end.to_h
+      end
 
       # The records of tasks still running.
       def running_entries = entries.values.select { |entry| State.running?(entry) }

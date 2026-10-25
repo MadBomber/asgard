@@ -28,6 +28,9 @@ module Asgard
       # ("label" => disabled, or "label" => true on older macOS).
       def self.disabled_labels(output) = output.scan(/"([^"]+)"\s*=>\s*(disabled|true)\b/).map(&:first)
 
+      # Whether the installed file at +path+ already holds +content+.
+      def self.unchanged?(path, content) = File.exist?(path) && File.read(path) == content
+
       def self.plist(label:, arguments:, working_directory:, environment:, log_path:, intervals: nil, every: nil)
         dict = {
           "Label"                => label,
@@ -134,12 +137,17 @@ module Asgard
         { plist_path(name) => plist }
       end
 
+      # An unchanged plist whose job is loaded is left alone: a bootout
+      # would kill a run in progress for nothing. A changed one is linted
+      # before it replaces the installed file, then reloaded.
       def install(spec, asgard:, direnv:)
-        name  = spec[:name]
-        plist = plist_path(name)
+        name    = spec[:name]
+        plist   = plist_path(name)
+        content = files(spec, asgard:, direnv:).fetch(plist)
+        return :active if self.class.unchanged?(plist, content) && loaded?(name)
+
         FileUtils.mkdir_p [File.dirname(plist), File.dirname(log_path(name))]
-        files(spec, asgard:, direnv:).each { |path, content| File.write(path, content) }
-        run! "plutil", "-lint", "-s", plist
+        write_linted(plist, content)
         unload(name)
         return :stopped if stopped?(name)
 
@@ -195,8 +203,17 @@ module Asgard
         out, ok = run("launchctl", "print", target(name))
         return { state: stopped?(name) ? :stopped : :not_loaded, last_exit: nil } unless ok
 
+        { state: out.include?("state = running") ? :running : :active, last_exit: self.class.last_exit(out) }
+      end
+
+      # The last exit from `launchctl print`: its code, or the signal that
+      # ended it ("signal 15 (Terminated)"); nil when it never exited.
+      def self.last_exit(out)
         code = out[/last exit code = (\d+)/, 1]
-        { state: :active, last_exit: code }
+        return code if code
+
+        signal = out.match(/last terminating signal = ([^:\n]+): (\d+)/)
+        "signal #{signal[2]} (#{signal[1]})" if signal
       end
 
       def notes = []
@@ -204,6 +221,17 @@ module Asgard
       private
 
       def target(name) = "#{@domain}/#{label(name)}"
+
+      # Written beside the plist (not *.plist, so never listed), linted,
+      # then renamed over it; a plist plutil rejects never lands.
+      def write_linted(plist, content)
+        draft = "#{plist}.new"
+        Schedule.write_private(draft, content)
+        run! "plutil", "-lint", "-s", draft
+        File.rename(draft, plist)
+      ensure
+        FileUtils.rm_f(draft)
+      end
 
       def loaded?(name) = run("launchctl", "print", target(name)).last
 

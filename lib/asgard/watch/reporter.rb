@@ -2,6 +2,7 @@
 
 require "time"
 require_relative "../pid"
+require_relative "../state_dir"
 
 module Asgard
   module Watch
@@ -9,7 +10,8 @@ module Asgard
     # the dispatcher push frozen reports onto a shared queue; the reporter
     # drains it in a main-Ractor thread, appends a log line per report,
     # keeps the latest record per entry on disk through the state, and
-    # tracks which pids are in flight so shutdown can wait for them.
+    # tracks which pids are in flight so shutdown can say what it waits
+    # for.
     class Reporter
       class << self
         # One log line for a report. behind: is the pid a trigger is queued
@@ -21,8 +23,14 @@ module Asgard
           case kind
           when :trigger then "#{head} #{changed}#{" (queued behind pid #{behind})" if behind}"
           when :spawn   then "#{head} pid=#{pid} #{changed}"
-          else               "#{head} pid=#{pid} status=#{report[:status]} seconds=#{format('%.2f', report[:seconds])}"
+          when :dropped then "#{head} #{changed} (dropped: the task's queue is full)"
+          else               exit_line(head, report)
           end
+        end
+
+        def exit_line(head, report)
+          line = "#{head} pid=#{report[:pid]} status=#{report[:status]} seconds=#{format('%.2f', report[:seconds])}"
+          report[:error] ? "#{line} error=#{report[:error]}" : line
         end
 
         # The entry's record after this report: a spawn starts a new record
@@ -53,10 +61,12 @@ module Asgard
         def asgard_process?(pid, *words, command: nil) = Pid.matches?(pid, "asgard", *words, command:)
       end
 
-      # state: responds to write_entry(name, record).
-      def initialize(reports, log:, state:)
+      # state: responds to write_entry(name, record). max_log: is the size
+      # past which the log is rotated (StateDir.rotate).
+      def initialize(reports, log:, state:, max_log: StateDir.log_limit)
         @reports = reports
         @log     = log
+        @max_log = max_log
         @state   = state
         @records = {}
         @running = {} # pid => task
@@ -72,11 +82,18 @@ module Asgard
 
       def start = Thread.new { run }
 
+      # Tracks the report, then logs it. A report that cannot be written
+      # (the state directory removed under a running daemon) is said so on
+      # stderr; the reporter goes on, since every worker waits on it.
       def handle(report)
-        trigger = report[:kind] == :trigger
+        kind    = report[:kind]
+        trigger = kind == :trigger
         line    = Reporter.log_line(report, behind: trigger ? running_for(report[:task]) : nil)
+        track(report) if %i[spawn exit].include?(kind)
+        StateDir.rotate(@log, max_bytes: @max_log)
         File.open(@log, "a") { |file| file.puts(line) }
-        track(report) unless trigger
+      rescue SystemCallError, IOError => e
+        $stderr.puts "watcher: could not write #{kind} report for #{report[:entry]}: #{e.message}" # rubocop:disable Style/StderrPuts
       end
 
       # Pids of tasks in flight, ascending.
@@ -84,17 +101,6 @@ module Asgard
 
       # The in-flight pid of task, or nil.
       def running_for(task) = @mutex.synchronize { @running.key(task) }
-
-      # Blocks until no task is in flight, saying what it waits for once
-      # per interval. A pid that is gone without an exit report (a worker
-      # died between its reports) is forgotten rather than waited on.
-      def drain(interval: 1.0, out: $stdout)
-        until (pids = running).empty?
-          out.puts "watcher: waiting for pid #{pids.join(', ')}"
-          sleep interval
-          forget_dead
-        end
-      end
 
       private
 
@@ -104,10 +110,6 @@ module Asgard
         @records[entry] = record
         @state.write_entry(entry, record)
         @mutex.synchronize { record.key?(:finished) ? @running.delete(pid) : @running[pid] = record[:task] }
-      end
-
-      def forget_dead
-        @mutex.synchronize { @running.delete_if { |pid, _task| !Reporter.alive?(pid) } }
       end
     end
   end

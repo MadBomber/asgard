@@ -39,20 +39,28 @@ module Asgard
       # stdin from /dev/null, stdout and stderr appended to the log, so
       # the job never takes SIGTTIN or writes into a terminal that
       # happens to be attached.
-      def spawn_options(log_path) = { in: File::NULL, %i[out err] => [log_path, "a"] }
+      # close_others: a descriptor asgard inherited (a CI runner's, a
+      # `3>file`) has no business staying open for the job's lifetime.
+      def spawn_options(log_path) = { in: File::NULL, %i[out err] => [log_path, "a"], close_others: true }
 
       # Forks, starts a new session (pid = pgid = sid, no controlling
       # terminal) and execs; returns the child's pid, detached. The parent
-      # waits on a pipe the child closes once setsid is done, so by the
-      # time the pid is recorded it already leads its own group: a `stop`
-      # issued at once signals the job, never the parent's group.
+      # waits on a pipe whose write end the child holds until exec closes
+      # it (pipes are close-on-exec), so by the time the pid is recorded it
+      # already leads its own group, and already runs the trampoline: a
+      # `stop` issued at once signals the job, never the parent's group,
+      # and a start issued at once sees the job's own command line.
       def launch(env, argv, options)
         reader, writer = IO.pipe
         pid = fork do
           reader.close
           Process.setsid
-          writer.close
           exec(env, *argv, **options)
+        rescue SystemCallError => e
+          # exit!, not raise: no at_exit handler of the parent may run here.
+          $stderr.puts "asgard: could not start job: #{e.message}" # rubocop:disable Style/StderrPuts
+          $stderr.flush # exit! skips Ruby's own flush
+          exit!(127)
         end
         writer.close
         reader.read
@@ -66,13 +74,15 @@ module Asgard
       # front, as foreground `sh` does; the trampoline would otherwise
       # hide it as a status nobody is watching for.
       def start(run, name:, task:, state:, silent: false, out: $stdout)
-        existing = state.read_record(name)
-        return already_running(existing, out:) if existing && state.verified?(existing)
+        state.with_lock(name) do
+          existing = state.read_record(name)
+          return already_running(existing, out:) if existing && state.verified?(existing)
 
-        shell_missing!(run) unless Shell.resolve(run.shell[:path])
-        job = spawn_job(run, name:, task:, state:)
-        out.puts "started #{job.name} (pid #{job.pid}), log: #{job.log}" unless silent
-        job
+          shell_missing!(run) unless Shell.resolve(run.shell[:path])
+          job = spawn_job(run, name:, task:, state:)
+          out.puts "started #{job.name} (pid #{job.pid}), log: #{job.log}" unless silent
+          job
+        end
       end
 
       def already_running(record, out:)

@@ -35,7 +35,7 @@ class Tasks
     unless options[:yes]
       print "Release #{@@project} v#{project_version} to RubyGems? [y/N] "
       $stdout.flush
-      return puts "Aborted." unless $stdin.gets.strip.downcase == "y"
+      return puts "Aborted." unless $stdin.gets.to_s.strip.downcase == "y" # nil at end of input
     end
 
     abort "Working directory is not clean — commit or stash changes first." unless `git status --porcelain`.strip.empty?

@@ -5,13 +5,21 @@ require "tmpdir"
 require "fileutils"
 require "ractor_queue"
 require "stringio"
+require "timeout"
+require "json"
 
 class TestWatchDeclaration < Minitest::Test
   W = Asgard::Watch
 
   # Stand-ins for File in split_glob: every plain path is / is not a file.
-  IS_FILE  = Module.new { def self.file?(_path) = true }
-  NOT_FILE = Module.new { def self.file?(_path) = false }
+  IS_FILE  = Module.new do
+    def self.file?(_path) = true
+    def self.directory?(_path) = false
+  end
+  NOT_FILE = Module.new do
+    def self.file?(_path) = false
+    def self.directory?(_path) = false
+  end
 
   def test_split_glob_directory
     assert_equal ["docs", nil], W.split_glob("docs", stat: NOT_FILE)
@@ -36,6 +44,29 @@ class TestWatchDeclaration < Minitest::Test
         assert_equal ["lib", nil],         W.split_glob("lib")
       end
     end
+  end
+
+  # W8: a plain path is a file or a directory in the project root, not in
+  # whatever directory asgard runs from, and a dotted directory is a
+  # directory.
+  def test_regression_w8_plain_paths_are_judged_in_the_project_root
+    Dir.mktmpdir do |tmp|
+      File.write(File.join(tmp, "Gemfile"), "")
+      FileUtils.mkdir_p [File.join(tmp, "sub"), File.join(tmp, "config.d")]
+      Dir.chdir(File.join(tmp, "sub")) do
+        assert_equal [".", /\AGemfile\z/], W.split_glob("Gemfile", root: tmp)
+        assert_equal ["config.d", nil],    W.split_glob("config.d", root: tmp)
+      end
+    end
+  end
+
+  # W9: globs inside braces are globs too.
+  def test_regression_w9_brace_alternatives_are_globs
+    regexp = W.glob_regexp("{*.rb,*.rake}")
+    %w[foo.rb x.rake].each { |path| assert_match regexp, path }
+    refute_match regexp, "foo.py"
+    refute_match regexp, "a/b.rb"
+    assert_match W.glob_regexp("lib/{a,b?}/*.rb"), "lib/bc/x.rb"
   end
 
   def test_split_glob_patterns
@@ -278,6 +309,13 @@ class TestWatchSpawn < Minitest::Test
     refute_includes S.base_env.keys, "SECRET"
   end
 
+  def test_regression_w11_base_env_keeps_ruby_and_bundler_settings
+    env  = { "GEM_HOME" => "/g", "GEM_PATH" => "/g:/h", "RUBYOPT" => "-W0", "RUBYLIB" => "/l",
+             "BUNDLE_GEMFILE" => "/proj/Gemfile", "BUNDLER_VERSION" => "2.6", "SECRET" => "x" }
+    kept = Asgard::Watch::Spawn.base_env(env)
+    assert_equal env.keys - ["SECRET"], kept.keys
+  end
+
   def test_environment_layers_base_declared_and_trigger_variables
     env = S.environment(spec, changes, context)
     assert_equal "/override", env["PATH"]
@@ -470,10 +508,10 @@ class TestWatchWorker < Minitest::Test
   def test_start_runs_real_processes_in_a_ractor
     queue   = RactorQueue.new(capacity: 16)
     reports = RactorQueue.new(capacity: 16)
-    Worker.start(queue, reports)
-    queue.push(description("ok"))
-    queue.push(description("bad", "sh", "-c", "echo hi; exit 3"))
-    queue.push(nil)
+    inbox   = Asgard::Watch::Mailbox.new(queue, Worker.start(queue, reports))
+    inbox.push(description("ok"))
+    inbox.push(description("bad", "sh", "-c", "echo hi; exit 3"))
+    inbox.push(nil)
 
     received = Array.new(4) { reports.pop(timeout: 10) }
     assert_equal(%i[spawn exit spawn exit], received.map { |report| report[:kind] })
@@ -513,6 +551,44 @@ class TestWatchReporter < Minitest::Test
 
   def exit_report(pid, status = 0, entry = "lint", task = entry)
     { kind: :exit, entry:, task:, pid:, at: AT + 2.5, status:, seconds: 2.5 }
+  end
+
+  def test_regression_w12_a_failed_log_write_does_not_end_the_reporter
+    reporter = Reporter.new(@queue, log: File.join(@dir, "gone", "watcher.log"), state: @state)
+    thread   = reporter.start
+    @queue.push(spawn(7))
+    @queue.push(exit_report(7))
+    @queue.push(nil)
+    _, err = capture_io { thread.join(5) }
+    refute thread.alive?
+    assert_empty reporter.running, "the exit was still tracked"
+    assert_equal 0, @state.entries["lint"][:status]
+    assert_match(/could not write/, err)
+  end
+
+  # E4 (X1): the watcher log is rotated once it passes its size limit,
+  # keeping one previous file.
+  def test_regression_x1_the_log_rotates_past_its_limit
+    reporter = Reporter.new(@queue, log: @log, state: @state, max_log: 200)
+    File.write(@log, "x" * 250)
+    reporter.handle(trigger)
+    assert_equal "x" * 250, File.read("#{@log}.1")
+    assert_operator File.size(@log), :<, 200
+    reporter.handle(trigger)
+    assert_equal "x" * 250, File.read("#{@log}.1"), "a small log is left alone"
+  end
+
+  def test_regression_x1_rotate_is_pure_enough
+    path = File.join(@dir, "r.log")
+    refute Asgard::StateDir.rotate(path, max_bytes: 10), "no file, nothing to do"
+    File.write(path, "12345")
+    refute Asgard::StateDir.rotate(path, max_bytes: 10)
+    File.write(path, "x" * 11)
+    assert Asgard::StateDir.rotate(path, max_bytes: 10)
+    refute File.exist?(path)
+    assert_equal 10_485_760, Asgard::StateDir.log_limit({})
+    assert_equal 2048, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "2048" })
+    assert_equal 10_485_760, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "lots" })
   end
 
   def test_log_lines
@@ -559,39 +635,6 @@ class TestWatchReporter < Minitest::Test
     thread.join
     assert_equal [7, 8], @reporter.running
     assert_equal %w[a b], @state.entries.keys
-  end
-
-  def test_drain_waits_for_the_exit_report
-    @reporter.handle(spawn(41))
-    thread = @reporter.start
-    Thread.new do
-      sleep 0.05
-      @queue.push(exit_report(41))
-      @queue.push(nil)
-    end
-    out = StringIO.new
-    @reporter.drain(interval: 0.01, out: out)
-    assert_empty @reporter.running
-    assert_includes out.string, "waiting for pid 41"
-  ensure
-    thread&.join
-  end
-
-  def test_drain_forgets_a_pid_that_is_gone
-    dead = Process.spawn("true")
-    Process.wait(dead)
-    @reporter.handle(spawn(dead))
-    @reporter.handle(spawn(Process.pid, "me"))
-    helper = Thread.new do
-      sleep 0.05
-      @reporter.handle(exit_report(Process.pid, 0, "me"))
-    end
-    @reporter.drain(interval: 0.01, out: StringIO.new)
-    assert_empty @reporter.running
-    refute Reporter.alive?(dead)
-    assert Reporter.alive?(Process.pid)
-  ensure
-    helper&.join
   end
 end
 
@@ -652,7 +695,7 @@ class TestWatchDispatcher < Minitest::Test
     inbox.push(["lint", batch(modified: ["lib/c.rb"])])
     inbox.push(nil)
     thread.join
-    assert_equal 2, @dispatcher.workers["lint"][:queue].size
+    assert_equal 1, @dispatcher.workers["lint"][:queue].size, "the two lint triggers merged (W15)"
     assert_equal 1, @dispatcher.workers["test"][:queue].size
     assert_equal 3, @reports.size
   end
@@ -668,6 +711,30 @@ class TestWatchState < Minitest::Test
   end
 
   def teardown = FileUtils.rm_rf(@home)
+
+  def test_regression_w6_the_lock_is_held_by_one_holder_at_a_time
+    first = @state.acquire_lock
+    assert first, "the first holder gets the lock"
+    assert_nil @state.acquire_lock, "a second open of the lock file is refused"
+    first.close
+    second = @state.acquire_lock
+    assert second, "released on close"
+    second.close
+  end
+
+  def test_regression_w6_an_inherited_lock_is_adopted_only_when_it_is_the_lock_file
+    held = @state.acquire_lock
+    adopted = @state.adopt_lock({ State::LOCK_ENV => held.fileno.to_s })
+    assert_equal held.fileno, adopted&.fileno
+    adopted.autoclose = false # same descriptor as held, which closes it
+    File.open(File::NULL) do |other|
+      assert_nil @state.adopt_lock({ State::LOCK_ENV => other.fileno.to_s }), "an unrelated fd is never adopted"
+    end
+    assert_nil @state.adopt_lock({ State::LOCK_ENV => "999999" }), "a closed fd"
+    assert_nil @state.adopt_lock({}), "nothing inherited"
+  ensure
+    held&.close
+  end
 
   def test_paths_live_under_the_state_home
     dir = File.join(@home, ".local", "state", "asgard", "watch", "my-proj")
@@ -713,11 +780,238 @@ class TestWatchState < Minitest::Test
     assert_empty Dir.glob(File.join(@state.entries_dir, "asgard*")), "no tempfile left behind"
   end
 
+  # W14: a task named "t" is not every asgard command line with a t in it.
+  def test_regression_w14_running_matches_the_task_as_a_whole_word
+    asgard = "/usr/local/bin/asgard"
+    assert State.task_process?("lint", command: "/opt/homebrew/bin/direnv exec /proj #{asgard} lint")
+    refute State.task_process?("t", command: "ruby #{asgard} test_check")
+    refute State.task_process?("lint", command: "/bin/sleep lint")
+    refute State.task_process?("lint", command: nil)
+  end
+
   def test_declarations_round_trip
     specs = [Asgard::Watch.normalize(:lint, paths: "lib/**/*.rb", events: :added)]
     assert_empty @state.read_declarations
     @state.write_declarations(specs)
     assert_equal [{ name: "lint", task: "lint", paths: ["lib/**/*.rb"], events: ["added"] }], @state.read_declarations
+  end
+end
+
+# W2: a spawn that raises must not end the worker, a full worker queue
+# must not stall routing, and change lists too big for the environment
+# travel in a file instead.
+# W2 regressions.
+class TestWatchWorker
+  # RecordingSpawner whose first spawn raises +error+.
+  class RaisingSpawner < RecordingSpawner
+    def initialize(error)
+      super()
+      @error = error
+    end
+
+    def spawn(description)
+      error = @error
+      @error = nil
+      raise error if error
+
+      super
+    end
+  end
+
+  def test_regression_w2_a_spawn_error_is_reported_and_the_worker_lives_on
+    queue   = Queue.new
+    reports = Queue.new
+    spawner = RaisingSpawner.new(Errno::E2BIG.new)
+    thread  = start_thread(queue, reports, spawner)
+    2.times { queue.push(description("lint")) }
+    failed = Timeout.timeout(5) { reports.pop }
+    assert_equal [:exit, "lint", nil, 126], failed.values_at(:kind, :entry, :pid, :status)
+    assert_match(/Argument list too long/, failed[:error])
+    spawned = Timeout.timeout(5) { reports.pop }
+    assert_equal :spawn, spawned[:kind], "the next trigger still runs"
+    spawner.release(spawned[:pid], 0)
+    assert_equal :exit, Timeout.timeout(5) { reports.pop }[:kind]
+  ensure
+    queue&.push(nil)
+    thread&.join(5)
+  end
+
+  def test_regression_w2_a_real_ractor_survives_a_missing_root
+    queue   = RactorQueue.new(capacity: 16)
+    reports = RactorQueue.new(capacity: 16)
+    inbox   = Asgard::Watch::Mailbox.new(queue, Worker.start(queue, reports))
+    missing = Ractor.make_shareable(description("gone").merge(root: File.join(@dir, "no", "such", "dir")))
+    inbox.push(missing)
+    inbox.push(description("ok"))
+    inbox.push(nil)
+    received = Array.new(3) { reports.pop(timeout: 10) }
+    assert_equal(%i[exit spawn exit], received.map { |report| report[:kind] })
+    assert_equal 127, received[0][:status]
+    assert_equal 0,   received[2][:status]
+  end
+
+  def test_regression_w2_reporter_logs_a_spawn_error
+    line = Asgard::Watch::Reporter.log_line({ kind: :exit, entry: "lint", task: "lint", pid: nil, at: 0, status: 126,
+                                              seconds: 0.0, error: "Argument list too long" })
+    assert_match(/status=126 .*error=Argument list too long/, line)
+  end
+end
+
+# W4: a task must never read the daemon's stdin. The test's own stdin is
+# swapped for a pipe nobody writes to, so a child that inherits it blocks
+# in `read`, while one given /dev/null sees end-of-file at once.
+class TestWatchWorker
+  # Yields with fd 0 a pipe whose write end stays open (and silent) until
+  # the block returns, so the block must also wait for its child.
+  def with_silent_stdin
+    reader, writer = IO.pipe
+    saved = $stdin.dup
+    $stdin.reopen(reader)
+    yield -> { $stdin.reopen(saved) }
+  ensure
+    $stdin.reopen(saved) if saved
+    [reader, writer, saved].each { |io| io&.close }
+  end
+
+  def test_regression_w4_spawn_options_detach_stdin
+    options = Spawner.spawn_options(description("lint"))
+    assert_equal File::NULL, options[:in]
+    assert_equal({ chdir: @dir, pgroup: true, unsetenv_others: true, out: [@log, "a"], err: %i[child out] },
+                 options.except(:in))
+  end
+
+  def test_regression_w4_a_task_that_reads_stdin_sees_end_of_file
+    pid    = nil
+    status = nil
+    with_silent_stdin do |restore|
+      pid = Spawner.spawn(description("reader", "sh", "-c", 'read line; echo "read=$?"'))
+      restore.call
+      status = Timeout.timeout(3) { Spawner.wait(pid) }
+    end
+    assert_equal 0, status
+    assert_includes File.read(@log), "read=1"
+  ensure
+    if pid && Asgard::Pid.alive?(pid)
+      Process.kill("KILL", pid)
+      Process.wait(pid)
+    end
+  end
+
+  def test_regression_w4_the_daemon_is_started_without_stdin
+    options = Asgard::Watch::Commands.daemon_spawn_options("/proj", "/proj/watcher.log")
+    assert_equal({ chdir: "/proj", pgroup: true, in: File::NULL, out: ["/proj/watcher.log", "a"], err: %i[child out] }, options)
+  end
+end
+
+# W2 regressions.
+class TestWatchDispatcher
+  def test_regression_w2_a_full_worker_queue_drops_the_trigger_instead_of_blocking
+    queue = @dispatcher.workers["lint"][:queue]
+    nil while queue.try_push(Ractor.make_shareable({ filler: true }))
+    result = Timeout.timeout(2) { @dispatcher.route("lint", batch(modified: ["lib/a.rb"])) }
+    assert_nil result, "nothing was queued"
+    kinds = Array.new(@reports.size) { @reports.pop[:kind] }
+    assert_equal %i[trigger dropped], kinds
+  end
+end
+
+# E2 (W15): triggers waiting for a busy task merge.
+class TestWatchDispatcher
+  def drain(queue)
+    items = []
+    until (item = queue.try_pop).equal?(RactorQueue::EMPTY)
+      items << item
+    end
+    items
+  end
+
+  def test_regression_w15_triggers_waiting_for_one_entry_merge_into_one_run
+    @dispatcher.route("lint", batch(modified: ["lib/a.rb"]))
+    @dispatcher.route("lint", batch(modified: ["lib/b.rb", "lib/a.rb"], added: ["lib/c.rb"]))
+    @dispatcher.route("lint", batch(removed: ["lib/d.rb"]))
+    pending = drain(@dispatcher.workers["lint"][:queue])
+    assert_equal 1, pending.size, "one run with every change, not three"
+    assert_equal({ modified: ["lib/a.rb", "lib/b.rb"], added: ["lib/c.rb"], removed: ["lib/d.rb"] }, pending.first[:changes])
+    assert_equal "lib/a.rb\nlib/b.rb", pending.first[:env]["ASGARD_MODIFIED"]
+  end
+
+  def test_regression_w15_different_entries_of_one_task_stay_apart
+    @dispatcher.route("lint", batch(modified: ["lib/a.rb"]))
+    @dispatcher.route("lint-doc", batch(added: ["docs/x.md"]))
+    @dispatcher.route("lint", batch(modified: ["lib/b.rb"]))
+    pending = drain(@dispatcher.workers["lint"][:queue])
+    assert_equal(%w[lint-doc lint], pending.map { |item| item[:entry] })
+    assert_equal ["lib/a.rb", "lib/b.rb"], pending.last[:changes][:modified]
+  end
+
+  def test_regression_w15_merge_changes_is_pure
+    merged = Asgard::Watch.merge_changes([Asgard::Changes.new(modified: %w[a b]), Asgard::Changes.new(modified: %w[b c], removed: %w[d])])
+    assert_equal [%w[a b c], [], %w[d]], [merged.modified, merged.added, merged.removed]
+  end
+end
+
+class TestRegressionChangesFile < Minitest::Test
+  Spawn = Asgard::Watch::Spawn
+
+  def test_regression_w2_oversized_change_lists_move_to_a_file
+    changes = Asgard::Changes.new(modified: Array.new(50) { |i| "lib/file_#{i}.rb" })
+    assert_equal changes.to_env, Spawn.change_env(changes, "/state/c.json", limit: 1_000_000)
+    assert_equal({ "ASGARD_CHANGES_FILE" => "/state/c.json" }, Spawn.change_env(changes, "/state/c.json", limit: 100))
+    assert_equal changes.to_env, Spawn.change_env(changes, nil, limit: 100), "no file to spill to: keep the env"
+  end
+
+  def test_regression_w2_the_dispatcher_spills_and_the_worker_cleans_up
+    Dir.mktmpdir do |dir|
+      context = Spawn::Context.new(root: dir, log: File.join(dir, "watcher.log"), base: {}, asgard: "/bin/asgard", direnv: nil)
+      decls   = { "lint" => Asgard::Watch.normalize(:lint, paths: "lib") }
+      reports = Queue.new
+      dispatcher = Asgard::Watch::Dispatcher.new(decls, context, reports:, start: ->(_q, _r) { :ractor })
+      huge = Array.new(20_000) { |i| "lib/some/deeply/nested/file_#{i}.rb" }
+      description = dispatcher.route("lint", { modified: huge, added: [], removed: [] })
+      path = description[:changes_file]
+      assert_equal path, description[:env]["ASGARD_CHANGES_FILE"]
+      refute description[:env].key?("ASGARD_MODIFIED")
+      assert_equal huge, Asgard::Changes.from_file(path).modified
+      Asgard::Watch::Worker.remove_changes_file(path)
+      refute File.exist?(path)
+      assert_nil Asgard::Watch::Worker.remove_changes_file(path), "already gone is fine"
+    end
+  end
+
+  def test_regression_w2_changes_read_back_from_the_file
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "c.json")
+      File.write(path, JSON.generate({ modified: ["a.rb"], added: ["b.rb"], removed: [] }))
+      changes = Asgard::Changes.from_env({ "ASGARD_CHANGES_FILE" => path })
+      assert_equal [["a.rb"], ["b.rb"], []], [changes.modified, changes.added, changes.removed]
+    end
+  end
+end
+
+class TestWatchMailbox < Minitest::Test
+  Mailbox = Asgard::Watch::Mailbox
+
+  def test_a_ractor_sleeps_until_a_push_wakes_it
+    queue  = RactorQueue.new(capacity: 4)
+    ractor = Ractor.new(queue) { |q| Asgard::Watch::Mailbox.new(q, Ractor.current).pop }
+    sleep 0.2 # it is now blocked in Ractor.receive
+    Mailbox.new(queue, ractor).push(:hello)
+    assert_equal :hello, ractor.value
+  end
+
+  def test_try_push_reports_a_full_queue_and_pop_returns_nil_payloads
+    mailbox = Mailbox.new(RactorQueue.new(capacity: 1), nil)
+    assert mailbox.try_push(nil)
+    nil while mailbox.try_push(:more)
+    refute mailbox.try_push(:overflow)
+    assert_nil mailbox.pop, "a pushed nil is a payload, not emptiness"
+  end
+
+  def test_ringing_an_ended_ractor_or_a_stand_in_is_harmless
+    ended = Ractor.new { :done }
+    ended.value
+    assert_nil Mailbox.ring(ended)
+    assert_nil Mailbox.ring(:ractor)
   end
 end
 
@@ -737,6 +1031,8 @@ end
 
 class TestWatchDaemon < Minitest::Test
   Daemon = Asgard::Watch::Daemon
+  # The task files always load: the fake asgard here is not a real one.
+  VALID  = ->(_asgard, _root) { true }
 
   def setup
     @cwd  = Dir.pwd
@@ -769,7 +1065,7 @@ class TestWatchDaemon < Minitest::Test
 
   def daemon(declarations, tasks: %w[lint docs])
     config = Daemon::Config.new(declarations:, root: @root, state: @state, context: @context, tasks:)
-    Daemon.new(config, listen: @listen, exec: ->(*argv) { @execs << argv }, out: @out)
+    Daemon.new(config, listen: @listen, exec: ->(*argv) { @execs << argv }, out: @out, validate: VALID)
   end
 
   def declarations
@@ -802,7 +1098,8 @@ class TestWatchDaemon < Minitest::Test
     assert_equal ["lib"],   lint.dirs
     assert_equal ["docs"],  docs.dirs
     assert_equal [@root],   loki.dirs
-    assert_equal(/\.loki\z/, loki.options[:only])
+    assert_match loki.options[:only], ".loki"
+    refute_match loki.options[:only], "test/fixtures/.loki"
     assert_equal 0.1, lint.options[:wait_for_delay]
     assert @listen.listeners.all?(&:started)
     assert_equal @root, Dir.pwd
@@ -834,11 +1131,197 @@ class TestWatchDaemon < Minitest::Test
     thread  = Thread.new { watcher.run }
     wait_until { @state.running_pid }
     @listen.listeners.last.callback.call([".loki"], [], [])
-    assert_equal [[@asgard, "watcher", "run"]], @execs
+    wait_until { @execs.any? }
+    assert_equal([[@asgard, "watcher", "run"]], @execs.map { |argv| argv.grep(String) })
     refute @listen.listeners.any?(&:started)
+    assert_includes @out.string, "watcher: reloading"
   ensure
     watcher&.stop
     thread&.join
+  end
+end
+
+# W1: a .loki change must re-exec the daemon. Real Listen, because the
+# failure (a listener stopping itself from its own callback thread) is
+# Listen's, and the fake one runs callbacks on the caller's thread.
+# W1 regressions.
+class TestWatchDaemon
+  def test_regression_w1_a_real_loki_change_reaches_exec
+    FileUtils.mkdir_p [File.join(@root, "lib"), File.join(@root, "docs")]
+    File.write(File.join(@root, ".loki"), "# v1\n")
+    config  = Daemon::Config.new(declarations:, root: @root, state: @state, context: @context, tasks: %w[lint docs])
+    watcher = Daemon.new(config, listen: Daemon.listen_module, exec: ->(*argv) { @execs << argv }, out: @out, validate: VALID)
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+    sleep 1 # FSEvents / inotify need a moment before they report
+    File.write(File.join(@root, ".loki"), "# v2\n")
+    wait_until(10) { @execs.any? }
+    assert_equal([[@asgard, "watcher", "run"]], @execs.map { |argv| argv.grep(String) })
+    assert thread.join(5), "run returns once the (stand-in) exec returns"
+  ensure
+    watcher&.stop
+    thread&.join(5)
+  end
+
+  # W3: a stop that lands while a trigger is still being routed must not
+  # return with that trigger about to spawn. The dispatcher stand-in
+  # routes slowly, so shutdown always overtakes it; the fake asgard exits
+  # at once (go exists).
+  class SlowDispatcher < Asgard::Watch::Dispatcher
+    def route(id, batch)
+      sleep 0.3
+      super
+    end
+  end
+
+  def test_regression_w3_shutdown_waits_for_a_trigger_being_routed
+    FileUtils.touch(File.join(@root, "go"))
+    config  = Daemon::Config.new(declarations:, root: @root, state: @state, context: @context, tasks: %w[lint docs])
+    watcher = Daemon.new(config, listen: @listen, exec: ->(*argv) { @execs << argv }, out: @out, dispatcher: SlowDispatcher,
+                                 validate: VALID)
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+    @listen.listeners.first.callback.call(["lib/a.rb"], [], [])
+    sleep 0.05 # the dispatcher has popped the batch and is inside route
+    watcher.stop
+    assert thread.join(10), "run returns"
+    returned = File.exist?(@state.log_path) ? File.read(@state.log_path) : ""
+    sleep 1
+    after = File.exist?(@state.log_path) ? File.read(@state.log_path) : ""
+    assert_equal returned, after, "nothing may happen after run returned"
+    spawns = after.scan(/ spawn lint task=lint pid=(\d+)/).flatten
+    exits  = after.scan(/ exit lint task=lint pid=(\d+)/).flatten
+    assert_equal spawns, exits, "every spawned task has an exit record"
+  ensure
+    thread&.join(5)
+  end
+
+  def test_regression_w3_close_queue_drops_waiting_triggers_and_ends_the_worker
+    queue = RactorQueue.new(capacity: 4)
+    3.times { |i| queue.push(i) }
+    Daemon.close_queue(Asgard::Watch::Mailbox.new(queue, nil))
+    assert_nil queue.pop(timeout: 1), "only the closing nil is left"
+    assert_predicate queue, :empty?
+  end
+
+  def test_regression_w3_join_worker_tolerates_a_dead_worker
+    dead = Ractor.new { raise "worker died" }
+    capture_io { assert_nil Daemon.join_worker(dead) }
+    assert_equal 42, Daemon.join_worker(Ractor.new { 42 }) && 42
+  end
+
+  # W5: an idle daemon (two workers, the reporter, the dispatcher) must
+  # not burn CPU waiting. Spinning queues cost about 0.12s per 2s here.
+  def test_regression_w5_an_idle_daemon_uses_almost_no_cpu
+    watcher = daemon(declarations)
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+    sleep 0.5
+    cpu    = -> { Process.clock_gettime(Process::CLOCK_PROCESS_CPUTIME_ID) }
+    before = cpu.call
+    sleep 2
+    used = cpu.call - before
+    assert_operator used, :<, 0.03, "idle CPU over 2s: #{used.round(3)}s"
+  ensure
+    watcher&.stop
+    thread&.join(10)
+  end
+
+  def test_regression_w6_a_daemon_refuses_to_run_while_another_holds_the_lock
+    held  = @state.prepare.acquire_lock
+    error = assert_raises(Asgard::Watch::Error) { daemon(declarations).run }
+    assert_match(/another watcher is already running/, error.message)
+    assert_empty @listen.listeners, "nothing was started"
+  ensure
+    held&.close
+  end
+
+  # W10: the signal traps are in place while the listeners start (which
+  # can take seconds on a big tree), and a start that fails leaves no
+  # pidfile and no held lock behind.
+  class ProbeListen < FakeListen
+    attr_reader :handlers
+
+    def initialize(fail_on_start:)
+      super()
+      @fail     = fail_on_start
+      @handlers = []
+    end
+
+    def to(*, **, &)
+      listener = super
+      probe    = self
+      fail     = @fail
+      listener.define_singleton_method(:start) do
+        previous = trap("TERM", "DEFAULT")
+        trap("TERM", previous)
+        probe.handlers << previous
+        raise "listen could not start" if fail
+
+        self.started = true
+      end
+      listener
+    end
+  end
+
+  def test_regression_w10_traps_come_first_and_a_failed_start_cleans_up
+    @listen = ProbeListen.new(fail_on_start: true)
+    error = assert_raises(RuntimeError) { daemon(declarations).run }
+    assert_equal "listen could not start", error.message
+    assert_kind_of Proc, @listen.handlers.first, "TERM is trapped before the listeners start"
+    refute File.exist?(@state.pid_path)
+    lock = @state.acquire_lock
+    assert lock, "the lock was released"
+  ensure
+    lock&.close
+  end
+
+  # W13: only the task files asgard loaded, plus .loki files beside the
+  # root one (an `import "*.loki"` may pick up a new one), reload the
+  # daemon; a .loki deep in fixtures or vendored code does not.
+  def test_regression_w13_only_loaded_and_root_level_loki_files_reload
+    pattern = Daemon.loki_pattern(@root, [File.join(@root, ".loki"), File.join(@root, "tasks", "gem.loki"),
+                                          "/elsewhere/x.loki", File.join(@root, "lib", "x.rb")])
+    [".loki", "quality.loki", "tasks/gem.loki"].each { |path| assert_match pattern, path }
+    ["test/fixtures/.loki", "tasks/other.loki", "lib/x.rb", "x.loki.bak"].each { |path| refute_match pattern, path }
+  end
+
+  # E3 (W16): a .loki saved with an error must not replace a working
+  # daemon with one that aborts; the old declarations keep watching.
+  def test_regression_w16_a_broken_loki_keeps_the_running_daemon
+    config  = Daemon::Config.new(declarations:, root: @root, state: @state, context: @context, tasks: %w[lint docs])
+    checked = []
+    watcher = Daemon.new(config, listen: @listen, exec: ->(*argv) { @execs << argv }, out: @out,
+                                 validate: ->(asgard, root) { (checked << [asgard, root]) && false })
+    thread  = Thread.new { watcher.run }
+    wait_until { @state.running_pid }
+    @listen.listeners.last.callback.call([".loki"], [], [])
+    wait_until { checked.any? }
+    sleep 0.5
+    assert_empty @execs, "no exec into a .loki that does not load"
+    assert thread.alive?
+    assert @listen.listeners.all?(&:started), "still listening"
+    assert_match(/keeping the running declarations/, @out.string)
+    assert_equal [[@asgard, @root]], checked
+  ensure
+    watcher&.stop
+    thread&.join(10)
+  end
+
+  def test_regression_w16_loki_valid_runs_asgard_help_in_the_root
+    Dir.mktmpdir do |dir|
+      good = File.join(dir, "good")
+      File.write(good, "#!/bin/sh\n[ \"$1\" = help ] && [ \"$PWD\" = \"#{File.realpath(dir)}\" ]\n")
+      File.chmod(0o755, good)
+      assert Daemon.loki_valid?(good, File.realpath(dir))
+      refute Daemon.loki_valid?("/bin/false", dir)
+    end
+  end
+
+  def test_regression_w1_next_action
+    assert_equal :wait,   Daemon.next_action(stopping: false, reload: false)
+    assert_equal :reload, Daemon.next_action(stopping: false, reload: true)
+    assert_equal :stop,   Daemon.next_action(stopping: true,  reload: true), "a stop wins over a pending reload"
   end
 end
 
@@ -903,9 +1386,16 @@ class TestWatchCommands < Minitest::Test
     assert_equal "lib test [added, removed]", Commands.describe(spec)
     assert_equal "lib/**/*.rb", Commands.describe(Asgard::Watch.normalize(:tree, paths: "lib/**/*.rb"))
     assert_equal "never", Commands.last_run(nil)
-    assert_equal "running (pid 41)", Commands.last_run({ pid: 41 })
+    assert_equal "running (pid 41)", Commands.last_run({ pid: 41 }, running: ->(_) { true })
     finished = Time.new(2026, 10, 18, 9, 30, 2).iso8601
     assert_equal "3 (2.5s, 2026-10-18 09:30:02)", Commands.last_run({ pid: 41, finished:, status: 3, seconds: 2.5 })
+  end
+
+  # W7: an entry whose task never reported an exit (a crash, a kill -9,
+  # a reload) is not "running" once its pid is gone.
+  def test_regression_w7_last_run_of_a_dead_unfinished_entry
+    assert_equal "running (pid 41)", Commands.last_run({ pid: 41, task: "t" }, running: ->(_) { true })
+    assert_equal "did not finish (pid 41)", Commands.last_run({ pid: 41, task: "t" }, running: ->(_) { false })
   end
 
   def test_asgard_watcher_maps_to_the_subcommand_and_help_hides_the_underscore
@@ -981,6 +1471,23 @@ class TestWatchCommands < Minitest::Test
     assert_match(%r{│ tree\s+│ asgard tree\s+│ lib/\*\*/\*\.rb\s+│ stopped\s+│ never}, out)
     _, err = capture_io { assert_raises(SystemExit) { watcher("stop") } }
     assert_match "not running for #{@slug}", err
+  end
+
+  # W6: a second start that checks the pidfile before the first daemon
+  # has written it must still be refused. Removing the first daemon's
+  # pidfile puts the second start in exactly that position.
+  def test_regression_w6_a_second_start_racing_the_first_is_refused
+    Tasks.watch :tree, paths: "lib/**/*.rb"
+    capture_io { watcher("start") }
+    first = state.running_pid
+    assert first
+    File.delete(state.pid_path)
+    _, err = capture_io { assert_raises(SystemExit) { watcher("start") } }
+    assert_match "already running for #{@slug}", err
+  ensure
+    [first, state.read_pid].compact.uniq.each do |pid|
+      Process.kill("TERM", pid) if pid.positive? && pid != Process.pid && Asgard::Watch::State.daemon?(pid)
+    end
   end
 
   def test_list_shows_last_runs_and_every_project_with_all
@@ -1110,6 +1617,34 @@ class TestPidAndStateDir < Minitest::Test
     refute Pid.alive?(child)
   end
 
+  # J4: procps can cut the command line to the terminal width, and a
+  # job's script path sits at the very end of a long one.
+  def test_regression_j4_ps_is_asked_for_unlimited_width
+    assert_equal [Pid::PS, "-ww", "-o", "command=", "-p", "42"], Pid.ps_argv(42)
+  end
+
+  def test_regression_j4_a_long_command_line_comes_back_whole
+    tail  = "x" * 400
+    child = Process.spawn(["/bin/sleep", "sleep-#{tail}"], "30")
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 5
+    sleep 0.02 until Pid.command_line(child).to_s.include?("sleep-") || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+    saved = ENV.fetch("COLUMNS", nil)
+    ENV["COLUMNS"] = "40"
+    assert_includes Pid.command_line(child), tail
+  ensure
+    saved ? ENV["COLUMNS"] = saved : ENV.delete("COLUMNS")
+    if child
+      Process.kill("TERM", child)
+      Process.wait(child)
+    end
+  end
+
+  def test_regression_j10_group_commands_keeps_only_that_group
+    out = "  501 /bin/sh -c trap asgard-job bash /s/api.sh\n  777 bash /s/api.sh\n  777 sleep 30\n 7770 other\n"
+    assert_equal ["bash /s/api.sh", "sleep 30"], Pid.group_commands(out, 777)
+    assert_empty Pid.group_commands("", 777)
+  end
+
   def test_all_lists_one_kind_at_a_time
     Dir.mktmpdir do |home|
       watch = StateDir.base_dir("watch", home:, env: {})
@@ -1122,6 +1657,29 @@ class TestPidAndStateDir < Minitest::Test
       assert_equal [["a-1", "/a"]],                 StateDir.all(base: watch)
       assert_equal [["b-2", "/b"], ["c-3", "/c"]], StateDir.all(base: jobs)
       assert_equal [], StateDir.all(base: File.join(home, "none"))
+    end
+  end
+
+  # X2: logs and job scripts can hold secrets; only the owner may look.
+  def test_regression_x2_a_project_state_directory_is_private
+    Dir.mktmpdir do |home|
+      dir = File.join(home, "asgard", "jobs", "p-1")
+      StateDir.record_root(dir, "/p")
+      assert_equal 0o700, File.stat(dir).mode & 0o777
+    end
+  end
+
+  # X3: one corrupt record must not take down a listing.
+  def test_regression_x3_a_corrupt_record_reads_as_nil
+    Dir.mktmpdir do |home|
+      path = File.join(home, "bad.json")
+      File.write(path, "{ not json")
+      assert_nil StateDir.read_json(path)
+      state = Asgard::Jobs::State.new(project: "p", root: "/p", base: home)
+      state.prepare
+      File.write(File.join(state.dir, "broken.json"), "{")
+      state.write_record({ name: "ok", task: "t", pid: 1, pgid: 1, started: "2026-10-24T00:00:00Z" })
+      assert_equal(["ok"], state.records.map { |record| record[:name] })
     end
   end
 

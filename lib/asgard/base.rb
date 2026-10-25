@@ -60,6 +60,19 @@ module Asgard
         !thor_generated?(path) && !path.start_with?(ASGARD_LIB)
       end
 
+      HIDDEN_DESC = "(hidden task: defined without a desc)"
+
+      # A public method a .loki defines without a desc is a hidden task:
+      # it runs from the command line and as a dependency, and help leaves
+      # it out. Not one: a method that already has a desc pending, anything
+      # inside no_commands (helpers), non-public methods, the gem's own
+      # _-prefixed names, and a name Thor already has a command for (help).
+      def implicit_hidden_task?(method_name)
+        name = method_name.to_s
+        !@usage && !no_commands? && !name.start_with?("_") && name != "method_missing" &&
+          public_method_defined?(method_name) && !all_commands.key?(name)
+      end
+
       def _check_reserved_name!(method_name)
         return unless RESERVED_NAMES.include?(method_name)
 
@@ -86,6 +99,7 @@ module Asgard
           @_pending_single_desc_opts = nil
           desc(name, pending_desc, pending_opts)
         end
+        desc(name, HIDDEN_DESC, hide: true) if implicit_hidden_task?(method_name)
 
         return super unless @usage
 

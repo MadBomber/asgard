@@ -14,6 +14,10 @@ module Asgard
   module StateDir
     ROOT_FILE = "root"
 
+    # The size a log may reach before it is rotated, unless ASGARD_LOG_MAX
+    # (bytes) says otherwise.
+    LOG_MAX = 10 * 1024 * 1024
+
     module_function
 
     def base_dir(kind, home: Dir.home, env: ENV)
@@ -40,11 +44,40 @@ module Asgard
       end
     end
 
-    def read_json(path) = File.exist?(path) ? JSON.parse(File.read(path), symbolize_names: true) : nil
+    # The parsed record, or nil when there is none or it is not JSON (a
+    # disk that filled up, a hand edit): one bad file must not take down
+    # every listing that reads it.
+    def read_json(path)
+      return nil unless File.exist?(path)
 
-    # Creates +dir+ and records the project root in it.
+      JSON.parse(File.read(path), symbolize_names: true)
+    rescue JSON::ParserError
+      nil
+    end
+
+    # The log size limit: ASGARD_LOG_MAX when it is a positive number of
+    # bytes, else LOG_MAX.
+    def log_limit(env = ENV)
+      bytes = Integer(env["ASGARD_LOG_MAX"].to_s, exception: false)
+      bytes&.positive? ? bytes : LOG_MAX
+    end
+
+    # Moves +path+ to +path+.1 (replacing an older one) once it is larger
+    # than +max_bytes+; the new name when it did, else nil. A task still
+    # writing to the old file carries on into path.1, and the next line
+    # starts a fresh file.
+    def rotate(path, max_bytes:)
+      return nil unless File.exist?(path) && File.size(path) > max_bytes
+
+      File.rename(path, "#{path}.1")
+      "#{path}.1"
+    end
+
+    # Creates +dir+, readable by its owner only (logs and job scripts can
+    # hold secrets), and records the project root in it.
     def record_root(dir, root)
-      FileUtils.mkdir_p(dir)
+      FileUtils.mkdir_p(dir, mode: 0o700)
+      File.chmod(0o700, dir)
       File.write(File.join(dir, ROOT_FILE), "#{root}\n")
     end
   end

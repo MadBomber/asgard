@@ -199,13 +199,10 @@ module Asgard
       def missing_message = "asgard: shell #{name.inspect} not found: #{argv('...').shelljoin}"
     end
 
-    # Run +script+ with the default shell. Exits with the command's status on
-    # failure.
-    def sh(script, **) = shebang(script, **)
-
     # Write +script+ to a tempfile and run it with the shell registered as
     # +name+, or with the default shell when only the script is given.
-    # Returns true; exits with the command's status code on failure.
+    # Returns true; exits with the command's status code on failure. `sh`
+    # is the same method under a shorter name (see the alias below).
     #
     # background: true starts the script as a job named after the calling
     # task (`doc_server-1`); a Symbol or String names the job itself. The
@@ -218,6 +215,7 @@ module Asgard
       $stdout.puts run.script unless silent
       job ? start_job(run, job, silent:) : run_script(run)
     end
+    alias_method :sh, :shebang # rubocop:disable Style/Alias -- the method form reads as the API statement it is
 
     private
 

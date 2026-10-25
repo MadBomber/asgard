@@ -1625,6 +1625,12 @@ class TestAsgardShell < Minitest::Test
     Asgard::Shell.reset_shells!
   end
 
+  def test_sh_is_the_same_method_as_shebang_and_takes_a_shell_name
+    assert_equal Asgard::Shell.instance_method(:shebang), Asgard::Shell.instance_method(:sh)
+    out, = capture_subprocess_io { sh :ruby, "puts RUBY_VERSION", silent: true }
+    assert_equal RUBY_VERSION, out.strip
+  end
+
   def test_shebang_returns_true_on_success
     assert_equal true, sh("true", silent: true)
     assert_equal true, shebang(:ruby, "exit 0", silent: true)

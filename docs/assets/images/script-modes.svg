@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="100%" role="img" aria-labelledby="script-modes-title" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">
+  <title id="script-modes-title">The three ways a script runs: in the foreground asgard waits for the exit status; as a managed background job asgard records the job and returns at once; detached with an ampersand the shell exits and asgard knows nothing about the process.</title>
+  <defs>
+    <marker id="arrow-modes" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" fill-opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <!-- lane separators -->
+  <line x1="20" y1="108" x2="740" y2="108" stroke="currentColor" stroke-opacity="0.15" stroke-width="1"/>
+  <line x1="20" y1="218" x2="740" y2="218" stroke="currentColor" stroke-opacity="0.15" stroke-width="1"/>
+
+  <!-- Lane 1: foreground -->
+  <text x="20" y="34" fill="currentColor" font-weight="600">Foreground</text>
+  <rect x="20" y="44" width="220" height="54" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="130" y="66" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">sh "rake build"</text>
+  <text x="130" y="86" text-anchor="middle" fill="currentColor" font-size="12">the task waits here</text>
+  <rect x="300" y="44" width="200" height="54" rx="8" fill="#38bdf8" fill-opacity="0.22" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="400" y="66" text-anchor="middle" fill="currentColor" font-weight="600">bash runs the script</text>
+  <text x="400" y="86" text-anchor="middle" fill="currentColor" font-size="12">output in your terminal</text>
+  <line x1="240" y1="62" x2="298" y2="62" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-modes)"/>
+  <line x1="300" y1="84" x2="242" y2="84" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-modes)"/>
+  <text x="270" y="56" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">start</text>
+  <text x="270" y="98" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">exit status</text>
+  <text x="560" y="66" fill="currentColor" font-size="12">non-zero: asgard exits with it</text>
+  <text x="560" y="86" fill="currentColor" font-size="12">zero: the next statement runs</text>
+
+  <!-- Lane 2: managed background -->
+  <text x="20" y="144" fill="currentColor" font-weight="600">Managed background</text>
+  <rect x="20" y="154" width="220" height="54" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="130" y="176" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">sh "mkdocs serve", background: true</text>
+  <text x="130" y="196" text-anchor="middle" fill="currentColor" font-size="12">returns a job object at once</text>
+  <rect x="300" y="154" width="200" height="54" rx="8" fill="#fbbf24" fill-opacity="0.22" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="400" y="176" text-anchor="middle" fill="currentColor" font-weight="600">job: doc_server-1</text>
+  <text x="400" y="196" text-anchor="middle" fill="currentColor" font-size="12">own session, name, pid, log recorded</text>
+  <rect x="560" y="154" width="180" height="54" rx="8" fill="#fbbf24" fill-opacity="0.22" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="650" y="176" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">asgard jobs</text>
+  <text x="650" y="196" text-anchor="middle" fill="currentColor" font-size="12">list, log, stop, restart, later</text>
+  <line x1="240" y1="181" x2="298" y2="181" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-modes)"/>
+  <line x1="500" y1="181" x2="558" y2="181" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrow-modes)"/>
+  <text x="529" y="173" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">outlives asgard</text>
+
+  <!-- Lane 3: detached -->
+  <text x="20" y="254" fill="currentColor" font-weight="600">Detached</text>
+  <rect x="20" y="264" width="220" height="54" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="130" y="286" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">sh "mkdocs serve &amp;"</text>
+  <text x="130" y="306" text-anchor="middle" fill="currentColor" font-size="12">reports success at once</text>
+  <rect x="300" y="264" width="200" height="54" rx="8" fill="#38bdf8" fill-opacity="0.22" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="400" y="286" text-anchor="middle" fill="currentColor" font-weight="600">bash exits immediately</text>
+  <text x="400" y="306" text-anchor="middle" fill="currentColor" font-size="12">the &amp; hands the process off</text>
+  <rect x="560" y="264" width="180" height="54" rx="8" fill="#fb7185" fill-opacity="0.22" stroke="#fb7185" stroke-width="1.5"/>
+  <text x="650" y="286" text-anchor="middle" fill="currentColor" font-weight="600">process floats free</text>
+  <text x="650" y="306" text-anchor="middle" fill="currentColor" font-size="12">asgard knows nothing about it</text>
+  <line x1="240" y1="291" x2="298" y2="291" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-modes)"/>
+  <line x1="500" y1="291" x2="558" y2="291" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-modes)"/>
+</svg>

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`sh` is `shebang`** — `sh` took only a script and forwarded it to
+  `shebang`, so `sh :python3, "..."` was an `ArgumentError` while
+  `shebang :python3, "..."` worked. `sh` is now `alias_method :sh,
+  :shebang`: one method under two names, with the same arguments,
+  keywords and behaviour. Nothing that worked before changes.
+- **`--debug` and `--verbose` show one spelling in help** — the two
+  built-in boolean flags were listed as `[--debug], [--no-debug],
+  [--skip-debug]` and the same for `--verbose`, the way Thor shows every
+  boolean option. Negating a flag that defaults to off means nothing, so
+  both now use `no_negate`, as `--version` and `--doctor` already did,
+  and help lists just `[--debug]` and `[--verbose]`. The negated
+  spellings still parse if typed.
 - **BREAKING: project slugs carry a hash of the path** — schedule labels,
   systemd unit names and the watcher's state directory were filed under
   the basename of the project directory alone, so two projects in

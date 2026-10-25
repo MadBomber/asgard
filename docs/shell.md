@@ -1,14 +1,16 @@
-# Shell Helpers
+# Shell Commands
 
-`shebang` is the one way a task runs something that isn't Ruby. It writes the script to a tempfile and hands the file to an interpreter from the `shells` registry. Called with a script alone it uses the `default_shell`, and `sh script` is the same call. Both are provided by `Asgard::Shell` and mixed into every `Tasks` instance.
+Some asgard tasks need to run processes that are not executed in Ruby: a build, a test suite, a deploy script, a Python one-off. Asgard gives every task one method for that, under two names: `sh` and `shebang` are the same method, and everything on this page about one is true of the other. `sh :python3, script` runs the script under the interpreter registered as `:python3`; `sh script`, with no shell named, runs it under the default shell. Many task authors write `sh` without a shell designation as the short-cut for an ordinary shell command and reserve the longer `shebang` for scripts in another language, which is how this page is laid out, but that is a habit, not a rule.
 
-Both return `true` and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept `silent: true` to suppress the script echo, and `background:` to start the script as a [managed background job](jobs.md) instead of waiting for it.
+Whichever spelling you use, the script is written to a temporary file, run, and asgard stops if it fails, so a pipeline of tasks never continues past a broken step.
+
+Start with the nameless form. Everything else on this page is a refinement of it.
 
 ---
 
-## `sh` — Run a Script in the Default Shell
+## `sh`: Run a Script in the Default Shell
 
-`sh script` is `shebang script`: the script runs under the `default_shell`, which is bash until a `.loki` says otherwise. One line or many take the same path:
+`sh` takes a script and runs it. One line or many, it works the same way:
 
 ```ruby
 class Tasks
@@ -30,29 +32,45 @@ class Tasks
 end
 ```
 
-All lines of a heredoc execute in the same shell session, so variable assignments carry across lines. By default the script is printed before it runs:
+```bash
+asgard build
+```
 
 ```
 rake build
+... rake's output ...
 ```
 
+The script is printed before it runs, so the terminal shows what asgard did. All lines of a heredoc run in one shell session, so a variable set on one line is visible on the next:
+
+```ruby
+desc "Tag the build"
+def tag
+  sh <<~SHELL
+    version=$(cat VERSION)
+    git tag "v$version"
+    echo "tagged v$version"
+  SHELL
+end
+```
+
+The shell is bash until a `.loki` says otherwise (see [`default_shell`](#default_shell-the-shell-used-when-none-is-named)). Bash syntax such as `[[ ... ]]`, arrays and `$PIPESTATUS` works in a one-liner as well as in a heredoc.
+
 !!! note
-    Earlier versions ran a one-line `sh` script through `/bin/sh` and a heredoc through `bash`. On Debian and Ubuntu `/bin/sh` is dash, so bash syntax such as `[[ ... ]]` or `$PIPESTATUS` failed in a one-liner and worked in a heredoc. Both now take the same path.
+    Before 0.6.0 a one-line `sh` went through `/bin/sh` and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-every-script-runs-under-bash).
 
 ### Silent Mode
 
-Pass `silent: true` to suppress the echo. The script still runs and still exits on failure:
+Pass `silent: true` to skip the echo. The script still runs and still stops asgard on failure:
 
 ```ruby
-class Tasks
-  desc "Compile (quiet)"
-  def build = sh "rake build", silent: true
-end
+desc "Compile (quiet)"
+def build = sh "rake build", silent: true
 ```
 
 ### Exit on Failure
 
-A failing script calls `exit($?.exitstatus)`. There is no rescue path — a failing command terminates the `asgard` process. This is intentional: failed steps should stop the pipeline rather than silently continue.
+When the script exits non-zero, asgard exits with that same status. Nothing after the failing `sh` runs, no Ruby exception is raised, and there is nothing to rescue:
 
 ```ruby
 class Tasks
@@ -60,17 +78,48 @@ class Tasks
   desc "Test then release"
   def release
     sh "bundle exec rake release"
-    # Never reached if rake release fails
-    puts "Released!"
+    puts "Released!"        # never reached if rake release fails
   end
 end
 ```
 
+```bash
+asgard release; echo "exit $?"
+# ... rake release fails with status 1 ...
+# exit 1
+```
+
+A command that ends on a signal exits with 128 plus the signal number, the way a shell reports it. This is deliberate: a task runner that continued past a failed step would hide the failure. When a command is allowed to fail, say so in the script or in Ruby:
+
+```ruby
+desc "Remove build output, if any"
+def clean
+  sh "rm -r dist || true"                  # the shell swallows the failure
+end
+
+desc "Report whether the server is up"
+def ping
+  if system("curl -fsS localhost:3000/health > /dev/null")   # plain Ruby: returns true or false
+    puts "up"
+  else
+    puts "down"
+  end
+end
+
+desc "Count TODO comments"
+def todos
+  count = `grep -r TODO lib | wc -l`.strip   # backticks capture output, never exit asgard
+  puts "#{count} TODOs"
+end
+```
+
+`sh` returns `true` when the script succeeds, which is useful at the end of an endless-method task: `def build = sh "rake build"`.
+
 ---
 
-## `shebang` — Any Interpreter
+## `shebang`: Any Interpreter
 
-`shebang name, script` writes the script to a tempfile with the extension registered for `name` and runs the registered executable on it. Use it to embed Python, Node.js, Ruby, Perl, or any other interpreter directly in a task:
+`shebang :name, script` writes the script to a tempfile with the extension registered for `name` and runs the registered executable on it. Python, Node, Ruby, Perl or anything else can live directly in a task:
 
 ```ruby
 class Tasks
@@ -102,69 +151,61 @@ class Tasks
 end
 ```
 
-A name that isn't registered runs as itself, found on `PATH`, with a `.tmp` extension. So any interpreter works without declaring it:
+`shebang` is the same method as `sh`, so it takes the same `silent:` and `background:` keywords, echoes the script the same way, and exits asgard on failure the same way. `sh :python3, script` and `shebang :python3, script` are one call; so are `shebang "rake build"` and `sh "rake build"`.
+
+### Interpreters You Did Not Register
+
+A name that is not in the registry runs as itself, found on `PATH`, with a `.tmp` file extension. Any interpreter works without declaring it:
 
 ```ruby
-shebang :lua, <<~LUA
-  print("Hello from Lua!")
-LUA
+desc "Say hello from Lua"
+def lua_hello = shebang :lua, 'print("Hello from Lua!")'
 ```
 
-If the executable can't be found, asgard prints the shell name and the command it tried, then exits 127:
+If the executable is not found, asgard names the shell and the command it tried, then exits 127:
 
 ```
-asgard: shell :lua not found: lua ...
+asgard: shell :lua not found: lua /var/folders/.../T/asgard_20261024-80545-1x2y3z.tmp
 ```
+
+Register the interpreter with [`shell`](#shell-add-or-replace-an-entry) when it needs a specific extension or options, or when you want the mistake caught while the `.loki` loads rather than the first time the task runs.
 
 ---
 
 ## The `shells` Registry
 
-`Tasks.shells` is a Hash from shell name to the executable, the arguments placed before the script, and the tempfile extension. It is seeded with:
+Every shell name maps to an executable, the arguments placed before the script file, and the tempfile extension. The registry starts with these entries:
 
-| Name | `path` | `args` | `ext` |
+| Name | Executable | Arguments | Extension |
 |---|---|---|---|
-| `:bash` | `bash` | `[]` | `.sh` |
-| `:sh` | `sh` | `[]` | `.sh` |
-| `:python3` | `python3` | `[]` | `.py` |
-| `:python` | `python` | `[]` | `.py` |
-| `:node` | `node` | `[]` | `.js` |
-| `:ruby` | `ruby` | `[]` | `.rb` |
-| `:perl` | `perl` | `[]` | `.pl` |
+| `:bash` | `bash` | none | `.sh` |
+| `:sh` | `sh` | none | `.sh` |
+| `:python3` | `python3` | none | `.py` |
+| `:python` | `python` | none | `.py` |
+| `:node` | `node` | none | `.js` |
+| `:ruby` | `ruby` | none | `.rb` |
+| `:perl` | `perl` | none | `.pl` |
+
+You can read an entry back in a `.loki`:
 
 ```ruby
 Tasks.shells[:bash]   # => { path: "bash", args: [], ext: ".sh" }
 ```
 
-A bare `path` is looked up on `PATH` each time the script runs, exactly as the kernel does for a `#!/usr/bin/env` line. The extension matters only to interpreters that read it: Node decides between CommonJS and ES modules by extension, and PowerShell refuses a file that isn't `.ps1`.
+A bare executable such as `bash` is looked up on `PATH` each time a script runs, exactly as a `#!/usr/bin/env bash` line would do. The extension matters only to interpreters that read it: Node decides between CommonJS and ES modules by extension, and PowerShell refuses a script that is not `.ps1`. Zsh and fish scripts get `.sh` and `.fish` even without a registry entry, and csh and tcsh get `.csh`.
 
-### `shell` — Add or Replace an Entry
+There is one registry for the whole project. A `shell` declared in `.loki` applies inside [subcommand classes](subcommands.md) too.
 
-`shell name, path, args: nil, ext: nil` at class level registers a shell and returns its name. A String path is split with shell quoting rules: the first word is the executable and any remaining words become arguments. A `Pathname` is one executable, taken whole, so a directory with a space in it needs no quoting. `args:` may be a String, also split, or an Array; it follows the words from the path. When `ext:` is omitted it is derived from the executable's basename, falling back to `.tmp`.
+### `shell`: Add or Replace an Entry
 
-The executable is checked as the `.loki` loads. A path with a directory part must be an existing executable file, exactly as written, since nothing expands `~` or searches `PATH` for it later; a bare name must be found on `PATH` as an executable. A failing check raises `ArgumentError` naming the shell, so the problem shows at the declaration rather than as an exit 127 the first time a task runs. The seeded entries are not checked, which is why `shebang :perl` on a machine without perl fails only when it runs.
-
-The name may be left out. A bare path registers under the executable's basename, with any options in the string parsed into `args:`, and a Symbol alone registers that name as itself from `PATH`:
+`shell` at class level registers a shell and returns its name. The simplest forms name the shell and give its path:
 
 ```ruby
 class Tasks
-  shell "/usr/local/bin/bash -c -w"                  # :bash => { path: "/usr/local/bin/bash", args: ["-c", "-w"], ext: ".sh" }
-  shell Pathname.new("/opt/homebrew/bin/fish")       # :fish
-  shell :zsh                                         # :zsh  => { path: "zsh", args: [], ext: ".sh" }
-end
-```
-
-With a name:
-
-```ruby
-class Tasks
-  shell :bash,   "/opt/homebrew/bin/bash"            # pin bash 5 for sh and shebang :bash
-  shell :strict, "bash -eu -o pipefail"              # options before the script
-  shell :strict, "bash", args: "-eu -o pipefail"     # same entry
-  shell :strict, "bash", args: %w[-eu -o pipefail]   # same entry
-  shell :uv,     "uv run --script", ext: ".py"       # a wrapper, not just a binary
-  shell :tool,   "'/Applications/Some App/bin/tool' -q"
-  shell :tool,   Pathname.new("/Applications/Some App/bin/tool"), args: "-q"   # same entry
+  shell :bash,   "/opt/homebrew/bin/bash"           # pin bash 5 for sh and shebang :bash
+  shell :strict, "bash -eu -o pipefail"             # options before the script
+  shell :uv,     "uv run --script", ext: ".py"      # a wrapper command, not just a binary
+  shell :fish                                       # fish from PATH, defaults
 
   desc "Deploy under strict bash"
   def deploy = shebang :strict, <<~BASH
@@ -178,50 +219,81 @@ end
 Tasks.shells[:strict]  # => { path: "bash", args: ["-eu", "-o", "pipefail"], ext: ".sh" }
 ```
 
-There is one registry for every `Tasks` subclass, so a `shell` declared in `.loki` applies inside subcommand classes too.
+The path string is split the way a shell splits a command line, quotes respected: the first word is the executable and the rest become arguments. `args:` adds more arguments, as a String (also split) or an Array; they follow the words from the path. `ext:` sets the tempfile extension; when omitted it comes from the executable's basename (`.sh` for bash, `.py` for python3, and so on), falling back to `.tmp`.
 
-### `default_shell` — What `sh` Runs
-
-`default_shell name` at class level picks the registry entry that `sh`, and `shebang` called without a name, run. It starts as `:bash`. With no argument it returns the current name. A bare Symbol only selects; it never changes the registry, so a path pinned earlier with `shell` stays pinned.
-
-Any other form registers first, exactly as `shell` would, then selects what it registered. A bare path registers under the executable's basename; a name with a path, `args:` or `ext:` registers that name, and the path is the name itself when only `args:` or `ext:` are given.
+These are all the same entry:
 
 ```ruby
-class Tasks
-  default_shell "/usr/local/bin/bash -c -w"                # register :bash with those options, select it
-  default_shell :strict, "bash", args: "-eu -o pipefail"   # register :strict, select it
-  default_shell :zsh, args: "-f"                           # path defaults to "zsh"
-  default_shell :bash5, Pathname.new("/opt/homebrew/bin/bash")
-end
+shell :strict, "bash -eu -o pipefail"
+shell :strict, "bash", args: "-eu -o pipefail"
+shell :strict, "bash", args: %w[-eu -o pipefail]
 ```
 
-Which is the same as:
+**Leaving the name out.** A bare path registers under the executable's basename, with any options parsed into the arguments:
+
+```ruby
+shell "/usr/local/bin/bash -c -w"      # :bash => { path: "/usr/local/bin/bash", args: ["-c", "-w"], ext: ".sh" }
+shell Pathname.new("/opt/homebrew/bin/fish")   # :fish
+```
+
+**Paths with spaces.** A `Pathname` is one executable, taken whole and never split, so a directory with a space in it needs no quoting:
+
+```ruby
+shell :tool, "'/Applications/Some App/bin/tool' -q"                           # quoted String
+shell :tool, Pathname.new("/Applications/Some App/bin/tool"), args: "-q"      # same entry, no quoting
+```
+
+**The executable is checked as the `.loki` loads.** A path with a directory part must be an existing executable file, exactly as written (nothing expands `~` or searches `PATH` for it later). A bare name must be found on `PATH`. A failing check stops the load with a message naming the shell:
+
+```
+asgard: /proj/.loki:3: shell :bash: /opt/homebrew/bin/bash is not an executable file (ArgumentError)
+asgard: /proj/.loki:4: shell :uv: uv is not an executable on PATH (ArgumentError)
+```
+
+This is why a typo in a `shell` line shows at startup, while a missing seeded interpreter (`shebang :perl` on a machine without perl) shows only when the task runs: the seeded entries are not checked until they are used.
+
+### `default_shell`: The Shell Used When None Is Named
+
+`default_shell` picks the registry entry that `sh` and `shebang` run when no shell is named. It starts as `:bash`. With no argument it returns the current name.
+
+A bare Symbol only selects. It checks that the shell exists but never changes the registry, so a path pinned earlier with `shell` stays pinned:
 
 ```ruby
 class Tasks
   shell :strict, "bash -eu -o pipefail"
   default_shell :strict
 
-  desc "Every sh call now runs under strict bash"
+  desc "Every call that names no shell now runs under strict bash"
   def build
-    sh "rake build"              # shebang :strict, "rake build"
+    sh "rake build"              # no shell named: runs under :strict
     shebang "rake package"       # same shell, same path
-    shebang :python3, "print('explicit names still win')"
+    shebang :python3, "print('an explicit name still wins')"
   end
 end
 ```
 
-Like the registry, the default is one value shared by every `Tasks` subclass.
+Any other form registers first, exactly as `shell` would, then selects what it registered:
+
+```ruby
+class Tasks
+  default_shell "/usr/local/bin/bash -c -w"                # register :bash with those options, select it
+  default_shell :strict, "bash", args: "-eu -o pipefail"   # register :strict, select it
+  default_shell :zsh, args: "-f"                           # path defaults to the name, "zsh"
+  default_shell :bash5, Pathname.new("/opt/homebrew/bin/bash")
+end
+```
+
+Like the registry, the default is one value for the whole project, subcommands included. A `.loki` that imports several files should set it once, in the root `.loki`, before the imports.
 
 ### Pinning a Path
 
-Your terminal's `PATH` and the `PATH` a scheduled or watched task sees are not the same. On a Mac with Homebrew, `bash` at the terminal is 5.x from `/opt/homebrew/bin`, while under `launchd` it is the 3.2 build in `/bin`. Pin the one you mean:
+Your terminal's `PATH` and the `PATH` a [scheduled](schedule.md) or [watched](watch.md) task sees are not the same. On a Mac with Homebrew, `bash` at the terminal is 5.x from `/opt/homebrew/bin`, while a job started by launchd finds the 3.2 build in `/bin`. A script that uses associative arrays or `${var,,}` works in one and fails in the other. Pin the one you mean:
 
 ```ruby
 shell :bash, "/opt/homebrew/bin/bash"
 ```
 
-A `.loki` file is Ruby, so a path that differs between machines is an ordinary expression:
+A `.loki` is Ruby, so a path that differs between machines is an ordinary expression:
 
 ```ruby
 shell :bash, %w[/opt/homebrew/bin/bash /usr/local/bin/bash /bin/bash].find { File.executable?(it) }
@@ -231,11 +303,11 @@ shell :bash, %w[/opt/homebrew/bin/bash /usr/local/bin/bash /bin/bash].find { Fil
 
 ## Long-Running Commands
 
-A dev server or a REPL needs nothing special. The shell and the script it runs are one unit: when the script finishes the shell exits, and Ctrl-C reaches asgard, the shell and the command together, because all three share the terminal's process group.
+A dev server, a REPL or a watch loop needs nothing special. Asgard waits for the shell, the shell waits for the command, and Ctrl-C reaches all three at once because they share the terminal's process group:
 
 ```ruby
 class Tasks
-  desc "Documentation server startup"
+  desc "Serve the documentation"
   depends_on :doc_builder
   def doc_server = sh "mkdocs serve"
 
@@ -244,28 +316,38 @@ class Tasks
 end
 ```
 
-Asgard waits for the shell and exits with its status, so a command that ends on a signal exits 128 plus the signal number, the same as a shell would report.
+```bash
+asgard doc_server
+# ... Ctrl-C ...
+# asgard exits 130
+```
+
+Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.
 
 !!! note
-    Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0; see [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed).
+    Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0 and now raises `ArgumentError (unknown keyword: :exec)`; delete the keyword. See [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed).
+
+### `$0` Is a Tempfile
+
+Because the script runs from a file, `$0` inside it is the path of that tempfile, such as `/var/folders/.../T/asgard_20261024-80545-bmbloc.sh`, and the file is deleted when the script ends. A usage message that printed `$0` should print a name you choose instead.
 
 ---
 
-## Background Jobs: Three Modes
+## Three Ways a Script Runs
 
-A script runs in one of three modes. Only the first two are asgard's.
+A script runs in one of three modes. The first two are asgard's; the third belongs to the shell.
 
 | Mode | How you ask for it | The task | When asgard exits | `asgard jobs` |
 |---|---|---|---|---|
 | Foreground | `sh "rake build"` | Waits for the script before its next statement; a failure exits asgard | The script has already finished | Nothing to manage |
-| Managed background | `sh "mkdocs serve", background: true` | Continues at once with a `Job` in hand | The job keeps running | Lists, stops, restarts and cleans it |
+| Managed background | `sh "mkdocs serve", background: true` | Continues at once with a job object in hand | The job keeps running | Lists, stops, restarts and cleans it |
 | Detached | `sh "mkdocs serve &"` | Continues at once with `true`; the shell has already exited | The process keeps running | Knows nothing about it |
 
-`background: true` names the job after the calling task and a counter (`doc_server-1`); a Symbol or String names it outright (`background: :api`). The job starts in its own session with its output in a log, its pid and task are recorded, and `asgard jobs list|stop|log|restart|clean` manage it from then on, in this asgard run or any later one:
+`background: true` names the job after the calling task plus a counter (`doc_server-1`); a Symbol or String names it outright (`background: :api`). The job starts in its own session with its output in a log file, its pid and task are recorded, and `asgard jobs list|stop|log|restart|clean` manage it from then on, in this asgard run or any later one:
 
 ```ruby
 class Tasks
-  desc "Documentation server startup"
+  desc "Serve the documentation"
   depends_on :doc_builder
   def doc_server = sh "mkdocs serve", background: true
 
@@ -277,17 +359,26 @@ class Tasks
 end
 ```
 
-A trailing `&` in the script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal; you stop it yourself with `ps` and `kill`. Use `background:` for anything you expect to come back to. The whole story, naming rules, the commands and the files on disk are on the [Background Jobs](jobs.md) page.
+```bash
+asgard doc_server
+```
+
+```
+mkdocs serve
+started doc_server-1 (pid 48213), log: ~/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
+```
+
+A trailing `&` in a script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal. You stop it yourself with `ps` and `kill`. Use `background:` for anything you expect to come back to. The whole story, including naming rules, the commands and the files on disk, is on the [Background Jobs](jobs.md) page.
 
 ---
 
 ## Combining `sh` and `shebang`
 
-Mix both freely in the same task:
+Mix both freely in one task. Each call runs to completion before the next starts:
 
 ```ruby
 class Tasks
-  desc "Run a mixed shell + Python pipeline"
+  desc "Run a mixed shell and Python pipeline"
   def pipeline
     sh "bundle exec rake build"
 
@@ -301,3 +392,60 @@ class Tasks
   end
 end
 ```
+
+Because every call stops asgard on failure, the Python step never runs after a failed build and the deploy never runs after failed validation. To share values between steps, write them to a file or an environment variable in the script, or compute them in Ruby and interpolate them into the next script (see [Variables](variables.md#strings-and-interpolation)).
+
+---
+
+## `sh` Versus Ruby's Own Methods
+
+A `.loki` is Ruby, so everything Ruby offers for running a program works in a task: `system`, backticks, `%x()`, `exec`, `spawn`, `Open3.capture3`. Nothing stops you using them, and the examples above do. What `sh` and `shebang` add is the behaviour a task runner needs around the command:
+
+| | `sh` / `shebang` | `system` | Backticks |
+|---|---|---|---|
+| Shows the command before running it | Yes, unless `silent: true` | No | No |
+| On failure | Exits asgard with the command's status; nothing after it runs | Returns `false` and the task carries on | Returns the output and the task carries on |
+| Missing interpreter | Prints which shell and exits 127 | Returns `nil` | Raises `Errno::ENOENT` |
+| Ended by a signal | Exits 128 plus the signal number | Returns `false` | Returns partial output |
+| Which shell runs it | The one registered in `shells`, the same under the watcher and a schedule | `/bin/sh`, or none for a single word | `/bin/sh` |
+| One line or a heredoc | The same path either way | A heredoc runs as one `/bin/sh` script | Same |
+| Other interpreters | `shebang :python3, script` | Build the argv yourself | Same |
+| As a managed background job | `background: true` | No | No |
+| Returns | `true`, or a job object | `true`, `false` or `nil` | The command's stdout |
+
+The first two rows are the reason to prefer `sh` by default. A task that calls `system("rake test")` and does not check the return value continues to the release step whether the tests passed or not, and asgard exits 0. The same line as `sh "rake test"` stops at the failure and exits with rake's status, and the log shows which command it was. Under the [watcher](watch.md) and a [schedule](schedule.md), where nobody is watching the terminal, both matter more.
+
+The shell row is the other one worth knowing. `system` and backticks go through `/bin/sh`, which is dash on Debian and Ubuntu and bash 3.2 in POSIX mode on macOS, so bash syntax that works at your prompt may not work there. `sh` runs the `:bash` entry of the `shells` registry, and `shell :bash, "/opt/homebrew/bin/bash"` pins it to one executable for every run on the machine.
+
+Ruby's methods are still the right tool when you want the output as a value, or when a failure is information rather than an error:
+
+```ruby
+desc "Tag the release"
+def tag
+  version = `git describe --tags --abbrev=0`.strip     # capture: backticks
+  sh "git tag #{version.succ} && git push --tags"      # act: sh
+end
+
+desc "Report whether the server is up"
+def ping
+  puts system("curl -fsS localhost:3000/health > /dev/null") ? "up" : "down"   # false is an answer, not a failure
+end
+```
+
+`sh` never captures output: the script's stdout and stderr go straight to yours, or to the watcher, schedule or job log. To use a command's output in Ruby, use backticks or `Open3`; to run a step that must succeed, use `sh`.
+
+---
+
+## Summary
+
+| Call | What it runs | Notes |
+|---|---|---|
+| `sh "script"` | The default shell (`:bash` until changed) | One line or heredoc; echoes; exits asgard on failure |
+| `sh "script", silent: true` | Same | No echo |
+| `sh "script", background: true` | Same, as a managed job | Returns at once; see [Background Jobs](jobs.md) |
+| `sh :name, "script"` | The shell registered as `:name` | Unregistered names run from `PATH` with `.tmp` |
+| `shebang ...` | Exactly as `sh` | The same method under its longer name |
+| `shell :name, "path", args:, ext:` | Class level: register a shell | Executable checked at load; returns the name |
+| `default_shell :name` | Class level: select the default | Other forms register and select |
+
+The full signatures are in the [DSL Reference](reference.md).

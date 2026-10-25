@@ -19,7 +19,7 @@
 - <strong>Subcommands</strong> — group related tasks under a named namespace<br>
 - <strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands<br>
 - <strong>`helper` DSL</strong> — define a method once, available in both class-level DSL calls (<code>header</code>) and inside task instance methods<br>
-- <strong>Shell Helpers</strong> — <code>sh</code> for any shell command or heredoc; <code>shebang</code> for polyglot scripts<br>
+- <strong>Shell Helpers</strong> — <code>sh</code> (alias <code>shebang</code>) runs a command or heredoc under the default shell, or under any registered interpreter when you name one<br>
 - <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
 - <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
 - <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
@@ -430,7 +430,7 @@ end
 
 ## Shell helpers
 
-`shebang` writes a script body to a tempfile and runs it with a registered interpreter; given a script alone it uses the `default_shell` (bash), and `sh` is the same call, for one line or a heredoc. Both return `true` and exit with the command's status code on failure.
+`sh` writes a script body to a tempfile and runs it with a registered interpreter; given a script alone it uses the `default_shell` (bash), for one line or a heredoc. `shebang` is the same method under a longer name, which many authors reserve for scripts in another language. Both return `true` and exit with the command's status code on failure.
 
 ```ruby
 class Tasks

@@ -1,6 +1,6 @@
 # MkDocs Configuration for Asgard Documentation
 site_name: Asgard
-site_description: Thor-based Ruby task runner with dependency graphs and concurrent execution
+site_description: A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.
 site_author: Dewayne VanHoozer
 site_url: https://madbomber.github.io/asgard
 copyright: Copyright &copy; 2026 Dewayne VanHoozer
@@ -148,21 +148,26 @@ extra:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
-  - Tasks:
+  - Writing Tasks:
       - Defining Tasks: tasks.md
+      - Shell Commands: shell.md
       - Dependencies: dependencies.md
+      - Options & Flags: options.md
       - Variables: variables.md
       - Helper Methods: helpers.md
-  - CLI:
-      - Options & Flags: options.md
       - Subcommands: subcommands.md
-      - Shell Helpers: shell.md
-      - Environment: environment.md
+  - Organizing a Project:
+      - Task Files: task-files.md
+      - Environment Variables: environment.md
+      - Help & Diagnostics: diagnostics.md
+  - Built-in Commands:
       - Scheduled Tasks: schedule.md
       - Watched Files: watch.md
       - Background Jobs: jobs.md
-  - Task Files: task-files.md
-  - API Reference: api.md
-  - Examples: examples.md
+  - Reference:
+      - DSL Reference: reference.md
+      - Command Reference: commands.md
+      - Files & Directories: files.md
+      - Examples: examples.md
   - Upgrading to 0.6.0: upgrading-0.6.md
   - Changelog: changelog.md

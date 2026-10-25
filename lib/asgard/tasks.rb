@@ -19,11 +19,13 @@ class Tasks < Asgard::Base
                type:    :boolean,
                default: false,
                desc:    "Enable debug mode ($DEBUG = true)"
+  no_negate :debug
 
   class_option :verbose,
                type:    :boolean,
                default: false,
                desc:    "Enable verbose output ($VERBOSE = true)"
+  no_negate :verbose
 
   class_option :version,
                type:    :boolean,

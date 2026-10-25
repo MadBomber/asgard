@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 270" width="100%" role="img" aria-labelledby="schedule-flow-title" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">
+  <title id="schedule-flow-title">A schedule declaration in .loki is installed into launchd or systemd, which runs the task in the project root and appends its output to a log file.</title>
+  <defs>
+    <marker id="arrow-sched" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" fill-opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <!-- .loki declaration -->
+  <rect x="20" y="30" width="210" height="76" rx="8" fill="#a78bfa" fill-opacity="0.22" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="125" y="54" text-anchor="middle" fill="currentColor" font-weight="600">.loki</text>
+  <text x="125" y="76" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">schedule :report,</text>
+  <text x="125" y="94" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">options: "--period week", at: "16:00", on: :friday</text>
+
+  <!-- install -->
+  <rect x="275" y="30" width="210" height="76" rx="8" fill="#fbbf24" fill-opacity="0.22" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="380" y="62" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="13">asgard schedule install</text>
+  <text x="380" y="86" text-anchor="middle" fill="currentColor" font-size="12">writes the job files, loads them</text>
+
+  <!-- scheduler -->
+  <rect x="530" y="30" width="210" height="76" rx="8" fill="#38bdf8" fill-opacity="0.22" stroke="#38bdf8" stroke-width="1.5"/>
+  <text x="635" y="58" text-anchor="middle" fill="currentColor" font-weight="600">launchd / systemd</text>
+  <text x="635" y="80" text-anchor="middle" fill="currentColor" font-size="12">fires every Friday at 16:00</text>
+  <text x="635" y="96" text-anchor="middle" fill="currentColor" font-size="12">(or on wake, if the machine slept)</text>
+
+  <!-- the task run -->
+  <rect x="530" y="170" width="210" height="76" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="635" y="198" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="13">asgard report --period week</text>
+  <text x="635" y="220" text-anchor="middle" fill="currentColor" font-size="12">in the project root, with the</text>
+  <text x="635" y="236" text-anchor="middle" fill="currentColor" font-size="12">PATH captured at install and env:</text>
+
+  <!-- log -->
+  <rect x="275" y="170" width="210" height="76" rx="8" fill="#a3e635" fill-opacity="0.22" stroke="#a3e635" stroke-width="1.5"/>
+  <text x="380" y="200" text-anchor="middle" fill="currentColor" font-weight="600">log file</text>
+  <text x="380" y="222" text-anchor="middle" fill="currentColor" font-family="ui-monospace, monospace" font-size="12">asgard schedule log report-period-week</text>
+
+  <!-- connectors -->
+  <line x1="230" y1="68" x2="273" y2="68" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-sched)"/>
+  <line x1="485" y1="68" x2="528" y2="68" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-sched)"/>
+  <line x1="635" y1="106" x2="635" y2="168" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-sched)"/>
+  <line x1="530" y1="208" x2="487" y2="208" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#arrow-sched)"/>
+  <text x="508" y="200" text-anchor="middle" fill="currentColor" fill-opacity="0.7" font-size="11">stdout + stderr</text>
+</svg>

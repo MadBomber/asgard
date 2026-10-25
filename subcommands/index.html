@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Thor-based Ruby task runner with dependency graphs and concurrent execution">
+        <meta name="description" content="A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.">
       
       
         <meta name="author" content="Dewayne VanHoozer">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/subcommands/">
       
       
-        <link rel="prev" href="../options/">
+        <link rel="prev" href="../helpers/">
       
       
-        <link rel="next" href="../shell/">
+        <link rel="next" href="../task-files/">
       
       
         
@@ -268,41 +268,19 @@
   
   
   
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../tasks/" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Tasks
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
     
   
   
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../options/" class="md-tabs__link">
+        <a href="../tasks/" class="md-tabs__link">
           
   
   
     
   
-  CLI
+  Writing Tasks
 
         </a>
       </li>
@@ -315,17 +293,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../task-files/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../task-files/" class="md-tabs__link">
+          
   
   
     
   
-  Task Files
+  Organizing a Project
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -334,17 +315,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../api/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../schedule/" class="md-tabs__link">
+          
   
   
     
   
-  API Reference
+  Built-in Commands
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -353,17 +337,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../examples/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
   
   
     
   
-  Examples
+  Reference
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -514,8 +501,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -527,28 +516,37 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Tasks
+    Writing Tasks
   
 
     
@@ -559,12 +557,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tasks
+    Writing Tasks
   
 
           </label>
@@ -605,6 +603,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dependencies/" class="md-nav__link">
         
   
@@ -613,6 +639,34 @@
     
   
     Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options & Flags
   
 
     
@@ -669,112 +723,6 @@
     
   
     Helper Methods
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLI
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    CLI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Options & Flags
   
 
     
@@ -857,10 +805,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-pattern" class="md-nav__link">
+  <a href="#the-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Pattern
+        The Pattern
       
     </span>
   </a>
@@ -871,7 +819,7 @@
   <a href="#why-inherit-from-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why Inherit from Tasks?
+        Why Inherit from Tasks
       
     </span>
   </a>
@@ -890,10 +838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-subcommand-example" class="md-nav__link">
+  <a href="#a-complete-example-server-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Server Subcommand Example
+        A Complete Example: Server Commands
       
     </span>
   </a>
@@ -901,10 +849,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scoped-dsl" class="md-nav__link">
+  <a href="#scoped-declarations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scoped DSL
+        Scoped Declarations
       
     </span>
   </a>
@@ -912,10 +860,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multiple-subcommands" class="md-nav__link">
+  <a href="#several-groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multiple Subcommands
+        Several Groups
       
     </span>
   </a>
@@ -933,6 +881,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#help-for-a-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help for a Group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-built-in-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Built-in Groups
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -942,6 +912,71 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organizing a Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organizing a Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -949,14 +984,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../shell/" class="md-nav__link">
+      <a href="../task-files/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Shell Helpers
+    Task Files
   
 
     
@@ -984,7 +1019,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -997,6 +1032,99 @@
   
 
               
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -1095,15 +1223,75 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../task-files/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Task Files
+    DSL Reference
   
 
     
@@ -1115,22 +1303,23 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="../commands/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    Command Reference
   
 
     
@@ -1142,9 +1331,38 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Files & Directories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1166,6 +1384,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1253,10 +1479,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-pattern" class="md-nav__link">
+  <a href="#the-pattern" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Pattern
+        The Pattern
       
     </span>
   </a>
@@ -1267,7 +1493,7 @@
   <a href="#why-inherit-from-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why Inherit from Tasks?
+        Why Inherit from Tasks
       
     </span>
   </a>
@@ -1286,10 +1512,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-subcommand-example" class="md-nav__link">
+  <a href="#a-complete-example-server-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Server Subcommand Example
+        A Complete Example: Server Commands
       
     </span>
   </a>
@@ -1297,10 +1523,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#scoped-dsl" class="md-nav__link">
+  <a href="#scoped-declarations" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Scoped DSL
+        Scoped Declarations
       
     </span>
   </a>
@@ -1308,10 +1534,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multiple-subcommands" class="md-nav__link">
+  <a href="#several-groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multiple Subcommands
+        Several Groups
       
     </span>
   </a>
@@ -1323,6 +1549,28 @@
     <span class="md-ellipsis">
       
         Subcommands Across Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#help-for-a-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Help for a Group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-built-in-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Built-in Groups
       
     </span>
   </a>
@@ -1372,10 +1620,10 @@
     
     
       <li class="md-path__item">
-        <a href="../options/" class="md-path__link">
+        <a href="../tasks/" class="md-path__link">
           
   <span class="md-ellipsis">
-    CLI
+    Writing Tasks
   </span>
 
         </a>
@@ -1411,10 +1659,8 @@
 
 
 <h1 id="subcommands">Subcommands<a class="headerlink" href="#subcommands" title="Permanent link">&para;</a></h1>
-<p>Subcommands group related tasks under a common namespace, giving you commands like <code>asgard server start</code> or <code>asgard db migrate</code>. Asgard uses Thor's <code>subcommand</code> method for this, with one important convention: subcommand classes inherit from <code>Tasks</code> rather than from <code>Asgard::Base</code> or <code>Thor</code> directly.</p>
-<hr />
-<h2 id="basic-pattern">Basic Pattern<a class="headerlink" href="#basic-pattern" title="Permanent link">&para;</a></h2>
-<p>Define a subcommand class that inherits from <code>Tasks</code>, then register it on the top-level <code>Tasks</code> class with <code>subcommand</code>:</p>
+<p>A subcommand groups related tasks under one name, so you type <code>asgard db migrate</code> and <code>asgard server start</code> instead of <code>migrate_db</code> and <code>start_server</code>. Each group is its own class with its own tasks, options and help page.</p>
+<p>The whole pattern in one file:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy to staging"</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">staging</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"cap staging deploy"</span>
@@ -1428,132 +1674,229 @@
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"deploy"</span><span class="p">,</span><span class="w"> </span><span class="no">DeployCommands</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>deploy<span class="w">              </span><span class="c1"># shows deploy subcommand help</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>staging
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>production
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>staging
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>production
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>asgard<span class="w"> </span>deploy<span class="w">              </span><span class="c1"># the group's help</span>
 </span></code></pre></div>
+<p>The rest of this page explains what the subcommand class gets from <code>Tasks</code>, how dependencies and options work inside it, and how to lay out several groups across files.</p>
 <hr />
-<h2 id="why-inherit-from-tasks">Why Inherit from <code>Tasks</code>?<a class="headerlink" href="#why-inherit-from-tasks" title="Permanent link">&para;</a></h2>
-<p>Inheriting from <code>Tasks</code> (rather than <code>Asgard::Base</code> or <code>Thor</code>) gives the subcommand class access to:</p>
+<h2 id="the-pattern">The Pattern<a class="headerlink" href="#the-pattern" title="Permanent link">&para;</a></h2>
+<p>A subcommand needs two things:</p>
+<ol>
+<li><strong>A class that inherits from <code>Tasks</code>.</strong> Its public methods with a <code>desc</code> are the group's tasks, exactly as in <code>Tasks</code> itself. The class name is yours to choose; <code>DeployCommands</code>, <code>Deploy</code> and <code>DeployTasks</code> all work.</li>
+<li><strong>A registration on <code>Tasks</code></strong> with <code>subcommand "name", TheClass</code>, preceded by a <code>desc</code> whose usage string is conventionally <code>name SUBCOMMAND</code>. The description is what <code>asgard help</code> shows next to the group.</li>
+</ol>
+<p>The class must exist before the <code>subcommand</code> line runs. In a single file, write the class first. Across files, import the file that defines the class before the <code>class Tasks</code> body that registers it (see <a href="#subcommands-across-files">Across Files</a>).</p>
+<hr />
+<h2 id="why-inherit-from-tasks">Why Inherit from <code>Tasks</code><a class="headerlink" href="#why-inherit-from-tasks" title="Permanent link">&para;</a></h2>
+<p>Inheriting from <code>Tasks</code> gives the group everything a top-level task has:</p>
 <ul>
-<li><code>sh</code> and <code>shebang</code> shell helpers (from <code>Asgard::Shell</code>)</li>
-<li><code>depends_on</code> for dependency declarations</li>
-<li><code>dotenv</code> for environment loading</li>
-<li><code>@@</code> class variables declared on <code>Tasks</code> (visible in all subclasses)</li>
-<li>The built-in <code>--debug</code> and <code>--verbose</code> class options</li>
-<li>The <code>debug?</code> and <code>verbose?</code> private predicates</li>
-<li>Any private helpers or <code>no_commands</code> methods defined on <code>Tasks</code></li>
+<li><code>sh</code> and <code>shebang</code>, and the same <code>shells</code> registry and <code>default_shell</code> (one registry for the whole project, so a <code>shell :bash, "/opt/homebrew/bin/bash"</code> in <code>.loki</code> applies here too)</li>
+<li><code>depends_on</code>, scoped to the group's own tasks</li>
+<li><code>dotenv</code> and <code>env</code></li>
+<li><code>@@</code> class variables declared on <code>Tasks</code>, visible in every task of the group</li>
+<li>The built-in <code>--debug</code> and <code>--verbose</code> options, and <code>debug?</code> / <code>verbose?</code></li>
+<li>Any <code>class_option</code> you added to <code>Tasks</code></li>
+<li>Every private helper, <code>no_commands</code> method and <code>helper</code> defined on <code>Tasks</code></li>
+</ul>
+<p>Two consequences of inheritance to know about:</p>
+<ul>
+<li><strong>The group inherits the top-level tasks as well.</strong> <code>asgard db deploy</code> runs the top-level <code>deploy</code>, and <code>asgard db help</code> lists the inherited tasks above the group's own, under a namespace made from the class name (<code>asgard d_b_commands deploy</code>). Harmless, but it is why the group's help is longer than you might expect.</li>
+<li>
+<p><strong>A <code>default_task</code> on <code>Tasks</code> is inherited too.</strong> If <code>.loki</code> says <code>default_task :greet</code>, then <code>asgard db</code> with no further word runs <code>greet</code>, not the group's help. Set the group's own default:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">default_task</span><span class="w"> </span><span class="ss">:help</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="c1"># ...</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">end</span>
+</span></code></pre></div>
+</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Do <strong>not</strong> redeclare <code>class_option :debug</code> or <code>class_option :verbose</code> in your subcommand class — they are already inherited from <code>Tasks</code>. Redeclaring them causes duplicate option errors.</p>
+<p>Do not redeclare <code>class_option :debug</code> or <code>class_option :verbose</code> in a subcommand class. They are inherited; declaring them again is an error.</p>
 </div>
 <hr />
-<h2 id="depends_on-within-a-subcommand">depends_on Within a Subcommand<a class="headerlink" href="#depends_on-within-a-subcommand" title="Permanent link">&para;</a></h2>
-<p><code>depends_on</code> works exactly as at the top level, scoped to the subcommand's own dependency graph:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run pending migrations"</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="k">end</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="k">end</span>
+<h2 id="depends_on-within-a-subcommand"><code>depends_on</code> Within a Subcommand<a class="headerlink" href="#depends_on-within-a-subcommand" title="Permanent link">&para;</a></h2>
+<p><code>depends_on</code> works inside the group exactly as at the top level, and names the group's own tasks:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run pending migrations"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="k">end</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
 </span></code></pre></div>
+<p>Each task still runs at most once per invocation, parallel groups still run in threads, and cycles and undefined names are still caught before anything runs. See <a href="../dependencies/">Dependencies</a>.</p>
 <hr />
-<h2 id="server-subcommand-example">Server Subcommand Example<a class="headerlink" href="#server-subcommand-example" title="Permanent link">&para;</a></h2>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ServerCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"start [PORT]"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Start the server on PORT (default: 3000)"</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:daemon</span><span class="p">,</span><span class="w">  </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-d"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:boolean</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="kp">false</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Run as a background daemon"</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:workers</span><span class="p">,</span><span class="w"> </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-w"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:numeric</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">     </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Number of worker processes"</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:log</span><span class="p">,</span><span class="w">                    </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:string</span><span class="p">,</span><span class="w">  </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="s2">"log/server.log"</span><span class="p">,</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">                                  </span><span class="ss">banner</span><span class="p">:</span><span class="w"> </span><span class="s2">"FILE"</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Write logs to FILE"</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3000"</span><span class="p">)</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[]</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="n">flags</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s2">"--daemon"</span><span class="w">              </span><span class="k">if</span><span class="w"> </span><span class="n">options</span><span class="o">[</span><span class="ss">:daemon</span><span class="o">]</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="n">flags</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s2">"--workers </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:workers</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="n">flags</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s2">"--log </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:log</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"puma -p </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">flags</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">' '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Stop the running server"</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:force</span><span class="p">,</span><span class="w"> </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-f"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:boolean</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="kp">false</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Force-kill without draining"</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">stop</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">    </span><span class="n">options</span><span class="o">[</span><span class="ss">:force</span><span class="o">]</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"pkill -9 puma"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"pumactl stop"</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Show server status"</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"pumactl stats"</span>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:stop</span><span class="p">,</span><span class="w"> </span><span class="ss">:start</span>
-</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"restart [PORT]"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Stop then start"</span>
-</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">restart</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"3000"</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Server restarted on :</span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">."</span>
-</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="k">end</span>
-</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>
-</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"server SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the application server"</span>
-</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="no">ServerCommands</span>
-</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a><span class="k">end</span>
+<h2 id="a-complete-example-server-commands">A Complete Example: Server Commands<a class="headerlink" href="#a-complete-example-server-commands" title="Permanent link">&para;</a></h2>
+<p>This group starts, stops and restarts a server, and remembers the port it was started on so <code>stop</code> and <code>restart</code> use the same one. It is the <code>examples/server_subcommands.loki</code> file from the repository:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="no">SERVER_PORT_FILE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"tmp/.server.port"</span><span class="o">.</span><span class="n">freeze</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">ServerCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="n">default_task</span><span class="w"> </span><span class="ss">:help</span><span class="w">     </span><span class="c1"># `asgard server` shows this group's help</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="c1"># Available both in the class body and inside the tasks below</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="n">helper</span><span class="p">(</span><span class="ss">:server_port</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="no">SERVER_PORT_FILE</span><span class="p">)</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="no">SERVER_PORT_FILE</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">to_i</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the server"</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:port</span><span class="p">,</span><span class="w">    </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-p"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:numeric</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="mi">3000</span><span class="p">,</span><span class="w">  </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Port to listen on"</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:daemon</span><span class="p">,</span><span class="w">  </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-d"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:boolean</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="kp">false</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Run as a background daemon"</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:workers</span><span class="p">,</span><span class="w"> </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-w"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:numeric</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">     </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Number of worker processes"</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:log</span><span class="p">,</span><span class="w">                    </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:string</span><span class="p">,</span><span class="w">  </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="s2">"log/server.log"</span><span class="p">,</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">                                  </span><span class="ss">banner</span><span class="p">:</span><span class="w"> </span><span class="s2">"FILE"</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Write logs to FILE"</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">    </span><span class="no">FileUtils</span><span class="o">.</span><span class="n">mkdir_p</span><span class="p">(</span><span class="s2">"tmp"</span><span class="p">)</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">    </span><span class="no">File</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="no">SERVER_PORT_FILE</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="o">[</span><span class="ss">:port</span><span class="o">].</span><span class="n">to_s</span><span class="p">)</span>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Starting server on :</span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:port</span><span class="o">]</span><span class="si">}</span><span class="s2"> with </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:workers</span><span class="o">]</span><span class="si">}</span><span class="s2"> workers</span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:daemon</span><span class="o">]</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s1">' (daemon)'</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">..."</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Stop the running server"</span>
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:force</span><span class="p">,</span><span class="w"> </span><span class="ss">aliases</span><span class="p">:</span><span class="w"> </span><span class="s2">"-f"</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:boolean</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="kp">false</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Force-kill without draining"</span>
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">  </span><span class="n">option</span><span class="w"> </span><span class="ss">:wait</span><span class="p">,</span><span class="w">                  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:numeric</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span><span class="w">   </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Seconds to wait for shutdown"</span>
+</span><span id="__span-5-26"><a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">stop</span>
+</span><span id="__span-5-27"><a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">options</span><span class="o">[</span><span class="ss">:force</span><span class="o">]</span>
+</span><span id="__span-5-28"><a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Force-stopping server on :</span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">..."</span>
+</span><span id="__span-5-29"><a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">    </span><span class="k">else</span>
+</span><span id="__span-5-30"><a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Gracefully stopping server on :</span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2"> (timeout: </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:wait</span><span class="o">]</span><span class="si">}</span><span class="s2">s)..."</span>
+</span><span id="__span-5-31"><a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-5-32"><a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-33"><a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>
+</span><span id="__span-5-34"><a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Show server status and process info"</span>
+</span><span id="__span-5-35"><a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Server is listening on :</span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-5-36"><a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>
+</span><span id="__span-5-37"><a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:stop</span>
+</span><span id="__span-5-38"><a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Restart the server on the same port it was started on"</span>
+</span><span id="__span-5-39"><a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">restart</span>
+</span><span id="__span-5-40"><a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Starting server on :</span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">..."</span>
+</span><span id="__span-5-41"><a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Server restarted."</span>
+</span><span id="__span-5-42"><a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-43"><a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="k">end</span>
+</span><span id="__span-5-44"><a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>
+</span><span id="__span-5-45"><a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-5-46"><a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"server SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the application server"</span>
+</span><span id="__span-5-47"><a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="no">ServerCommands</span>
+</span><span id="__span-5-48"><a id="__codelineno-5-48" name="__codelineno-5-48" href="#__codelineno-5-48"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span>server<span class="w"> </span>start
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>asgard<span class="w"> </span>server<span class="w"> </span>start<span class="w"> </span><span class="m">4000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--daemon
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>asgard<span class="w"> </span>server<span class="w"> </span>stop<span class="w"> </span>--force
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>asgard<span class="w"> </span>server<span class="w"> </span>restart
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>asgard<span class="w"> </span>server<span class="w"> </span>status
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>server<span class="w"> </span>start<span class="w"> </span>-p<span class="w"> </span><span class="m">4000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--daemon
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># Starting server on :4000 with 4 workers (daemon)...</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>asgard<span class="w"> </span>server<span class="w"> </span>status
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Server is listening on :4000</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>asgard<span class="w"> </span>server<span class="w"> </span>restart
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="c1"># Gracefully stopping server on :4000 (timeout: 30s)...</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="c1"># Starting server on :4000...</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="c1"># Server restarted.</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>asgard<span class="w"> </span>server<span class="w"> </span>stop<span class="w"> </span>--force
 </span></code></pre></div>
+<p>Everything from <a href="../tasks/">Defining Tasks</a> applies inside the group: per-task options, <code>long_desc</code>, <code>map</code> for short names, positional parameters.</p>
 <hr />
-<h2 id="scoped-dsl">Scoped DSL<a class="headerlink" href="#scoped-dsl" title="Permanent link">&para;</a></h2>
-<p>Each subcommand class has its own independent scope for:</p>
-<ul>
-<li><code>desc</code> / <code>long_desc</code> — documentation strings</li>
-<li><code>method_option</code> / <code>option</code> — per-command options</li>
-<li><code>class_option</code> — options shared across the subcommand's tasks (in addition to inherited ones)</li>
-<li><code>map</code> — aliases within the subcommand group</li>
-<li><code>default_task</code> — which command runs when the subcommand is invoked with no further arguments</li>
-<li><code>depends_on</code> — dependency declarations scoped to this class</li>
-</ul>
-<p>These do not bleed into the parent <code>Tasks</code> class or other subcommand classes.</p>
+<h2 id="scoped-declarations">Scoped Declarations<a class="headerlink" href="#scoped-declarations" title="Permanent link">&para;</a></h2>
+<p>Each subcommand class has its own:</p>
+<table>
+<thead>
+<tr>
+<th>Declaration</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>desc</code>, <code>long_desc</code></td>
+<td>The group's tasks</td>
+</tr>
+<tr>
+<td><code>method_option</code> / <code>option</code></td>
+<td>The task that follows</td>
+</tr>
+<tr>
+<td><code>class_option</code></td>
+<td>Every task in the group, in addition to the ones inherited from <code>Tasks</code></td>
+</tr>
+<tr>
+<td><code>map</code></td>
+<td>Short names within the group: <code>map "m" =&gt; "migrate"</code> makes <code>asgard db m</code> work</td>
+</tr>
+<tr>
+<td><code>default_task</code></td>
+<td>What <code>asgard db</code> alone runs</td>
+</tr>
+<tr>
+<td><code>depends_on</code></td>
+<td>The group's own tasks</td>
+</tr>
+</tbody>
+</table>
+<p>None of these leak back into <code>Tasks</code> or into another group.</p>
 <hr />
-<h2 id="multiple-subcommands">Multiple Subcommands<a class="headerlink" href="#multiple-subcommands" title="Permanent link">&para;</a></h2>
-<p>You can register as many subcommand groups as needed:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ServerCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="c1"># ... server tasks ...</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">end</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="c1"># ... database tasks ...</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">end</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="c1"># ... deploy tasks ...</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">end</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"server SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the server"</span><span class="p">;</span><span class="w">    </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="no">ServerCommands</span>
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w">     </span><span class="s2">"Manage the database"</span><span class="p">;</span><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w">     </span><span class="no">DBCommands</span>
-</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"deploy SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Deploy"</span><span class="p">;</span><span class="w">               </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"deploy"</span><span class="p">,</span><span class="w"> </span><span class="no">DeployCommands</span>
-</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="k">end</span>
+<h2 id="several-groups">Several Groups<a class="headerlink" href="#several-groups" title="Permanent link">&para;</a></h2>
+<p>Register as many as you need:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ServerCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="c1"># ...</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">end</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="c1"># ...</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="k">end</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeployCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="c1"># ...</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="k">end</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"server SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the server"</span><span class="p">;</span><span class="w">   </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="no">ServerCommands</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w">     </span><span class="s2">"Manage the database"</span><span class="p">;</span><span class="w"> </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w">     </span><span class="no">DBCommands</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"deploy SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Deploy"</span><span class="p">;</span><span class="w">              </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"deploy"</span><span class="p">,</span><span class="w"> </span><span class="no">DeployCommands</span>
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="k">end</span>
 </span></code></pre></div>
+<p><code>asgard help</code> lists each group on one line (<code>asgard db SUBCOMMAND  # Manage the database</code>); <code>asgard tree</code> adds a section per group, named after its class (<code>d_b_commands</code>), listing the group's own tasks.</p>
 <hr />
 <h2 id="subcommands-across-files">Subcommands Across Files<a class="headerlink" href="#subcommands-across-files" title="Permanent link">&para;</a></h2>
-<p>Define each subcommand class in its own <code>.loki</code> file. Because all files reopen the same Ruby classes, the classes are available when <code>.loki</code> registers them:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>myproject/
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  .loki                    ← registers all subcommands
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  server_subcommands.loki  ← defines ServerCommands
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  db_subcommands.loki      ← defines DBCommands
+<p>Give each group its own file and register them all in <code>.loki</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>myproject/
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  .loki                    imports the siblings, then registers the groups
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  server_subcommands.loki  defines ServerCommands
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  db_subcommands.loki      defines DBCommands
 </span></code></pre></div>
-<p>Because siblings loaded via <code>import "*.loki"</code> execute before <code>.loki</code>'s own class body, both <code>DBCommands</code> and <code>ServerCommands</code> are defined by the time <code>.loki</code> runs its <code>subcommand</code> calls.</p>
-<p>See <a href="../examples/#server-subcommands"><code>examples/server_subcommands.loki</code></a> and <a href="../examples/#db-subcommands"><code>examples/db_subcommands.loki</code></a> for complete working examples.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># .loki</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">"*.loki"</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"server SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the server"</span><span class="p">;</span><span class="w">   </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"server"</span><span class="p">,</span><span class="w"> </span><span class="no">ServerCommands</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w">     </span><span class="s2">"Manage the database"</span><span class="p">;</span><span class="w"> </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w">     </span><span class="no">DBCommands</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>The <code>import</code> at the top of <code>.loki</code> loads the siblings before <code>.loki</code>'s own <code>class Tasks</code> body runs, so both classes are defined by the time the <code>subcommand</code> lines need them. See <a href="../task-files/#subcommand-classes-in-their-own-files">Task Files</a>.</p>
+<hr />
+<h2 id="help-for-a-group">Help for a Group<a class="headerlink" href="#help-for-a-group" title="Permanent link">&para;</a></h2>
+<p>Three spellings reach the group's help:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard<span class="w"> </span>db<span class="w">            </span><span class="c1"># the group's help (when the group has no default task of its own)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>asgard<span class="w"> </span>db<span class="w"> </span><span class="nb">help</span><span class="w">       </span><span class="c1"># the same</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>asgard<span class="w"> </span><span class="nb">help</span><span class="w"> </span>db<span class="w">       </span><span class="c1"># the same</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>asgard<span class="w"> </span>db<span class="w"> </span><span class="nb">help</span><span class="w"> </span>migrate<span class="w">   </span><span class="c1"># one task of the group</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>Commands:
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  asgard db console             # Open an interactive database console
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  asgard db help [COMMAND]      # Describe subcommands or one specific subcommand
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  asgard db migrate [VERSION]   # Run pending migrations up to VERSION
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  asgard db reset               # Rollback all migrations, re-migrate, and reseed
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  ...
+</span></code></pre></div>
+<p>The inherited top-level tasks appear in the same listing under the class's namespace, as noted above.</p>
+<hr />
+<h2 id="the-built-in-groups">The Built-in Groups<a class="headerlink" href="#the-built-in-groups" title="Permanent link">&para;</a></h2>
+<p><code>asgard schedule</code>, <code>asgard watcher</code> and <code>asgard jobs</code> are subcommand groups too, built into asgard. They are registered under reserved names, so a task of your own called <code>schedule</code>, <code>watcher</code> or <code>jobs</code> does not shadow them: <code>asgard schedule install</code> always reaches the built-in. See <a href="../schedule/">Scheduled Tasks</a>, <a href="../watch/">Watched Files</a> and <a href="../jobs/">Background Jobs</a>.</p>
 
 
 
@@ -1643,7 +1986,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../options/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Options &amp; Flags">
+          <a href="../helpers/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Helper Methods">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1653,20 +1996,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Options & Flags
+                Helper Methods
               </div>
             </div>
           </a>
         
         
           
-          <a href="../shell/" class="md-footer__link md-footer__link--next" aria-label="Next: Shell Helpers">
+          <a href="../task-files/" class="md-footer__link md-footer__link--next" aria-label="Next: Task Files">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Shell Helpers
+                Task Files
               </div>
             </div>
             <div class="md-footer__button md-icon">

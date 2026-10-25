@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Thor-based Ruby task runner with dependency graphs and concurrent execution">
+        <meta name="description" content="A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.">
       
       
         <meta name="author" content="Dewayne VanHoozer">
@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/examples/">
       
       
-        <link rel="prev" href="../api/">
+        <link rel="prev" href="../files/">
       
       
         <link rel="next" href="../upgrading-0.6/">
@@ -278,7 +278,7 @@
   
     
   
-  Tasks
+  Writing Tasks
 
         </a>
       </li>
@@ -294,13 +294,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../options/" class="md-tabs__link">
+        <a href="../task-files/" class="md-tabs__link">
           
   
   
     
   
-  CLI
+  Organizing a Project
 
         </a>
       </li>
@@ -313,36 +313,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../task-files/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../schedule/" class="md-tabs__link">
+          
   
   
     
   
-  Task Files
+  Built-in Commands
 
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../api/" class="md-tabs__link">
-        
-  
-  
+        </a>
+      </li>
     
-  
-  API Reference
-
-      </a>
-    </li>
   
 
       
@@ -353,17 +337,20 @@
     
   
   
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../reference/" class="md-tabs__link">
+          
   
   
     
   
-  Examples
+  Reference
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -527,6 +514,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
     
@@ -548,7 +541,7 @@
   <span class="md-ellipsis">
     
   
-    Tasks
+    Writing Tasks
   
 
     
@@ -564,7 +557,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tasks
+    Writing Tasks
   
 
           </label>
@@ -605,6 +598,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dependencies/" class="md-nav__link">
         
   
@@ -613,6 +634,34 @@
     
   
     Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options & Flags
   
 
     
@@ -682,107 +731,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLI
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    CLI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Options & Flags
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
               
                 
   
@@ -811,6 +759,71 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organizing a Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organizing a Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -818,14 +831,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../shell/" class="md-nav__link">
+      <a href="../task-files/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Shell Helpers
+    Task Files
   
 
     
@@ -853,7 +866,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -866,6 +879,99 @@
   
 
               
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -962,17 +1068,82 @@
       
   
   
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
-      <a href="../task-files/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Task Files
+    DSL Reference
   
 
     
@@ -984,22 +1155,23 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="../commands/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    Command Reference
   
 
     
@@ -1011,9 +1183,38 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Files & Directories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
     
@@ -1081,10 +1282,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-the-examples-directory" class="md-nav__link">
+  <a href="#running-the-examples-directory" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Using the Examples Directory
+        Running the Examples Directory
       
     </span>
   </a>
@@ -1103,10 +1304,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-subcommands" class="md-nav__link">
+  <a href="#server_subcommandsloki" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Server Subcommands
+        server_subcommands.loki
       
     </span>
   </a>
@@ -1114,10 +1315,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#db-subcommands" class="md-nav__link">
+  <a href="#db_subcommandsloki" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DB Subcommands
+        db_subcommands.loki
       
     </span>
   </a>
@@ -1158,6 +1359,155 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#env_usageloki-and-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        env_usage.loki and .env
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subdir/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#depends_on_blockgood-and-depends_on_blockbad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        depends_on_block/good/ and depends_on_block/bad/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#badloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bad.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#watcher_examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        watcher_examples/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-asgard-repository-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The asgard Repository Itself
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The asgard Repository Itself">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#loki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qualityloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quality.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gem_tasksloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gem_tasks.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gitloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        git.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#doc_tasksloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doc_tasks.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xyzzyloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xyzzy.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality_railsloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quality_rails.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1171,6 +1521,14 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -1259,10 +1617,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-the-examples-directory" class="md-nav__link">
+  <a href="#running-the-examples-directory" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Using the Examples Directory
+        Running the Examples Directory
       
     </span>
   </a>
@@ -1281,10 +1639,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#server-subcommands" class="md-nav__link">
+  <a href="#server_subcommandsloki" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Server Subcommands
+        server_subcommands.loki
       
     </span>
   </a>
@@ -1292,10 +1650,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#db-subcommands" class="md-nav__link">
+  <a href="#db_subcommandsloki" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DB Subcommands
+        db_subcommands.loki
       
     </span>
   </a>
@@ -1336,6 +1694,155 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#env_usageloki-and-env" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        env_usage.loki and .env
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subdir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subdir/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#depends_on_blockgood-and-depends_on_blockbad" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        depends_on_block/good/ and depends_on_block/bad/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#badloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bad.loki
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#watcher_examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        watcher_examples/
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-asgard-repository-itself" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The asgard Repository Itself
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The asgard Repository Itself">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#loki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#qualityloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quality.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gem_tasksloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gem_tasks.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gitloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        git.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#doc_tasksloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        doc_tasks.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#xyzzyloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xyzzy.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality_railsloki" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        quality_rails.loki
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1364,6 +1871,46 @@
   
 
 
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href=".." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../reference/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Reference
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
               
               <article class="md-content__inner md-typeset">
                 
@@ -1388,180 +1935,452 @@
 
 
 <h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h1>
-<p>The <code>examples/</code> directory in the Asgard repository contains complete, working <code>.loki</code> files that demonstrate every feature of the gem. You can use them as a standalone Asgard project or as copy-paste references.</p>
+<p>The asgard repository ships working <code>.loki</code> files in its <code>examples/</code> directory, one for each feature, plus the gem's own task files at the repository root, which are a real multi-file project in daily use. This page says what each one shows and how to run it. Copy whatever is useful into your own project.</p>
 <hr />
-<h2 id="using-the-examples-directory">Using the Examples Directory<a class="headerlink" href="#using-the-examples-directory" title="Permanent link">&para;</a></h2>
-<p>The <code>examples/</code> directory contains its own <code>.loki</code> root marker (the gem's project-level <code>.loki</code>), which means you can run <code>asgard</code> from inside the <code>examples/</code> directory and all example files will be loaded:</p>
+<h2 id="running-the-examples-directory">Running the Examples Directory<a class="headerlink" href="#running-the-examples-directory" title="Permanent link">&para;</a></h2>
+<p><code>examples/</code> has its own <code>.loki</code>, so it is a project in its own right:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/MadBomber/asgard.git
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">cd</span><span class="w"> </span>asgard/examples
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>asgard<span class="w"> </span><span class="nb">help</span>
 </span></code></pre></div>
-<p>Alternatively, copy individual example files into your own project's directory.</p>
+<p>Its <code>.loki</code> loads everything else explicitly:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># examples/.loki</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">"*.loki"</span><span class="w">                      </span><span class="c1"># every sibling task file, alphabetically</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">import</span><span class="w"> </span><span class="s2">"subdir/import_demo.loki"</span><span class="w">     </span><span class="c1"># one file from a subdirectory</span>
+</span></code></pre></div>
+<p>Three examples are separate projects with their own <code>.loki</code> and must be run from their own directory: <code>depends_on_block/good</code>, <code>depends_on_block/bad</code> and <code>watcher_examples</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Some examples (notably <code>concurrent.loki</code>) produce visible interleaved output to demonstrate real thread concurrency. They are designed to be run, not just read.</p>
+<p><code>concurrent.loki</code> and <code>bad.loki</code> exist to be run, not read: their point is output that changes from run to run.</p>
 </div>
 <hr />
 <h2 id="kitchen_sinkloki"><code>kitchen_sink.loki</code><a class="headerlink" href="#kitchen_sinkloki" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/kitchen_sink.loki</code></p>
-<p>The most comprehensive example — demonstrates every Thor DSL feature available in Asgard:</p>
+<p>Every Thor word and most of asgard's, in one file. Task names avoid the gem's own (<code>test</code>, <code>build</code>, <code>quality</code>, <code>install</code>, <code>release</code>) so the file can sit beside them.</p>
 <ul>
-<li><code>@@</code> class variables for shared configuration values</li>
-<li><code>dotenv</code> (commented out, ready to activate)</li>
-<li><code>class_option</code> with <code>:boolean</code> and <code>:string</code> types, including <code>enum</code></li>
-<li><code>default_task</code> — sets the default command when <code>asgard</code> is run with no arguments</li>
-<li><code>map</code> — short aliases for multiple tasks</li>
-<li>A basic task with no parameters</li>
-<li>A task with a positional parameter and default</li>
-<li>A task with <code>option</code> (the <code>method_option</code> alias)</li>
-<li>All five <code>method_option</code> types: <code>:string</code>, <code>:boolean</code>, <code>:numeric</code>, <code>:array</code>, <code>:hash</code></li>
-<li><code>required</code> option, <code>enum</code> validation, and <code>banner</code> customization</li>
-<li><code>long_desc</code> with <code>\x5</code> line-break trick for formatted examples in help text</li>
-<li>Sequential <code>depends_on</code> (<code>:analyze</code> before <code>:spec</code>)</li>
-<li>Parallel <code>depends_on</code> (<code>[:analyze, :typecheck]</code> run concurrently)</li>
-<li>Mixed sequential + parallel <code>depends_on</code> (<code>:check</code>, <code>[:compile, :spec]</code>, <code>:pack</code>)</li>
-<li><code>no_commands</code> block for a public helper excluded from CLI</li>
-<li><code>private</code> methods for internal helpers</li>
+<li><code>@@app_name</code> and <code>@@build_dir</code> class variables shared by every task</li>
+<li><code>private</code> computed values (<code>version</code>, <code>sha</code>, <code>branch</code>) with memoization</li>
+<li><code>class_option :dry_run</code> and <code>class_option :env</code> with <code>enum</code>, on every task</li>
+<li><code>default_task :greet</code> and <code>map</code> aliases (<code>g</code>, <code>ck</code>, <code>rp</code>, <code>pl</code>)</li>
+<li>A positional parameter with a default (<code>hello NAME</code>)</li>
+<li>All five option types (<code>:string</code>, <code>:boolean</code>, <code>:numeric</code>, <code>:array</code>, <code>:hash</code>) on <code>compile</code></li>
+<li><code>required: true</code>, <code>enum:</code> and <code>banner:</code> on <code>deploy</code></li>
+<li><code>long_desc</code> with <code>\x5</code> line breaks on <code>report</code></li>
+<li>Sequential, parallel and mixed <code>depends_on</code> (<code>spec</code>, <code>check</code>, <code>pipeline</code>)</li>
+<li><code>debug?</code> and <code>verbose?</code> on <code>status</code></li>
+<li><code>sh</code> with one line and with a heredoc (<code>env_info</code>, <code>bootstrap</code>)</li>
+<li>A <code>no_commands</code> helper and a <code>private</code> helper</li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span><span class="nb">help</span><span class="w">                </span><span class="c1"># see all tasks</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>asgard<span class="w"> </span>greet<span class="w">               </span><span class="c1"># default task</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>asgard<span class="w"> </span>hello<span class="w"> </span>Alice
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>asgard<span class="w"> </span>compile<span class="w"> </span>--jobs<span class="w"> </span><span class="m">4</span><span class="w"> </span>--tags<span class="w"> </span>debug<span class="w"> </span>release<span class="w"> </span>--defines<span class="w"> </span>VERSION:2<span class="w"> </span>MODE:fast
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>--strategy<span class="w"> </span>rolling
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>asgard<span class="w"> </span>report<span class="w"> </span>--format<span class="w"> </span>html<span class="w"> </span>--since<span class="w"> </span><span class="m">2024</span>-01-01
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>asgard<span class="w"> </span>pipeline
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>asgard<span class="w">                       </span><span class="c1"># the default task, greet</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>asgard<span class="w"> </span>hello<span class="w"> </span>Alice
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>asgard<span class="w"> </span>compile<span class="w"> </span>--jobs<span class="w"> </span><span class="m">4</span><span class="w"> </span>--tags<span class="w"> </span>debug<span class="w"> </span>release<span class="w"> </span>--defines<span class="w"> </span>VERSION:2<span class="w"> </span>MODE:fast
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>--strategy<span class="w"> </span>rolling
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>asgard<span class="w"> </span>deploy<span class="w">                </span><span class="c1"># Error: required option '--strategy' is missing</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>asgard<span class="w"> </span><span class="nb">help</span><span class="w"> </span>report<span class="w">           </span><span class="c1"># the long_desc</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>asgard<span class="w"> </span>pipeline<span class="w">              </span><span class="c1"># check → compile ∥ spec → pack → pipeline</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>asgard<span class="w"> </span>status<span class="w"> </span>--verbose<span class="w"> </span>--debug
 </span></code></pre></div>
+<p>See <a href="../tasks/">Defining Tasks</a>, <a href="../options/">Options &amp; Flags</a> and <a href="../dependencies/">Dependencies</a>.</p>
 <hr />
-<h2 id="server-subcommands">Server Subcommands<a class="headerlink" href="#server-subcommands" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/server_subcommands.loki</code></p>
-<p>Demonstrates Thor subcommands with a server management group. Covers:</p>
+<h2 id="server_subcommandsloki"><code>server_subcommands.loki</code><a class="headerlink" href="#server_subcommandsloki" title="Permanent link">&para;</a></h2>
+<p>A subcommand group, <code>asgard server ...</code>, in a class that inherits from <code>Tasks</code>:</p>
 <ul>
-<li>Defining a subcommand class (<code>ServerCommands &lt; Tasks</code>)</li>
-<li>Registering it with <code>subcommand "server", ServerCommands</code></li>
-<li>Per-command options (<code>--daemon</code>, <code>--workers</code>, <code>--log</code>, <code>--force</code>, <code>--wait</code>)</li>
-<li><code>depends_on</code> inside a subcommand group (<code>:stop</code> and <code>:start</code> before <code>:restart</code>)</li>
+<li><code>ServerCommands &lt; Tasks</code> registered with <code>subcommand "server", ServerCommands</code></li>
+<li>Per-command options (<code>--port</code>, <code>--daemon</code>, <code>--workers</code>, <code>--log</code>, <code>--force</code>, <code>--wait</code>)</li>
+<li>A <code>helper</code> (<code>server_port</code>) that reads the port saved by <code>start</code> so <code>stop</code> and <code>restart</code> use the same one</li>
+<li><code>depends_on :stop</code> inside the group, so <code>restart</code> stops first</li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>asgard<span class="w"> </span>server<span class="w"> </span><span class="nb">help</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>asgard<span class="w"> </span>server<span class="w"> </span>start
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>asgard<span class="w"> </span>server<span class="w"> </span>start<span class="w"> </span><span class="m">4000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--daemon
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>asgard<span class="w"> </span>server<span class="w"> </span>stop<span class="w"> </span>--force
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>asgard<span class="w"> </span>server<span class="w"> </span>status
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>asgard<span class="w"> </span>server<span class="w"> </span>restart<span class="w"> </span><span class="m">4000</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>server<span class="w">                    </span><span class="c1"># the group's own help</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>asgard<span class="w"> </span>server<span class="w"> </span>start<span class="w"> </span>-p<span class="w"> </span><span class="m">4000</span><span class="w"> </span>--workers<span class="w"> </span><span class="m">4</span><span class="w"> </span>--daemon
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>asgard<span class="w"> </span>server<span class="w"> </span>status
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>asgard<span class="w"> </span>server<span class="w"> </span>stop<span class="w"> </span>--force
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>asgard<span class="w"> </span>server<span class="w"> </span>restart<span class="w">            </span><span class="c1"># stop → restart, on the saved port</span>
 </span></code></pre></div>
-<p>The <code>ServerCommands</code> class inherits from <code>Tasks</code>, giving it access to <code>sh</code>, <code>depends_on</code>, and the built-in <code>--debug</code>/<code>--verbose</code> flags.</p>
+<p>See <a href="../subcommands/">Subcommands</a>.</p>
 <hr />
-<h2 id="db-subcommands">DB Subcommands<a class="headerlink" href="#db-subcommands" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/db_subcommands.loki</code></p>
-<p>Demonstrates subcommands with more complex <code>depends_on</code> chaining within the group. Covers:</p>
+<h2 id="db_subcommandsloki"><code>db_subcommands.loki</code><a class="headerlink" href="#db_subcommandsloki" title="Permanent link">&para;</a></h2>
+<p>A second group, <code>asgard db ...</code>, with a longer dependency chain:</p>
 <ul>
-<li><code>DBCommands &lt; Tasks</code> with migrate, rollback, seed, reset, console, and status commands</li>
-<li>Multi-step <code>depends_on</code> chain: <code>rollback → migrate → seed → reset</code></li>
-<li><code>long_desc</code> with formatted examples inside a subcommand class</li>
-<li><code>enum</code> validation on subcommand options</li>
-<li>Optional positional parameters (<code>migrate [VERSION]</code>, <code>rollback [STEPS]</code>, <code>seed [FILE]</code>)</li>
+<li><code>migrate [VERSION]</code>, <code>rollback [STEPS]</code>, <code>seed [FILE]</code> with optional positional parameters</li>
+<li><code>depends_on :rollback, :migrate, :seed</code> on <code>reset</code></li>
+<li><code>long_desc</code> and <code>enum</code> validation inside a subcommand class</li>
 </ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>db<span class="w"> </span><span class="nb">help</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>asgard<span class="w"> </span>db<span class="w"> </span>migrate
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>asgard<span class="w"> </span>db<span class="w"> </span>migrate<span class="w"> </span><span class="m">20240101120000</span><span class="w"> </span>--dry-run
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>asgard<span class="w"> </span>db<span class="w"> </span>rollback
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>asgard<span class="w"> </span>db<span class="w"> </span>rollback<span class="w"> </span><span class="m">3</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>asgard<span class="w"> </span>db<span class="w"> </span>seed<span class="w"> </span>--env<span class="w"> </span>staging
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">         </span><span class="c1"># rollback → migrate → seed → reset</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>asgard<span class="w"> </span>db<span class="w"> </span>console<span class="w"> </span>--env<span class="w"> </span>staging
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>asgard<span class="w"> </span>db<span class="w"> </span>status
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>migrate<span class="w"> </span><span class="m">20240101120000</span><span class="w"> </span>--dry-run
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>asgard<span class="w"> </span>db<span class="w"> </span>rollback<span class="w"> </span><span class="m">3</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>asgard<span class="w"> </span>db<span class="w"> </span>seed<span class="w"> </span>--env<span class="w"> </span>staging
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">                  </span><span class="c1"># rollback → migrate → seed → reset</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>asgard<span class="w"> </span>db<span class="w"> </span>console<span class="w"> </span>--env<span class="w"> </span>staging
 </span></code></pre></div>
 <hr />
 <h2 id="concurrentloki"><code>concurrent.loki</code><a class="headerlink" href="#concurrentloki" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/concurrent.loki</code></p>
-<p>A focused demonstration of true concurrent execution via parallel <code>depends_on</code> groups:</p>
-<ul>
-<li>Three worker tasks (<code>worker_a</code>, <code>worker_b</code>, <code>worker_c</code>) each print a character repeatedly with random sleep delays</li>
-<li>All three run in parallel threads when <code>asgard finish</code> is invoked</li>
-<li>The interleaved output proves that real concurrency is occurring (not sequential batching)</li>
-<li>Uses <code>$stdout.sync = true</code> to ensure thread-safe immediate output flushing</li>
-</ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span>finish
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1"># starting demo of concurrent task execution ...</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1"># ABCBACBACBABCBACBACB   (order varies every run)</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># fini - the end of concurrent task demo</span>
+<p>Proof that a parallel stage really runs at the same time. Three workers each print a letter ten times with random pauses; <code>finish</code> depends on all three.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:start</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:worker_a</span><span class="p">,</span><span class="w"> </span><span class="ss">:worker_b</span><span class="p">,</span><span class="w"> </span><span class="ss">:worker_c</span><span class="o">]</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Print end marker after all workers complete"</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">finish</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="se">\n</span><span class="s2">fini - the end of concurrent task demo"</span>
 </span></code></pre></div>
-<p>Execution order: <code>start</code> → <code>worker_a ∥ worker_b ∥ worker_c</code> → <code>finish</code></p>
-<p>This example is also useful as a test harness for verifying that parallel execution is working correctly on a given system.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>finish
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>starting demo of concurrent task execution ...
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>ABCBACBACBABCBACBACBCABCABACBA
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>fini - the end of concurrent task demo
+</span></code></pre></div>
+<p>The letters interleave differently every run. The file sets <code>$stdout.sync = true</code> so each <code>print</code> appears at once. See <a href="../dependencies/#parallel-dependencies">Parallel Dependencies</a>.</p>
 <hr />
 <h2 id="doloki"><code>do.loki</code><a class="headerlink" href="#doloki" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/do.loki</code></p>
-<p>A plain user task that runs other tasks in sequence, the way <code>rake a b c</code> or <code>just a b c</code> does. No gem changes needed:</p>
-<ul>
-<li>Steps are comma-separated, so each step can carry its own arguments and options; with no commas, every word is a task of its own</li>
-<li>Each step is parsed by Thor as if it were typed on the command line</li>
-<li>The sequence stops at the first failure (a failing <code>sh</code>, or a step returning <code>:fail</code>)</li>
-</ul>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>greet<span class="w"> </span>finish
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>hello<span class="w"> </span>Alice,<span class="w"> </span>farewell<span class="w"> </span>Bob<span class="w"> </span>--formal
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># Hello, Alice!</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Goodbye, Bob.</span>
+<p>Asgard runs one task per command line. This example adds a <code>do</code> task that runs several, the way <code>rake a b c</code> or <code>just a b c</code> does. It is an ordinary user task, so you can copy it into any <code>.loki</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">require</span><span class="w"> </span><span class="s2">"shellwords"</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="c1"># Not a task (a class method), so it can be tested on its own:</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="c1">#   Tasks.do_steps("lint, hello Alice") #=&gt; [["lint"], ["hello", "Alice"]]</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nc">self</span><span class="o">.</span><span class="nf">do_steps</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="n">line</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">step</span><span class="o">|</span><span class="w"> </span><span class="no">Shellwords</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:empty?</span><span class="p">)</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">                       </span><span class="p">:</span><span class="w"> </span><span class="no">Shellwords</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">word</span><span class="o">|</span><span class="w"> </span><span class="o">[</span><span class="n">word</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"do STEPS..."</span><span class="p">,</span><span class="w"> </span><span class="s2">"Run several tasks in sequence, e.g. `asgard do hello Alice, farewell Bob --formal`"</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="n">stop_on_unknown_option!</span><span class="w"> </span><span class="ss">:do</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">do</span><span class="p">(</span><span class="o">*</span><span class="n">words</span><span class="p">)</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="n">steps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">do_steps</span><span class="p">(</span><span class="n">words</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">" "</span><span class="p">))</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"do: no tasks given"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">steps</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">    </span><span class="n">steps</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="o">|</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">      </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"do: unknown task '</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">'"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"do"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">!</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">all_commands</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">      </span><span class="c1"># Each step is parsed as if typed on its own command line.</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="ss">:fail</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:dispatch</span><span class="p">,</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">shell</span><span class="p">:</span><span class="w"> </span><span class="n">shell</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="ss">:fail</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Every task runs at most once per <code>asgard</code> invocation, so <code>asgard do hello Alice, hello Bob</code> greets only Alice. The same rule makes a dependency shared by several steps run once.</p>
-</div>
+<p>Steps are comma-separated so a step can carry its own arguments and options; with no commas, every word is a task.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>greet<span class="w"> </span>finish
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>asgard<span class="w"> </span><span class="k">do</span><span class="w"> </span>hello<span class="w"> </span>Alice,<span class="w"> </span>farewell<span class="w"> </span>Bob<span class="w"> </span>--formal,<span class="w"> </span>finish
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Hello, Alice!
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>Goodbye, Bob.
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>...
+</span></code></pre></div>
+<ul>
+<li>Each step's arguments and options work exactly as they would alone.</li>
+<li>The sequence stops at the first failure: a failing <code>sh</code> exits asgard, and a step that returns <code>:fail</code> makes <code>do</code> return <code>:fail</code> (exit 1).</li>
+<li>Every task runs at most once per asgard invocation, so <code>asgard do hello Alice, hello Bob</code> greets only Alice, and a dependency shared by several steps runs once.</li>
+</ul>
 <hr />
 <h2 id="confirmloki"><code>confirm.loki</code><a class="headerlink" href="#confirmloki" title="Permanent link">&para;</a></h2>
-<p><strong>Path:</strong> <code>examples/confirm.loki</code></p>
-<p>A guard task. List <code>confirm</code> first in a dangerous task's <code>depends_on</code>, and the task runs only after the user answers yes:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:confirm</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Drop and recreate the database"</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">reset_database</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails db:reset"</span>
+<p>A guard: list <code>confirm</code> first in a dangerous task's <code>depends_on</code> and the task only runs after you answer yes. Also an ordinary user task, worth copying:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="c1"># Not a task, so it can be tested on its own:</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="c1">#   Tasks.confirmed?("y", yes_env: nil) #=&gt; true</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nc">self</span><span class="o">.</span><span class="nf">confirmed?</span><span class="p">(</span><span class="n">answer</span><span class="p">,</span><span class="w"> </span><span class="ss">yes_env</span><span class="p">:)</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="kp">true</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">yes_env</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="o">!</span><span class="n">yes_env</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="sx">%w[y yes]</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">answer</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">downcase</span><span class="p">)</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Ask before running the task that depends on this"</span><span class="p">,</span><span class="w"> </span><span class="ss">hide</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">confirm</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="w">    </span><span class="n">command</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"asgard </span><span class="si">#{</span><span class="no">ARGV</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">' '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">    </span><span class="n">yes_env</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">(</span><span class="ss">:asgard_yes</span><span class="p">,</span><span class="w"> </span><span class="s2">""</span><span class="p">)</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">confirmed?</span><span class="p">(</span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="ss">yes_env</span><span class="p">:)</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"refusing `</span><span class="si">#{</span><span class="n">command</span><span class="si">}</span><span class="s2">`: no terminal to confirm on (set ASGARD_YES=1)"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vg">$stdin</span><span class="o">.</span><span class="n">tty?</span>
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">    </span><span class="n">answer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ask</span><span class="p">(</span><span class="s2">"Really run `</span><span class="si">#{</span><span class="n">command</span><span class="si">}</span><span class="s2">`? [y/N]"</span><span class="p">)</span>
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"aborted `</span><span class="si">#{</span><span class="n">command</span><span class="si">}</span><span class="s2">`"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">confirmed?</span><span class="p">(</span><span class="n">answer</span><span class="p">,</span><span class="w"> </span><span class="ss">yes_env</span><span class="p">:)</span>
+</span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-11-20"><a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>
+</span><span id="__span-11-21"><a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:confirm</span>
+</span><span id="__span-11-22"><a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Pretend to drop and recreate the database (demo for confirm)"</span>
+</span><span id="__span-11-23"><a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset_database</span>
+</span><span id="__span-11-24"><a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Database reset."</span>
+</span><span id="__span-11-25"><a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-11-26"><a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>asgard<span class="w"> </span>reset_database
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Really run `asgard reset_database`? [y/N] n</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># asgard: aborted `asgard reset_database`      (exit 1)</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nv">ASGARD_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>asgard<span class="w"> </span>reset_database<span class="w">             </span><span class="c1"># no question, for scripts and CI</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard<span class="w"> </span>reset_database
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># Really run `asgard reset_database`? [y/N] n</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># asgard: aborted `asgard reset_database`          (exit 1)</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="nv">ASGARD_YES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>asgard<span class="w"> </span>reset_database<span class="w">                 </span><span class="c1"># no question: scripts and CI</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># Database reset.</span>
 </span></code></pre></div>
+<p>Points the example makes:</p>
 <ul>
-<li>Answering no <strong>raises</strong> <code>Asgard::Error</code>, which stops the dependent task. Returning <code>:fail</code> would not: a dependency's return value never stops the task that depends on it</li>
-<li>A dependency doesn't know which task asked for it, so the question shows the whole command line</li>
-<li>With no terminal (a schedule, the watcher, a pipe) it refuses unless <code>ASGARD_YES</code> is set</li>
-<li><code>confirm</code> is declared with <code>hide: true</code>, so it stays out of <code>asgard help</code></li>
+<li>Answering no <strong>raises</strong> <code>Asgard::Error</code>, which stops everything that has not run yet. Returning <code>:fail</code> would not: a dependency's return value never stops the task that depends on it.</li>
+<li>A dependency does not know which task asked for it, so the question shows the whole command line.</li>
+<li>With no terminal to ask on (a schedule, the watcher, a pipe) it refuses unless <code>ASGARD_YES</code> is set, rather than hanging.</li>
+<li><code>hide: true</code> keeps <code>confirm</code> out of <code>asgard help</code>.</li>
+<li>It runs once per invocation, so <code>asgard do reset_database, drop_cache</code> asks once for the whole line. Keep it in its own first stage: in <code>depends_on [:confirm, :backup]</code>, <code>backup</code> runs while the question waits.</li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code>confirm</code> runs at most once per <code>asgard</code> invocation, so <code>asgard do reset_database, drop_cache</code> asks once for the whole line. Keep it in its own first stage: in <code>depends_on [:confirm, :backup]</code>, <code>backup</code> runs while the question waits.</p>
-</div>
+<p><code>ASGARD_YES</code> is the example's own variable, not something asgard reads. See <a href="../dependencies/#when-a-dependency-fails">When a Dependency Fails</a>.</p>
+<hr />
+<h2 id="env_usageloki-and-env"><code>env_usage.loki</code> and <code>.env</code><a class="headerlink" href="#env_usageloki-and-env" title="Permanent link">&para;</a></h2>
+<p>Reading variables with <code>env</code> after loading a dotenv file:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="c1"># loki_up finds .env in this directory or any ancestor, so the task</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="c1"># works from any subdirectory.</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">".env"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s2">".env"</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Print environment variable values resolved via env()"</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">env_demo</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">OUT</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="sh">      APP_NAME     : #{env(:app_name)}</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="sh">      PORT         : #{env(:port)}</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="sh">      API_KEY      : #{env(:api_key)}</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="sh">      DATABASE_URL : #{env(:database_url)}</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="sh">      LOG_LEVEL    : #{env(:log_level, "info")}</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="dl">    OUT</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a># examples/.env
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>APP_NAME=my_app
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>PORT=4000
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>API_KEY=secret-key-abc123
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>DATABASE_URL=postgres://localhost/my_app_dev
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard<span class="w"> </span>env_demo
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>APP_NAME     : my_app
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>PORT         : 4000
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>API_KEY      : secret-key-abc123
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>DATABASE_URL : postgres://localhost/my_app_dev
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>LOG_LEVEL    : info
+</span></code></pre></div>
+<p><code>LOG_LEVEL</code> is not in <code>.env</code>, so <code>env(:log_level, "info")</code> returns the default. See <a href="../environment/">Environment Variables</a>.</p>
+<hr />
+<h2 id="subdir"><code>subdir/</code><a class="headerlink" href="#subdir" title="Permanent link">&para;</a></h2>
+<p>Three files that show <code>import</code> across a directory boundary and <code>import_up</code> back out of one:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>subdir/import_demo.loki</code></td>
+<td>Defines <code>subdir_task</code>; loaded by <code>examples/.loki</code> with <code>import "subdir/import_demo.loki"</code></td>
+</tr>
+<tr>
+<td><code>subdir/.loki</code></td>
+<td>Makes <code>subdir/</code> a project of its own when you run asgard from inside it; loads <code>import_up_demo.loki</code></td>
+</tr>
+<tr>
+<td><code>subdir/import_up_demo.loki</code></td>
+<td>Calls <code>import_up "env_usage.loki"</code>, which walks up and finds <code>examples/env_usage.loki</code> without a hard-coded relative path</td>
+</tr>
+</tbody>
+</table>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="nb">cd</span><span class="w"> </span>examples<span class="p">;</span><span class="w">        </span>asgard<span class="w"> </span>subdir_task<span class="w">      </span><span class="c1"># Loaded from examples/subdir/import_demo.loki</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="nb">cd</span><span class="w"> </span>examples/subdir<span class="p">;</span><span class="w"> </span>asgard<span class="w"> </span>env_demo<span class="w">         </span><span class="c1"># found one directory up by import_up</span>
+</span></code></pre></div>
+<p>See <a href="../task-files/">Task Files</a>.</p>
+<hr />
+<h2 id="depends_on_blockgood-and-depends_on_blockbad"><code>depends_on_block/good/</code> and <code>depends_on_block/bad/</code><a class="headerlink" href="#depends_on_blockgood-and-depends_on_blockbad" title="Permanent link">&para;</a></h2>
+<p>Two one-file projects for the block form of <code>depends_on</code>, which computes the dependency list after every file has loaded. Run each from its own directory.</p>
+<p><strong><code>good/.loki</code></strong> defines <code>a_check</code>, <code>b_check</code>, <code>c_check</code> and three tasks that gather them:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every *_check task in parallel, then report"</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"quality: all *_check tasks passed"</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">a_check</span><span class="w"> </span><span class="n">b_check</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:teardown</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"setup, then a_check+b_check in parallel, then teardown"</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">full_cycle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"full_cycle: done"</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="n">depends_on</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="n">all_checks</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">  </span><span class="n">slow_checks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">c_check</span><span class="o">]</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">  </span><span class="o">[</span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="n">all_checks</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">slow_checks</span><span class="p">,</span><span class="w"> </span><span class="ss">:teardown</span><span class="o">]</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="k">end</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"setup, then every *_check except the slow ones, then teardown"</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="k">def</span><span class="w"> </span><span class="nf">smoke</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"smoke: done"</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nb">cd</span><span class="w"> </span>examples/depends_on_block/good
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>asgard<span class="w"> </span>quality
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>running a_check ...
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>running b_check ...
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>running c_check ...
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>quality: all *_check tasks passed
+</span></code></pre></div>
+<p><strong><code>bad/.loki</code></strong> wraps the list in one Array too many, <code>[[ ... ]]</code>. The result is checked before any task runs:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="nb">cd</span><span class="w"> </span>examples/depends_on_block/bad
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>asgard<span class="w"> </span>quality
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>asgard: depends_on proc/block for 'quality' returned invalid dependency [:a_check, :b_check, :c_check] (Array) in a parallel group; expected a Symbol or String
+</span></code></pre></div>
+<p>See <a href="../dependencies/#dynamic-dependencies">Dynamic Dependencies</a>.</p>
+<hr />
+<h2 id="badloki"><code>bad.loki</code><a class="headerlink" href="#badloki" title="Permanent link">&para;</a></h2>
+<p>What goes wrong when parallel tasks share state through an instance variable, and why <code>dep_result</code> exists. Four workers run in one parallel stage and each adds to the same <code>@hits</code> counter a thousand times:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>asgard<span class="w"> </span>bad_race
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>expected @hits == 4000, got 3127
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>DATA RACE CONFIRMED: 873 update(s) lost
+</span></code></pre></div>
+<p>Parallel dependencies each run on their own instance, so an instance variable is the wrong channel between them and the task that depends on them. Return the value from each task and read it with <code>dep_result(:worker_1)</code> instead. See <a href="../dependencies/#passing-results-between-tasks">Passing Results Between Tasks</a>.</p>
+<hr />
+<h2 id="watcher_examples"><code>watcher_examples/</code><a class="headerlink" href="#watcher_examples" title="Permanent link">&para;</a></h2>
+<p>A small project whose tasks run when its files change: four <code>watch</code> declarations covering a glob, a directory with <code>only:</code>, <code>ignore:</code> and <code>env:</code>, an <code>events:</code> filter with <code>debounce:</code>, and a second watch of one task with <code>as:</code>. The <code>lib/</code>, <code>bin/</code>, <code>docs/</code> and <code>data/</code> directories hold one placeholder file each so there is something to edit at once.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nb">cd</span><span class="w"> </span>examples/watcher_examples
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>start
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="nb">echo</span><span class="w"> </span><span class="s1">'# a change'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>lib/greeter.rb
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>stop
+</span></code></pre></div>
+<p>Every task also runs by hand, when <code>changes</code> is empty. Its <code>README.md</code> walks through the whole session with expected output; so does <a href="../watch/">Watched Files</a>.</p>
+<hr />
+<h2 id="the-asgard-repository-itself">The asgard Repository Itself<a class="headerlink" href="#the-asgard-repository-itself" title="Permanent link">&para;</a></h2>
+<p>The repository root is a multi-file project that builds, tests and releases the gem. It is the best example of a <code>.loki</code> layout in real use.</p>
+<h3 id="loki"><code>.loki</code><a class="headerlink" href="#loki" title="Permanent link">&para;</a></h3>
+<p>The entry point: imports, shared values, a <code>header</code> built from a <code>helper</code>, a <code>watch</code>, and a <code>default_task</code>.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">import</span><span class="w"> </span><span class="s2">"quality.loki"</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="n">import</span><span class="w"> </span><span class="s2">"quality_rails.loki"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="no">ENV</span><span class="o">[</span><span class="s2">"RAILS_ROOT"</span><span class="o">]</span><span class="w">   </span><span class="c1"># a conditional import</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="n">import</span><span class="w"> </span><span class="s2">"gem_tasks.loki"</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="n">import</span><span class="w"> </span><span class="s2">"git.loki"</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="n">import</span><span class="w"> </span><span class="s2">"doc_tasks.loki"</span>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="n">import</span><span class="w"> </span><span class="s2">"xyzzy.loki"</span><span class="w">                                 </span><span class="c1"># a deliberate override, for --doctor</span>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">  </span><span class="vc">@@project</span><span class="w">      </span><span class="o">||=</span><span class="w"> </span><span class="s2">"asgard"</span><span class="o">.</span><span class="n">freeze</span>
+</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">  </span><span class="vc">@@project_desc</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="s2">"CLI-task runner"</span>
+</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>
+</span><span id="__span-26-12"><a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a><span class="w">  </span><span class="n">watch</span><span class="w"> </span><span class="ss">:test_check</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="sx">%w[lib test]</span><span class="p">,</span><span class="w"> </span><span class="ss">only</span><span class="p">:</span> <span class="sr">/\.rb\z/</span><span class="w">   </span><span class="c1"># rerun the tests on save</span>
+</span><span id="__span-26-13"><a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>
+</span><span id="__span-26-14"><a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a><span class="w">  </span><span class="n">helper</span><span class="p">(</span><span class="ss">:project_version</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-26-15"><a id="__codelineno-26-15" name="__codelineno-26-15" href="#__codelineno-26-15"></a><span class="w">    </span><span class="vc">@@project_version</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">"lib/</span><span class="si">#{</span><span class="vc">@@project</span><span class="si">}</span><span class="s2">/version.rb"</span><span class="p">)</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sr">/VERSION\s*=\s*"([^"]+)"/</span><span class="p">)</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="n">freeze</span>
+</span><span id="__span-26-16"><a id="__codelineno-26-16" name="__codelineno-26-16" href="#__codelineno-26-16"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-26-17"><a id="__codelineno-26-17" name="__codelineno-26-17" href="#__codelineno-26-17"></a>
+</span><span id="__span-26-18"><a id="__codelineno-26-18" name="__codelineno-26-18" href="#__codelineno-26-18"></a><span class="w">  </span><span class="n">default_task</span><span class="w"> </span><span class="ss">:quality</span>
+</span><span id="__span-26-19"><a id="__codelineno-26-19" name="__codelineno-26-19" href="#__codelineno-26-19"></a>
+</span><span id="__span-26-20"><a id="__codelineno-26-20" name="__codelineno-26-20" href="#__codelineno-26-20"></a><span class="w">  </span><span class="n">header</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">HEAD</span>
+</span><span id="__span-26-21"><a id="__codelineno-26-21" name="__codelineno-26-21" href="#__codelineno-26-21"></a><span class="sh">    Project:  #{@@project} (v#{project_version}) - #{@@project_desc}</span>
+</span><span id="__span-26-22"><a id="__codelineno-26-22" name="__codelineno-26-22" href="#__codelineno-26-22"></a><span class="sh">    Root Dir: #{loki_up.parent}</span>
+</span><span id="__span-26-23"><a id="__codelineno-26-23" name="__codelineno-26-23" href="#__codelineno-26-23"></a><span class="sh">    Default task: #{default_task}</span>
+</span><span id="__span-26-24"><a id="__codelineno-26-24" name="__codelineno-26-24" href="#__codelineno-26-24"></a><span class="dl">  HEAD</span>
+</span><span id="__span-26-25"><a id="__codelineno-26-25" name="__codelineno-26-25" href="#__codelineno-26-25"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="qualityloki"><code>quality.loki</code><a class="headerlink" href="#qualityloki" title="Permanent link">&para;</a></h3>
+<p>The quality gates, and the convention that ties them together. Every gate is a task named <code>*_check</code> that writes its full output to <code>&lt;gate&gt;_output.txt</code>, prints one summary line, and <strong>returns</strong> a status: <code>:pass</code>, <code>:fail</code>, <code>:warn</code> (ran, non-blocking advice) or <code>:skip</code> (the tool is not installed). <code>quality</code> discovers every <code>*_check</code> task with a block <code>depends_on</code>, runs them all in parallel, reads each result with <code>dep_result</code>, and prints a summary table; it aborts only when a gate returned <code>:fail</code>.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every *_check quality gate task in parallel"</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">  </span><span class="n">check_tasks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">_deps</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:quality</span><span class="p">,</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">)</span>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="w">  </span><span class="n">results</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">check_tasks</span><span class="o">.</span><span class="n">to_h</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="o">|</span><span class="w"> </span><span class="o">[</span><span class="n">quality_gate_label</span><span class="p">(</span><span class="nb">name</span><span class="p">),</span><span class="w"> </span><span class="n">dep_result</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">  </span><span class="n">print_quality_summary</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Because a <code>*_check</code> task returns <code>:fail</code> rather than exiting, every gate runs to the end and the summary shows all failures at once. Run alone (<code>asgard rubocop_check</code>), a gate that returns <code>:fail</code> still makes asgard exit 1.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>asgard<span class="w"> </span>quality
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>Tests: 412 runs, 1193 assertions, 0 failures, 0 errors, 0 skips (see test_output.txt)
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>RuboCop: 61 files inspected, no offenses detected (see rubocop_output.txt)
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>...
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>============================================================
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>Quality Gate Summary
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>============================================================
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>  [PASS] Tests + Coverage
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>  [PASS] RuboCop
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>  [SKIP] Typos
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>  ...
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>------------------------------------------------------------
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>  9 pass, 1 skip
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>============================================================
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>All quality gates passed.
+</span></code></pre></div>
+<h3 id="gem_tasksloki"><code>gem_tasks.loki</code><a class="headerlink" href="#gem_tasksloki" title="Permanent link">&para;</a></h3>
+<p><code>console</code>, <code>build</code> (depends on <code>quality</code>), <code>install</code> (depends on <code>build</code>) and <code>release</code> (depends on <code>quality</code>, asks for confirmation unless <code>--yes</code>, refuses a dirty working tree or an existing tag). A plain <code>sh</code> sequence does the work; <code>project_version</code> comes from the <code>helper</code> in <code>.loki</code>.</p>
+<h3 id="gitloki"><code>git.loki</code><a class="headerlink" href="#gitloki" title="Permanent link">&para;</a></h3>
+<p>Three one-liners: <code>push</code>, <code>pull</code> (fast-forward only), <code>fetch</code>. The smallest useful task file.</p>
+<h3 id="doc_tasksloki"><code>doc_tasks.loki</code><a class="headerlink" href="#doc_tasksloki" title="Permanent link">&para;</a></h3>
+<p>Tasks that only exist when the project has the matching tool, decided with ordinary Ruby <code>if</code> around the <code>def</code>s. The documentation server is a background job:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="n">root</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loki_up</span><span class="o">.</span><span class="n">dirname</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">root</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">"mkdocs.yml"</span><span class="p">)</span><span class="o">.</span><span class="n">exist?</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">    </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation builder"</span>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">    </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_builder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs build"</span>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a>
+</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="w">    </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation server, as a background job (see `asgard jobs`)"</span>
+</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="w">    </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
+</span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="w">    </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-30-11"><a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-30-12"><a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>asgard<span class="w"> </span>doc_server<span class="w">        </span><span class="c1"># started doc_server-1 (pid 48213), log: ...</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w">              </span><span class="c1"># lists it</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>stop<span class="w"> </span>doc_server
+</span></code></pre></div>
+<p>See <a href="../jobs/">Background Jobs</a>.</p>
+<h3 id="xyzzyloki"><code>xyzzy.loki</code><a class="headerlink" href="#xyzzyloki" title="Permanent link">&para;</a></h3>
+<p>Defines a <code>xyzzy</code> task; <code>.loki</code>, loaded after it, defines <code>xyzzy</code> again. The first definition is silently dead, and <code>asgard --doctor</code> says so:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>  .loki
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a>    xyzzy  .loki:26   active — redefines xyzzy.loki:6
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>  xyzzy.loki
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>    xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:26 — never callable
+</span></code></pre></div>
+<p>See <a href="../diagnostics/">Help &amp; Diagnostics</a>.</p>
+<h3 id="quality_railsloki"><code>quality_rails.loki</code><a class="headerlink" href="#quality_railsloki" title="Permanent link">&para;</a></h3>
+<p>Rails-only gates (<code>brakeman_check</code>, <code>rails_best_practices_check</code>, <code>active_record_doctor_check</code>), imported by <code>.loki</code> only when <code>RAILS_ROOT</code> is set. Nothing else needs to change for <code>quality</code> to pick them up: its block <code>depends_on</code> finds every <code>*_check</code> task that is loaded.</p>
 <hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>File</th>
-<th>Primary Focus</th>
+<th>Example</th>
+<th>Shows</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>kitchen_sink.loki</code></td>
-<td>Comprehensive Thor DSL reference — options, aliases, long_desc, depends_on</td>
+<td>Every option type, <code>long_desc</code>, <code>map</code>, <code>default_task</code>, <code>class_option</code>, all <code>depends_on</code> shapes, helpers</td>
 </tr>
 <tr>
 <td><code>server_subcommands.loki</code></td>
-<td>Subcommand groups, per-command options, depends_on in subcommands</td>
+<td>A subcommand group with options, a <code>helper</code>, <code>depends_on</code> inside the group</td>
 </tr>
 <tr>
 <td><code>db_subcommands.loki</code></td>
-<td>Multi-step depends_on chains, enum validation, long_desc in subcommands</td>
+<td>A subcommand group with a dependency chain, <code>enum</code>, <code>long_desc</code></td>
 </tr>
 <tr>
 <td><code>concurrent.loki</code></td>
-<td>Parallel task execution, thread concurrency demonstration</td>
+<td>A parallel stage really running at once</td>
 </tr>
 <tr>
 <td><code>do.loki</code></td>
-<td>Running several tasks in sequence from one command line</td>
+<td>Several tasks from one command line, with per-step arguments</td>
 </tr>
 <tr>
 <td><code>confirm.loki</code></td>
-<td>A guard dependency that asks before a dangerous task runs</td>
+<td>A guard dependency that asks before a dangerous task</td>
+</tr>
+<tr>
+<td><code>env_usage.loki</code></td>
+<td><code>dotenv</code>, <code>loki_up(".env")</code> and <code>env</code> with defaults</td>
+</tr>
+<tr>
+<td><code>subdir/</code></td>
+<td><code>import</code> from a subdirectory, <code>import_up</code> to an ancestor</td>
+</tr>
+<tr>
+<td><code>depends_on_block/good</code>, <code>bad</code></td>
+<td>The block form of <code>depends_on</code>, and its shape error</td>
+</tr>
+<tr>
+<td><code>bad.loki</code></td>
+<td>Why parallel tasks must not share instance variables</td>
+</tr>
+<tr>
+<td><code>watcher_examples/</code></td>
+<td>Four <code>watch</code> declarations and the <code>changes</code> accessor</td>
+</tr>
+<tr>
+<td>repository root</td>
+<td>A real multi-file project: <code>*_check</code> gates, <code>dep_result</code>, conditional imports and tasks, a background job, an override caught by <code>--doctor</code></td>
 </tr>
 </tbody>
 </table>
@@ -1654,7 +2473,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../api/" class="md-footer__link md-footer__link--prev" aria-label="Previous: API Reference">
+          <a href="../files/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Files &amp; Directories">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1664,7 +2483,7 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                API Reference
+                Files & Directories
               </div>
             </div>
           </a>

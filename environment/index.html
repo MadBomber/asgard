@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Thor-based Ruby task runner with dependency graphs and concurrent execution">
+        <meta name="description" content="A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.">
       
       
         <meta name="author" content="Dewayne VanHoozer">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/environment/">
       
       
-        <link rel="prev" href="../shell/">
+        <link rel="prev" href="../task-files/">
       
       
-        <link rel="next" href="../schedule/">
+        <link rel="next" href="../diagnostics/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Environment - Asgard</title>
+        <title>Environment Variables - Asgard</title>
       
     
     
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Environment
+              Environment Variables
             
           </span>
         </div>
@@ -278,7 +278,7 @@
   
     
   
-  Tasks
+  Writing Tasks
 
         </a>
       </li>
@@ -296,13 +296,13 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../options/" class="md-tabs__link">
+        <a href="../task-files/" class="md-tabs__link">
           
   
   
     
   
-  CLI
+  Organizing a Project
 
         </a>
       </li>
@@ -315,17 +315,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../task-files/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../schedule/" class="md-tabs__link">
+          
   
   
     
   
-  Task Files
+  Built-in Commands
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -334,36 +337,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../api/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
   
   
     
   
-  API Reference
+  Reference
 
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../examples/" class="md-tabs__link">
-        
-  
-  
+        </a>
+      </li>
     
-  
-  Examples
-
-      </a>
-    </li>
   
 
       
@@ -527,6 +514,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
     
@@ -548,7 +541,7 @@
   <span class="md-ellipsis">
     
   
-    Tasks
+    Writing Tasks
   
 
     
@@ -564,7 +557,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tasks
+    Writing Tasks
   
 
           </label>
@@ -605,6 +598,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dependencies/" class="md-nav__link">
         
   
@@ -613,6 +634,34 @@
     
   
     Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options & Flags
   
 
     
@@ -682,6 +731,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../subcommands/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Subcommands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -699,14 +776,6 @@
   
     
     
-      
-        
-      
-        
-      
-        
-      
-        
       
         
       
@@ -738,7 +807,7 @@
   <span class="md-ellipsis">
     
   
-    CLI
+    Organizing a Project
   
 
     
@@ -754,7 +823,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    CLI
+    Organizing a Project
   
 
           </label>
@@ -767,70 +836,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
+      <a href="../task-files/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Options & Flags
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../subcommands/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Subcommands
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../shell/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Shell Helpers
+    Task Files
   
 
     
@@ -867,7 +880,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -885,7 +898,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -913,22 +926,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#reading-variables-with-env" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage
+        Reading Variables with env
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading-env-files-with-dotenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loading .env Files with dotenv
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Loading .env Files with dotenv">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#load-a-named-file" class="md-nav__link">
+  <a href="#a-named-file-or-several" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Load a Named File
+        A Named File, or Several
       
     </span>
   </a>
@@ -936,10 +960,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#multiple-calls" class="md-nav__link">
+  <a href="#a-missing-file-is-not-an-error" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multiple Calls
+        A Missing File Is Not an Error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-any-subdirectory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From Any Subdirectory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Format
       
     </span>
   </a>
@@ -952,10 +998,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-dotenv-runs" class="md-nav__link">
+  <a href="#one-value-several-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When dotenv Runs
+        One Value, Several Tasks
       
     </span>
   </a>
@@ -963,10 +1009,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#file-not-found" class="md-nav__link">
+  <a href="#variables-asgard-sets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        File Not Found
+        Variables Asgard Sets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variables Asgard Sets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tasks-run-by-the-watcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks Run by the Watcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduled-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduled Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variables-asgard-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variables Asgard Reads
       
     </span>
   </a>
@@ -974,10 +1070,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#environment-variables-vs-class-variables" class="md-nav__link">
+  <a href="#envrc-and-direnv" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Environment Variables vs. Class Variables
+        .envrc and direnv
       
     </span>
   </a>
@@ -985,10 +1081,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dotenv-file-format" class="md-nav__link">
+  <a href="#path-is-not-the-same-everywhere" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dotenv File Format
+        PATH Is Not the Same Everywhere
       
     </span>
   </a>
@@ -1003,6 +1099,99 @@
   
 
               
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -1101,15 +1290,75 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../task-files/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Task Files
+    DSL Reference
   
 
     
@@ -1121,22 +1370,23 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="../commands/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    Command Reference
   
 
     
@@ -1148,9 +1398,38 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Files & Directories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1172,6 +1451,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1259,22 +1546,33 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
+  <a href="#reading-variables-with-env" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Basic Usage
+        Reading Variables with env
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Basic Usage">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loading-env-files-with-dotenv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loading .env Files with dotenv
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Loading .env Files with dotenv">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#load-a-named-file" class="md-nav__link">
+  <a href="#a-named-file-or-several" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Load a Named File
+        A Named File, or Several
       
     </span>
   </a>
@@ -1282,10 +1580,32 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#multiple-calls" class="md-nav__link">
+  <a href="#a-missing-file-is-not-an-error" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Multiple Calls
+        A Missing File Is Not an Error
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-any-subdirectory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From Any Subdirectory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Format
       
     </span>
   </a>
@@ -1298,10 +1618,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#when-dotenv-runs" class="md-nav__link">
+  <a href="#one-value-several-tasks" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When dotenv Runs
+        One Value, Several Tasks
       
     </span>
   </a>
@@ -1309,10 +1629,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#file-not-found" class="md-nav__link">
+  <a href="#variables-asgard-sets" class="md-nav__link">
     <span class="md-ellipsis">
       
-        File Not Found
+        Variables Asgard Sets
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Variables Asgard Sets">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tasks-run-by-the-watcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tasks Run by the Watcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduled-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scheduled Tasks
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#variables-asgard-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Variables Asgard Reads
       
     </span>
   </a>
@@ -1320,10 +1690,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#environment-variables-vs-class-variables" class="md-nav__link">
+  <a href="#envrc-and-direnv" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Environment Variables vs. Class Variables
+        .envrc and direnv
       
     </span>
   </a>
@@ -1331,10 +1701,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dotenv-file-format" class="md-nav__link">
+  <a href="#path-is-not-the-same-everywhere" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dotenv File Format
+        PATH Is Not the Same Everywhere
       
     </span>
   </a>
@@ -1384,10 +1754,10 @@
     
     
       <li class="md-path__item">
-        <a href="../options/" class="md-path__link">
+        <a href="../task-files/" class="md-path__link">
           
   <span class="md-ellipsis">
-    CLI
+    Organizing a Project
   </span>
 
         </a>
@@ -1423,97 +1793,288 @@
 
 
 <h1 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h1>
-<p>Asgard provides the <code>dotenv</code> class method to load <code>.env</code> files into the process environment before tasks run. It is a thin wrapper around the <a href="https://github.com/bkeepers/dotenv">dotenv gem</a>.</p>
-<hr />
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
-<p>Call <code>dotenv</code> inside the class body (not inside a task method) to load the default <code>.env</code> file:</p>
+<p>Tasks read configuration from the environment all the time: a port, a deploy target, an API key. This page covers how a task reads a variable, how a project loads a <code>.env</code> file, and then the part that is easy to miss: the variables asgard itself sets for the processes it starts, and the few it reads.</p>
+<p>The short version:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">   </span><span class="c1"># loads .env from the current working directory</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">                     </span><span class="c1"># load .env, if there is one</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Print the app name from .env"</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">env</span><span class="p">(</span><span class="ss">:app_name</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the server"</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"puma -p </span><span class="si">#{</span><span class="n">env</span><span class="p">(</span><span class="ss">:port</span><span class="p">,</span><span class="w"> </span><span class="s1">'3000'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">end</span>
 </span></code></pre></div>
-<h3 id="load-a-named-file">Load a Named File<a class="headerlink" href="#load-a-named-file" title="Permanent link">&para;</a></h3>
-<p>Pass a file path string to load a specific file:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="s2">".env.local"</span><span class="w">     </span><span class="c1"># load a local override</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="s2">".env.staging"</span><span class="w">   </span><span class="c1"># load staging-specific vars</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">end</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>start<span class="w">               </span><span class="c1"># puma -p 3000</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nv">PORT</span><span class="o">=</span><span class="m">8080</span><span class="w"> </span>asgard<span class="w"> </span>start<span class="w">     </span><span class="c1"># puma -p 8080</span>
 </span></code></pre></div>
-<h3 id="multiple-calls">Multiple Calls<a class="headerlink" href="#multiple-calls" title="Permanent link">&para;</a></h3>
-<p>Call <code>dotenv</code> multiple times to load several files. Each call merges the loaded variables into <code>ENV</code>. Later calls do not overwrite variables already set by earlier calls (standard dotenv behavior):</p>
+<hr />
+<h2 id="reading-variables-with-env">Reading Variables with <code>env</code><a class="headerlink" href="#reading-variables-with-env" title="Permanent link">&para;</a></h2>
+<p><code>env</code> fetches an environment variable by name. The name may be a symbol or a string, and it is upcased for you, so <code>env(:port)</code> and <code>env("PORT")</code> are the same call.</p>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>env(:port, "3000")</code></td>
+<td>The value of <code>PORT</code>, or <code>"3000"</code> when it is unset</td>
+</tr>
+<tr>
+<td><code>env(:api_key)</code></td>
+<td>The value of <code>API_KEY</code>; raises <code>KeyError</code> when it is unset</td>
+</tr>
+<tr>
+<td><code>env("DATABASE_URL")</code></td>
+<td>A string name works the same way</td>
+</tr>
+<tr>
+<td><code>env("database_url")</code></td>
+<td>Lower case is upcased: still <code>DATABASE_URL</code></td>
+</tr>
+</tbody>
+</table>
+<p>Use the no-default form for anything a task cannot run without. The error names the variable, and asgard stops before the task does half its work:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">              </span><span class="c1"># loads .env (base config)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="s2">".env.local"</span><span class="w"> </span><span class="c1"># loads .env.local (local overrides)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy the app"</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"cap </span><span class="si">#{</span><span class="n">env</span><span class="p">(</span><span class="ss">:deploy_target</span><span class="p">)</span><span class="si">}</span><span class="s2"> deploy"</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">end</span>
 </span></code></pre></div>
-<hr />
-<h2 id="when-dotenv-runs">When <code>dotenv</code> Runs<a class="headerlink" href="#when-dotenv-runs" title="Permanent link">&para;</a></h2>
-<p><code>dotenv</code> is a <strong>class-level</strong> call — it executes at Ruby class-load time, not when a task is invoked. This means:</p>
-<ol>
-<li>Variables are available in <code>ENV</code> before any task method runs.</li>
-<li>They are available during <code>depends_on</code> dependency resolution.</li>
-</ol>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">dotenv</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"DATABASE_URL=</span><span class="si">#{</span><span class="n">env</span><span class="p">(</span><span class="ss">:database_url</span><span class="p">)</span><span class="si">}</span><span class="s2"> rails db:migrate"</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">end</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>deploy
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># .loki:3:in 'deploy': key not found: "DEPLOY_TARGET" (KeyError)</span>
 </span></code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>If <code>.env</code> does not exist, <code>dotenv</code> silently does nothing — it checks <code>File.exist?</code> before loading. There is no error for a missing file.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Environment values are always strings. Convert where it matters: <code>env(:port, "3000").to_i</code>, <code>env(:debug, "false") == "true"</code>.</p>
 </div>
+<p><code>env</code> is available everywhere in a <code>.loki</code> file: in task bodies, in helpers, and in the class body (<code>@@host ||= env(:host, "localhost")</code>).</p>
 <hr />
-<h2 id="file-not-found">File Not Found<a class="headerlink" href="#file-not-found" title="Permanent link">&para;</a></h2>
-<p>Asgard calls <code>Dotenv.load(path)</code> only when <code>File.exist?(path)</code> is true. If the file is absent, the call is a no-op:</p>
+<h2 id="loading-env-files-with-dotenv">Loading <code>.env</code> Files with <code>dotenv</code><a class="headerlink" href="#loading-env-files-with-dotenv" title="Permanent link">&para;</a></h2>
+<p><code>dotenv</code> loads a file of <code>KEY=value</code> lines into the environment before any task runs. Call it in the class body, not inside a task:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="s2">".env.local"</span><span class="w">   </span><span class="c1"># silently skipped if .env.local does not exist</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">end</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">                  </span><span class="c1"># loads .env</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Print the app name from .env"</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">check</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">env</span><span class="p">(</span><span class="ss">:app_name</span><span class="p">)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>This makes it safe to commit a <code>.env.local</code> line to your <code>.loki</code> without requiring every developer to create the file.</p>
-<hr />
-<h2 id="environment-variables-vs-class-variables">Environment Variables vs. Class Variables<a class="headerlink" href="#environment-variables-vs-class-variables" title="Permanent link">&para;</a></h2>
-<p>Use <code>dotenv</code> to bring external configuration into <code>ENV</code>. Use <code>@@</code> class variables for fixed values declared in the task file, and read from <code>ENV</code> directly in task bodies or helper methods when the value comes from the environment:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">dotenv</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="vc">@@app_name</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="s2">"myapp"</span><span class="o">.</span><span class="n">freeze</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the server"</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">"PORT"</span><span class="p">,</span><span class="w"> </span><span class="s2">"3000"</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"puma -b tcp://0.0.0.0:</span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2"> -w </span><span class="si">#{</span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s1">'WORKERS'</span><span class="p">,</span><span class="w"> </span><span class="s1">'2'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">end</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># .env</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nv">APP_NAME</span><span class="o">=</span>myapp
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://localhost/myapp_development
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="nv">REDIS_URL</span><span class="o">=</span>redis://localhost:6379/0
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span>
 </span></code></pre></div>
-<p>For <code>ENV</code> values used in multiple tasks, define a private helper method:</p>
+<h3 id="a-named-file-or-several">A Named File, or Several<a class="headerlink" href="#a-named-file-or-several" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">dotenv</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the server"</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"puma -p </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Show config"</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="vc">@@app_name</span><span class="si">}</span><span class="s2"> on port </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="kp">private</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ENV</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="s2">"PORT"</span><span class="p">,</span><span class="w"> </span><span class="s2">"3000"</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="k">end</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w">                  </span><span class="c1"># .env: shared defaults</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="s2">".env.local"</span><span class="w">     </span><span class="c1"># per-machine values</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">end</span>
 </span></code></pre></div>
+<p>Each call adds the variables it finds. A variable that is already set, by an earlier <code>dotenv</code> call or by your shell, is <strong>never overwritten</strong>. That is the standard dotenv rule, and it means your shell always has the last word: <code>PORT=8080 asgard start</code> beats whatever <code>.env</code> says.</p>
+<h3 id="a-missing-file-is-not-an-error">A Missing File Is Not an Error<a class="headerlink" href="#a-missing-file-is-not-an-error" title="Permanent link">&para;</a></h3>
+<p><code>dotenv</code> checks that the file exists and does nothing when it does not. A <code>.loki</code> can name <code>.env.local</code> without requiring every developer to create one.</p>
+<h3 id="from-any-subdirectory">From Any Subdirectory<a class="headerlink" href="#from-any-subdirectory" title="Permanent link">&para;</a></h3>
+<p>The path is relative to the directory you ran asgard from, not to <code>.loki</code>. Run <code>asgard start</code> from <code>src/app/</code> and a bare <code>dotenv</code> looks for <code>src/app/.env</code>, finds nothing, and silently loads nothing. Ask for the nearest <code>.env</code> up the tree instead:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="n">dotenv</span><span class="w"> </span><span class="n">loki_up</span><span class="p">(</span><span class="s2">".env"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="s2">".env"</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>loki_up(".env")</code> returns the first <code>.env</code> found in the current directory or any ancestor, and the <code>|| ".env"</code> keeps the usual no-op behaviour when there is none. See <a href="../task-files/#finding-files-with-loki_up">Task Files</a>.</p>
+<h3 id="file-format">File Format<a class="headerlink" href="#file-format" title="Permanent link">&para;</a></h3>
+<p>Standard dotenv syntax: one <code>KEY=value</code> per line, <code>#</code> comments, quoted values when a value has spaces, and <code>${OTHER}</code> to reference another variable. Multi-line values are supported as the dotenv gem documents them.</p>
 <hr />
-<h2 id="dotenv-file-format">Dotenv File Format<a class="headerlink" href="#dotenv-file-format" title="Permanent link">&para;</a></h2>
-<p>Standard dotenv file syntax applies:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># .env</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nv">APP_NAME</span><span class="o">=</span>myapp
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://localhost/myapp_development
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="nv">REDIS_URL</span><span class="o">=</span>redis://localhost:6379/0
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="nv">PORT</span><span class="o">=</span><span class="m">3000</span>
+<h2 id="one-value-several-tasks">One Value, Several Tasks<a class="headerlink" href="#one-value-several-tasks" title="Permanent link">&para;</a></h2>
+<p>When several tasks read the same variable, read it once in a private helper so the default lives in one place:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">dotenv</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the server"</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"puma -p </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Show the configuration"</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"listening on </span><span class="si">#{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="kp">private</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">(</span><span class="ss">:port</span><span class="p">,</span><span class="w"> </span><span class="s2">"3000"</span><span class="p">)</span><span class="o">.</span><span class="n">to_i</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Multi-line values and quotes are supported per the dotenv gem's own documentation.</p>
+<p>For a value that is also needed in the class body (a <code>header</code> line, say), use <code>helper</code> instead of <code>private</code>; see <a href="../helpers/#the-helper-dsl-method">Helper Methods</a>.</p>
+<hr />
+<h2 id="variables-asgard-sets">Variables Asgard Sets<a class="headerlink" href="#variables-asgard-sets" title="Permanent link">&para;</a></h2>
+<p>Three of asgard's built-ins start tasks as new processes: the <a href="../watch/">watcher</a>, <a href="../jobs/">background jobs</a> and <a href="../schedule/">schedules</a>. Each hands its process a specific environment, and a few <code>ASGARD_*</code> variables that tell the task why it is running.</p>
+<h3 id="tasks-run-by-the-watcher">Tasks Run by the Watcher<a class="headerlink" href="#tasks-run-by-the-watcher" title="Permanent link">&para;</a></h3>
+<p>A task the watcher triggers does <strong>not</strong> inherit the shell the watcher was started from. It gets:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A fixed base</td>
+<td><code>PATH</code>, <code>HOME</code>, <code>USER</code>, <code>LOGNAME</code>, <code>SHELL</code>, <code>LANG</code>, every <code>LC_*</code>, <code>TMPDIR</code>, <code>SSH_AUTH_SOCK</code>, and the Ruby setup the watcher started under: <code>GEM_HOME</code>, <code>GEM_PATH</code>, <code>RUBYOPT</code>, <code>RUBYLIB</code>, every <code>BUNDLE_*</code> and <code>BUNDLER_*</code>. All captured when <code>asgard watcher start</code> ran</td>
+</tr>
+<tr>
+<td>The declaration's <code>env:</code></td>
+<td><code>watch :docs, paths: "docs", env: { BUILD_ENV: "dev" }</code> adds <code>BUILD_ENV=dev</code></td>
+</tr>
+<tr>
+<td><code>.envrc</code></td>
+<td>Loaded in the task's own process through <code>direnv exec</code> when direnv is on <code>PATH</code> (see <a href="#envrc-and-direnv"><code>.envrc</code> and direnv</a>)</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>Only if your <code>.loki</code> calls <code>dotenv</code>, as it would for any run</td>
+</tr>
+<tr>
+<td>The trigger</td>
+<td><code>ASGARD_WATCH</code>, the entry name; <code>ASGARD_WATCH_ROOT</code>, the project root; and the changed paths, below</td>
+</tr>
+</tbody>
+</table>
+<p>The changed paths arrive in three variables, one path per line, relative to the project root:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ASGARD_MODIFIED</code></td>
+<td>Files whose contents changed</td>
+</tr>
+<tr>
+<td><code>ASGARD_ADDED</code></td>
+<td>Files that appeared</td>
+</tr>
+<tr>
+<td><code>ASGARD_REMOVED</code></td>
+<td>Files that disappeared</td>
+</tr>
+<tr>
+<td><code>ASGARD_CHANGES_FILE</code></td>
+<td>Set instead of the three above when the lists are too large for the environment (over 128 KB, as a branch switch under a <code>**</code> watch can produce). It names a JSON file holding the same three lists</td>
+</tr>
+</tbody>
+</table>
+<p>You do not read these yourself. The <code>changes</code> method does, from whichever form they came in, and returns <code>.modified</code>, <code>.added</code>, <code>.removed</code> and <code>.all</code>; every list is empty when you run the task by hand. See <a href="../watch/#reading-the-changes">Watched Files</a>.</p>
+<p><code>asgard watcher preview</code> prints the exact command and environment each entry would run, so there is never any guessing about what a triggered task sees.</p>
+<h3 id="background-jobs">Background Jobs<a class="headerlink" href="#background-jobs" title="Permanent link">&para;</a></h3>
+<p>A job started with <code>sh "...", background: true</code> inherits the full environment of the task that started it, plus:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ASGARD_JOB</code></td>
+<td>The job's name (<code>doc_server-1</code>, <code>api</code>)</td>
+</tr>
+<tr>
+<td><code>ASGARD_JOB_STATUS</code></td>
+<td>The file the job's exit status is written to when it ends</td>
+</tr>
+<tr>
+<td><code>PYTHONUNBUFFERED</code></td>
+<td>Set to <code>1</code> unless you set it yourself. Python fully buffers stdout when it is a file, so without this a <code>print</code> loop would show nothing in the job's log until the process exits</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scheduled-tasks">Scheduled Tasks<a class="headerlink" href="#scheduled-tasks" title="Permanent link">&para;</a></h3>
+<p>A job installed by <code>asgard schedule install</code> runs under launchd or systemd, far from any shell of yours. It gets:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PATH</code></td>
+<td>The <code>PATH</code> that was current when you ran <code>install</code>. Change your <code>PATH</code> and re-run <code>install</code> to update it</td>
+</tr>
+<tr>
+<td>The declaration's <code>env:</code></td>
+<td><code>schedule :sync, every: 3600, env: { "SYNC_TARGET" =&gt; "s3://bucket" }</code>. The values are written into the job file, which only your user can read</td>
+</tr>
+<tr>
+<td><code>.envrc</code></td>
+<td>Loaded at run time through <code>direnv exec</code> when direnv is on <code>PATH</code></td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>Only if your <code>.loki</code> calls <code>dotenv</code></td>
+</tr>
+</tbody>
+</table>
+<p>Nothing else. In particular, variables you exported in <code>.zshrc</code> or <code>.bashrc</code> are not there, and neither is Homebrew's <code>PATH</code> on a Mac unless it was in <code>PATH</code> at install time. <code>asgard schedule preview</code> shows the job files, environment included, before you install them.</p>
+<hr />
+<h2 id="variables-asgard-reads">Variables Asgard Reads<a class="headerlink" href="#variables-asgard-reads" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ASGARD_TRACE</code></td>
+<td>When set, a task file that fails to load prints the full Ruby backtrace instead of asgard's one-line summary. See <a href="../diagnostics/#load-errors">Help &amp; Diagnostics</a></td>
+</tr>
+<tr>
+<td><code>ASGARD_LOG_MAX</code></td>
+<td>Bytes the watcher's log may reach before it is rotated to <code>watcher.log.1</code>. Default 10 MB</td>
+</tr>
+<tr>
+<td><code>XDG_STATE_HOME</code></td>
+<td>Where per-project state lives (watcher and job records, logs). Default <code>~/.local/state</code>; asgard uses <code>&lt;XDG_STATE_HOME&gt;/asgard/</code></td>
+</tr>
+<tr>
+<td><code>XDG_CONFIG_HOME</code></td>
+<td>On Linux, where systemd user units are written. Default <code>~/.config</code></td>
+</tr>
+<tr>
+<td><code>COLUMNS</code></td>
+<td>The width the <code>list</code> tables wrap to when output is not a terminal (piped to a file or <code>less</code>). Default 120</td>
+</tr>
+<tr>
+<td><code>NO_COLOR</code></td>
+<td>When set, the <code>list</code> tables print without colour</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../files/">Files &amp; Directories</a> for the paths these produce.</p>
+<hr />
+<h2 id="envrc-and-direnv"><code>.envrc</code> and direnv<a class="headerlink" href="#envrc-and-direnv" title="Permanent link">&para;</a></h2>
+<p>If the project root has a <code>.envrc</code>, asgard's watcher and schedules wrap each task in <code>direnv exec &lt;root&gt;</code>. The task's own process then loads <code>.envrc</code> the way your shell does when you <code>cd</code> into the project: API keys and other secrets reach the task at run time and are <strong>never copied</strong> into a launchd plist, a systemd unit or a watcher record. A rotated key takes effect on the next run with nothing to reinstall.</p>
+<p>For that to work, <code>direnv</code> has to be on <code>PATH</code> when you run <code>asgard schedule install</code> or <code>asgard watcher start</code>. When it is not, each prints a warning and goes on without it:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>schedule: .envrc found but direnv is not on PATH; its variables will not be loaded
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>watcher: .envrc found but direnv is not on PATH; its variables will not be loaded
+</span></code></pre></div>
+<p>A task you run by hand from a direnv-enabled shell already has <code>.envrc</code> loaded, so nothing changes there.</p>
+<hr />
+<h2 id="path-is-not-the-same-everywhere"><code>PATH</code> Is Not the Same Everywhere<a class="headerlink" href="#path-is-not-the-same-everywhere" title="Permanent link">&para;</a></h2>
+<p>The <code>PATH</code> in your terminal is built by your shell's startup files. A task that runs under launchd, systemd or the watcher never runs those files. The practical consequences:</p>
+<ul>
+<li><strong>A tool on your terminal's <code>PATH</code> may be missing in a scheduled run.</strong> Homebrew's <code>/opt/homebrew/bin</code> is the usual example on a Mac. Schedules capture <code>PATH</code> at install time, so run <code>install</code> from a shell that has what the task needs. The watcher captures <code>PATH</code> at <code>start</code>.</li>
+<li><strong>The same name can be a different program.</strong> <code>bash</code> in a Homebrew terminal is 5.x; under launchd it is the 3.2 build in <code>/bin</code>. A script that uses bash 4 syntax passes by hand and fails on a schedule.</li>
+</ul>
+<p>Pin the executables that matter in the <code>shells</code> registry, so every run uses the same one:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/opt/homebrew/bin/bash"</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>See <a href="../shell/#pinning-a-path">Shell Commands</a>.</p>
 
 
 
@@ -1603,7 +2164,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../shell/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Shell Helpers">
+          <a href="../task-files/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Task Files">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1613,20 +2174,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Shell Helpers
+                Task Files
               </div>
             </div>
           </a>
         
         
           
-          <a href="../schedule/" class="md-footer__link md-footer__link--next" aria-label="Next: Scheduled Tasks">
+          <a href="../diagnostics/" class="md-footer__link md-footer__link--next" aria-label="Next: Help &amp; Diagnostics">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Scheduled Tasks
+                Help & Diagnostics
               </div>
             </div>
             <div class="md-footer__button md-icon">

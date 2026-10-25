@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Thor-based Ruby task runner with dependency graphs and concurrent execution">
+        <meta name="description" content="A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.">
       
       
         <meta name="author" content="Dewayne VanHoozer">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/shell/">
       
       
-        <link rel="prev" href="../subcommands/">
+        <link rel="prev" href="../tasks/">
       
       
-        <link rel="next" href="../environment/">
+        <link rel="next" href="../dependencies/">
       
       
         
@@ -29,7 +29,7 @@
     
     
       
-        <title>Shell Helpers - Asgard</title>
+        <title>Shell Commands - Asgard</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#shell-helpers" class="md-skip">
+        <a href="#shell-commands" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Shell Helpers
+              Shell Commands
             
           </span>
         </div>
@@ -268,41 +268,19 @@
   
   
   
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="../tasks/" class="md-tabs__link">
-          
-  
-  
-    
-  
-  Tasks
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
     
   
   
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../options/" class="md-tabs__link">
+        <a href="../tasks/" class="md-tabs__link">
           
   
   
     
   
-  CLI
+  Writing Tasks
 
         </a>
       </li>
@@ -315,17 +293,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../task-files/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../task-files/" class="md-tabs__link">
+          
   
   
     
   
-  Task Files
+  Organizing a Project
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -334,17 +315,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../api/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../schedule/" class="md-tabs__link">
+          
   
   
     
   
-  API Reference
+  Built-in Commands
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -353,17 +337,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../examples/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
   
   
     
   
-  Examples
+  Reference
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -514,8 +501,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -527,28 +516,37 @@
       
         
       
-    
-    
-    
+        
       
+        
+      
+        
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
             
   
   
   <span class="md-ellipsis">
     
   
-    Tasks
+    Writing Tasks
   
 
     
@@ -559,12 +557,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tasks
+    Writing Tasks
   
 
           </label>
@@ -602,6 +600,272 @@
                 
   
   
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#sh-run-a-script-in-the-default-shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sh: Run a Script in the Default Shell
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="sh: Run a Script in the Default Shell">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#silent-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Silent Mode
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exit-on-failure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exit on Failure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shebang-any-interpreter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shebang: Any Interpreter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="shebang: Any Interpreter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interpreters-you-did-not-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpreters You Did Not Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-shells-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The shells Registry
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The shells Registry">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shell-add-or-replace-an-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        shell: Add or Replace an Entry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default_shell-the-shell-used-when-none-is-named" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        default_shell: The Shell Used When None Is Named
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pinning-a-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pinning a Path
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#long-running-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Long-Running Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Long-Running Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#0-is-a-tempfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $0 Is a Tempfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#three-ways-a-script-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three Ways a Script Runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combining-sh-and-shebang" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining sh and shebang
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sh-versus-rubys-own-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sh Versus Ruby's Own Methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
   
   
     <li class="md-nav__item">
@@ -613,6 +877,34 @@
     
   
     Dependencies
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options & Flags
   
 
     
@@ -682,112 +974,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-        
-        
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLI
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    CLI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Options & Flags
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
               
                 
   
@@ -816,30 +1002,50 @@
 
               
             
-              
-                
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
   
   
     
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
+    
       
         
       
+        
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
           
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
     
   
-    Shell Helpers
+    Organizing a Project
   
 
     
@@ -847,17 +1053,35 @@
   
   
 
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organizing a Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../task-files/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Shell Helpers
+    Task Files
   
 
     
@@ -866,161 +1090,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="On this page">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      On this page
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#sh-run-a-script-in-the-default-shell" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        sh — Run a Script in the Default Shell
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="sh — Run a Script in the Default Shell">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#silent-mode" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Silent Mode
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#exit-on-failure" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Exit on Failure
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#shebang-any-interpreter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        shebang — Any Interpreter
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-shells-registry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The shells Registry
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The shells Registry">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#shell-add-or-replace-an-entry" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        shell — Add or Replace an Entry
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#default_shell-what-sh-runs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        default_shell — What sh Runs
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pinning-a-path" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Pinning a Path
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#long-running-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Long-Running Commands
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#background-jobs-three-modes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Background Jobs: Three Modes
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#combining-sh-and-shebang" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Combining sh and shebang
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1040,7 +1109,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -1053,6 +1122,99 @@
   
 
               
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -1151,15 +1313,75 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../task-files/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Task Files
+    DSL Reference
   
 
     
@@ -1171,22 +1393,23 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="../commands/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    Command Reference
   
 
     
@@ -1198,9 +1421,38 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Files & Directories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1222,6 +1474,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1312,12 +1572,12 @@
   <a href="#sh-run-a-script-in-the-default-shell" class="md-nav__link">
     <span class="md-ellipsis">
       
-        sh — Run a Script in the Default Shell
+        sh: Run a Script in the Default Shell
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="sh — Run a Script in the Default Shell">
+    <nav class="md-nav" aria-label="sh: Run a Script in the Default Shell">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1351,10 +1611,27 @@
   <a href="#shebang-any-interpreter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        shebang — Any Interpreter
+        shebang: Any Interpreter
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="shebang: Any Interpreter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interpreters-you-did-not-register" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Interpreters You Did Not Register
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1374,7 +1651,7 @@
   <a href="#shell-add-or-replace-an-entry" class="md-nav__link">
     <span class="md-ellipsis">
       
-        shell — Add or Replace an Entry
+        shell: Add or Replace an Entry
       
     </span>
   </a>
@@ -1382,10 +1659,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#default_shell-what-sh-runs" class="md-nav__link">
+  <a href="#default_shell-the-shell-used-when-none-is-named" class="md-nav__link">
     <span class="md-ellipsis">
       
-        default_shell — What sh Runs
+        default_shell: The Shell Used When None Is Named
       
     </span>
   </a>
@@ -1417,13 +1694,30 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Long-Running Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#0-is-a-tempfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        $0 Is a Tempfile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
-  <a href="#background-jobs-three-modes" class="md-nav__link">
+  <a href="#three-ways-a-script-runs" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Background Jobs: Three Modes
+        Three Ways a Script Runs
       
     </span>
   </a>
@@ -1435,6 +1729,28 @@
     <span class="md-ellipsis">
       
         Combining sh and shebang
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sh-versus-rubys-own-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sh Versus Ruby's Own Methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
       
     </span>
   </a>
@@ -1484,10 +1800,10 @@
     
     
       <li class="md-path__item">
-        <a href="../options/" class="md-path__link">
+        <a href="../tasks/" class="md-path__link">
           
   <span class="md-ellipsis">
-    CLI
+    Writing Tasks
   </span>
 
         </a>
@@ -1522,12 +1838,13 @@
   
 
 
-<h1 id="shell-helpers">Shell Helpers<a class="headerlink" href="#shell-helpers" title="Permanent link">&para;</a></h1>
-<p><code>shebang</code> is the one way a task runs something that isn't Ruby. It writes the script to a tempfile and hands the file to an interpreter from the <code>shells</code> registry. Called with a script alone it uses the <code>default_shell</code>, and <code>sh script</code> is the same call. Both are provided by <code>Asgard::Shell</code> and mixed into every <code>Tasks</code> instance.</p>
-<p>Both return <code>true</code> and exit with the command's status code on failure — they do not raise Ruby exceptions. Both accept <code>silent: true</code> to suppress the script echo, and <code>background:</code> to start the script as a <a href="../jobs/">managed background job</a> instead of waiting for it.</p>
+<h1 id="shell-commands">Shell Commands<a class="headerlink" href="#shell-commands" title="Permanent link">&para;</a></h1>
+<p>Some asgard tasks need to run processes that are not executed in Ruby: a build, a test suite, a deploy script, a Python one-off. Asgard gives every task one method for that, under two names: <code>sh</code> and <code>shebang</code> are the same method, and everything on this page about one is true of the other. <code>sh :python3, script</code> runs the script under the interpreter registered as <code>:python3</code>; <code>sh script</code>, with no shell named, runs it under the default shell. Many task authors write <code>sh</code> without a shell designation as the short-cut for an ordinary shell command and reserve the longer <code>shebang</code> for scripts in another language, which is how this page is laid out, but that is a habit, not a rule.</p>
+<p>Whichever spelling you use, the script is written to a temporary file, run, and asgard stops if it fails, so a pipeline of tasks never continues past a broken step.</p>
+<p>Start with the nameless form. Everything else on this page is a refinement of it.</p>
 <hr />
-<h2 id="sh-run-a-script-in-the-default-shell"><code>sh</code> — Run a Script in the Default Shell<a class="headerlink" href="#sh-run-a-script-in-the-default-shell" title="Permanent link">&para;</a></h2>
-<p><code>sh script</code> is <code>shebang script</code>: the script runs under the <code>default_shell</code>, which is bash until a <code>.loki</code> says otherwise. One line or many take the same path:</p>
+<h2 id="sh-run-a-script-in-the-default-shell"><code>sh</code>: Run a Script in the Default Shell<a class="headerlink" href="#sh-run-a-script-in-the-default-shell" title="Permanent link">&para;</a></h2>
+<p><code>sh</code> takes a script and runs it. One line or many, it works the same way:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile the project"</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
@@ -1546,212 +1863,264 @@
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>All lines of a heredoc execute in the same shell session, so variable assignments carry across lines. By default the script is printed before it runs:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rake build
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>build
 </span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>rake build
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>... rake's output ...
+</span></code></pre></div>
+<p>The script is printed before it runs, so the terminal shows what asgard did. All lines of a heredoc run in one shell session, so a variable set on one line is visible on the next:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Tag the build"</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">tag</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">SHELL</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="sh">    version=$(cat VERSION)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="sh">    git tag "v$version"</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="sh">    echo "tagged v$version"</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="dl">  SHELL</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>The shell is bash until a <code>.loki</code> says otherwise (see <a href="#default_shell-the-shell-used-when-none-is-named"><code>default_shell</code></a>). Bash syntax such as <code>[[ ... ]]</code>, arrays and <code>$PIPESTATUS</code> works in a one-liner as well as in a heredoc.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Earlier versions ran a one-line <code>sh</code> script through <code>/bin/sh</code> and a heredoc through <code>bash</code>. On Debian and Ubuntu <code>/bin/sh</code> is dash, so bash syntax such as <code>[[ ... ]]</code> or <code>$PIPESTATUS</code> failed in a one-liner and worked in a heredoc. Both now take the same path.</p>
+<p>Before 0.6.0 a one-line <code>sh</code> went through <code>/bin/sh</code> and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See <a href="../upgrading-0.6/#sh-and-shebang-every-script-runs-under-bash">Upgrading to 0.6.0</a>.</p>
 </div>
 <h3 id="silent-mode">Silent Mode<a class="headerlink" href="#silent-mode" title="Permanent link">&para;</a></h3>
-<p>Pass <code>silent: true</code> to suppress the echo. The script still runs and still exits on failure:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile (quiet)"</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span><span class="p">,</span><span class="w"> </span><span class="ss">silent</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">end</span>
+<p>Pass <code>silent: true</code> to skip the echo. The script still runs and still stops asgard on failure:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile (quiet)"</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span><span class="p">,</span><span class="w"> </span><span class="ss">silent</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
 </span></code></pre></div>
 <h3 id="exit-on-failure">Exit on Failure<a class="headerlink" href="#exit-on-failure" title="Permanent link">&para;</a></h3>
-<p>A failing script calls <code>exit($?.exitstatus)</code>. There is no rescue path — a failing command terminates the <code>asgard</code> process. This is intentional: failed steps should stop the pipeline rather than silently continue.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:test</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test then release"</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake release"</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="c1"># Never reached if rake release fails</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Released!"</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">end</span>
+<p>When the script exits non-zero, asgard exits with that same status. Nothing after the failing <code>sh</code> runs, no Ruby exception is raised, and there is nothing to rescue:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:test</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test then release"</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake release"</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Released!"</span><span class="w">        </span><span class="c1"># never reached if rake release fails</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">end</span>
 </span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>release<span class="p">;</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"exit </span><span class="nv">$?</span><span class="s2">"</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># ... rake release fails with status 1 ...</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># exit 1</span>
+</span></code></pre></div>
+<p>A command that ends on a signal exits with 128 plus the signal number, the way a shell reports it. This is deliberate: a task runner that continued past a failed step would hide the failure. When a command is allowed to fail, say so in the script or in Ruby:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Remove build output, if any"</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">clean</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rm -r dist || true"</span><span class="w">                  </span><span class="c1"># the shell swallows the failure</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="k">end</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Report whether the server is up"</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">ping</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="nb">system</span><span class="p">(</span><span class="s2">"curl -fsS localhost:3000/health &gt; /dev/null"</span><span class="p">)</span><span class="w">   </span><span class="c1"># plain Ruby: returns true or false</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"up"</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="k">else</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"down"</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="k">end</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Count TODO comments"</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="k">def</span><span class="w"> </span><span class="nf">todos</span>
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">  </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`grep -r TODO lib | wc -l`</span><span class="o">.</span><span class="n">strip</span><span class="w">   </span><span class="c1"># backticks capture output, never exit asgard</span>
+</span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">count</span><span class="si">}</span><span class="s2"> TODOs"</span>
+</span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>sh</code> returns <code>true</code> when the script succeeds, which is useful at the end of an endless-method task: <code>def build = sh "rake build"</code>.</p>
 <hr />
-<h2 id="shebang-any-interpreter"><code>shebang</code> — Any Interpreter<a class="headerlink" href="#shebang-any-interpreter" title="Permanent link">&para;</a></h2>
-<p><code>shebang name, script</code> writes the script to a tempfile with the extension registered for <code>name</code> and runs the registered executable on it. Use it to embed Python, Node.js, Ruby, Perl, or any other interpreter directly in a task:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run Python data analysis"</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="sh">      import json</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="sh">      data = json.load(open("results.json"))</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="sh">      print(f"Total: {sum(data.values())}")</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="dl">    PYTHON</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Build frontend assets with esbuild"</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">bundle_assets</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:node</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">JS</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="sh">      import * as esbuild from "esbuild"</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="sh">      esbuild.buildSync({ entryPoints: ["src/app.js"], bundle: true, outfile: "dist/app.js" })</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="dl">    JS</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a bash provisioning script"</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">provision</span>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="sh">      set -euo pipefail</span>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="sh">      apt-get update</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="sh">      apt-get install -y curl wget git</span>
-</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a><span class="dl">    BASH</span>
-</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="k">end</span>
+<h2 id="shebang-any-interpreter"><code>shebang</code>: Any Interpreter<a class="headerlink" href="#shebang-any-interpreter" title="Permanent link">&para;</a></h2>
+<p><code>shebang :name, script</code> writes the script to a tempfile with the extension registered for <code>name</code> and runs the registered executable on it. Python, Node, Ruby, Perl or anything else can live directly in a task:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run Python data analysis"</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">analyze</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="sh">      import json</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="sh">      data = json.load(open("results.json"))</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="sh">      print(f"Total: {sum(data.values())}")</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="dl">    PYTHON</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Build frontend assets with esbuild"</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">bundle_assets</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:node</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">JS</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="sh">      import * as esbuild from "esbuild"</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="sh">      esbuild.buildSync({ entryPoints: ["src/app.js"], bundle: true, outfile: "dist/app.js" })</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="dl">    JS</span>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a bash provisioning script"</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">provision</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="sh">      set -euo pipefail</span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="sh">      apt-get update</span>
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="sh">      apt-get install -y curl wget git</span>
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="dl">    BASH</span>
+</span><span id="__span-8-26"><a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-27"><a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>A name that isn't registered runs as itself, found on <code>PATH</code>, with a <code>.tmp</code> extension. So any interpreter works without declaring it:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">shebang</span><span class="w"> </span><span class="ss">:lua</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">LUA</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="sh">  print("Hello from Lua!")</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="dl">LUA</span>
+<p><code>shebang</code> is the same method as <code>sh</code>, so it takes the same <code>silent:</code> and <code>background:</code> keywords, echoes the script the same way, and exits asgard on failure the same way. <code>sh :python3, script</code> and <code>shebang :python3, script</code> are one call; so are <code>shebang "rake build"</code> and <code>sh "rake build"</code>.</p>
+<h3 id="interpreters-you-did-not-register">Interpreters You Did Not Register<a class="headerlink" href="#interpreters-you-did-not-register" title="Permanent link">&para;</a></h3>
+<p>A name that is not in the registry runs as itself, found on <code>PATH</code>, with a <code>.tmp</code> file extension. Any interpreter works without declaring it:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Say hello from Lua"</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">lua_hello</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:lua</span><span class="p">,</span><span class="w"> </span><span class="s1">'print("Hello from Lua!")'</span>
 </span></code></pre></div>
-<p>If the executable can't be found, asgard prints the shell name and the command it tried, then exits 127:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard: shell :lua not found: lua ...
+<p>If the executable is not found, asgard names the shell and the command it tried, then exits 127:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard: shell :lua not found: lua /var/folders/.../T/asgard_20261024-80545-1x2y3z.tmp
 </span></code></pre></div>
+<p>Register the interpreter with <a href="#shell-add-or-replace-an-entry"><code>shell</code></a> when it needs a specific extension or options, or when you want the mistake caught while the <code>.loki</code> loads rather than the first time the task runs.</p>
 <hr />
 <h2 id="the-shells-registry">The <code>shells</code> Registry<a class="headerlink" href="#the-shells-registry" title="Permanent link">&para;</a></h2>
-<p><code>Tasks.shells</code> is a Hash from shell name to the executable, the arguments placed before the script, and the tempfile extension. It is seeded with:</p>
+<p>Every shell name maps to an executable, the arguments placed before the script file, and the tempfile extension. The registry starts with these entries:</p>
 <table>
 <thead>
 <tr>
 <th>Name</th>
-<th><code>path</code></th>
-<th><code>args</code></th>
-<th><code>ext</code></th>
+<th>Executable</th>
+<th>Arguments</th>
+<th>Extension</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>:bash</code></td>
 <td><code>bash</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.sh</code></td>
 </tr>
 <tr>
 <td><code>:sh</code></td>
 <td><code>sh</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.sh</code></td>
 </tr>
 <tr>
 <td><code>:python3</code></td>
 <td><code>python3</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.py</code></td>
 </tr>
 <tr>
 <td><code>:python</code></td>
 <td><code>python</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.py</code></td>
 </tr>
 <tr>
 <td><code>:node</code></td>
 <td><code>node</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.js</code></td>
 </tr>
 <tr>
 <td><code>:ruby</code></td>
 <td><code>ruby</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.rb</code></td>
 </tr>
 <tr>
 <td><code>:perl</code></td>
 <td><code>perl</code></td>
-<td><code>[]</code></td>
+<td>none</td>
 <td><code>.pl</code></td>
 </tr>
 </tbody>
 </table>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="no">Tasks</span><span class="o">.</span><span class="n">shells</span><span class="o">[</span><span class="ss">:bash</span><span class="o">]</span><span class="w">   </span><span class="c1"># =&gt; { path: "bash", args: [], ext: ".sh" }</span>
+<p>You can read an entry back in a <code>.loki</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="no">Tasks</span><span class="o">.</span><span class="n">shells</span><span class="o">[</span><span class="ss">:bash</span><span class="o">]</span><span class="w">   </span><span class="c1"># =&gt; { path: "bash", args: [], ext: ".sh" }</span>
 </span></code></pre></div>
-<p>A bare <code>path</code> is looked up on <code>PATH</code> each time the script runs, exactly as the kernel does for a <code>#!/usr/bin/env</code> line. The extension matters only to interpreters that read it: Node decides between CommonJS and ES modules by extension, and PowerShell refuses a file that isn't <code>.ps1</code>.</p>
-<h3 id="shell-add-or-replace-an-entry"><code>shell</code> — Add or Replace an Entry<a class="headerlink" href="#shell-add-or-replace-an-entry" title="Permanent link">&para;</a></h3>
-<p><code>shell name, path, args: nil, ext: nil</code> at class level registers a shell and returns its name. A String path is split with shell quoting rules: the first word is the executable and any remaining words become arguments. A <code>Pathname</code> is one executable, taken whole, so a directory with a space in it needs no quoting. <code>args:</code> may be a String, also split, or an Array; it follows the words from the path. When <code>ext:</code> is omitted it is derived from the executable's basename, falling back to <code>.tmp</code>.</p>
-<p>The executable is checked as the <code>.loki</code> loads. A path with a directory part must be an existing executable file, exactly as written, since nothing expands <code>~</code> or searches <code>PATH</code> for it later; a bare name must be found on <code>PATH</code> as an executable. A failing check raises <code>ArgumentError</code> naming the shell, so the problem shows at the declaration rather than as an exit 127 the first time a task runs. The seeded entries are not checked, which is why <code>shebang :perl</code> on a machine without perl fails only when it runs.</p>
-<p>The name may be left out. A bare path registers under the executable's basename, with any options in the string parsed into <code>args:</code>, and a Symbol alone registers that name as itself from <code>PATH</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="s2">"/usr/local/bin/bash -c -w"</span><span class="w">                  </span><span class="c1"># :bash =&gt; { path: "/usr/local/bin/bash", args: ["-c", "-w"], ext: ".sh" }</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/opt/homebrew/bin/fish"</span><span class="p">)</span><span class="w">       </span><span class="c1"># :fish</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:zsh</span><span class="w">                                         </span><span class="c1"># :zsh  =&gt; { path: "zsh", args: [], ext: ".sh" }</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="k">end</span>
-</span></code></pre></div>
-<p>With a name:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w">   </span><span class="s2">"/opt/homebrew/bin/bash"</span><span class="w">            </span><span class="c1"># pin bash 5 for sh and shebang :bash</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash -eu -o pipefail"</span><span class="w">              </span><span class="c1"># options before the script</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-eu -o pipefail"</span><span class="w">     </span><span class="c1"># same entry</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="sx">%w[-eu -o pipefail]</span><span class="w">   </span><span class="c1"># same entry</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:uv</span><span class="p">,</span><span class="w">     </span><span class="s2">"uv run --script"</span><span class="p">,</span><span class="w"> </span><span class="ss">ext</span><span class="p">:</span><span class="w"> </span><span class="s2">".py"</span><span class="w">       </span><span class="c1"># a wrapper, not just a binary</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:tool</span><span class="p">,</span><span class="w">   </span><span class="s2">"'/Applications/Some App/bin/tool' -q"</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:tool</span><span class="p">,</span><span class="w">   </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/Applications/Some App/bin/tool"</span><span class="p">),</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-q"</span><span class="w">   </span><span class="c1"># same entry</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy under strict bash"</span>
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="sh">    cd build</span>
-</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="sh">    rsync -a . server:/srv/app/</span>
-</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="dl">  BASH</span>
-</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="k">end</span>
-</span></code></pre></div>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="no">Tasks</span><span class="o">.</span><span class="n">shells</span><span class="o">[</span><span class="ss">:strict</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; { path: "bash", args: ["-eu", "-o", "pipefail"], ext: ".sh" }</span>
-</span></code></pre></div>
-<p>There is one registry for every <code>Tasks</code> subclass, so a <code>shell</code> declared in <code>.loki</code> applies inside subcommand classes too.</p>
-<h3 id="default_shell-what-sh-runs"><code>default_shell</code> — What <code>sh</code> Runs<a class="headerlink" href="#default_shell-what-sh-runs" title="Permanent link">&para;</a></h3>
-<p><code>default_shell name</code> at class level picks the registry entry that <code>sh</code>, and <code>shebang</code> called without a name, run. It starts as <code>:bash</code>. With no argument it returns the current name. A bare Symbol only selects; it never changes the registry, so a path pinned earlier with <code>shell</code> stays pinned.</p>
-<p>Any other form registers first, exactly as <code>shell</code> would, then selects what it registered. A bare path registers under the executable's basename; a name with a path, <code>args:</code> or <code>ext:</code> registers that name, and the path is the name itself when only <code>args:</code> or <code>ext:</code> are given.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="s2">"/usr/local/bin/bash -c -w"</span><span class="w">                </span><span class="c1"># register :bash with those options, select it</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-eu -o pipefail"</span><span class="w">   </span><span class="c1"># register :strict, select it</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:zsh</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-f"</span><span class="w">                           </span><span class="c1"># path defaults to "zsh"</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:bash5</span><span class="p">,</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/opt/homebrew/bin/bash"</span><span class="p">)</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="k">end</span>
-</span></code></pre></div>
-<p>Which is the same as:</p>
+<p>A bare executable such as <code>bash</code> is looked up on <code>PATH</code> each time a script runs, exactly as a <code>#!/usr/bin/env bash</code> line would do. The extension matters only to interpreters that read it: Node decides between CommonJS and ES modules by extension, and PowerShell refuses a script that is not <code>.ps1</code>. Zsh and fish scripts get <code>.sh</code> and <code>.fish</code> even without a registry entry, and csh and tcsh get <code>.csh</code>.</p>
+<p>There is one registry for the whole project. A <code>shell</code> declared in <code>.loki</code> applies inside <a href="../subcommands/">subcommand classes</a> too.</p>
+<h3 id="shell-add-or-replace-an-entry"><code>shell</code>: Add or Replace an Entry<a class="headerlink" href="#shell-add-or-replace-an-entry" title="Permanent link">&para;</a></h3>
+<p><code>shell</code> at class level registers a shell and returns its name. The simplest forms name the shell and give its path:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash -eu -o pipefail"</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:strict</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Every sh call now runs under strict bash"</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span><span class="w">              </span><span class="c1"># shebang :strict, "rake build"</span>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="s2">"rake package"</span><span class="w">       </span><span class="c1"># same shell, same path</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="s2">"print('explicit names still win')"</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="k">end</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w">   </span><span class="s2">"/opt/homebrew/bin/bash"</span><span class="w">           </span><span class="c1"># pin bash 5 for sh and shebang :bash</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash -eu -o pipefail"</span><span class="w">             </span><span class="c1"># options before the script</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:uv</span><span class="p">,</span><span class="w">     </span><span class="s2">"uv run --script"</span><span class="p">,</span><span class="w"> </span><span class="ss">ext</span><span class="p">:</span><span class="w"> </span><span class="s2">".py"</span><span class="w">      </span><span class="c1"># a wrapper command, not just a binary</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:fish</span><span class="w">                                       </span><span class="c1"># fish from PATH, defaults</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy under strict bash"</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">BASH</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="sh">    cd build</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="sh">    rsync -a . server:/srv/app/</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="dl">  BASH</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Like the registry, the default is one value shared by every <code>Tasks</code> subclass.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="no">Tasks</span><span class="o">.</span><span class="n">shells</span><span class="o">[</span><span class="ss">:strict</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; { path: "bash", args: ["-eu", "-o", "pipefail"], ext: ".sh" }</span>
+</span></code></pre></div>
+<p>The path string is split the way a shell splits a command line, quotes respected: the first word is the executable and the rest become arguments. <code>args:</code> adds more arguments, as a String (also split) or an Array; they follow the words from the path. <code>ext:</code> sets the tempfile extension; when omitted it comes from the executable's basename (<code>.sh</code> for bash, <code>.py</code> for python3, and so on), falling back to <code>.tmp</code>.</p>
+<p>These are all the same entry:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash -eu -o pipefail"</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-eu -o pipefail"</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="sx">%w[-eu -o pipefail]</span>
+</span></code></pre></div>
+<p><strong>Leaving the name out.</strong> A bare path registers under the executable's basename, with any options parsed into the arguments:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">shell</span><span class="w"> </span><span class="s2">"/usr/local/bin/bash -c -w"</span><span class="w">      </span><span class="c1"># :bash =&gt; { path: "/usr/local/bin/bash", args: ["-c", "-w"], ext: ".sh" }</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">shell</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/opt/homebrew/bin/fish"</span><span class="p">)</span><span class="w">   </span><span class="c1"># :fish</span>
+</span></code></pre></div>
+<p><strong>Paths with spaces.</strong> A <code>Pathname</code> is one executable, taken whole and never split, so a directory with a space in it needs no quoting:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:tool</span><span class="p">,</span><span class="w"> </span><span class="s2">"'/Applications/Some App/bin/tool' -q"</span><span class="w">                           </span><span class="c1"># quoted String</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:tool</span><span class="p">,</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/Applications/Some App/bin/tool"</span><span class="p">),</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-q"</span><span class="w">      </span><span class="c1"># same entry, no quoting</span>
+</span></code></pre></div>
+<p><strong>The executable is checked as the <code>.loki</code> loads.</strong> A path with a directory part must be an existing executable file, exactly as written (nothing expands <code>~</code> or searches <code>PATH</code> for it later). A bare name must be found on <code>PATH</code>. A failing check stops the load with a message naming the shell:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>asgard: /proj/.loki:3: shell :bash: /opt/homebrew/bin/bash is not an executable file (ArgumentError)
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>asgard: /proj/.loki:4: shell :uv: uv is not an executable on PATH (ArgumentError)
+</span></code></pre></div>
+<p>This is why a typo in a <code>shell</code> line shows at startup, while a missing seeded interpreter (<code>shebang :perl</code> on a machine without perl) shows only when the task runs: the seeded entries are not checked until they are used.</p>
+<h3 id="default_shell-the-shell-used-when-none-is-named"><code>default_shell</code>: The Shell Used When None Is Named<a class="headerlink" href="#default_shell-the-shell-used-when-none-is-named" title="Permanent link">&para;</a></h3>
+<p><code>default_shell</code> picks the registry entry that <code>sh</code> and <code>shebang</code> run when no shell is named. It starts as <code>:bash</code>. With no argument it returns the current name.</p>
+<p>A bare Symbol only selects. It checks that the shell exists but never changes the registry, so a path pinned earlier with <code>shell</code> stays pinned:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash -eu -o pipefail"</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:strict</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Every call that names no shell now runs under strict bash"</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span><span class="w">              </span><span class="c1"># no shell named: runs under :strict</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="s2">"rake package"</span><span class="w">       </span><span class="c1"># same shell, same path</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="s2">"print('an explicit name still wins')"</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Any other form registers first, exactly as <code>shell</code> would, then selects what it registered:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="s2">"/usr/local/bin/bash -c -w"</span><span class="w">                </span><span class="c1"># register :bash with those options, select it</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:strict</span><span class="p">,</span><span class="w"> </span><span class="s2">"bash"</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-eu -o pipefail"</span><span class="w">   </span><span class="c1"># register :strict, select it</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:zsh</span><span class="p">,</span><span class="w"> </span><span class="ss">args</span><span class="p">:</span><span class="w"> </span><span class="s2">"-f"</span><span class="w">                           </span><span class="c1"># path defaults to the name, "zsh"</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:bash5</span><span class="p">,</span><span class="w"> </span><span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"/opt/homebrew/bin/bash"</span><span class="p">)</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="k">end</span>
+</span></code></pre></div>
+<p>Like the registry, the default is one value for the whole project, subcommands included. A <code>.loki</code> that imports several files should set it once, in the root <code>.loki</code>, before the imports.</p>
 <h3 id="pinning-a-path">Pinning a Path<a class="headerlink" href="#pinning-a-path" title="Permanent link">&para;</a></h3>
-<p>Your terminal's <code>PATH</code> and the <code>PATH</code> a scheduled or watched task sees are not the same. On a Mac with Homebrew, <code>bash</code> at the terminal is 5.x from <code>/opt/homebrew/bin</code>, while under <code>launchd</code> it is the 3.2 build in <code>/bin</code>. Pin the one you mean:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/opt/homebrew/bin/bash"</span>
+<p>Your terminal's <code>PATH</code> and the <code>PATH</code> a <a href="../schedule/">scheduled</a> or <a href="../watch/">watched</a> task sees are not the same. On a Mac with Homebrew, <code>bash</code> at the terminal is 5.x from <code>/opt/homebrew/bin</code>, while a job started by launchd finds the 3.2 build in <code>/bin</code>. A script that uses associative arrays or <code>${var,,}</code> works in one and fails in the other. Pin the one you mean:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/opt/homebrew/bin/bash"</span>
 </span></code></pre></div>
-<p>A <code>.loki</code> file is Ruby, so a path that differs between machines is an ordinary expression:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="sx">%w[/opt/homebrew/bin/bash /usr/local/bin/bash /bin/bash]</span><span class="o">.</span><span class="n">find</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">executable?</span><span class="p">(</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+<p>A <code>.loki</code> is Ruby, so a path that differs between machines is an ordinary expression:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="sx">%w[/opt/homebrew/bin/bash /usr/local/bin/bash /bin/bash]</span><span class="o">.</span><span class="n">find</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="no">File</span><span class="o">.</span><span class="n">executable?</span><span class="p">(</span><span class="n">it</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <hr />
 <h2 id="long-running-commands">Long-Running Commands<a class="headerlink" href="#long-running-commands" title="Permanent link">&para;</a></h2>
-<p>A dev server or a REPL needs nothing special. The shell and the script it runs are one unit: when the script finishes the shell exits, and Ctrl-C reaches asgard, the shell and the command together, because all three share the terminal's process group.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation server startup"</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start a REPL"</span>
-</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">console</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec pry"</span>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="k">end</span>
+<p>A dev server, a REPL or a watch loop needs nothing special. Asgard waits for the shell, the shell waits for the command, and Ctrl-C reaches all three at once because they share the terminal's process group:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Serve the documentation"</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start a REPL"</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">console</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec pry"</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Asgard waits for the shell and exits with its status, so a command that ends on a signal exits 128 plus the signal number, the same as a shell would report.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>asgard<span class="w"> </span>doc_server
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="c1"># ... Ctrl-C ...</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># asgard exits 130</span>
+</span></code></pre></div>
+<p>Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0; see <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</p>
+<p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0 and now raises <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword. See <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</p>
 </div>
+<h3 id="0-is-a-tempfile"><code>$0</code> Is a Tempfile<a class="headerlink" href="#0-is-a-tempfile" title="Permanent link">&para;</a></h3>
+<p>Because the script runs from a file, <code>$0</code> inside it is the path of that tempfile, such as <code>/var/folders/.../T/asgard_20261024-80545-bmbloc.sh</code>, and the file is deleted when the script ends. A usage message that printed <code>$0</code> should print a name you choose instead.</p>
 <hr />
-<h2 id="background-jobs-three-modes">Background Jobs: Three Modes<a class="headerlink" href="#background-jobs-three-modes" title="Permanent link">&para;</a></h2>
-<p>A script runs in one of three modes. Only the first two are asgard's.</p>
+<h2 id="three-ways-a-script-runs">Three Ways a Script Runs<a class="headerlink" href="#three-ways-a-script-runs" title="Permanent link">&para;</a></h2>
+<p>A script runs in one of three modes. The first two are asgard's; the third belongs to the shell.</p>
 <table>
 <thead>
 <tr>
@@ -1773,7 +2142,7 @@
 <tr>
 <td>Managed background</td>
 <td><code>sh "mkdocs serve", background: true</code></td>
-<td>Continues at once with a <code>Job</code> in hand</td>
+<td>Continues at once with a job object in hand</td>
 <td>The job keeps running</td>
 <td>Lists, stops, restarts and cleans it</td>
 </tr>
@@ -1786,38 +2155,177 @@
 </tr>
 </tbody>
 </table>
-<p><code>background: true</code> names the job after the calling task and a counter (<code>doc_server-1</code>); a Symbol or String names it outright (<code>background: :api</code>). The job starts in its own session with its output in a log, its pid and task are recorded, and <code>asgard jobs list|stop|log|restart|clean</code> manage it from then on, in this asgard run or any later one:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Documentation server startup"</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Bring up the development stack"</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">servers</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"docker compose up postgres"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w">    </span><span class="c1"># servers-1</span>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails server"</span><span class="p">,</span><span class="w">            </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:api</span><span class="w">   </span><span class="c1"># api</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">end</span>
+<p><code>background: true</code> names the job after the calling task plus a counter (<code>doc_server-1</code>); a Symbol or String names it outright (<code>background: :api</code>). The job starts in its own session with its output in a log file, its pid and task are recorded, and <code>asgard jobs list|stop|log|restart|clean</code> manage it from then on, in this asgard run or any later one:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Serve the documentation"</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:doc_builder</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Bring up the development stack"</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">servers</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"docker compose up postgres"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w">    </span><span class="c1"># servers-1</span>
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails server"</span><span class="p">,</span><span class="w">            </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:api</span><span class="w">   </span><span class="c1"># api</span>
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>A trailing <code>&amp;</code> in the script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal; you stop it yourself with <code>ps</code> and <code>kill</code>. Use <code>background:</code> for anything you expect to come back to. The whole story, naming rules, the commands and the files on disk are on the <a href="../jobs/">Background Jobs</a> page.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>asgard<span class="w"> </span>doc_server
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>mkdocs serve
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>started doc_server-1 (pid 48213), log: ~/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
+</span></code></pre></div>
+<p>A trailing <code>&amp;</code> in a script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal. You stop it yourself with <code>ps</code> and <code>kill</code>. Use <code>background:</code> for anything you expect to come back to. The whole story, including naming rules, the commands and the files on disk, is on the <a href="../jobs/">Background Jobs</a> page.</p>
 <hr />
 <h2 id="combining-sh-and-shebang">Combining <code>sh</code> and <code>shebang</code><a class="headerlink" href="#combining-sh-and-shebang" title="Permanent link">&para;</a></h2>
-<p>Mix both freely in the same task:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell + Python pipeline"</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="sh">      import subprocess</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="sh">      print(result.stdout)</span>
-</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="dl">    PYTHON</span>
-</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>
-</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
-</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="k">end</span>
+<p>Mix both freely in one task. Each call runs to completion before the next starts:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run a mixed shell and Python pipeline"</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pipeline</span>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake build"</span>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>
+</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a><span class="w">    </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:python3</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&lt;~</span><span class="dl">PYTHON</span>
+</span><span id="__span-27-7"><a id="__codelineno-27-7" name="__codelineno-27-7" href="#__codelineno-27-7"></a><span class="sh">      import subprocess</span>
+</span><span id="__span-27-8"><a id="__codelineno-27-8" name="__codelineno-27-8" href="#__codelineno-27-8"></a><span class="sh">      result = subprocess.run(["./bin/validate"], capture_output=True, text=True)</span>
+</span><span id="__span-27-9"><a id="__codelineno-27-9" name="__codelineno-27-9" href="#__codelineno-27-9"></a><span class="sh">      print(result.stdout)</span>
+</span><span id="__span-27-10"><a id="__codelineno-27-10" name="__codelineno-27-10" href="#__codelineno-27-10"></a><span class="dl">    PYTHON</span>
+</span><span id="__span-27-11"><a id="__codelineno-27-11" name="__codelineno-27-11" href="#__codelineno-27-11"></a>
+</span><span id="__span-27-12"><a id="__codelineno-27-12" name="__codelineno-27-12" href="#__codelineno-27-12"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake deploy"</span>
+</span><span id="__span-27-13"><a id="__codelineno-27-13" name="__codelineno-27-13" href="#__codelineno-27-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-27-14"><a id="__codelineno-27-14" name="__codelineno-27-14" href="#__codelineno-27-14"></a><span class="k">end</span>
 </span></code></pre></div>
+<p>Because every call stops asgard on failure, the Python step never runs after a failed build and the deploy never runs after failed validation. To share values between steps, write them to a file or an environment variable in the script, or compute them in Ruby and interpolate them into the next script (see <a href="../variables/#strings-and-interpolation">Variables</a>).</p>
+<hr />
+<h2 id="sh-versus-rubys-own-methods"><code>sh</code> Versus Ruby's Own Methods<a class="headerlink" href="#sh-versus-rubys-own-methods" title="Permanent link">&para;</a></h2>
+<p>A <code>.loki</code> is Ruby, so everything Ruby offers for running a program works in a task: <code>system</code>, backticks, <code>%x()</code>, <code>exec</code>, <code>spawn</code>, <code>Open3.capture3</code>. Nothing stops you using them, and the examples above do. What <code>sh</code> and <code>shebang</code> add is the behaviour a task runner needs around the command:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>sh</code> / <code>shebang</code></th>
+<th><code>system</code></th>
+<th>Backticks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shows the command before running it</td>
+<td>Yes, unless <code>silent: true</code></td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>On failure</td>
+<td>Exits asgard with the command's status; nothing after it runs</td>
+<td>Returns <code>false</code> and the task carries on</td>
+<td>Returns the output and the task carries on</td>
+</tr>
+<tr>
+<td>Missing interpreter</td>
+<td>Prints which shell and exits 127</td>
+<td>Returns <code>nil</code></td>
+<td>Raises <code>Errno::ENOENT</code></td>
+</tr>
+<tr>
+<td>Ended by a signal</td>
+<td>Exits 128 plus the signal number</td>
+<td>Returns <code>false</code></td>
+<td>Returns partial output</td>
+</tr>
+<tr>
+<td>Which shell runs it</td>
+<td>The one registered in <code>shells</code>, the same under the watcher and a schedule</td>
+<td><code>/bin/sh</code>, or none for a single word</td>
+<td><code>/bin/sh</code></td>
+</tr>
+<tr>
+<td>One line or a heredoc</td>
+<td>The same path either way</td>
+<td>A heredoc runs as one <code>/bin/sh</code> script</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>Other interpreters</td>
+<td><code>shebang :python3, script</code></td>
+<td>Build the argv yourself</td>
+<td>Same</td>
+</tr>
+<tr>
+<td>As a managed background job</td>
+<td><code>background: true</code></td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Returns</td>
+<td><code>true</code>, or a job object</td>
+<td><code>true</code>, <code>false</code> or <code>nil</code></td>
+<td>The command's stdout</td>
+</tr>
+</tbody>
+</table>
+<p>The first two rows are the reason to prefer <code>sh</code> by default. A task that calls <code>system("rake test")</code> and does not check the return value continues to the release step whether the tests passed or not, and asgard exits 0. The same line as <code>sh "rake test"</code> stops at the failure and exits with rake's status, and the log shows which command it was. Under the <a href="../watch/">watcher</a> and a <a href="../schedule/">schedule</a>, where nobody is watching the terminal, both matter more.</p>
+<p>The shell row is the other one worth knowing. <code>system</code> and backticks go through <code>/bin/sh</code>, which is dash on Debian and Ubuntu and bash 3.2 in POSIX mode on macOS, so bash syntax that works at your prompt may not work there. <code>sh</code> runs the <code>:bash</code> entry of the <code>shells</code> registry, and <code>shell :bash, "/opt/homebrew/bin/bash"</code> pins it to one executable for every run on the machine.</p>
+<p>Ruby's methods are still the right tool when you want the output as a value, or when a failure is information rather than an error:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Tag the release"</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">tag</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="w">  </span><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`git describe --tags --abbrev=0`</span><span class="o">.</span><span class="n">strip</span><span class="w">     </span><span class="c1"># capture: backticks</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="w">  </span><span class="n">sh</span><span class="w"> </span><span class="s2">"git tag </span><span class="si">#{</span><span class="n">version</span><span class="o">.</span><span class="n">succ</span><span class="si">}</span><span class="s2"> &amp;&amp; git push --tags"</span><span class="w">      </span><span class="c1"># act: sh</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="k">end</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Report whether the server is up"</span>
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">ping</span>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="nb">system</span><span class="p">(</span><span class="s2">"curl -fsS localhost:3000/health &gt; /dev/null"</span><span class="p">)</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s2">"up"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"down"</span><span class="w">   </span><span class="c1"># false is an answer, not a failure</span>
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><code>sh</code> never captures output: the script's stdout and stderr go straight to yours, or to the watcher, schedule or job log. To use a command's output in Ruby, use backticks or <code>Open3</code>; to run a step that must succeed, use <code>sh</code>.</p>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Call</th>
+<th>What it runs</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sh "script"</code></td>
+<td>The default shell (<code>:bash</code> until changed)</td>
+<td>One line or heredoc; echoes; exits asgard on failure</td>
+</tr>
+<tr>
+<td><code>sh "script", silent: true</code></td>
+<td>Same</td>
+<td>No echo</td>
+</tr>
+<tr>
+<td><code>sh "script", background: true</code></td>
+<td>Same, as a managed job</td>
+<td>Returns at once; see <a href="../jobs/">Background Jobs</a></td>
+</tr>
+<tr>
+<td><code>sh :name, "script"</code></td>
+<td>The shell registered as <code>:name</code></td>
+<td>Unregistered names run from <code>PATH</code> with <code>.tmp</code></td>
+</tr>
+<tr>
+<td><code>shebang ...</code></td>
+<td>Exactly as <code>sh</code></td>
+<td>The same method under its longer name</td>
+</tr>
+<tr>
+<td><code>shell :name, "path", args:, ext:</code></td>
+<td>Class level: register a shell</td>
+<td>Executable checked at load; returns the name</td>
+</tr>
+<tr>
+<td><code>default_shell :name</code></td>
+<td>Class level: select the default</td>
+<td>Other forms register and select</td>
+</tr>
+</tbody>
+</table>
+<p>The full signatures are in the <a href="../reference/">DSL Reference</a>.</p>
 
 
 
@@ -1907,7 +2415,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../subcommands/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Subcommands">
+          <a href="../tasks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Defining Tasks">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1917,20 +2425,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Subcommands
+                Defining Tasks
               </div>
             </div>
           </a>
         
         
           
-          <a href="../environment/" class="md-footer__link md-footer__link--next" aria-label="Next: Environment">
+          <a href="../dependencies/" class="md-footer__link md-footer__link--next" aria-label="Next: Dependencies">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Environment
+                Dependencies
               </div>
             </div>
             <div class="md-footer__button md-icon">

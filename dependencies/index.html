@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Thor-based Ruby task runner with dependency graphs and concurrent execution">
+        <meta name="description" content="A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.">
       
       
         <meta name="author" content="Dewayne VanHoozer">
@@ -15,10 +15,10 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/dependencies/">
       
       
-        <link rel="prev" href="../tasks/">
+        <link rel="prev" href="../shell/">
       
       
-        <link rel="next" href="../variables/">
+        <link rel="next" href="../options/">
       
       
         
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#task-dependencies" class="md-skip">
+        <a href="#dependencies" class="md-skip">
           Skip to content
         </a>
       
@@ -280,7 +280,7 @@
   
     
   
-  Tasks
+  Writing Tasks
 
         </a>
       </li>
@@ -296,13 +296,13 @@
     
     
       <li class="md-tabs__item">
-        <a href="../options/" class="md-tabs__link">
+        <a href="../task-files/" class="md-tabs__link">
           
   
   
     
   
-  CLI
+  Organizing a Project
 
         </a>
       </li>
@@ -315,17 +315,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../task-files/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../schedule/" class="md-tabs__link">
+          
   
   
     
   
-  Task Files
+  Built-in Commands
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -334,36 +337,20 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../api/" class="md-tabs__link">
-        
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reference/" class="md-tabs__link">
+          
   
   
     
   
-  API Reference
+  Reference
 
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../examples/" class="md-tabs__link">
-        
-  
-  
+        </a>
+      </li>
     
-  
-  Examples
-
-      </a>
-    </li>
   
 
       
@@ -529,6 +516,12 @@
       
         
       
+        
+      
+        
+      
+        
+      
     
     
     
@@ -553,7 +546,7 @@
   <span class="md-ellipsis">
     
   
-    Tasks
+    Writing Tasks
   
 
     
@@ -569,7 +562,7 @@
             <span class="md-nav__icon md-icon"></span>
             
   
-    Tasks
+    Writing Tasks
   
 
           </label>
@@ -590,6 +583,34 @@
     
   
     Defining Tasks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shell Commands
   
 
     
@@ -716,17 +737,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deduplication" class="md-nav__link">
+  <a href="#each-task-runs-once" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deduplication
+        Each Task Runs Once
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Each Task Runs Once">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#transitive-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -736,12 +758,17 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
-  <a href="#circular-dependency-detection" class="md-nav__link">
+  <a href="#dependencies-across-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Circular Dependency Detection
+        Dependencies Across Files
       
     </span>
   </a>
@@ -749,10 +776,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#depends_on-across-multiple-files" class="md-nav__link">
+  <a href="#when-a-dependency-fails" class="md-nav__link">
     <span class="md-ellipsis">
       
-        depends_on Across Multiple Files
+        When a Dependency Fails
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="When a Dependency Fails">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-return-value-never-stops-anything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Return Value Never Stops Anything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failure-in-a-parallel-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure in a Parallel Group
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#passing-results-between-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing Results Between Tasks
       
     </span>
   </a>
@@ -760,10 +826,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dynamic-dependencies-proc-block-form" class="md-nav__link">
+  <a href="#startup-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic Dependencies (Proc / Block Form)
+        Startup Validation
       
     </span>
   </a>
@@ -771,10 +837,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#depends_on-inside-subcommands" class="md-nav__link">
+  <a href="#dynamic-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        depends_on Inside Subcommands
+        Dynamic Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dynamic Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-shape-of-the-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Shape of the Result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-block-can-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the Block Can See
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies-inside-subcommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies Inside Subcommands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
       
     </span>
   </a>
@@ -785,6 +901,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options & Flags
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -846,107 +990,6 @@
 
               
             
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    CLI
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    CLI
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../options/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Options & Flags
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
               
                 
   
@@ -975,6 +1018,71 @@
 
               
             
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Organizing a Project
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Organizing a Project
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
               
                 
   
@@ -982,14 +1090,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../shell/" class="md-nav__link">
+      <a href="../task-files/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Shell Helpers
+    Task Files
   
 
     
@@ -1017,7 +1125,7 @@
   <span class="md-ellipsis">
     
   
-    Environment
+    Environment Variables
   
 
     
@@ -1030,6 +1138,99 @@
   
 
               
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnostics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Help & Diagnostics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Built-in Commands
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Built-in Commands
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
             
               
                 
@@ -1128,15 +1329,75 @@
   
   
   
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
     <li class="md-nav__item">
-      <a href="../task-files/" class="md-nav__link">
+      <a href="../reference/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Task Files
+    DSL Reference
   
 
     
@@ -1148,22 +1409,23 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
   
     <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="../commands/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    API Reference
+    Command Reference
   
 
     
@@ -1175,9 +1437,38 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-      
-      
+  
+    Files & Directories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
   
   
   
@@ -1199,6 +1490,14 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -1330,17 +1629,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#deduplication" class="md-nav__link">
+  <a href="#each-task-runs-once" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Deduplication
+        Each Task Runs Once
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Each Task Runs Once">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#transitive-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1350,12 +1650,17 @@
   </a>
   
 </li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
-  <a href="#circular-dependency-detection" class="md-nav__link">
+  <a href="#dependencies-across-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Circular Dependency Detection
+        Dependencies Across Files
       
     </span>
   </a>
@@ -1363,10 +1668,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#depends_on-across-multiple-files" class="md-nav__link">
+  <a href="#when-a-dependency-fails" class="md-nav__link">
     <span class="md-ellipsis">
       
-        depends_on Across Multiple Files
+        When a Dependency Fails
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="When a Dependency Fails">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-return-value-never-stops-anything" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Return Value Never Stops Anything
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failure-in-a-parallel-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure in a Parallel Group
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#passing-results-between-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Passing Results Between Tasks
       
     </span>
   </a>
@@ -1374,10 +1718,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dynamic-dependencies-proc-block-form" class="md-nav__link">
+  <a href="#startup-validation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic Dependencies (Proc / Block Form)
+        Startup Validation
       
     </span>
   </a>
@@ -1385,10 +1729,60 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#depends_on-inside-subcommands" class="md-nav__link">
+  <a href="#dynamic-dependencies" class="md-nav__link">
     <span class="md-ellipsis">
       
-        depends_on Inside Subcommands
+        Dynamic Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dynamic Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-shape-of-the-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Shape of the Result
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-block-can-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the Block Can See
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies-inside-subcommands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies Inside Subcommands
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
       
     </span>
   </a>
@@ -1441,7 +1835,7 @@
         <a href="../tasks/" class="md-path__link">
           
   <span class="md-ellipsis">
-    Tasks
+    Writing Tasks
   </span>
 
         </a>
@@ -1476,25 +1870,9 @@
   
 
 
-<h1 id="task-dependencies">Task Dependencies<a class="headerlink" href="#task-dependencies" title="Permanent link">&para;</a></h1>
-<p><code>depends_on</code> declares what must run before a task. Asgard resolves the dependency graph at startup, validates it for cycles, and executes prerequisites automatically when a task is invoked.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code>desc</code> and <code>depends_on</code> are independent — either can come first. Both must appear before the <code>def</code>.</p>
-</div>
-<hr />
-<h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<p>When you run <code>asgard &lt;task&gt;</code>, Asgard:</p>
-<ol>
-<li>Validates the full dependency graph for circular references (fails fast with a clear error).</li>
-<li>Resolves the dependency stages for the requested task in order.</li>
-<li>Executes each stage — running parallel groups in native Ruby threads.</li>
-<li>Runs the task itself after all prerequisites complete.</li>
-</ol>
-<p><strong>Deduplication:</strong> each task runs at most once per <code>asgard</code> invocation, regardless of how many other tasks declare it as a dependency. This is enforced thread-safely via a class-level <code>Set</code> and <code>Mutex</code>.</p>
-<hr />
-<h2 id="sequential-dependencies">Sequential Dependencies<a class="headerlink" href="#sequential-dependencies" title="Permanent link">&para;</a></h2>
-<p>Bare symbols run one after another in the order declared:</p>
+<h1 id="dependencies">Dependencies<a class="headerlink" href="#dependencies" title="Permanent link">&para;</a></h1>
+<p><code>depends_on</code> says what must run before a task. You list the prerequisites above the task, and asgard runs them in order, runs groups of them at the same time where you ask for that, and makes sure each one runs only once no matter how many tasks need it. Dependencies are what turn a pile of commands into a pipeline.</p>
+<p>The simplest form is one task that needs another:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile the project"</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
@@ -1502,210 +1880,455 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the test suite"</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:test</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Publish the gem"</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake release"</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="k">end</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>release<span class="w">   </span><span class="c1"># build → test → release</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w">    </span><span class="c1"># runs build, then test</span>
 </span></code></pre></div>
-<p>Multiple sequential dependencies in a single <code>depends_on</code> call run left to right:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Clean, build, and test"</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake package"</span>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>desc</code> and <code>depends_on</code> both go above the <code>def</code>, in either order. <code>depends_on</code> always attaches to the very next method.</p>
+</div>
+<hr />
+<h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
+<p>When you run <code>asgard &lt;task&gt;</code>:</p>
+<ol>
+<li>Every <code>.loki</code> file loads and every dependency list is checked: unknown task names, cycles and a few other mistakes stop asgard before anything runs (see <a href="#startup-validation">Startup Validation</a>).</li>
+<li>The task's prerequisites run stage by stage. A stage is one task, or a group of tasks that run at the same time. The next stage starts when every task in the current one has finished.</li>
+<li>The task itself runs.</li>
+</ol>
+<p>Each task runs at most once per <code>asgard</code> command, however many other tasks depend on it. A prerequisite that fails stops the whole run with a non-zero exit status.</p>
+<hr />
+<h2 id="sequential-dependencies">Sequential Dependencies<a class="headerlink" href="#sequential-dependencies" title="Permanent link">&para;</a></h2>
+<p>Bare task names run one after another, left to right:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile the project"</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the test suite"</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:test</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Publish the gem"</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake release"</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>asgard<span class="w"> </span>release<span class="w">   </span><span class="c1"># build → test → release</span>
+</span></code></pre></div>
+<p>Several names in one <code>depends_on</code> also run in order:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Clean, build, and test"</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake package"</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span>package<span class="w">   </span><span class="c1"># clean → build → test → package</span>
 </span></code></pre></div>
 <hr />
 <h2 id="parallel-dependencies">Parallel Dependencies<a class="headerlink" href="#parallel-dependencies" title="Permanent link">&para;</a></h2>
-<p>Wrap symbols in an array to declare they can run concurrently. Asgard waits for all tasks in a parallel group to finish before moving to the next stage:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run type checks"</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">typecheck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec srb tc"</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests (after lint and typecheck)"</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="k">end</span>
+<p>Wrap names in an array and they run at the same time. Asgard waits for the whole group before moving on:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run type checks"</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">typecheck</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec srb tc"</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:typecheck</span><span class="o">]</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests (after lint and typecheck)"</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w">   </span><span class="c1"># lint ∥ typecheck → test</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>asgard<span class="w"> </span><span class="nb">test</span><span class="w">   </span><span class="c1"># lint ∥ typecheck → test</span>
 </span></code></pre></div>
-<p>Parallel groups run in native Ruby threads. For CPU-bound work, keep in mind the GVL; for I/O-bound work (shell commands, network), true concurrency is achieved.</p>
+<p>Parallel tasks run in threads inside one asgard process. For shell commands and other work that waits on the outside world, that is real concurrency: two <code>sh</code> calls in two parallel tasks are two processes running at once. The output of parallel tasks interleaves on the terminal; <code>examples/concurrent.loki</code> in the repository shows this on purpose.</p>
 <hr />
 <h2 id="mixed-sequential-and-parallel">Mixed Sequential and Parallel<a class="headerlink" href="#mixed-sequential-and-parallel" title="Permanent link">&para;</a></h2>
-<p>Mix bare symbols and arrays in a single <code>depends_on</code> call. Execution proceeds stage by stage — each stage completes before the next begins:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install dependencies"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span><span class="p">;</span><span class="w">     </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span><span class="p">;</span><span class="w">       </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span><span class="p">;</span><span class="w">            </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Post to Slack"</span><span class="p">;</span><span class="w">        </span><span class="k">def</span><span class="w"> </span><span class="nf">notify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"curl $SLACK_WEBHOOK -d '{</span><span class="se">\"</span><span class="s2">text</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">done</span><span class="se">\"</span><span class="s2">}'"</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="c1"># setup first, then lint+build in parallel, then test, then notify</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:notify</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Full CI pipeline"</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"CI complete"</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="k">end</span>
-</span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>ci
-</span></code></pre></div>
-<p>Execution order:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>setup
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  ↓
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>lint ∥ build    (concurrent)
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  ↓
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>test
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  ↓
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>notify
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  ↓
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>ci
-</span></code></pre></div>
-<hr />
-<h2 id="deduplication">Deduplication<a class="headerlink" href="#deduplication" title="Permanent link">&para;</a></h2>
-<p>Each task runs at most once per <code>asgard</code> invocation. If multiple tasks declare the same dependency, it executes only on its first encounter:</p>
+<p>Mix bare names and arrays in one <code>depends_on</code>. Each element is a stage:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install gems"</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check style"</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rubocop"</span>
-</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
-</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="o">]</span>
-</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test and lint (setup runs once)"</span>
-</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"done"</span>
-</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="k">end</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install dependencies"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span><span class="p">;</span><span class="w">     </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span><span class="p">;</span><span class="w">       </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span><span class="p">;</span><span class="w">            </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w">   </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rake test"</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Post to Slack"</span><span class="p">;</span><span class="w">        </span><span class="k">def</span><span class="w"> </span><span class="nf">notify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"curl $SLACK_WEBHOOK -d '{</span><span class="se">\"</span><span class="s2">text</span><span class="se">\"</span><span class="s2">:</span><span class="se">\"</span><span class="s2">done</span><span class="se">\"</span><span class="s2">}'"</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">  </span><span class="c1"># setup first, then lint and build together, then test, then notify</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:build</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:notify</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Full CI pipeline"</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"CI complete"</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>When <code>asgard ci</code> runs, <code>setup</code> executes once even though both <code>test</code> and <code>lint</code> declare it as a dependency. The deduplication set is managed with a <code>Mutex</code> so parallel groups are also safe.</p>
-<hr />
-<h2 id="transitive-dependencies">Transitive Dependencies<a class="headerlink" href="#transitive-dependencies" title="Permanent link">&para;</a></h2>
-<p>When a dependency has its own dependencies, Asgard resolves them recursively before running the dependent task. The deduplication set ensures each task runs at most once regardless of how many paths lead to it.</p>
-<p>Consider this graph:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Fetch gems"</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:setup</span>
-</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the full pipeline"</span>
-</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
-</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="k">end</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>asgard<span class="w"> </span>ci
 </span></code></pre></div>
-<p><code>ci</code> declares three sequential dependencies: <code>build</code>, <code>lint</code>, <code>setup</code>. But <code>build</code> itself depends on <code>setup</code>. The effective execution order is:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>setup          ← run as build's prerequisite
+<figure>
+<p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" width="100%" role="img" aria-labelledby="deps-stages-title">
+  <title id="deps-stages-title">Execution stages of depends_on :setup, [:lint, :build], :test, :notify followed by the ci task</title>
+  <defs>
+    <marker id="deps-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" fill-opacity="0.6"/>
+    </marker>
+  </defs>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" fill="currentColor">
+    <!-- stage labels -->
+    <g font-size="12" fill-opacity="0.65">
+      <text x="60" y="26" text-anchor="middle">stage 1</text>
+      <text x="230" y="26" text-anchor="middle">stage 2 (parallel)</text>
+      <text x="400" y="26" text-anchor="middle">stage 3</text>
+      <text x="540" y="26" text-anchor="middle">stage 4</text>
+      <text x="690" y="26" text-anchor="middle">the task</text>
+    </g></p>
+<div class="language-text highlight"><pre><span></span><code>&lt;!-- stage 2 group outline --&gt;
+&lt;rect x="160" y="60" width="140" height="230" rx="12" fill="#fbbf24" fill-opacity="0.08" stroke="#fbbf24" stroke-opacity="0.5" stroke-width="1" stroke-dasharray="4 3"/&gt;
+
+&lt;!-- setup --&gt;
+&lt;rect x="10" y="150" width="100" height="44" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/&gt;
+&lt;text x="60" y="178" text-anchor="middle"&gt;setup&lt;/text&gt;
+
+&lt;!-- lint --&gt;
+&lt;rect x="180" y="90" width="100" height="44" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/&gt;
+&lt;text x="230" y="118" text-anchor="middle"&gt;lint&lt;/text&gt;
+
+&lt;!-- build --&gt;
+&lt;rect x="180" y="210" width="100" height="44" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/&gt;
+&lt;text x="230" y="238" text-anchor="middle"&gt;build&lt;/text&gt;
+
+&lt;!-- test --&gt;
+&lt;rect x="350" y="150" width="100" height="44" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/&gt;
+&lt;text x="400" y="178" text-anchor="middle"&gt;test&lt;/text&gt;
+
+&lt;!-- notify --&gt;
+&lt;rect x="490" y="150" width="100" height="44" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/&gt;
+&lt;text x="540" y="178" text-anchor="middle"&gt;notify&lt;/text&gt;
+
+&lt;!-- ci --&gt;
+&lt;rect x="640" y="150" width="100" height="44" rx="8" fill="#fbbf24" fill-opacity="0.22" stroke="#fbbf24" stroke-width="1.5"/&gt;
+&lt;text x="690" y="178" text-anchor="middle"&gt;ci&lt;/text&gt;
+
+&lt;!-- connectors --&gt;
+&lt;g fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#deps-arrow)"&gt;
+  &lt;path d="M 110 172 C 145 172, 145 112, 178 112"/&gt;
+  &lt;path d="M 110 172 C 145 172, 145 232, 178 232"/&gt;
+  &lt;path d="M 280 112 C 315 112, 315 172, 348 172"/&gt;
+  &lt;path d="M 280 232 C 315 232, 315 172, 348 172"/&gt;
+  &lt;path d="M 450 172 L 488 172"/&gt;
+  &lt;path d="M 590 172 L 638 172"/&gt;
+&lt;/g&gt;
+
+&lt;!-- caption line --&gt;
+&lt;g font-size="12" fill-opacity="0.65"&gt;
+  &lt;text x="230" y="312" text-anchor="middle"&gt;both finish before stage 3 starts&lt;/text&gt;
+&lt;/g&gt;
+</code></pre></div>
+<p></g>
+</svg></p>
+<figcaption>Each element of <code>depends_on</code> is one stage. An array is a stage whose tasks run together.</figcaption>
+</figure>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>setup
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  ↓
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>build
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>lint ∥ build    (at the same time)
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  ↓
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>lint
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>test
 </span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  ↓
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>(setup skipped — already done)
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>notify
 </span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  ↓
 </span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>ci
 </span></code></pre></div>
-<p><code>setup</code> runs once — on its first encounter as <code>build</code>'s prerequisite. When <code>ci</code>'s own stage for <code>setup</code> is reached, the deduplication set skips it.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>When a task is both a transitive dependency and a direct dependency, declare it only where it logically belongs — as a prerequisite of the task that needs it. Declaring it redundantly at the top level is harmless (deduplication handles it) but adds noise.</p>
-</div>
 <hr />
-<h2 id="circular-dependency-detection">Circular Dependency Detection<a class="headerlink" href="#circular-dependency-detection" title="Permanent link">&para;</a></h2>
-<p>Asgard validates the full dependency graph using stdlib <a href="https://docs.ruby-lang.org/en/master/TSort.html">TSort</a> before any task runs. A circular dependency produces a clean error and exits:</p>
+<h2 id="each-task-runs-once">Each Task Runs Once<a class="headerlink" href="#each-task-runs-once" title="Permanent link">&para;</a></h2>
+<p>A task that several other tasks depend on runs the first time it is needed and is skipped after that:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:b</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task A"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"a"</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Install gems"</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
 </span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:a</span>
-</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task B"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"b"</span>
-</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="k">end</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run tests"</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check style"</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rubocop"</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="o">]</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test and lint (setup runs once)"</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"done"</span>
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard<span class="w"> </span>a
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># asgard: circular dependency — TSort::Cyclic: ...</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard<span class="w"> </span>ci<span class="w">   </span><span class="c1"># setup once, then test ∥ lint, then ci</span>
 </span></code></pre></div>
-<p>No backtrace is shown — just a single diagnostic line.</p>
-<hr />
-<h2 id="depends_on-across-multiple-files">depends_on Across Multiple Files<a class="headerlink" href="#depends_on-across-multiple-files" title="Permanent link">&para;</a></h2>
-<p><code>depends_on</code> works across <code>.loki</code> files because all files reopen the same <code>class Tasks</code>. The dependency is recorded when the <code>def</code> is encountered, so load order matters:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># build.loki</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile"</span>
-</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
-</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">end</span>
-</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
-</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="c1"># test.loki</span>
-</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">           </span><span class="c1"># build.loki must be loaded first</span>
-</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test"</span>
-</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
-</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="k">end</span>
+<p>Here <code>test</code> and <code>lint</code> start together and both want <code>setup</code>. One of them runs it; the other waits until it has finished rather than running it a second time or starting early. The guarantee holds across parallel groups, across files and across subcommands: one <code>asgard</code> command, one run per task.</p>
+<h3 id="transitive-dependencies">Transitive Dependencies<a class="headerlink" href="#transitive-dependencies" title="Permanent link">&para;</a></h3>
+<p>A prerequisite's own prerequisites run first, recursively:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Fetch gems"</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle install"</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile assets"</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake assets:precompile"</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">lint</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bundle exec rubocop"</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">:lint</span><span class="p">,</span><span class="w"> </span><span class="ss">:setup</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the full pipeline"</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Because <code>*.loki</code> files are loaded alphabetically when <code>import "*.loki"</code> is used, <code>build.loki</code> loads before <code>test.loki</code>. If you need to control load order precisely, use explicit <code>import</code> calls with full filenames rather than a glob.</p>
-<hr />
-<h2 id="dynamic-dependencies-proc-block-form">Dynamic Dependencies (Proc / Block Form)<a class="headerlink" href="#dynamic-dependencies-proc-block-form" title="Permanent link">&para;</a></h2>
-<p><code>depends_on</code> normally takes a fixed list, recorded the moment the <code>def</code> right after it is encountered — which is why load order matters, as above. Pass a <code>Proc</code> or lambda instead — or, equivalently, a block — and that list is computed <em>later</em>, after every <code>.loki</code> file has finished loading, rather than at the point <code>depends_on</code> itself is evaluated:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every *_check quality gate task in parallel"</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality</span>
-</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="k">end</span>
-</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
-</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Same thing, written as a block"</span>
-</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality2</span>
-</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="k">end</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>asgard<span class="w"> </span>ci
 </span></code></pre></div>
-<p>This solves exactly the "load order matters" problem from the previous section: a plain array can only name tasks that already exist in <code>.loki</code> files loaded <em>before</em> this one. A Proc/block is resolved once every file has loaded, so it can safely reference a task defined in a file that hasn't been imported yet at the point <code>depends_on</code> is written — including one that only exists conditionally, e.g. a Rails-specific task file imported with <code>import "quality_rails.loki" if defined?(Rails)</code>. <code>depends_on</code> accepts task arguments <em>or</em> a block, never both — combining them raises <code>Asgard::Error</code>.</p>
-<p><strong>Shape:</strong> the Proc/block must return exactly what the plain-array form would receive as its splat arguments — an array of stages, each a <code>Symbol</code>/<code>String</code> (sequential) or an <code>Array</code> of <code>Symbol</code>/<code>String</code> (parallel group), nested no deeper than that. The example above returns <code>[[:a_check, :b_check, :c_check]]</code>: one stage, containing every matching task, all running in parallel — the same shape as <code>depends_on [:a_check, :b_check, :c_check]</code>. This shape is validated once the result comes back — a bad return value (wrong type, a stage that isn't a Symbol/String/Array, a leaf inside a parallel group that isn't a Symbol/String, or nesting more than one level deep) raises <code>Asgard::Error</code> naming the task and the offending value, instead of failing later with an opaque <code>NoMethodError</code>:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard<span class="w"> </span>quality
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1"># asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them</span>
-</span></code></pre></div>
-<p><strong>When it runs:</strong> once, when <code>validate_deps!</code> runs (right after the <code>.loki</code> chain finishes loading, before any task dispatches). The resolved result replaces the Proc/block in the dependency table, so cycle detection, undefined-task checks, and arity checks all run against the <em>resolved</em> list — a Proc/block that references an undefined task, or that itself introduces a cycle, is caught at startup exactly like a plain array would be:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>asgard<span class="w"> </span>quality
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check</span>
-</span></code></pre></div>
-<p><strong><code>self</code> inside the Proc/block:</strong> since it's written directly in a <code>class Tasks</code> body, it lexically captures that class as <code>self</code> — so it can call <code>all_commands</code>, <code>_deps</code>, or any other class-level method bare, without a <code>self.class.</code> prefix, even though it's actually invoked later from inside <code>validate_deps!</code>.</p>
-<p><strong>If the Proc/block raises</strong>, the error is caught and re-raised as <code>Asgard::Error</code> naming the task it was declared for:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>asgard: depends_on proc for 'quality' raised RuntimeError: boom
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>setup          (as build's prerequisite)
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  ↓
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>build
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>  ↓
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>lint
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>  ↓
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>(setup skipped: already done)
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>  ↓
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>ci
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Reach for this only when the dependency list genuinely can't be known until every file has loaded — like "every task whose name ends in <code>_check</code>," discovered across several <code>.loki</code> files. For a fixed, known-upfront list, the plain array form is simpler and reads just as clearly.</p>
+<p>Declare a task where it logically belongs, as a prerequisite of the task that needs it. Naming it again further up is harmless (it runs once either way) but adds noise.</p>
 </div>
 <hr />
-<h2 id="depends_on-inside-subcommands">depends_on Inside Subcommands<a class="headerlink" href="#depends_on-inside-subcommands" title="Permanent link">&para;</a></h2>
-<p><code>depends_on</code> works within subcommand classes exactly as it does at the top level. Dependency scope is per-class:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
-</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
-</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
-</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="k">end</span>
-</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
-</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
-</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
-</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="k">end</span>
+<h2 id="dependencies-across-files">Dependencies Across Files<a class="headerlink" href="#dependencies-across-files" title="Permanent link">&para;</a></h2>
+<p>All <code>.loki</code> files reopen the same <code>Tasks</code> class, so a task in one file may depend on a task in another. Names are checked once every file has loaded, so the order in which the files load does not matter:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># test.loki</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:build</span><span class="w">        </span><span class="c1"># defined in build.loki, which may load before or after this file</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Test"</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake test"</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># build.loki</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Compile"</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rake build"</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>See <a href="../subcommands/">Subcommands</a> for the full guide.</p>
+<p>What does depend on load order is a task name defined twice: the later definition silently replaces the earlier one, including its <code>depends_on</code>. See <a href="../task-files/#task-name-overloading">Task Files</a> and <a href="../diagnostics/">Help &amp; Diagnostics</a> for how <code>asgard --doctor</code> finds that.</p>
+<hr />
+<h2 id="when-a-dependency-fails">When a Dependency Fails<a class="headerlink" href="#when-a-dependency-fails" title="Permanent link">&para;</a></h2>
+<p>A failed prerequisite stops the run. How it stops depends on what failed:</p>
+<ul>
+<li><strong>A failing <code>sh</code> or <code>shebang</code></strong>, or an <code>abort</code>, ends asgard with that command's exit status. The task that depended on it never starts. This is the normal case: <code>asgard release</code> with a failing test suite exits with the test runner's status.</li>
+<li><strong>An exception</strong> raised inside a dependency propagates and asgard reports it. Raise <code>Asgard::Error</code> for a clean one-line message: <code>asgard: &lt;message&gt;</code>, exit 1.</li>
+</ul>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Refuse to deploy from a dirty tree"</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">clean_tree</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"commit or stash your changes first"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="sb">`git status --porcelain`</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean_tree</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy to production"</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"cap production deploy"</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>asgard<span class="w"> </span>deploy
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1"># asgard: commit or stash your changes first</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1"># (exit 1)</span>
+</span></code></pre></div>
+<h3 id="a-return-value-never-stops-anything">A Return Value Never Stops Anything<a class="headerlink" href="#a-return-value-never-stops-anything" title="Permanent link">&para;</a></h3>
+<p>Only an exit or an exception stops a dependent task. A dependency that <em>returns</em> something, even <code>:fail</code> or <code>false</code>, has succeeded as far as the pipeline is concerned. (Returning <code>:fail</code> from the task you typed on the command line does make asgard exit 1, which is how the quality-gate pattern below reports failure, but it does not stop a task that depends on it.) To guard a task, raise or let a command fail. <code>examples/confirm.loki</code> in the repository is a guard task built this way: it asks "Really run <code>asgard reset_database</code>?" and raises <code>Asgard::Error</code> on anything but yes. See <a href="../examples/#confirmloki">Examples</a>.</p>
+<h3 id="failure-in-a-parallel-group">Failure in a Parallel Group<a class="headerlink" href="#failure-in-a-parallel-group" title="Permanent link">&para;</a></h3>
+<p>When one task in a parallel group fails, asgard waits for every other task in the group to finish before reporting, so no subprocess is left running on its own. One failure is reported the same way it would be on its own: a failing command exits asgard with its status, an exception propagates. When more than one task fails, each is named on stderr and the run ends with an error listing them:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>asgard: dependency 'lint' failed: exit 1
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>asgard: dependency 'typecheck' failed: RuntimeError: boom
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>asgard: parallel dependencies failed: lint, typecheck
+</span></code></pre></div>
+<p>A task that is waiting for a shared prerequisite in another thread does not run if that prerequisite fails. With <code>ci</code> depending on <code>[test, lint]</code> and both depending on <code>setup</code>, a failing <code>setup</code> stops <code>test</code>, <code>lint</code> and <code>ci</code> alike, and asgard exits with <code>setup</code>'s status.</p>
+<hr />
+<h2 id="passing-results-between-tasks">Passing Results Between Tasks<a class="headerlink" href="#passing-results-between-tasks" title="Permanent link">&para;</a></h2>
+<p>A task's return value is kept, and the task that depends on it can read it with <code>dep_result</code>. This is how a summary task collects what its prerequisites found. The example is the pattern the asgard repository uses for its own quality gates: every <code>*_check</code> task returns <code>:pass</code>, <code>:fail</code>, <code>:warn</code> or <code>:skip</code>, and <code>quality</code> prints a table:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run the test suite"</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">test_check</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`bundle exec rake test 2&gt;&amp;1`</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="no">File</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"test_output.txt"</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">)</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">    </span><span class="vg">$?</span><span class="o">.</span><span class="n">success?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="ss">:pass</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="ss">:fail</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Check code style"</span>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">rubocop_check</span>
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="w">    </span><span class="n">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="sb">`bundle exec rubocop 2&gt;&amp;1`</span>
+</span><span id="__span-21-12"><a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a><span class="w">    </span><span class="no">File</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"rubocop_output.txt"</span><span class="p">,</span><span class="w"> </span><span class="n">output</span><span class="p">)</span>
+</span><span id="__span-21-13"><a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a><span class="w">    </span><span class="vg">$?</span><span class="o">.</span><span class="n">success?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="ss">:pass</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="ss">:fail</span>
+</span><span id="__span-21-14"><a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-21-15"><a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>
+</span><span id="__span-21-16"><a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="o">[</span><span class="ss">:test_check</span><span class="p">,</span><span class="w"> </span><span class="ss">:rubocop_check</span><span class="o">]</span>
+</span><span id="__span-21-17"><a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every check in parallel, then report"</span>
+</span><span id="__span-21-18"><a id="__codelineno-21-18" name="__codelineno-21-18" href="#__codelineno-21-18"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">quality</span>
+</span><span id="__span-21-19"><a id="__codelineno-21-19" name="__codelineno-21-19" href="#__codelineno-21-19"></a><span class="w">    </span><span class="n">dep_results</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="n">status</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  </span><span class="si">#{</span><span class="n">status</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">upcase</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-21-20"><a id="__codelineno-21-20" name="__codelineno-21-20" href="#__codelineno-21-20"></a><span class="w">    </span><span class="n">failed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dep_results</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="ss">:fail</span><span class="p">)</span>
+</span><span id="__span-21-21"><a id="__codelineno-21-21" name="__codelineno-21-21" href="#__codelineno-21-21"></a><span class="w">    </span><span class="nb">abort</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">failed</span><span class="si">}</span><span class="s2"> check(s) failed"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">failed</span><span class="o">.</span><span class="n">zero?</span>
+</span><span id="__span-21-22"><a id="__codelineno-21-22" name="__codelineno-21-22" href="#__codelineno-21-22"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"All checks passed."</span>
+</span><span id="__span-21-23"><a id="__codelineno-21-23" name="__codelineno-21-23" href="#__codelineno-21-23"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-21-24"><a id="__codelineno-21-24" name="__codelineno-21-24" href="#__codelineno-21-24"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>asgard<span class="w"> </span>quality
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>  PASS  test_check
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>  FAIL  rubocop_check
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>1 check(s) failed
+</span></code></pre></div>
+<ul>
+<li><code>dep_result(:test_check)</code> is the return value of one direct dependency.</li>
+<li><code>dep_results</code> is a Hash of every direct dependency's name to its return value.</li>
+</ul>
+<p>Both read the dependencies of the task that is running, not of tasks further down the chain. A check that uses backticks or <code>system</code> rather than <code>sh</code> can report its result as a value instead of ending asgard; see <a href="../shell/#exit-on-failure">Exit on Failure</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Parallel dependencies do not share instance variables</p>
+<p>Tasks in one parallel group each run on their own copy of the task object, so an <code>@ivar</code> set by a parallel dependency is not visible to the task that depends on it. Sequential dependencies do share it, which is why the difference can surprise you when a <code>depends_on :a, :b</code> later becomes <code>depends_on [:a, :b]</code>. Pass values with <code>dep_result</code> instead; <code>examples/bad.loki</code> in the repository shows the lost-update race that shared instance state produces.</p>
+</div>
+<hr />
+<h2 id="startup-validation">Startup Validation<a class="headerlink" href="#startup-validation" title="Permanent link">&para;</a></h2>
+<p>Before any task runs, asgard checks every dependency list in every task class and stops with one line on the first problem. No backtrace, exit 1.</p>
+<p><strong>Circular dependencies</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:b</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task A"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"a"</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:a</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Task B"</span><span class="p">;</span><span class="w"> </span><span class="k">def</span><span class="w"> </span><span class="nf">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"b"</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>asgard<span class="w"> </span>a
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="c1"># asgard: circular dependency — topological sort failed: [:a, :b]</span>
+</span></code></pre></div>
+<p><strong>A dependency that is not a task</strong></p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>asgard<span class="w"> </span>ci
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check</span>
+</span></code></pre></div>
+<p>A private method is not a task, so <code>depends_on :my_helper</code> is undefined even though the method exists. Make it a task or call it from the task body.</p>
+<p><strong>A <code>depends_on</code> with nothing after it</strong></p>
+<p>A <code>depends_on</code> at the end of a class body, or followed only by <code>private</code> methods, has no task to attach to:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>asgard
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># asgard: depends_on(build, test) declared without a following task definition</span>
+</span></code></pre></div>
+<p><strong>A dependency that needs arguments</strong></p>
+<p>A task with required positional parameters cannot be a dependency, because nothing would supply them:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"greet NAME"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Greet NAME"</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">greet</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:greet</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Welcome"</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">welcome</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"welcome"</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>asgard<span class="w"> </span>welcome
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="c1"># asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency</span>
+</span></code></pre></div>
+<p>Give the parameter a default (<code>def greet(name = "World")</code>) or read the value from an option or environment variable instead.</p>
+<p><code>asgard --doctor</code> reports the same problems without stopping at the first one; see <a href="../diagnostics/">Help &amp; Diagnostics</a>.</p>
+<hr />
+<h2 id="dynamic-dependencies">Dynamic Dependencies<a class="headerlink" href="#dynamic-dependencies" title="Permanent link">&para;</a></h2>
+<p>A plain <code>depends_on</code> list is fixed when you write it. Sometimes the list has to be discovered: "every task whose name ends in <code>_check</code>", wherever it is defined, including a file that is only imported on some machines. For that, give <code>depends_on</code> a block, or a lambda, instead of a list. It is called once, after every <code>.loki</code> file has loaded, and must return the same shape a plain list would be:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Run every *_check task in parallel, then report"</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">  </span><span class="n">dep_results</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="n">status</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">status</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="k">end</span>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="n">depends_on</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"The same thing, written as a lambda"</span>
+</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">quality2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"done"</span>
+</span></code></pre></div>
+<p><code>all_commands.keys</code> is the list of every task name defined so far, as strings. The block above returns <code>[[:a_check, :b_check, :c_check]]</code>: an array with one element, an array of three tasks, which is one parallel stage, exactly like writing <code>depends_on [:a_check, :b_check, :c_check]</code>.</p>
+<h3 id="the-shape-of-the-result">The Shape of the Result<a class="headerlink" href="#the-shape-of-the-result" title="Permanent link">&para;</a></h3>
+<p>The block must return an Array of stages. Each stage is a Symbol or String (a sequential task) or an Array of Symbols or Strings (a parallel group). Nothing nests deeper than that. A mixed pipeline is written the same way the plain form is:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[</span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">a_check</span><span class="w"> </span><span class="n">b_check</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:teardown</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"setup, then a_check and b_check in parallel, then teardown"</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">full_cycle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"full_cycle: done"</span>
+</span></code></pre></div>
+<p>Use braces for a one-line block and <code>do ... end</code> when the block has several statements. Either way the last expression is the result:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="w">  </span><span class="n">all_checks</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">sort</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="w">  </span><span class="n">slow_checks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">integration_check</span><span class="o">]</span>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a><span class="w">  </span><span class="o">[</span><span class="ss">:setup</span><span class="p">,</span><span class="w"> </span><span class="n">all_checks</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">slow_checks</span><span class="p">,</span><span class="w"> </span><span class="ss">:teardown</span><span class="o">]</span>
+</span><span id="__span-32-6"><a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="k">end</span>
+</span><span id="__span-32-7"><a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Every check except the slow ones"</span>
+</span><span id="__span-32-8"><a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">smoke</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"smoke: done"</span>
+</span></code></pre></div>
+<p>The shape is checked as soon as the block returns. A wrong shape stops asgard with a message naming the task and the offending value, instead of failing later with an obscure error. The common mistake is one pair of brackets too many:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">depends_on</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">[[</span><span class="n">all_commands</span><span class="o">.</span><span class="n">keys</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="sr">/_check\z/</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_sym</span><span class="p">)</span><span class="o">]]</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1"># one [ ] too many</span>
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a>asgard: depends_on proc/block for 'quality' returned invalid dependency [:a_check, :b_check, :c_check] (Array) in a parallel group; expected a Symbol or String
+</span></code></pre></div>
+<p>Other shape errors read the same way, for example <code>returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them</code>. If the block itself raises, asgard reports that too: <code>asgard: depends_on proc for 'quality' raised RuntimeError: boom</code>.</p>
+<h3 id="what-the-block-can-see">What the Block Can See<a class="headerlink" href="#what-the-block-can-see" title="Permanent link">&para;</a></h3>
+<p>The block is written in the <code>Tasks</code> class body, so inside it <code>self</code> is that class: <code>all_commands</code> and the other class-level words work bare, with no prefix, even though the block is not called until later. Once it resolves, the result replaces the block, so cycle detection, the undefined-task check and the arguments check all run against the resolved list, exactly as for a plain one.</p>
+<p><code>depends_on</code> takes a list or a block, never both; combining them is an error.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The block runs before the command line is parsed, so <code>options</code>, <code>verbose?</code> and <code>debug?</code> inside it always see their defaults, never what was typed on this run. Keep the block to shaping the dependency list.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Reach for the block only when the list cannot be known until every file has loaded. A fixed list is clearer written out. <code>examples/depends_on_block/good/.loki</code> and <code>bad/.loki</code> in the repository are two small projects showing the block form working and the shape error; see <a href="../examples/">Examples</a>.</p>
+</div>
+<hr />
+<h2 id="dependencies-inside-subcommands">Dependencies Inside Subcommands<a class="headerlink" href="#dependencies-inside-subcommands" title="Permanent link">&para;</a></h2>
+<p><code>depends_on</code> works inside a subcommand class exactly as at the top level. It names that class's own tasks:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Run migrations"</span>
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:migrate"</span>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Load seed data"</span>
+</span><span id="__span-35-6"><a id="__codelineno-35-6" name="__codelineno-35-6" href="#__codelineno-35-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"rails db:seed"</span>
+</span><span id="__span-35-7"><a id="__codelineno-35-7" name="__codelineno-35-7" href="#__codelineno-35-7"></a>
+</span><span id="__span-35-8"><a id="__codelineno-35-8" name="__codelineno-35-8" href="#__codelineno-35-8"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:migrate</span><span class="p">,</span><span class="w"> </span><span class="ss">:seed</span>
+</span><span id="__span-35-9"><a id="__codelineno-35-9" name="__codelineno-35-9" href="#__codelineno-35-9"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Migrate then seed"</span>
+</span><span id="__span-35-10"><a id="__codelineno-35-10" name="__codelineno-35-10" href="#__codelineno-35-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Done."</span>
+</span><span id="__span-35-11"><a id="__codelineno-35-11" name="__codelineno-35-11" href="#__codelineno-35-11"></a><span class="k">end</span>
+</span><span id="__span-35-12"><a id="__codelineno-35-12" name="__codelineno-35-12" href="#__codelineno-35-12"></a>
+</span><span id="__span-35-13"><a id="__codelineno-35-13" name="__codelineno-35-13" href="#__codelineno-35-13"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-35-14"><a id="__codelineno-35-14" name="__codelineno-35-14" href="#__codelineno-35-14"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"db SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Manage the database"</span>
+</span><span id="__span-35-15"><a id="__codelineno-35-15" name="__codelineno-35-15" href="#__codelineno-35-15"></a><span class="w">  </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"db"</span><span class="p">,</span><span class="w"> </span><span class="no">DBCommands</span>
+</span><span id="__span-35-16"><a id="__codelineno-35-16" name="__codelineno-35-16" href="#__codelineno-35-16"></a><span class="k">end</span>
+</span></code></pre></div>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a>asgard<span class="w"> </span>db<span class="w"> </span>reset<span class="w">   </span><span class="c1"># migrate → seed → reset</span>
+</span></code></pre></div>
+<p>Each subcommand class has its own dependency graph, validated at startup like the top-level one. See <a href="../subcommands/">Subcommands</a>.</p>
+<hr />
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Form</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>depends_on :a</code></td>
+<td>Run <code>a</code> first</td>
+</tr>
+<tr>
+<td><code>depends_on :a, :b</code></td>
+<td>Run <code>a</code>, then <code>b</code></td>
+</tr>
+<tr>
+<td><code>depends_on [:a, :b]</code></td>
+<td>Run <code>a</code> and <code>b</code> at the same time</td>
+</tr>
+<tr>
+<td><code>depends_on :a, [:b, :c], :d</code></td>
+<td><code>a</code>, then <code>b</code> with <code>c</code>, then <code>d</code></td>
+</tr>
+<tr>
+<td><code>depends_on { [...] }</code> or <code>depends_on -&gt; { [...] }</code></td>
+<td>Compute the list after every file has loaded</td>
+</tr>
+<tr>
+<td><code>dep_result(:a)</code></td>
+<td>In the task body: what <code>a</code> returned</td>
+</tr>
+<tr>
+<td><code>dep_results</code></td>
+<td>In the task body: every direct dependency's result, by name</td>
+</tr>
+</tbody>
+</table>
+<p>Every task runs once per <code>asgard</code> command. A failing command or a raised error stops the run; a return value does not.</p>
 
 
 
@@ -1795,7 +2418,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../tasks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Defining Tasks">
+          <a href="../shell/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Shell Commands">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1805,20 +2428,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Defining Tasks
+                Shell Commands
               </div>
             </div>
           </a>
         
         
           
-          <a href="../variables/" class="md-footer__link md-footer__link--next" aria-label="Next: Variables">
+          <a href="../options/" class="md-footer__link md-footer__link--next" aria-label="Next: Options &amp; Flags">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Variables
+                Options & Flags
               </div>
             </div>
             <div class="md-footer__button md-icon">

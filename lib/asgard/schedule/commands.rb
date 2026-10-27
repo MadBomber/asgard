@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "pathname"
 require "shellwords"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "English"
-require "pathname"
 require "shellwords"
 require "tempfile"
 require_relative "schedule/declaration"

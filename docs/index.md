@@ -134,7 +134,7 @@ Start with [Getting Started](getting-started.md), then pick from the sections be
 
 ## Requirements
 
-- Ruby 3.2 or later.
+- Ruby 4.0 or later.
 - macOS or Linux for scheduled tasks and the file watcher (launchd on macOS, systemd user timers on Linux). Everything else works wherever Ruby does.
 - A C++17 compiler at install time: `gem install asgard` compiles one native extension. Xcode's command-line tools or a distribution's `build-essential` package is enough.
 

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "pathname"
-
 require_relative "doctor/task_sections"
 require_relative "doctor/report"
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: Ruby 4.0 or later** — `required_ruby_version` was
+  `>= 3.2.0`, but on Ruby 3.4 the file watcher hangs at shutdown: a
+  thread blocked in `Ractor.receive` is not woken by a message its own
+  Ractor sends once it has received one from another Ractor, so the
+  reporter never sees the closing nil. The gem now requires `>= 4.0.0`.
 - **`sh` is `shebang`** — `sh` took only a script and forwarded it to
   `shebang`, so `sh :python3, "..."` was an `ArgumentError` while
   `shebang :python3, "..."` worked. `sh` is now `alias_method :sh,
@@ -148,7 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Watcher log rotation** — `watcher.log` moves to `watcher.log.1` once
   it passes 10 MB (`ASGARD_LOG_MAX` bytes to change it).
 - **CI** — `.github/workflows/test.yml` runs the suite on Linux and macOS,
-  Ruby 3.4 and 4.0.
+  Ruby 4.0.6 and 4.0.9.
 
 ### Fixed
 

@@ -220,7 +220,7 @@ asgard ruby_version
 
 ```
 ruby --version
-ruby 3.4.1 (2024-12-25 revision 48d4efcb85) +PRISM [arm64-darwin24]
+ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [arm64-darwin27]
 ```
 
 When a command fails, asgard stops there and exits with the command's status, so a pipeline never silently continues past a broken step:

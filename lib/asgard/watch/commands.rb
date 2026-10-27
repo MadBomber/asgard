@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "pathname"
 require "shellwords"
 require "time"
 

@@ -153,7 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Watcher log rotation** — `watcher.log` moves to `watcher.log.1` once
   it passes 10 MB (`ASGARD_LOG_MAX` bytes to change it).
 - **CI** — `.github/workflows/test.yml` runs the suite on Linux and macOS,
-  Ruby 4.0.6 and 4.0.9.
+  Ruby 4.0.9 and 4.1.0-preview1.
 
 ### Fixed
 

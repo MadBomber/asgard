@@ -15,6 +15,16 @@ class Tasks
     sh "bundle exec ruby -Ilib:test -e #{TEST_LOADER} -- -v"
   end
 
+  desc "Run the test suite in forked worker processes (experimental)"
+  option :workers, aliases: "-w", type: :numeric, desc: "Worker processes (default: CPU count, at most 8)"
+  option :times, type: :boolean, default: false, desc: "Print each test's name and time"
+  def parallel_test
+    flags = []
+    flags << "--workers #{options.workers}" if options.workers
+    flags << "-v" if options.times?
+    sh ["bundle exec ruby -Ilib:test test/parallel_runner.rb", *flags].join(" ")
+  end
+
   # Every *_check task, in the order the summary lists them.
   def self.quality_checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
 

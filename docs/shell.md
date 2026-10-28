@@ -57,7 +57,7 @@ end
 The shell is bash until a `.loki` says otherwise (see [`default_shell`](#default_shell-the-shell-used-when-none-is-named)). Bash syntax such as `[[ ... ]]`, arrays and `$PIPESTATUS` works in a one-liner as well as in a heredoc.
 
 !!! note
-    Before 0.6.0 a one-line `sh` went through `/bin/sh` and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-every-script-runs-under-bash).
+    Before 0.6.0 a one-line `sh` went through `/bin/sh` and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See [Breaking Changes](breaking-changes.md#sh-and-shebang-every-script-runs-under-the-default-shell).
 
 ### Silent Mode
 
@@ -325,7 +325,7 @@ asgard doc_server
 Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.
 
 !!! note
-    Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0 and now raises `ArgumentError (unknown keyword: :exec)`; delete the keyword. See [Upgrading to 0.6.0](upgrading-0.6.md#sh-and-shebang-exec-removed).
+    Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0 and now raises `ArgumentError (unknown keyword: :exec)`; delete the keyword. See [Breaking Changes](breaking-changes.md#sh-and-shebang-exec-removed).
 
 ### `$0` Is a Tempfile
 

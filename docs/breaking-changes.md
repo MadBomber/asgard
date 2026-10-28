@@ -1,4 +1,8 @@
-# Upgrading to 0.6.0
+# Breaking Changes
+
+Each release that can break an existing project is listed here, newest first, with the steps to upgrade. The [Changelog](changelog.md) lists every change.
+
+## 0.6.0
 
 Version 0.6.0 changes how asgard names a project on disk. Every scheduled
 task and every watcher installed by an earlier version is filed under the
@@ -7,14 +11,16 @@ or `watch`, follow the steps on this page: stop everything under the old
 version, upgrade, then start everything again.
 
 `sh` and `shebang` changed too, and two of those changes can break a
-`.loki`: the `exec:` keyword is gone, and every `sh` script now runs under
-`bash`, which must be on `PATH`. Both are covered at the end of this page,
+`.loki`: the `exec:` keyword is gone, and a script given no shell name now
+runs under the shell set with `default_shell`, one line or many. A `.loki`
+that never calls `default_shell` gets `bash`, which must then be on
+`PATH`. Both are covered at the end of this page,
 starting at [`sh` and `shebang`: `exec:` removed](#sh-and-shebang-exec-removed).
 The other changes in the release are listed in the [Changelog](changelog.md).
 
 ---
 
-## What Changed
+### What Changed
 
 Each project's scheduled jobs and watcher state are kept outside the
 repository, under a name derived from the project. Before 0.6.0 that name
@@ -34,7 +40,7 @@ it is the same whether you reach the project through a symlink or not.
 
 ---
 
-## Why It Was Necessary
+### Why It Was Necessary
 
 A directory name is not unique on a machine. Two checkouts called `api`,
 a repository and its `examples/` directory alongside another repository's
@@ -60,7 +66,7 @@ full path next to each slug.
 
 ---
 
-## Before You Upgrade
+### Before You Upgrade
 
 Do this with the **old** version still installed, so its commands find the
 entries under their old names.
@@ -104,7 +110,7 @@ asgard watcher list --all    # every project shows DAEMON stopped
 
 ---
 
-## Upgrade
+### Upgrade
 
 ```bash
 gem update asgard
@@ -113,7 +119,7 @@ asgard --version     # 0.6.0
 
 ---
 
-## After You Upgrade
+### After You Upgrade
 
 In each project, install the schedules and start the watcher again. The
 declarations in `.loki` are unchanged; only the name they are filed under
@@ -137,7 +143,7 @@ Every project title now ends in a hash, for example
 
 ---
 
-## If You Already Upgraded
+### If You Already Upgraded
 
 Entries installed by the old version are still there and still run. The
 new version sees them as belonging to another project, because their slug
@@ -184,7 +190,7 @@ Then install and start under the new version as described above.
 
 ---
 
-## Related Changes in 0.6.0
+### Related Changes in 0.6.0
 
 Two smaller changes came with the slug and are worth knowing:
 
@@ -200,7 +206,7 @@ Two smaller changes came with the slug and are worth knowing:
 
 ---
 
-## `sh` and `shebang`: `exec:` removed
+### `sh` and `shebang`: `exec:` removed
 
 `sh` and `shebang` no longer take an `exec:` keyword. `sh` is `shebang`
 with the default shell, so this is one change, not two. A `.loki` that
@@ -237,19 +243,23 @@ the only behaviour.
 
 ---
 
-## `sh` and `shebang`: every script runs under bash
+### `sh` and `shebang`: every script runs under the default shell
 
 Before 0.6.0 a one-line `sh "..."` went through Ruby's `system`, which
 hands a single string to `/bin/sh`, while a multi-line script went through
 `bash`. The same `sh` call therefore ran under two different shells
 depending on line count, and bash syntax passed or failed with it. From
-0.6.0 `sh` is `shebang :bash`: one line or many is written to a tempfile
-and run by the `:bash` entry of the `shells` registry. Three things follow.
+0.6.0 `sh` and `shebang` are the same method, and a script given no shell
+name, one line or many, is written to a tempfile and run by the shell set
+with `default_shell`. A `.loki` that never calls `default_shell` gets
+`bash`, the seeded `:bash` entry of the `shells` registry. Three things
+follow.
 
-### `bash` must be on `PATH`
+#### `bash` must be on `PATH` unless you set another default
 
 The seeded `:bash` entry is the bare word `bash`, found on `PATH` at run
-time. A machine or container with only `/bin/sh` fails on the first `sh`:
+time. With no `default_shell` set, a machine or container with only
+`/bin/sh` fails on the first `sh`:
 
 ```
 asgard: shell :bash not found: bash ...
@@ -278,8 +288,9 @@ The first form is right when your scripts are POSIX sh already. The
 second is a quick way to get a container running; scripts that use bash
 features will then fail under `/bin/sh` the way they did before 0.6.0.
 
-### One-liners now run under bash, not `/bin/sh`
+#### One-liners now run under the default shell, not `/bin/sh`
 
+With the `bash` default, this means one-liners now run under bash.
 On macOS `/bin/sh` is bash in POSIX mode, so one-liners behave almost
 exactly as before. On Debian and Ubuntu `/bin/sh` is dash, so a one-line
 script that ran under dash now runs under bash. Bash accepts nearly
@@ -295,7 +306,7 @@ them, but a few builtins differ:
 behaviour. A script that needs `/bin/sh` exactly can ask for it by name:
 `shebang :sh, "..."`. The `:sh` entry is seeded and runs `sh` from `PATH`.
 
-### `$0` is a tempfile path
+#### `$0` is a tempfile path
 
 A script that printed `$0`, typically in a usage message, used to show
 `bash` or the command itself. It now shows the tempfile the script was
@@ -306,7 +317,7 @@ when the script finishes.
 **What to do:** print a name you choose instead of `$0`. Nothing else
 reads it.
 
-### Also changed, not breaking
+#### Also changed, not breaking
 
 - `sh` and `shebang` return `true`; they used to return `nil`.
 - A command that ends on a signal exits 128 plus the signal number, as a

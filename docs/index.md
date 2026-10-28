@@ -1,5 +1,8 @@
 # Asgard
 
+!!! warning "Upgrading from an earlier version?"
+    Version 0.6.0 has breaking changes to scheduled tasks, watchers and `sh`. Read [Breaking Changes](breaking-changes.md) before you upgrade.
+
 <table>
 <tr>
 <td width="40%" align="center" valign="top">
@@ -128,7 +131,7 @@ Start with [Getting Started](getting-started.md), then pick from the sections be
 | [Files & Directories](files.md) | Where asgard keeps logs, state and job definitions on disk |
 | [Examples](examples.md) | The working `.loki` files shipped in the repository |
 
-[Upgrading to 0.6.0](upgrading-0.6.md) explains the changes that affect existing schedules, watchers and `sh` calls, and the [Changelog](changelog.md) has the release history.
+[Breaking Changes](breaking-changes.md) explains the 0.6.0 changes that affect existing schedules, watchers and `sh` calls, and the [Changelog](changelog.md) has the release history.
 
 ---
 

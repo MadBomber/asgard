@@ -169,5 +169,5 @@ nav:
       - Command Reference: commands.md
       - Files & Directories: files.md
       - Examples: examples.md
-  - Upgrading to 0.6.0: upgrading-0.6.md
+  - Breaking Changes: breaking-changes.md
   - Changelog: changelog.md

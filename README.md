@@ -3,6 +3,9 @@
 > [!INFO]
 > See the [CHANGELOG](CHANGELOG.md) for the latest changes. The [examples directory](examples/) contains working `.loki` files demonstrating the full feature set.
 
+> [!WARNING]
+> Version 0.6.0 has breaking changes to scheduled tasks, watchers and `sh`. Read [Breaking Changes](https://madbomber.github.io/asgard/breaking-changes/) before you upgrade.
+
 <br>
 <table>
 <tr>
@@ -34,6 +37,8 @@
 <p>Asgard is a <a href="https://github.com/rails/thor">Thor</a>-based task runner for Ruby projects. Define tasks in <code>.loki</code> files, declare dependencies between them, and let Asgard handle ordering and concurrent execution. Anything Thor can do — subcommands, typed options, argument validation — is available inside a <code>.loki</code> file.</p>
 
 ## Installation
+
+Asgard requires Ruby 4.0 or later. Scheduled tasks and the file watcher need macOS or Linux, and installing compiles one native extension, so a C++17 compiler must be available (Xcode's command-line tools or a distribution's `build-essential` package).
 
 ```bash
 gem install asgard

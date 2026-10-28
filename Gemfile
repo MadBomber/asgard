@@ -17,3 +17,4 @@ gem "minitest"       # minitest provides a complete suite of testing facilities 
 gem "reek"           # Code smell detector for Ruby
 gem "rubocop"        # Automatic Ruby code style checking tool.
 gem "simplecov"      # Code coverage for Ruby
+gem "tty-spinner"    # A terminal spinner for tasks that have non-deterministic time frame.

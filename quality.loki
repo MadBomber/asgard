@@ -15,15 +15,42 @@ class Tasks
     sh "bundle exec ruby -Ilib:test -e #{TEST_LOADER} -- -v"
   end
 
+  # Every *_check task, in the order the summary lists them.
+  def self.quality_checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
+
   desc "Run every *_check quality gate task in parallel"
   # A Proc defers resolution to validate_deps!, after every .loki file has
   # loaded — so a *_check task from another file (e.g. quality_rails.loki's
   # brakeman_check) is picked up too, with no need to redeclare anything here.
-  depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+  # quality_board runs first so every gate has its row before any starts.
+  depends_on -> { [:quality_board, quality_checks] }
   def quality
-    results = dep_results.sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
+    results = dep_results.except(:quality_board).sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
 
-    print_quality_summary(results)
+    print_quality_summary(results, rows: QUALITY_BOARD.empty?)
+  end
+
+  # Gate task name => its spinner row; empty unless quality_board drew one.
+  QUALITY_BOARD = {}
+
+  desc "Draw the live quality board: one spinner row per gate", hide: true
+  def quality_board
+    return unless $stdout.tty?
+
+    require "io/console"
+    require "tty-spinner"
+
+    print_quality_header
+    labels = self.class.quality_checks.to_h { |check| [check, quality_gate_label(check.to_s)] }
+    width  = labels.values.map(&:length).max
+    board  = TTY::Spinner::Multi.new(output: $stdout, hide_cursor: true, success_mark: "",
+                                     frames: %w[●··· ·●·· ··●· ···● ··●· ·●··])
+    labels.each do |check, label|
+      row = board.register("  [:spinner:badge] #{label.ljust(width)}  :note")
+      row.update(badge: "", note: "")
+      row.auto_spin
+      QUALITY_BOARD[check] = row
+    end
   end
 
   desc "Check code style with RuboCop"
@@ -130,14 +157,42 @@ class Tasks
       report_gate(name, label, output, result, summary)
     end
 
-    # Writes +output+ to <name>_output.txt, prints the gate's one-line
+    # Writes +output+ to <name>_output.txt, reports the gate's one-line
     # summary and returns +result+.
     def report_gate(name, label, output, result, summary)
       file = "#{name}_output.txt"
       File.write(file, output)
-      puts "#{label}: #{gate_summary(output, result, summary)} (see #{file})"
+      finish_gate(name, label, result, "#{gate_summary(output, result, summary)} (see #{file})")
+    end
+
+    # Settles gate +name+ (:rubocop for rubocop_check): its row on the live
+    # board gets the badge and +note+, or, with no board, prints
+    # "Label: note". Returns +result+.
+    def finish_gate(name, label, result, note)
+      row = QUALITY_BOARD[:"#{name}_check"]
+      if row
+        row.update(badge: status_badge(result), note: fit_note(note, row.message))
+        row.success
+      else
+        puts "#{label}: #{note}"
+      end
       result
     end
+
+    # +note+ cut to fit on one terminal line after +pattern+'s visible text.
+    # A wrapped row would throw off the board's cursor moves.
+    def fit_note(note, pattern, columns = $stdout.winsize[1].nonzero? || 80)
+      room = columns - pattern.sub(":spinner:badge", "PASS").sub(":note", "").length - 1
+      note.length <= room ? note : "#{note[0, [room - 1, 0].max]}…"
+    end
+
+    # The colored badge text for a status, e.g. PASS in green.
+    def status_badge(status)
+      text, code = STATUS_BADGES.fetch(status)
+      colorize(code, text)
+    end
+
+    def colorize(code, text) = "\e[#{code}m#{text}\e[0m"
 
     # The summary for a gate's output. +summary+ is a Regexp, matched against
     # the last line that fits (the result's name when none does), or a
@@ -170,20 +225,18 @@ class Tasks
     end
 
     def skip_typos
-      puts "Typos: SKIPPED — `typos` command not found. Install it with `brew install typos-cli`."
-      :skip
+      finish_gate(:typos, "Typos", :skip,
+                  "SKIPPED — `typos` command not found. Install it with `brew install typos-cli`.")
     end
 
     def skip_erb_lint
-      puts "ERBLint: SKIPPED — no .erb files found."
-      :skip
+      finish_gate(:erb_lint, "ERBLint", :skip, "SKIPPED — no .erb files found.")
     end
 
     def skip_archspec
       reason = command_available?("archspec") ? "no Archspec.rb found" : "`archspec` command not found"
-      puts "ArchSpec: SKIPPED — #{reason}. Install it with `gem install archspec` " \
-        "and run `archspec init` to generate one."
-      :skip
+      finish_gate(:archspec, "ArchSpec", :skip,
+                  "SKIPPED — #{reason}. Install it with `gem install archspec` and run `archspec init` to generate one.")
     end
 
     # Status badges. Only :fail is blocking (aborts the quality task);
@@ -196,29 +249,37 @@ class Tasks
       skip: ["SKIP", 36], # cyan
     }.freeze
 
+    def print_quality_header
+      puts <<~HEADER
+
+        #{"=" * 60}
+        Quality Gate Summary
+        #{"=" * 60}
+      HEADER
+    end
+
     # Colorized status badges plus a pass/fail/warn/skip tally; aborts only
     # if any gate failed — skip and warn are informational, not blocking.
-    def print_quality_summary(results)
-      colorize_badge = ->(code, text) { "\e[#{code}m#{text}\e[0m" }
-      width = results.keys.map(&:length).max
-
-      puts "\n#{"=" * 60}"
-      puts "Quality Gate Summary"
-      puts "=" * 60
-      results.each do |label, status|
-        text, code = STATUS_BADGES.fetch(status)
-        puts "  [#{colorize_badge.call(code, text)}] #{label.ljust(width)}"
+    # +rows+ is false when the live board already showed the header and a
+    # row per gate.
+    def print_quality_summary(results, rows: true)
+      if rows
+        print_quality_header
+        width = results.keys.map(&:length).max
+        results.each { |label, status| puts "  [#{status_badge(status)}] #{label.ljust(width)}" }
       end
-      puts "-" * 60
 
       counts = results.values.tally
       failed = counts[:fail] || 0
       tally  = STATUS_BADGES.keys.filter_map { |s| "#{counts[s]} #{s}" if counts[s]&.positive? }.join(", ")
-      puts "  #{colorize_badge.call(failed.zero? ? 32 : 31, tally)}"
-      puts "=" * 60
+      puts <<~FOOTER
+        #{"-" * 60}
+          #{colorize(failed.zero? ? 32 : 31, tally)}
+        #{"=" * 60}
+      FOOTER
 
-      abort "\n#{colorize_badge.call(31, "Quality gate failed.")}" unless failed.zero?
-      puts "\n#{colorize_badge.call(32, "All quality gates passed.")}"
+      abort "\n#{colorize(31, "Quality gate failed.")}" unless failed.zero?
+      puts "\n#{colorize(32, "All quality gates passed.")}"
     end
   end
 end

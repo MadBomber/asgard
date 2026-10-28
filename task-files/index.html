@@ -2040,8 +2040,8 @@
 </li>
 </ul>
 <h3 id="return-value">Return Value<a class="headerlink" href="#return-value" title="Permanent link">&para;</a></h3>
-<p><code>import</code> returns <code>true</code> when it loaded at least one new file and <code>false</code> when every match was already loaded or the glob matched nothing. You rarely need this, but it makes a conditional read naturally:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">import</span><span class="p">(</span><span class="s2">"local_overrides.loki"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">puts</span><span class="p">(</span><span class="s2">"no local overrides"</span><span class="p">)</span>
+<p><code>import</code> returns <code>true</code> when it loaded at least one new file and <code>false</code> when every match was already loaded or the glob matched nothing. You rarely need this, but it makes a conditional read naturally. Write the name as a glob, so a missing file matches nothing instead of raising <code>LoadError</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">import</span><span class="p">(</span><span class="s2">"local_overrides*.loki"</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">puts</span><span class="p">(</span><span class="s2">"no local overrides"</span><span class="p">)</span>
 </span></code></pre></div>
 <hr />
 <h2 id="finding-files-with-loki_up">Finding Files with <code>loki_up</code><a class="headerlink" href="#finding-files-with-loki_up" title="Permanent link">&para;</a></h2>

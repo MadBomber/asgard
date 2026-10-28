@@ -2189,7 +2189,7 @@
 <td>Everything beneath it, at any depth</td>
 </tr>
 <tr>
-<td><code>"Gemfile.lock"</code> (a file, or a name with an extension)</td>
+<td><code>"Gemfile.lock"</code> (a file, or a name with an extension or a leading dot, like <code>.env</code>)</td>
 <td>Just that file; it may not exist yet</td>
 </tr>
 <tr>
@@ -2198,7 +2198,7 @@
 </tr>
 </tbody>
 </table>
-<p>Globs follow shell rules: <code>**</code> spans directories, <code>*</code> and <code>?</code> stay within one path segment, and <code>{a,b}</code> is an alternative:</p>
+<p>Globs follow shell rules: <code>**</code> spans directories, <code>*</code> and <code>?</code> stay within one path segment, <code>{a,b}</code> is an alternative (braces may nest, <code>{a,{b,c}}</code>), and <code>[ab]</code>, <code>[a-z]</code> and <code>[!ab]</code> match one character:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:assets</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"app/assets/**/*.{js,css}"</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:notes</span><span class="p">,</span><span class="w">  </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"notes/*.md"</span><span class="w">            </span><span class="c1"># only the top level of notes/</span>
 </span></code></pre></div>
@@ -2214,13 +2214,13 @@
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:build</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"config/*.yml"</span><span class="p">,</span><span class="w"> </span><span class="ss">as</span><span class="p">:</span><span class="w"> </span><span class="s2">"build-config"</span>
 </span></code></pre></div>
 <h3 id="narrowing-with-only">Narrowing with only:<a class="headerlink" href="#narrowing-with-only" title="Permanent link">&para;</a></h3>
-<p><code>only:</code> adds a filter on top of the paths. A path must match one of the patterns from <code>paths:</code> <strong>and</strong> one of the <code>only:</code> expressions. The filter is applied to every directory the declaration watches, so with <code>paths: %w[lib/**/*.rb docs/**/*.md]</code> a <code>.md</code> file under <code>lib/</code> also matches; use separate declarations when that matters.</p>
+<p><code>only:</code> adds a filter on top of the paths. A path must match one of the patterns from <code>paths:</code> <strong>and</strong> one of the <code>only:</code> expressions. Each directory keeps its own patterns, so with <code>paths: %w[lib/**/*.rb docs/**/*.md]</code> a <code>.md</code> file under <code>lib/</code> does not match, but <code>only:</code> applies to every directory the declaration watches.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="sx">%w[lib test]</span><span class="p">,</span><span class="w"> </span><span class="ss">only</span><span class="p">:</span> <span class="sr">/\.rb\z/</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:docs</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"docs"</span><span class="p">,</span><span class="w"> </span><span class="ss">only</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="sr">/\.md\z/</span><span class="p">,</span><span class="w"> </span><span class="sr">/\.yml\z/</span><span class="o">]</span>
 </span></code></pre></div>
 <p><code>only:</code> and <code>ignore:</code> take Regexps, nothing else: <code>watch :docs only: expects a Regexp or an Array of them (got "*.md")</code>.</p>
 <h3 id="default-ignores">Default Ignores<a class="headerlink" href="#default-ignores" title="Permanent link">&para;</a></h3>
-<p>Every watch ignores <code>.git/</code>, <code>coverage/</code>, <code>pkg/</code>, <code>tmp/</code>, <code>log/</code> and <code>node_modules/</code> at any depth, so a task that writes its output inside the project never retriggers itself. <code>ignore:</code> adds to that list:</p>
+<p>Every watch ignores <code>.git/</code>, <code>.hg/</code>, <code>.svn/</code> and <code>node_modules/</code> at any depth. The project's own output directories, <code>coverage/</code>, <code>pkg/</code>, <code>tmp/</code>, <code>log/</code>, <code>.bundle/</code>, <code>bundle/</code>, <code>vendor/bundle/</code> and <code>vendor/ruby/</code>, are ignored at the project root, so a task that writes its output there never retriggers itself; a directory of yours with the same name deeper down, such as <code>app/log/</code>, is watched like any other. Editor swap and temp files are ignored too. Ignored directories are not even scanned. <code>ignore:</code> adds to that list:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:docs</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"docs"</span><span class="p">,</span><span class="w"> </span><span class="ss">ignore</span><span class="p">:</span><span class="w"> </span><span class="sr">%r{\Adrafts/}</span>
 </span></code></pre></div>
 <h3 id="events">Events<a class="headerlink" href="#events" title="Permanent link">&para;</a></h3>
@@ -2234,7 +2234,7 @@
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:reindex</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"data/**/*.json"</span><span class="p">,</span><span class="w"> </span><span class="ss">events</span><span class="p">:</span><span class="w"> </span><span class="o">%</span><span class="n">i</span><span class="o">[</span><span class="n">added</span><span class="w"> </span><span class="n">removed</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">debounce</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
 </span></code></pre></div>
 <h3 id="environment">Environment<a class="headerlink" href="#environment" title="Permanent link">&para;</a></h3>
-<p><code>env:</code> adds variables to the task's process. The task reads them as usual, with <code>env(:build_env)</code> or <code>ENV["BUILD_ENV"]</code>:</p>
+<p><code>env:</code> adds variables to the task's process. The task reads them as usual, with <code>env(:build_env)</code> or <code>ENV["BUILD_ENV"]</code>. A name that is empty, contains <code>=</code> or a NUL byte, or is not a String or Symbol is rejected when the <code>.loki</code> loads, as is a value containing a NUL byte:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">watch</span><span class="w"> </span><span class="ss">:docs</span><span class="p">,</span><span class="w"> </span><span class="ss">paths</span><span class="p">:</span><span class="w"> </span><span class="s2">"docs"</span><span class="p">,</span><span class="w"> </span><span class="ss">env</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">BUILD_ENV</span><span class="p">:</span><span class="w"> </span><span class="s2">"dev"</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="entry-names">Entry Names<a class="headerlink" href="#entry-names" title="Permanent link">&para;</a></h3>
@@ -2274,12 +2274,13 @@
 <p><code>watcher</code> is also a command with subcommands:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>start<span class="w">        </span><span class="c1"># start the watcher for this project in the background</span>
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>stop<span class="w">         </span><span class="c1"># stop it; a task already running finishes first</span>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w">         </span><span class="c1"># this project's watches, daemon state, each entry's last run</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all<span class="w">   </span><span class="c1"># every project's</span>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>preview<span class="w">      </span><span class="c1"># the command and environment each entry would run</span>
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log<span class="w">          </span><span class="c1"># print the watcher's log</span>
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log<span class="w"> </span>-f<span class="w">       </span><span class="c1"># keep following it</span>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>run<span class="w">          </span><span class="c1"># watch in the foreground (what start runs detached)</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>stop<span class="w"> </span>--force<span class="w"> </span><span class="c1"># stop it and end any running task</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w">         </span><span class="c1"># this project's watches, daemon state, each entry's last run</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all<span class="w">   </span><span class="c1"># every project's</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>preview<span class="w">      </span><span class="c1"># the command and environment each entry would run</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log<span class="w">          </span><span class="c1"># print the watcher's log</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log<span class="w"> </span>-f<span class="w">       </span><span class="c1"># keep following it</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>run<span class="w">          </span><span class="c1"># watch in the foreground (what start runs detached)</span>
 </span></code></pre></div>
 <h3 id="start">start<a class="headerlink" href="#start" title="Permanent link">&para;</a></h3>
 <p><code>start</code> launches the watcher as a background process for this project and returns at once:</p>
@@ -2297,7 +2298,8 @@
 </span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>watcher: waiting for test (pid 12351)
 </span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>stopped watcher for api-9f3a1c2b
 </span></code></pre></div>
-<p><code>stop</code> never signals a running task. A task that hangs keeps <code>stop</code> waiting; kill the task and <code>stop</code> completes. With no watcher running: <code>watcher is not running for api-9f3a1c2b.</code></p>
+<p>Plain <code>stop</code> never signals a running task. A task that hangs keeps <code>stop</code> waiting; kill the task, or interrupt <code>stop</code> and run <code>stop --force</code>, and <code>stop</code> completes. With no watcher running: <code>watcher is not running for api-9f3a1c2b.</code></p>
+<p><code>stop --force</code> (<code>-f</code>) does not wait for running tasks. A second after asking the watcher to stop it asks again, and the watcher ends each running task: TERM to the task's process group (the task and everything it started), then KILL to any still running five seconds later. The task's exit lands in the log and in <code>list</code> as usual, <code>143</code> for TERM or <code>137</code> for KILL. The watcher only signals processes it can confirm are its own running tasks; background jobs a task started are not touched.</p>
 <h3 id="list">list<a class="headerlink" href="#list" title="Permanent link">&para;</a></h3>
 <p><code>list</code> shows this project's declarations, whether the watcher is running, and each entry's last run:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list
@@ -2369,13 +2371,13 @@
 </span><span id="__span-27-17"><a id="__codelineno-27-17" name="__codelineno-27-17" href="#__codelineno-27-17"></a>...
 </span></code></pre></div>
 <h3 id="log">log<a class="headerlink" href="#log" title="Permanent link">&para;</a></h3>
-<p>The watcher writes one log for the project: a line for every trigger, spawn and exit, with each task's own output in between. <code>log</code> prints it; <code>-f</code> follows it:</p>
+<p>The watcher writes one log for the project: a line for every trigger, spawn and exit, with each task's own output in between, plus the watcher's own messages. <code>log</code> prints it; <code>-f</code> follows it, and keeps following when the log is rotated:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log
 </span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>log<span class="w"> </span>-f
 </span></code></pre></div>
 <p>Before the first <code>start</code> there is no log: <code>api-9f3a1c2b has no watcher log yet (/Users/you/.local/state/asgard/watch/api-9f3a1c2b/watcher.log); it is created on the first start.</code></p>
 <h3 id="run">run<a class="headerlink" href="#run" title="Permanent link">&para;</a></h3>
-<p><code>run</code> is the watcher in the foreground: the same process <code>start</code> launches, attached to your terminal instead of detached. It runs until you press Ctrl-C or send it TERM, then shuts down the way <code>stop</code> does and prints <code>watcher: stopped</code>. Use it to see the watcher's own messages as they happen, or as the process a service manager would supervise.</p>
+<p><code>run</code> is the watcher in the foreground: the same process <code>start</code> launches, attached to your terminal instead of detached. It runs until you press Ctrl-C or send it TERM, then shuts down the way <code>stop</code> does and prints <code>watcher: stopped</code>. If a task is still running it says <code>watcher: INT or TERM again ends the running tasks</code>; a second Ctrl-C or TERM ends them the way <code>stop --force</code> does. Use it to see the watcher's own messages as they happen, or as the process a service manager would supervise.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>run
 </span></code></pre></div>
 <hr />
@@ -2407,7 +2409,7 @@
 <tbody>
 <tr>
 <td>Base</td>
-<td><code>PATH</code>, <code>HOME</code>, <code>USER</code>, <code>LOGNAME</code>, <code>SHELL</code>, <code>LANG</code>, <code>LC_*</code>, <code>TMPDIR</code>, <code>SSH_AUTH_SOCK</code>, and the Ruby setup variables <code>GEM_HOME</code>, <code>GEM_PATH</code>, <code>RUBYOPT</code>, <code>RUBYLIB</code>, <code>BUNDLE_*</code>, captured when the watcher started</td>
+<td><code>PATH</code>, <code>HOME</code>, <code>USER</code>, <code>LOGNAME</code>, <code>SHELL</code>, <code>LANG</code>, <code>LC_*</code>, <code>TMPDIR</code>, <code>SSH_AUTH_SOCK</code>, and the Ruby setup variables <code>RUBYOPT</code>, <code>RUBYLIB</code>, <code>GEM_*</code>, <code>RUBY_*</code> (chruby), <code>RBENV_*</code> and <code>BUNDLE_*</code>, captured when the watcher started</td>
 </tr>
 <tr>
 <td>Declared</td>
@@ -2419,11 +2421,12 @@
 </tr>
 </tbody>
 </table>
-<p>Nothing else from the daemon reaches the task. A change list too large for the environment (a branch switch under a <code>**</code> watch can change thousands of files) is written to a file instead, named by <code>ASGARD_CHANGES_FILE</code>; <code>changes</code> reads it the same way.</p>
+<p>Nothing else from the daemon reaches the task. A change list too large for the environment (a branch switch under a <code>**</code> watch can change thousands of files) is written to a file instead, named by <code>ASGARD_CHANGES_FILE</code>; <code>changes</code> reads it the same way. So is a change list holding a file name with a newline in it, which one-path-per-line variables cannot carry.</p>
 <h3 id="editing-loki-while-the-watcher-runs">Editing .loki While the Watcher Runs<a class="headerlink" href="#editing-loki-while-the-watcher-runs" title="Permanent link">&para;</a></h3>
-<p>The watcher watches its own task files too: every <code>.loki</code> the project loaded, and any new <code>.loki</code> that appears in the project root. Save one and the watcher restarts itself with the new declarations once any running task has finished; the log ends one run with <code>watcher: reloading</code> and the next begins. You never need to <code>stop</code> and <code>start</code> after changing a <code>watch</code> line.</p>
-<p>If the edited files do not load (a syntax error, a typo), the watcher keeps the declarations it already has and says so in the log:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>watcher: the task files do not load; keeping the running declarations
+<p>The watcher watches its own task files too: every <code>.loki</code> the project loaded, and any new <code>.loki</code> that appears in the project root. Save one and the watcher restarts itself with the new declarations once any running task has finished; the log ends one run with <code>watcher: reloading</code> and the next begins. Files saved while it waits are not lost: the restarted watcher runs their triggers. You never need to <code>stop</code> and <code>start</code> after changing a <code>watch</code> line.</p>
+<p>Before restarting, the watcher checks the edited project the way <code>watcher run</code> would. If the files do not load (a syntax error, a typo), no <code>watch</code> is left, or a <code>watch</code> names a task that no longer exists (a renamed task), it keeps the declarations it already has and says so in the log, after the reason:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>watcher: no such task(s): lint
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>watcher: the task files do not load or declare no runnable watch; keeping the running declarations
 </span></code></pre></div>
 <p>Fix the file and save again.</p>
 <hr />
@@ -2443,11 +2446,11 @@
 </tr>
 <tr>
 <td><code>watcher.lock</code></td>
-<td>Held by the running daemon, so two cannot start</td>
+<td>Held by the running daemon (never by its tasks), so two cannot start</td>
 </tr>
 <tr>
 <td><code>watcher.log</code></td>
-<td>One line per trigger, spawn and exit, plus every task's output</td>
+<td>One line per trigger, spawn and exit, plus every task's output and the watcher's own messages</td>
 </tr>
 <tr>
 <td><code>watcher.log.1</code></td>
@@ -2455,7 +2458,7 @@
 </tr>
 <tr>
 <td><code>declarations.json</code></td>
-<td>The declarations recorded at <code>start</code>, which <code>list --all</code> reads for other projects</td>
+<td>The running watcher's declarations, rewritten on every start and reload, which <code>list --all</code> reads for other projects</td>
 </tr>
 <tr>
 <td><code>entries/&lt;name&gt;.json</code></td>
@@ -2464,6 +2467,10 @@
 <tr>
 <td><code>changes/</code></td>
 <td>Change lists too large for the environment, one file per trigger</td>
+</tr>
+<tr>
+<td><code>pending.json</code></td>
+<td>Briefly, during a reload: triggers that arrived while the watcher waited, for the restarted watcher to run</td>
 </tr>
 <tr>
 <td><code>root</code></td>

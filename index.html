@@ -1793,7 +1793,8 @@
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Ruby 4.0 or later.</li>
-<li>macOS or Linux for scheduled tasks and the file watcher (launchd on macOS, systemd user timers on Linux). Everything else works wherever Ruby does.</li>
+<li>macOS or Linux for scheduled tasks and the file watcher (launchd on macOS, systemd user timers on Linux).</li>
+<li>A POSIX system for background jobs (<code>sh ..., background: true</code> and <code>asgard jobs</code>), which need <code>fork</code>, <code>setsid</code> and <code>/bin/sh</code>. Everything else works wherever Ruby does.</li>
 <li>A C++17 compiler at install time: <code>gem install asgard</code> compiles one native extension. Xcode's command-line tools or a distribution's <code>build-essential</code> package is enough.</li>
 </ul>
 <p>Asgard is on <a href="https://rubygems.org/gems/asgard">RubyGems</a>; the source and issue tracker are on <a href="https://github.com/MadBomber/asgard">GitHub</a>.</p>

@@ -2191,6 +2191,7 @@
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>An interval that is zero, negative or not a number is rejected: <code>schedule :sync every: must be a positive number of seconds or a Duration (3.minutes)</code>.</p>
+<p>An interval entry runs on every day, so <code>on:</code> goes with <code>at:</code> only. Giving <code>every:</code> an <code>on:</code> is an error rather than a day filter that is quietly ignored: <code>schedule :sync on: only applies to at: times; every: runs on every day</code>.</p>
 <h3 id="options-for-the-task">Options for the Task<a class="headerlink" href="#options-for-the-task" title="Permanent link">&para;</a></h3>
 <p>The scheduler runs <code>asgard &lt;task&gt;</code> with nothing else unless you say otherwise. <code>options:</code> carries the task's own arguments and flags. A String is split the way a shell splits a command line, so quotes group words:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">schedule</span><span class="w"> </span><span class="ss">:report</span><span class="p">,</span><span class="w"> </span><span class="ss">options</span><span class="p">:</span><span class="w"> </span><span class="s2">"--format md --title 'Week End'"</span><span class="p">,</span><span class="w"> </span><span class="ss">at</span><span class="p">:</span><span class="w"> </span><span class="s2">"16:00"</span><span class="p">,</span><span class="w"> </span><span class="ss">on</span><span class="p">:</span><span class="w"> </span><span class="ss">:friday</span>
@@ -2226,18 +2227,24 @@
 <td><code>report-period-week</code></td>
 </tr>
 <tr>
+<td><code>schedule :report, options: "--period=week", at: "16:00"</code></td>
+<td><code>report-period-week-</code> plus 8 hex digits</td>
+</tr>
+<tr>
 <td><code>schedule :notify, options: "--msg 'backup done'", every: 86_400, as: "notify_daily"</code></td>
 <td><code>notify_daily</code></td>
 </tr>
 </tbody>
 </table>
-<p>The name defaults to the task name. When the entry has <code>options:</code>, the default is a slug of the task plus its options, so one task can be scheduled several times with different flags and each run has its own entry, state and log. <code>as:</code> replaces the default with a name you choose; it may contain letters, digits, <code>_</code>, <code>.</code> and <code>-</code>.</p>
+<p>The name defaults to the task name. When the entry has <code>options:</code>, the default is a slug of the task plus its options, so one task can be scheduled several times with different flags and each run has its own entry, state and log.</p>
+<p>The slug keeps only lowercase letters, digits and dashes, so on its own it could give two different commands the same name. When an option holds anything else (<code>--period=week</code>, a capital letter, a quoted <code>'Week End'</code>), or the slug would be longer than 64 characters, the name is shortened if needed and ends in a dash and 8 hex digits taken from the exact options. The same options always give the same digits. Run <code>asgard schedule preview</code> or <code>list</code> to see the name, or choose one with <code>as:</code>.</p>
+<p><code>as:</code> replaces the default with a name you choose; it may contain letters, digits, <code>_</code>, <code>.</code> and <code>-</code>.</p>
 <p>Two different declarations that end up with the same name are an error when the <code>.loki</code> loads:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard: /proj/.loki:12: schedule: "report" is already declared; give one a distinct as: name (ArgumentError)
 </span></code></pre></div>
 <p>(Loading the same declaration twice, as happens when a file is imported from two places, is fine.)</p>
 <h3 id="task-names-with-dashes-and-subcommands">Task Names with Dashes and Subcommands<a class="headerlink" href="#task-names-with-dashes-and-subcommands" title="Permanent link">&para;</a></h3>
-<p>A task is always one word. A dash in it is taken as the underscore of the method name, so <code>schedule :daily-summary</code> schedules the <code>daily_summary</code> task. A subcommand's task cannot be named with a colon; schedule the subcommand itself and put the rest in <code>options:</code>:</p>
+<p>A task is always one word. A dash in it is taken as the underscore of the method name, so <code>schedule :"daily-summary"</code> schedules the <code>daily_summary</code> task. A subcommand's task cannot be named with a colon; schedule the subcommand itself and put the rest in <code>options:</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">schedule</span><span class="w"> </span><span class="ss">:db</span><span class="p">,</span><span class="w"> </span><span class="ss">options</span><span class="p">:</span><span class="w"> </span><span class="s2">"migrate --dry-run"</span><span class="p">,</span><span class="w"> </span><span class="ss">at</span><span class="p">:</span><span class="w"> </span><span class="s2">"02:00"</span><span class="w">   </span><span class="c1"># runs: asgard db migrate --dry-run</span>
 </span></code></pre></div>
 <p>Writing <code>schedule :"db:migrate"</code> is rejected with exactly that advice.</p>
@@ -2395,7 +2402,7 @@
 </tr>
 </tbody>
 </table>
-<p>LAST EXIT is the exit status of the last run (<code>0</code> is success), <code>never run</code> for an active entry that has not fired yet, or <code>-</code> for an entry that is stopped or not loaded. On macOS a run ended by a signal shows as <code>signal 15 (Terminated)</code>. A non-zero status is shown in red on a terminal; set <code>NO_COLOR</code> to turn colour off. Long COMMAND and SCHEDULE cells wrap to the terminal width, and a run of hourly times collapses to <code>10:00-17:00 hourly weekdays</code>.</p>
+<p>LAST EXIT is the exit status of the last run (<code>0</code> is success), <code>never run</code> for an active entry that has not fired yet, or <code>-</code> for an entry that is stopped or not loaded. A run ended by a signal shows the signal: <code>signal 15 (Terminated)</code> on macOS, <code>signal 15 (SIGTERM)</code> on Linux. A non-zero status or a signal is shown in red on a terminal; set <code>NO_COLOR</code> to turn colour off. Long COMMAND and SCHEDULE cells wrap to the terminal width, and a run of hourly times collapses to <code>10:00-17:00 hourly weekdays</code>.</p>
 <p>An entry that is installed but no longer in <code>.loki</code> shows <code>no longer declared</code> in the SCHEDULE column until the next <code>install</code> removes it.</p>
 <p>With nothing installed:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>No scheduled tasks installed for api-9f3a1c2b (launchd).
@@ -2432,6 +2439,7 @@
 </span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="c1"># ...</span>
 </span></code></pre></div>
 <p>The log files are left in place.</p>
+<p>If the scheduler refuses to unload an entry, <code>remove</code> stops with an error and leaves its job files where they are, so the entry still shows in <code>list</code> and you can try again. <code>prune</code>, and <code>install</code> removing an undeclared entry, behave the same way.</p>
 <h3 id="prune">prune<a class="headerlink" href="#prune" title="Permanent link">&para;</a></h3>
 <p>A project that was moved or deleted leaves its entries behind, and they keep firing in a directory that is not there. <code>prune</code> removes every such entry, from every project on the machine. <code>--dry-run</code> (<code>-n</code>) only lists them:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune<span class="w"> </span>--dry-run
@@ -2477,7 +2485,7 @@
 <li>If the project has a <code>.envrc</code>, the job is wrapped in <code>direnv exec</code>, so the variables in <code>.envrc</code> (API keys, credentials) are loaded at run time and never copied into the job files. If <code>direnv</code> is not on your <code>PATH</code>, <code>install</code> warns: <code>schedule: .envrc found but direnv is not on PATH; its variables will not be loaded</code>.</li>
 <li>Whatever the task's own <code>.loki</code> loads with <code>dotenv</code>, since that runs inside the task's process as usual.</li>
 </ul>
-<p>The job's stdout and stderr are appended to its log file.</p>
+<p>The job's stdout and stderr are appended to its log file. Background jobs the task starts keep running after the task itself finishes, on both platforms.</p>
 <p>A calendar entry (<code>at:</code>) that was due while the machine was asleep or off runs as soon as the machine is back; on macOS launchd does this on wake, and on Linux the timer is <code>Persistent</code>. An interval entry (<code>every:</code>) simply resumes its cadence.</p>
 <h3 id="the-project-slug">The Project Slug<a class="headerlink" href="#the-project-slug" title="Permanent link">&para;</a></h3>
 <p>Entries belong to a project, and the project is named by a <strong>slug</strong>: the name of the directory holding <code>.loki</code> plus a short hash of that directory's full path, such as <code>api-9f3a1c2b</code>. Two projects in directories with the same name therefore never share entries, and <code>install</code> in one can never remove the other's. The slug is stable as long as the project stays where it is; a moved project gets a new slug, and its old entries show up under <code>[root missing]</code> until you <code>prune</code> them and <code>install</code> again from the new location.</p>
@@ -2533,7 +2541,7 @@
 </tbody>
 </table>
 <p>Any other platform is unsupported: every <code>asgard schedule</code> subcommand there exits with <code>asgard: &lt;platform&gt; is not supported (needs macOS launchd or Linux systemd)</code>.</p>
-<p>Job files are written readable by you alone, since they can hold <code>env:</code> values. On macOS a plist is checked with <code>plutil</code> before it replaces the installed one, and an unchanged plist whose job is already loaded is left alone by <code>install</code>, so a reinstall never interrupts a run in progress.</p>
+<p>Job files are written readable by you alone, since they can hold <code>env:</code> values. On macOS a plist is checked with <code>plutil</code> before it replaces the installed one. On both platforms <code>install</code> leaves an unchanged entry alone, so a reinstall never interrupts a run in progress or restarts an <code>every:</code> countdown.</p>
 <hr />
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <p><strong>The job never runs.</strong> Check <code>asgard schedule list</code>. <code>stopped</code> means a <code>stop</code> is in effect: <code>start</code> it. <code>not loaded</code> means the scheduler lost the entry: <code>install</code> again. On macOS, user agents run only while you are logged in; on Linux, run <code>loginctl enable-linger</code> or the timers stop when you log out. <code>trigger NAME</code> runs the entry right now under the scheduler, which tells you whether the job itself works.</p>

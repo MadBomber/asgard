@@ -1998,7 +1998,7 @@
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>Compiling into build/ with 4 job(s)
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Tags: debug, release
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Defines: {"VERSION"=&gt;"2", "MODE"=&gt;"fast"}
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>Defines: {"VERSION" =&gt; "2", "MODE" =&gt; "fast"}
 </span></code></pre></div>
 <h3 id="reading-an-option">Reading an Option<a class="headerlink" href="#reading-an-option" title="Permanent link">&para;</a></h3>
 <p><code>options</code> answers three spellings, all the same value:</p>
@@ -2058,7 +2058,7 @@
 <tr>
 <td><code>:hash</code></td>
 <td><code>--defines KEY:val FOO:bar</code></td>
-<td><code>{"KEY"=&gt;"val", "FOO"=&gt;"bar"}</code></td>
+<td><code>{"KEY" =&gt; "val", "FOO" =&gt; "bar"}</code></td>
 </tr>
 </tbody>
 </table>
@@ -2348,7 +2348,7 @@
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>A dependency's return value never stops the task that depends on it: if <code>rubocop_check</code> returns <code>:fail</code> as a dependency of <code>build</code>, <code>build</code> still runs. To stop a chain, raise <code>Asgard::Error</code> or let a failing <code>sh</code> exit. How dependencies report failure is covered on <a href="../dependencies/#when-a-dependency-fails">Dependencies</a>.</p>
+<p>What a failing dependency means is up to you. A dependency's return value never stops the task that depends on it: if <code>rubocop_check</code> returns <code>:fail</code> as a dependency of <code>build</code>, <code>build</code> still runs and can read the result. A dependency that must succeed stops the chain itself, with <code>abort</code>, a non-zero <code>exit</code>, a failing <code>sh</code> or <code>raise Asgard::Error</code>. Both patterns are covered on <a href="../dependencies/#when-a-dependency-fails">Dependencies</a>.</p>
 </div>
 <hr />
 <h2 id="reserved-names">Reserved Names<a class="headerlink" href="#reserved-names" title="Permanent link">&para;</a></h2>
@@ -2360,7 +2360,10 @@
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a>asgard: 'run' at /proj/.loki:3 is a name Thor reserves and cannot be a task or helper; rename it
 </span></code></pre></div>
-<p>The reserved names are the ones Thor uses internally, among them <code>run</code>, <code>shell</code>, <code>options</code>, <code>invoke</code>, <code>args</code>, <code>action</code>, <code>behavior</code>, <code>root</code>, <code>inside</code>, <code>in_root</code>, <code>create_file</code>, <code>add_file</code> and <code>run_ruby_script</code>. Pick another word (<code>run_all</code>, <code>start</code>) or put the task in a <a href="../subcommands/">subcommand</a>.</p>
+<p>The reserved names are the ones Thor uses internally, among them <code>run</code>, <code>shell</code>, <code>options</code>, <code>invoke</code>, <code>args</code>, <code>action</code>, <code>behavior</code>, <code>root</code>, <code>inside</code>, <code>in_root</code>, <code>create_file</code>, <code>add_file</code> and <code>run_ruby_script</code>, and the helpers asgard gives every task body: <code>sh</code>, <code>shebang</code>, <code>env</code>, <code>import</code>, <code>import_up</code>, <code>loki_up</code>, <code>changes</code>, <code>debug?</code>, <code>verbose?</code>, <code>dep_result</code>, <code>dep_results</code> and <code>current_task</code>. A task named <code>sh</code> would otherwise replace the helper, and every other task's <code>sh</code> would quietly run it instead:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a>asgard: 'sh' at /proj/.loki:3 is an asgard helper and cannot be a task or helper; rename it
+</span></code></pre></div>
+<p>Pick another word (<code>run_all</code>, <code>start</code>, <code>shell_in</code>) or put the task in a <a href="../subcommands/">subcommand</a>.</p>
 <p>Names starting with <code>_</code> are asgard's own. Asgard's built-in commands use them, and <code>asgard _anything</code> is refused with <code>asgard: unknown command '_anything'</code>. Do not start a task or helper name with an underscore.</p>
 <hr />
 <h2 id="formal-argument-declaration">Formal Argument Declaration<a class="headerlink" href="#formal-argument-declaration" title="Permanent link">&para;</a></h2>
@@ -2369,15 +2372,15 @@
 <p class="admonition-title">Class-level scope</p>
 <p><code>argument</code> applies to <strong>every task in the class</strong>, not just the one that follows it. It suits a single-command tool, or a class whose tasks all take the same first value. In a <code>.loki</code> with many tasks, use method parameters instead.</p>
 </div>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">  </span><span class="n">argument</span><span class="w"> </span><span class="ss">:name</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:string</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="s2">"World"</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name to greet"</span>
-</span><span id="__span-42-3"><a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a>
-</span><span id="__span-42-4"><a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"hello NAME"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Say hello to NAME"</span>
-</span><span id="__span-42-5"><a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">!"</span>
-</span><span id="__span-42-6"><a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="w">  </span><span class="n">argument</span><span class="w"> </span><span class="ss">:name</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:string</span><span class="p">,</span><span class="w"> </span><span class="ss">default</span><span class="p">:</span><span class="w"> </span><span class="s2">"World"</span><span class="p">,</span><span class="w"> </span><span class="ss">desc</span><span class="p">:</span><span class="w"> </span><span class="s2">"Name to greet"</span>
+</span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a>
+</span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"hello NAME"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Say hello to NAME"</span>
+</span><span id="__span-43-5"><a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">!"</span>
+</span><span id="__span-43-6"><a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>For a multi-task file, the same thing as a method parameter:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="p">(</span><span class="nb">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"World"</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">!"</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">hello</span><span class="p">(</span><span class="nb">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"World"</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Hello, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">!"</span>
 </span></code></pre></div>
 <hr />
 <h2 id="running-several-tasks-in-one-command">Running Several Tasks in One Command<a class="headerlink" href="#running-several-tasks-in-one-command" title="Permanent link">&para;</a></h2>

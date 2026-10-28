@@ -2421,7 +2421,7 @@
 <hr />
 <h2 id="names-you-cannot-use">Names You Cannot Use<a class="headerlink" href="#names-you-cannot-use" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Names Thor uses internally.</strong> Defining a task or helper called <code>shell</code>, <code>options</code>, <code>invoke</code>, <code>run</code>, <code>args</code>, <code>behavior</code>, <code>root</code>, <code>destination_root</code>, <code>action</code>, <code>in_root</code>, <code>inside</code> or <code>parent_options</code> (among others on Thor's reserved list) stops asgard as the <code>.loki</code> loads, with the file and line. Pick another name. This is why the watcher's foreground command is spelled <code>asgard watcher run</code> while your own task cannot be named <code>run</code>.</li>
+<li><strong>Names Thor uses internally.</strong> Defining a task or helper called <code>shell</code>, <code>options</code>, <code>invoke</code>, <code>run</code>, <code>args</code>, <code>behavior</code>, <code>root</code>, <code>destination_root</code>, <code>action</code>, <code>in_root</code>, <code>inside</code> or <code>parent_options</code> (among others on Thor's reserved list), or after one of asgard's own helpers (<code>sh</code>, <code>shebang</code>, <code>env</code>, <code>import</code>, <code>import_up</code>, <code>loki_up</code>, <code>changes</code>, <code>dep_result</code>, <code>dep_results</code>, <code>current_task</code>), stops asgard as the <code>.loki</code> loads, with the file and line. Pick another name. This is why the watcher's foreground command is spelled <code>asgard watcher run</code> while your own task cannot be named <code>run</code>.</li>
 <li><strong>Names beginning with <code>_</code>.</strong> The underscore prefix is reserved for asgard's own built-ins. <code>asgard _anything</code> is refused as an unknown command, and a <code>.loki</code> must not define <code>_</code>-prefixed methods.</li>
 <li><strong><code>schedule</code>, <code>watcher</code>, <code>jobs</code>.</strong> You may define tasks with these names, but <code>asgard schedule</code>, <code>asgard watcher</code> and <code>asgard jobs</code> still run the built-ins.</li>
 <li><strong>A name defined twice.</strong> The later <code>def</code> silently replaces the earlier one; <code>asgard --doctor</code> reports it. See <a href="../task-files/#task-name-overloading">Task Files</a>.</li>
@@ -2474,7 +2474,7 @@
 </tr>
 </tbody>
 </table>
-<p>A dependency's return value never stops the task that depends on it; only an exit, an <code>abort</code> or a <code>raise</code> does. Full detail in <a href="../diagnostics/#exit-status">Help &amp; Diagnostics</a> and <a href="../dependencies/#when-a-dependency-fails">Dependencies</a>.</p>
+<p>A dependency's return value never stops the task that depends on it; only an exit, an <code>abort</code> or a <code>raise</code> does. Which one a dependency uses is your choice: return a result for the dependent to judge, or stop the chain when the dependency must succeed. Full detail in <a href="../diagnostics/#exit-status">Help &amp; Diagnostics</a> and <a href="../dependencies/#when-a-dependency-fails">Dependencies</a>.</p>
 
 
 

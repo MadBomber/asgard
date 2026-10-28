@@ -1403,6 +1403,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#parallel-dependencies-each-run-on-their-own-copy-of-the-task-object-so-the-hits-each-worker-sets-never-reaches-bad_race-the-return-values-do-read-one-with-dep_resultracer_1-or-all-of-them-with-dep_results-see-passing-results-between-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel dependencies each run on their own copy of the task object, so the @hits each worker sets never reaches bad_race. The return values do: read one with dep_result(:racer_1) or all of them with dep_results. See Passing Results Between Tasks.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#watcher_examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1738,6 +1749,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#parallel-dependencies-each-run-on-their-own-copy-of-the-task-object-so-the-hits-each-worker-sets-never-reaches-bad_race-the-return-values-do-read-one-with-dep_resultracer_1-or-all-of-them-with-dep_results-see-passing-results-between-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parallel dependencies each run on their own copy of the task object, so the @hits each worker sets never reaches bad_race. The return values do: read one with dep_result(:racer_1) or all of them with dep_results. See Passing Results Between Tasks.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#watcher_examples" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1951,7 +1973,7 @@
 <p>Three examples are separate projects with their own <code>.loki</code> and must be run from their own directory: <code>depends_on_block/good</code>, <code>depends_on_block/bad</code> and <code>watcher_examples</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>concurrent.loki</code> and <code>bad.loki</code> exist to be run, not read: their point is output that changes from run to run.</p>
+<p><code>concurrent.loki</code> exists to be run, not read: its point is output that changes from run to run.</p>
 </div>
 <hr />
 <h2 id="kitchen_sinkloki"><code>kitchen_sink.loki</code><a class="headerlink" href="#kitchen_sinkloki" title="Permanent link">&para;</a></h2>
@@ -1974,7 +1996,7 @@
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>asgard<span class="w"> </span>hello<span class="w"> </span>Alice
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>asgard<span class="w"> </span>compile<span class="w"> </span>--jobs<span class="w"> </span><span class="m">4</span><span class="w"> </span>--tags<span class="w"> </span>debug<span class="w"> </span>release<span class="w"> </span>--defines<span class="w"> </span>VERSION:2<span class="w"> </span>MODE:fast
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>--strategy<span class="w"> </span>rolling
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>asgard<span class="w"> </span>deploy<span class="w">                </span><span class="c1"># Error: required option '--strategy' is missing</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>asgard<span class="w"> </span>deploy<span class="w">                </span><span class="c1"># No value provided for required options '--strategy'</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>asgard<span class="w"> </span><span class="nb">help</span><span class="w"> </span>report<span class="w">           </span><span class="c1"># the long_desc</span>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>asgard<span class="w"> </span>pipeline<span class="w">              </span><span class="c1"># check → compile ∥ spec → pack → pipeline</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>asgard<span class="w"> </span>status<span class="w"> </span>--verbose<span class="w"> </span>--debug
@@ -2211,14 +2233,14 @@
 <p>See <a href="../dependencies/#dynamic-dependencies">Dynamic Dependencies</a>.</p>
 <hr />
 <h2 id="badloki"><code>bad.loki</code><a class="headerlink" href="#badloki" title="Permanent link">&para;</a></h2>
-<p>What goes wrong when parallel tasks share state through an instance variable, and why <code>dep_result</code> exists. Four workers run in one parallel stage and each adds to the same <code>@hits</code> counter a thousand times:</p>
+<p>Why an instance variable is the wrong way to pass results out of parallel dependencies, and why <code>dep_result</code> exists. Four workers run in one parallel stage; each sets <code>@hits</code> to a thousand and also returns it:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>asgard<span class="w"> </span>bad_race
 </span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>expected @hits == 4000, got 3127
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>DATA RACE CONFIRMED: 873 update(s) lost
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>@hits after the parallel stage: nil
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>dep_result(:racer_1): 1000
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>sum of dep_results: 4000
 </span></code></pre></div>
-<p>Parallel dependencies each run on their own instance, so an instance variable is the wrong channel between them and the task that depends on them. Return the value from each task and read it with <code>dep_result(:worker_1)</code> instead. See <a href="../dependencies/#passing-results-between-tasks">Passing Results Between Tasks</a>.</p>
-<hr />
+<h2 id="parallel-dependencies-each-run-on-their-own-copy-of-the-task-object-so-the-hits-each-worker-sets-never-reaches-bad_race-the-return-values-do-read-one-with-dep_resultracer_1-or-all-of-them-with-dep_results-see-passing-results-between-tasks">Parallel dependencies each run on their own copy of the task object, so the <code>@hits</code> each worker sets never reaches <code>bad_race</code>. The return values do: read one with <code>dep_result(:racer_1)</code> or all of them with <code>dep_results</code>. See <a href="../dependencies/#passing-results-between-tasks">Passing Results Between Tasks</a>.<a class="headerlink" href="#parallel-dependencies-each-run-on-their-own-copy-of-the-task-object-so-the-hits-each-worker-sets-never-reaches-bad_race-the-return-values-do-read-one-with-dep_resultracer_1-or-all-of-them-with-dep_results-see-passing-results-between-tasks" title="Permanent link">&para;</a></h2>
 <h2 id="watcher_examples"><code>watcher_examples/</code><a class="headerlink" href="#watcher_examples" title="Permanent link">&para;</a></h2>
 <p>A small project whose tasks run when its files change: four <code>watch</code> declarations covering a glob, a directory with <code>only:</code>, <code>ignore:</code> and <code>env:</code>, an <code>events:</code> filter with <code>debounce:</code>, and a second watch of one task with <code>as:</code>. The <code>lib/</code>, <code>bin/</code>, <code>docs/</code> and <code>data/</code> directories hold one placeholder file each so there is something to edit at once.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="nb">cd</span><span class="w"> </span>examples/watcher_examples
@@ -2293,7 +2315,7 @@
 </span><span id="__span-30-15"><a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a>All quality gates passed.
 </span></code></pre></div>
 <h3 id="gem_tasksloki"><code>gem_tasks.loki</code><a class="headerlink" href="#gem_tasksloki" title="Permanent link">&para;</a></h3>
-<p><code>console</code>, <code>build</code> (depends on <code>quality</code>), <code>install</code> (depends on <code>build</code>) and <code>release</code> (depends on <code>quality</code>, asks for confirmation unless <code>--yes</code>, refuses a dirty working tree or an existing tag). A plain <code>sh</code> sequence does the work; <code>project_version</code> comes from the <code>helper</code> in <code>.loki</code>.</p>
+<p><code>console</code>, <code>build</code> (depends on <code>quality</code>), <code>install</code> (depends on <code>build</code>) and <code>release</code> (runs only on <code>main</code>, then depends on <code>build</code>, asks for confirmation unless <code>--yes</code>, refuses a dirty working tree or an existing tag). A plain <code>sh</code> sequence does the work; <code>project_version</code> comes from the <code>helper</code> in <code>.loki</code>.</p>
 <h3 id="gitloki"><code>git.loki</code><a class="headerlink" href="#gitloki" title="Permanent link">&para;</a></h3>
 <p>Three one-liners: <code>push</code>, <code>pull</code> (fast-forward only), <code>fetch</code>. The smallest useful task file.</p>
 <h3 id="doc_tasksloki"><code>doc_tasks.loki</code><a class="headerlink" href="#doc_tasksloki" title="Permanent link">&para;</a></h3>

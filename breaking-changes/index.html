@@ -1882,11 +1882,18 @@ new version sees them as belonging to another project, because their slug
 has no hash, so they appear in <code>schedule list --all</code> and <code>watcher list
 --all</code> under the old name while your project's own entries, once
 reinstalled, appear under the new one.</p>
-<p><strong>Scheduled tasks.</strong> A leftover entry can be stopped by its old slug:</p>
+<p><strong>Scheduled tasks.</strong> Deal with the leftovers before you run <code>asgard schedule
+install</code> under the new version. Until then a leftover entry can be stopped,
+or removed along with its job files, by its old slug:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>api/nightly<span class="w">      </span><span class="c1"># the old slug was the bare basename</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span>api/nightly<span class="w">    </span><span class="c1"># unload it and delete its files</span>
 </span></code></pre></div>
-<p>Stopping disables the job but leaves its files. To remove them, delete the
-job by hand:</p>
+<p>Once the project's new entries are installed, <code>api/nightly</code> matches both
+the old slug <code>api</code> and the new <code>api-9f3a1c2b</code>, and the command stops with
+<code>api/nightly is in several projects (api, api-9f3a1c2b); name one as
+project/nightly.</code> The new entry can still be named by its whole slug,
+<code>api-9f3a1c2b/nightly</code>, but the old one no longer can. In that case delete
+the old job by hand:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">macOS (launchd)</label><label for="__tabbed_1_2">Linux (systemd)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -1914,10 +1921,11 @@ listening, lets a running task finish, and exits.</p>
 <h3 id="related-changes-in-060">Related Changes in 0.6.0<a class="headerlink" href="#related-changes-in-060" title="Permanent link">&para;</a></h3>
 <p>Two smaller changes came with the slug and are worth knowing:</p>
 <ul>
-<li>In a <code>project/name</code> argument to <code>schedule stop</code>, <code>start</code>, <code>trigger</code> or
-  <code>log</code>, the project may be the whole slug or just the directory name
+<li>In a <code>project/name</code> argument to <code>schedule stop</code>, <code>start</code>, <code>trigger</code>,
+  <code>log</code> or <code>remove</code>, the project may be the whole slug or just the directory name
   when that is enough to pick one project out: <code>asgard schedule stop
-  api/nightly</code> reaches <code>api-9f3a1c2b/nightly</code>.</li>
+  api/nightly</code> reaches <code>api-9f3a1c2b/nightly</code> when no leftover <code>api</code> entry
+  remains.</li>
 <li><code>schedule list --all</code> and <code>watcher list --all</code> mark a project whose
   directory no longer exists with <code>[root missing]</code>. Its jobs were left
   behind by a move or a delete, and the hash will not match the project

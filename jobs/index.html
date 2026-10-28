@@ -2121,7 +2121,7 @@
 <tr>
 <td><code>true</code></td>
 <td><code>&lt;task&gt;-&lt;N&gt;</code></td>
-<td>Named after the task whose body made the call, plus a counter: <code>doc_server-1</code>, <code>servers-1</code>, <code>servers-2</code>. Must be called from inside a task</td>
+<td>Named after the task whose body made the call, plus a counter: <code>doc_server-1</code>, <code>servers-1</code>, <code>servers-2</code>. Must be called from inside a task. A <code>?</code>, <code>!</code> or <code>=</code> in the task name is spelled <code>-q</code>, <code>-b</code> or <code>-e</code> (<code>ready?</code> gives <code>ready-q-1</code>), so no two tasks share a job name</td>
 </tr>
 <tr>
 <td>a Symbol or String</td>
@@ -2188,39 +2188,45 @@
 </tr>
 <tr>
 <td><code>exited N (Ns)</code></td>
-<td>The job ended with status N after that long; 143 is a TERM, 137 a KILL</td>
+<td>The job ended with status N after that long; 143 is a TERM, 137 a KILL by <code>asgard jobs stop</code></td>
+</tr>
+<tr>
+<td><code>exited N (Ns, processes left)</code></td>
+<td>The script ended, but processes it started (a <code>server &amp;</code> line, say) still run in the job's process group. <code>stop</code> still reaches them, and <code>clean</code> keeps the job until they are gone</td>
 </tr>
 <tr>
 <td><code>gone</code></td>
-<td>Neither: the process is not there and no status was written. The machine rebooted, or something killed the job outright</td>
+<td>Neither: the process is not there and no status was written. The machine rebooted, or something outside asgard killed the job outright</td>
 </tr>
 </tbody>
 </table>
-<p>Run from a directory with no <code>.loki</code> above it, <code>list</code> covers every project, as <code>--all</code> does. With no jobs recorded:</p>
+<p>Run from a directory with no <code>.loki</code> above it, <code>list</code> covers every project, as <code>--all</code> does. A file in the state directory that is not a job's record (a hand edit, a disk that filled up) is left out of the table with a note on stderr, <code>jobs: skipped &lt;path&gt;: not a job record</code>, and <code>clean</code> removes it. With no jobs recorded:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>No jobs recorded for api-9f3a1c2b. Start one with `sh "...", background: true` inside a task.
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Use `asgard jobs list --all` to see every project's jobs.
 </span></code></pre></div>
 <h3 id="stop">stop<a class="headerlink" href="#stop" title="Permanent link">&para;</a></h3>
 <p>Each name is first tried as a job name, then as a task name: <code>stop servers</code> ends every job that <code>servers</code> started and, through <code>depends_on</code>, every job its dependencies started (<code>db-1</code>). Resolving a task name reads the project's <code>.loki</code>, so that form works inside the project. No name stops every job of the project; <code>--all</code> stops every project's. Jobs stop newest first.</p>
-<p>Each job gets <code>TERM</code> to its whole process group, so the shell and everything it started go together. After a second of waiting the command says so, and when the grace period runs out (<code>--timeout</code>, default 10 seconds) it sends <code>KILL</code> and waits until the pid is gone. One line per job:</p>
+<p>Each job gets <code>TERM</code> to its whole process group, so the shell and everything it started go together, including processes the script left behind when it exited. After a second of waiting the command says so, and when the grace period runs out (<code>--timeout</code>, default 10 seconds) it sends <code>KILL</code>, waits until the group is empty, and records status 137 so <code>list</code> shows <code>exited 137</code>. One line per job:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>stopped api (pid 48213)
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>waiting for db-1 (pid 48201)
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>killed db-1 (pid 48201) after 10s
 </span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>doc_server-1 is not running
 </span></code></pre></div>
-<p>The exit status is 1 when any job had to be killed or any name matched nothing (<code>jobs: no such job or task: apii</code>). Records stay, so the log of a stopped job can still be read; <code>clean</code> removes them.</p>
+<p>A task that exists but has no jobs on record prints <code>servers has no running jobs</code>. The exit status is 1 when any job had to be killed or any name matched neither a job nor a task (<code>jobs: no such job or task: apii</code>). Records stay, so the log of a stopped job can still be read; <code>clean</code> removes them.</p>
 <h3 id="log">log<a class="headerlink" href="#log" title="Permanent link">&para;</a></h3>
 <p>Prints the job's log, stdout and stderr together, from its latest start (each start empties it). <code>-f</code> follows it as <code>tail -f</code> does. A job that has not written yet still has an empty log.</p>
 <h3 id="restart">restart<a class="headerlink" href="#restart" title="Permanent link">&para;</a></h3>
 <p>Stops the job, then runs its owning task again in the same asgard process, dependencies included. A job started with a chosen name from outside a task body has no owning task and cannot be restarted: <code>jobs: static was not started from a task, so there is nothing to run again</code>.</p>
 <h3 id="clean">clean<a class="headerlink" href="#clean" title="Permanent link">&para;</a></h3>
-<p>Removes the record, script, status and log of every job that is not verified running, and prints <code>removed NAME</code> for each. Nothing that is running is touched. With nothing to do: <code>Nothing to clean for api-9f3a1c2b.</code></p>
+<p>Removes the record, script, status and log of every job that is not verified running, and prints <code>removed NAME</code> for each. Nothing that is running is touched, and neither is a job whose script exited while processes it started still run. A job started again while <code>clean</code> runs keeps its fresh record. With nothing to do: <code>Nothing to clean for api-9f3a1c2b.</code></p>
 <hr />
 <h2 id="how-a-job-runs">How a Job Runs<a class="headerlink" href="#how-a-job-runs" title="Permanent link">&para;</a></h2>
 <p>A job starts in a <strong>new session</strong> of its own: it has no controlling terminal, so closing the terminal that started it does not reach it, and it leads its own process group, which is what <code>stop</code> signals as a whole so the shell and everything it started go together.</p>
 <p>The recorded pid belongs to a small <code>/bin/sh</code> wrapper that runs your script's shell as its child, waits for it, and writes the exit status to a status file when it ends. That is how <code>list</code> can show <code>exited 1 (2.5s)</code> for a job nobody was waiting on. The wrapper is always <code>/bin/sh</code>, whatever your <code>default_shell</code> is; your script still runs under the shell you asked for. Because the recorded pid is the wrapper, an <code>exec</code> inside your script replaces only the inner shell and the job stays verifiable.</p>
+<p>The wrapper deliberately outlasts a <code>TERM</code> so it can write the status, so <code>kill 48213</code> on the pid that <code>started</code> and <code>list</code> show does nothing to the job. Stop a job with <code>asgard jobs stop</code>, or signal its whole process group yourself with <code>kill -- -48213</code> (the leading <code>-</code> addresses the group).</p>
 <p>The job's stdin is <code>/dev/null</code>, so it can never stop waiting for keyboard input, and its stdout and stderr are appended to the log.</p>
-<p>A job is <strong>verified</strong>, not assumed, every time asgard looks at it: the pid must be alive and its command line must still carry the job's script path. A pid reused by an unrelated process after a reboot fails that check and the job shows as <code>gone</code> rather than as somebody else's process.</p>
+<p>A job is <strong>verified</strong>, not assumed, every time asgard looks at it: the pid must be alive and its command line must still carry the job's script path. A pid reused by an unrelated process after a reboot fails that check and the job shows as <code>gone</code> rather than as somebody else's process. Processes left in the group after the script exited count only if they started before it exited, so a process group that later reuses the number is never mistaken for the job.</p>
+<p>Verifying uses <code>ps -ww -o ... -p PID</code>, which the system <code>ps</code> on macOS and BSD and the procps <code>ps</code> on Linux accept. BusyBox <code>ps</code>, the default on Alpine, rejects those options; there a <code>background:</code> start, and every <code>asgard jobs</code> command that looks at a job, stops with an error that says so instead of treating every job as gone and starting duplicates. Install procps (<code>apk add procps</code>) to use jobs there.</p>
 <hr />
 <h2 id="files">Files<a class="headerlink" href="#files" title="Permanent link">&para;</a></h2>
 <p>Everything lives under <code>~/.local/state/asgard/jobs/&lt;slug&gt;/</code> (or <code>$XDG_STATE_HOME/asgard/jobs/&lt;slug&gt;/</code>), where the slug is the project directory's name plus a short hash of its full path, the same slug <a href="../schedule/#the-project-slug">schedules</a> and <a href="../watch/#files-and-logs">watchers</a> use:</p>
@@ -2246,7 +2252,7 @@
 </tr>
 <tr>
 <td><code>&lt;name&gt;.status</code></td>
-<td>The exit status, written when the job ends</td>
+<td>The exit status, written when the job ends (or 137, by <code>stop</code> after a <code>KILL</code>)</td>
 </tr>
 <tr>
 <td><code>root</code></td>

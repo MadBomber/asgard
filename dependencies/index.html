@@ -788,10 +788,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#a-return-value-never-stops-anything" class="md-nav__link">
+  <a href="#a-dependency-that-must-succeed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A Return Value Never Stops Anything
+        A Dependency That Must Succeed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-dependency-that-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Dependency That Reports
       
     </span>
   </a>
@@ -1680,10 +1691,21 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#a-return-value-never-stops-anything" class="md-nav__link">
+  <a href="#a-dependency-that-must-succeed" class="md-nav__link">
     <span class="md-ellipsis">
       
-        A Return Value Never Stops Anything
+        A Dependency That Must Succeed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-dependency-that-reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Dependency That Reports
       
     </span>
   </a>
@@ -2107,28 +2129,45 @@
 <p>What does depend on load order is a task name defined twice: the later definition silently replaces the earlier one, including its <code>depends_on</code>. See <a href="../task-files/#task-name-overloading">Task Files</a> and <a href="../diagnostics/">Help &amp; Diagnostics</a> for how <code>asgard --doctor</code> finds that.</p>
 <hr />
 <h2 id="when-a-dependency-fails">When a Dependency Fails<a class="headerlink" href="#when-a-dependency-fails" title="Permanent link">&para;</a></h2>
-<p>A failed prerequisite stops the run. How it stops depends on what failed:</p>
+<p>Asgard does not decide what a failing dependency means. You do, when you write the task. A dependency can fail in two ways, and the difference is entirely in how its body ends:</p>
 <ul>
-<li><strong>A failing <code>sh</code> or <code>shebang</code></strong>, or an <code>abort</code>, ends asgard with that command's exit status. The task that depended on it never starts. This is the normal case: <code>asgard release</code> with a failing test suite exits with the test runner's status.</li>
-<li><strong>An exception</strong> raised inside a dependency propagates and asgard reports it. Raise <code>Asgard::Error</code> for a clean one-line message: <code>asgard: &lt;message&gt;</code>, exit 1.</li>
+<li><strong>It ends the run.</strong> The dependency exits non-zero, aborts or raises. Nothing after it runs: not the task that depends on it, not anything further up the chain. Use this for a prerequisite that must succeed, where carrying on would be wrong or dangerous.</li>
+<li><strong>It reports.</strong> The dependency returns a value that says what happened (<code>:fail</code>, <code>false</code>, a count, a Hash of findings) and finishes normally. The task that depends on it runs and reads that value with <a href="#passing-results-between-tasks"><code>dep_result</code></a>, and decides for itself what to do about it.</li>
+</ul>
+<p>Neither is the default for "failure". A test suite can be either: a gate in front of <code>release</code>, or one line in a report.</p>
+<h3 id="a-dependency-that-must-succeed">A Dependency That Must Succeed<a class="headerlink" href="#a-dependency-that-must-succeed" title="Permanent link">&para;</a></h3>
+<p>Make the dependency stop the run when it fails. Any of these does it:</p>
+<ul>
+<li><strong>A failing <code>sh</code> or <code>shebang</code></strong> ends asgard with the command's exit status. This is the usual case, and it needs no code: <code>asgard release</code> with a failing test suite exits with the test runner's status.</li>
+<li><strong><code>abort "message"</code></strong> prints the message to standard error and exits 1.</li>
+<li><strong><code>exit 2</code></strong>, or any other non-zero code, exits with that code.</li>
+<li><strong><code>raise Asgard::Error, "message"</code></strong> prints <code>asgard: message</code> and exits 1. Any other exception is reported with its class and exits 1.</li>
 </ul>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Refuse to deploy from a dirty tree"</span>
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">clean_tree</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="no">Asgard</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span><span class="w"> </span><span class="s2">"commit or stash your changes first"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="sb">`git status --porcelain`</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nb">abort</span><span class="w"> </span><span class="s2">"commit or stash your changes first"</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="sb">`git status --porcelain`</span><span class="o">.</span><span class="n">strip</span><span class="o">.</span><span class="n">empty?</span>
 </span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean_tree</span>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy to production"</span>
-</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"cap production deploy"</span>
-</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="k">end</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Refuse to deploy without credentials"</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">credentials</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="nb">exit</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="no">ENV</span><span class="o">[</span><span class="s2">"DEPLOY_TOKEN"</span><span class="o">]</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:clean_tree</span><span class="p">,</span><span class="w"> </span><span class="ss">:credentials</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Deploy to production"</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deploy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"cap production deploy"</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="k">end</span>
 </span></code></pre></div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>asgard<span class="w"> </span>deploy
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1"># asgard: commit or stash your changes first</span>
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1"># (exit 1)</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1"># commit or stash your changes first</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1"># (exit 1; credentials and deploy never ran)</span>
 </span></code></pre></div>
-<h3 id="a-return-value-never-stops-anything">A Return Value Never Stops Anything<a class="headerlink" href="#a-return-value-never-stops-anything" title="Permanent link">&para;</a></h3>
-<p>Only an exit or an exception stops a dependent task. A dependency that <em>returns</em> something, even <code>:fail</code> or <code>false</code>, has succeeded as far as the pipeline is concerned. (Returning <code>:fail</code> from the task you typed on the command line does make asgard exit 1, which is how the quality-gate pattern below reports failure, but it does not stop a task that depends on it.) To guard a task, raise or let a command fail. <code>examples/confirm.loki</code> in the repository is a guard task built this way: it asks "Really run <code>asgard reset_database</code>?" and raises <code>Asgard::Error</code> on anything but yes. See <a href="../examples/#confirmloki">Examples</a>.</p>
+<p><code>examples/confirm.loki</code> in the repository is a guard task built this way: it asks "Really run <code>asgard reset_database</code>?" and raises <code>Asgard::Error</code> on anything but yes. See <a href="../examples/#confirmloki">Examples</a>.</p>
+<h3 id="a-dependency-that-reports">A Dependency That Reports<a class="headerlink" href="#a-dependency-that-reports" title="Permanent link">&para;</a></h3>
+<p>Return a value instead, and let the task that depends on it judge. A return value never stops anything: a dependency that returns <code>:fail</code> or <code>false</code> has finished as far as the pipeline is concerned, and the dependent runs. This is what you want when every check should run and be reported together, rather than the first failure hiding the rest.</p>
+<p>The repository's own <code>quality</code> task works this way. Each <code>*_check</code> dependency runs its tool and returns <code>:pass</code>, <code>:fail</code>, <code>:warn</code> or <code>:skip</code>; none of them stops the run. <code>quality</code> runs after all of them, prints one line per check, and only then decides: it calls <code>abort</code> when any check returned <code>:fail</code>, so <code>asgard quality</code> still exits 1 for CI. The code is under <a href="#passing-results-between-tasks">Passing Results Between Tasks</a>.</p>
+<p>Returning <code>:fail</code> from the task you typed on the command line makes asgard exit 1, so a check run on its own (<code>asgard test_check</code>) still reports its result through the exit status.</p>
 <h3 id="failure-in-a-parallel-group">Failure in a Parallel Group<a class="headerlink" href="#failure-in-a-parallel-group" title="Permanent link">&para;</a></h3>
 <p>When one task in a parallel group fails, asgard waits for every other task in the group to finish before reporting, so no subprocess is left running on its own. One failure is reported the same way it would be on its own: a failing command exits asgard with its status, an exception propagates. When more than one task fails, each is named on stderr and the run ends with an error listing them:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>asgard: dependency 'lint' failed: exit 1
@@ -2177,7 +2216,7 @@
 <p>Both read the dependencies of the task that is running, not of tasks further down the chain. A check that uses backticks or <code>system</code> rather than <code>sh</code> can report its result as a value instead of ending asgard; see <a href="../shell/#exit-on-failure">Exit on Failure</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Parallel dependencies do not share instance variables</p>
-<p>Tasks in one parallel group each run on their own copy of the task object, so an <code>@ivar</code> set by a parallel dependency is not visible to the task that depends on it. Sequential dependencies do share it, which is why the difference can surprise you when a <code>depends_on :a, :b</code> later becomes <code>depends_on [:a, :b]</code>. Pass values with <code>dep_result</code> instead; <code>examples/bad.loki</code> in the repository shows the lost-update race that shared instance state produces.</p>
+<p>Tasks in one parallel group each run on their own copy of the task object, so an <code>@ivar</code> set by a parallel dependency is not visible to the task that depends on it. Sequential dependencies do share it, which is why the difference can surprise you when a <code>depends_on :a, :b</code> later becomes <code>depends_on [:a, :b]</code>. Pass values with <code>dep_result</code> instead; <code>examples/bad.loki</code> in the repository shows an <code>@ivar</code> coming back <code>nil</code> while <code>dep_result</code> carries the value.</p>
 </div>
 <hr />
 <h2 id="startup-validation">Startup Validation<a class="headerlink" href="#startup-validation" title="Permanent link">&para;</a></h2>

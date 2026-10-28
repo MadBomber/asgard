@@ -1826,8 +1826,8 @@
 </tr>
 <tr>
 <td><code>asgard watcher stop</code></td>
-<td></td>
-<td>Stops the watcher; a task already running finishes first, and <code>stop</code> names it while it waits</td>
+<td><code>--force</code>, <code>-f</code></td>
+<td>Stops the watcher; a task already running finishes first, and <code>stop</code> names it while it waits. <code>--force</code> ends running tasks (TERM, then KILL after five seconds) instead of waiting</td>
 </tr>
 <tr>
 <td><code>asgard watcher list</code></td>
@@ -1847,7 +1847,7 @@
 <tr>
 <td><code>asgard watcher run</code></td>
 <td></td>
-<td>Watches in the foreground until Ctrl-C or TERM; this is what <code>start</code> runs detached</td>
+<td>Watches in the foreground until Ctrl-C or TERM; this is what <code>start</code> runs detached. <code>asgard tree</code> lists it as <code>daemon</code>, and <code>asgard watcher daemon</code> is the same command</td>
 </tr>
 </tbody>
 </table>

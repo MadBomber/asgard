@@ -1713,7 +1713,7 @@
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Do not redeclare <code>class_option :debug</code> or <code>class_option :verbose</code> in a subcommand class. They are inherited; declaring them again is an error.</p>
+<p>Do not redeclare <code>class_option :debug</code> or <code>class_option :verbose</code> in a subcommand class. They are inherited. Declaring them again raises no error but replaces asgard's own option in that group, so its help shows <code>[--debug], [--no-debug], [--skip-debug]</code> with no description or default.</p>
 </div>
 <hr />
 <h2 id="depends_on-within-a-subcommand"><code>depends_on</code> Within a Subcommand<a class="headerlink" href="#depends_on-within-a-subcommand" title="Permanent link">&para;</a></h2>
@@ -1893,7 +1893,7 @@
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>  asgard db reset               # Rollback all migrations, re-migrate, and reseed
 </span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>  ...
 </span></code></pre></div>
-<p>The inherited top-level tasks appear in the same listing under the class's namespace, as noted above.</p>
+<p>The listing shows only the group's own tasks. The top-level tasks the group inherits stay out of it, although <code>asgard db deploy</code> still runs them, as noted above.</p>
 <hr />
 <h2 id="the-built-in-groups">The Built-in Groups<a class="headerlink" href="#the-built-in-groups" title="Permanent link">&para;</a></h2>
 <p><code>asgard schedule</code>, <code>asgard watcher</code> and <code>asgard jobs</code> are subcommand groups too, built into asgard. They are registered under reserved names, so a task of your own called <code>schedule</code>, <code>watcher</code> or <code>jobs</code> does not shadow them: <code>asgard schedule install</code> always reaches the built-in. See <a href="../schedule/">Scheduled Tasks</a>, <a href="../watch/">Watched Files</a> and <a href="../jobs/">Background Jobs</a>.</p>

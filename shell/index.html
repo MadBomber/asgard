@@ -1958,12 +1958,12 @@
 </span></code></pre></div>
 <p><code>shebang</code> is the same method as <code>sh</code>, so it takes the same <code>silent:</code> and <code>background:</code> keywords, echoes the script the same way, and exits asgard on failure the same way. <code>sh :python3, script</code> and <code>shebang :python3, script</code> are one call; so are <code>shebang "rake build"</code> and <code>sh "rake build"</code>.</p>
 <h3 id="interpreters-you-did-not-register">Interpreters You Did Not Register<a class="headerlink" href="#interpreters-you-did-not-register" title="Permanent link">&para;</a></h3>
-<p>A name that is not in the registry runs as itself, found on <code>PATH</code>, with a <code>.tmp</code> file extension. Any interpreter works without declaring it:</p>
+<p>A name that is not in the registry runs as itself, found on <code>PATH</code>, with a <code>.tmp</code> file extension (zsh, fish, csh and tcsh get their usual extensions instead; see <a href="#the-shells-registry">the registry</a>). Any interpreter works without declaring it:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Say hello from Lua"</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">lua_hello</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shebang</span><span class="w"> </span><span class="ss">:lua</span><span class="p">,</span><span class="w"> </span><span class="s1">'print("Hello from Lua!")'</span>
 </span></code></pre></div>
 <p>If the executable is not found, asgard names the shell and the command it tried, then exits 127:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard: shell :lua not found: lua /var/folders/.../T/asgard_20261024-80545-1x2y3z.tmp
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>asgard: shell :lua not found: lua ...
 </span></code></pre></div>
 <p>Register the interpreter with <a href="#shell-add-or-replace-an-entry"><code>shell</code></a> when it needs a specific extension or options, or when you want the mistake caught while the <code>.loki</code> loads rather than the first time the task runs.</p>
 <hr />
@@ -2112,6 +2112,7 @@
 </span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># asgard exits 130</span>
 </span></code></pre></div>
 <p>Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.</p>
+<p>A signal sent to asgard alone also reaches the command. <code>timeout</code>, a CI runner cancelling a job, or <code>kill -TERM &lt;asgard pid&gt;</code> signal only asgard's own process, not the group; asgard passes the INT or TERM on to the running script, waits for it to end, and exits 130 or 143. Nothing is left running behind it.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0 and now raises <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword. See <a href="../breaking-changes/#sh-and-shebang-exec-removed">Breaking Changes</a>.</p>
@@ -2306,7 +2307,7 @@
 <tr>
 <td><code>sh :name, "script"</code></td>
 <td>The shell registered as <code>:name</code></td>
-<td>Unregistered names run from <code>PATH</code> with <code>.tmp</code></td>
+<td>Unregistered names run from <code>PATH</code> with <code>.tmp</code> (<code>.sh</code>, <code>.fish</code> or <code>.csh</code> for zsh, fish, csh and tcsh)</td>
 </tr>
 <tr>
 <td><code>shebang ...</code></td>

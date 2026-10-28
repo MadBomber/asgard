@@ -1774,12 +1774,12 @@
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>asgard<span class="w"> </span>migrate<span class="w"> </span>--env<span class="w"> </span>production
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>asgard<span class="w"> </span><span class="nb">help</span><span class="w"> </span>migrate<span class="w">          </span><span class="c1"># lists --dry-run and --env under Options</span>
 </span></code></pre></div>
-<p>Options come after the task name, class options included: <code>asgard deploy --env staging</code> works, <code>asgard --env staging deploy</code> does not (asgard sees no task name and complains that <code>help</code> got unexpected arguments). The two exceptions are <code>--version</code> and <code>--doctor</code>, which are asgard's own flags and come first.</p>
+<p>Options come after the task name, class options included: <code>asgard deploy --env staging</code> works, while <code>asgard --env staging deploy</code> does not run the task; it prints the help for <code>deploy</code> and exits 0. The two exceptions are <code>--version</code> and <code>--doctor</code>, which are asgard's own flags and come first.</p>
 <h3 id="class-options-and-subcommands">Class Options and Subcommands<a class="headerlink" href="#class-options-and-subcommands" title="Permanent link">&para;</a></h3>
 <p>A subcommand class written as <code>class DBCommands &lt; Tasks</code> inherits every class option declared on <code>Tasks</code>, including asgard's own. Declare new ones in the subcommand class for options only its tasks need.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>Do not declare <code>class_option :debug</code> or <code>class_option :verbose</code> (or <code>:version</code>, <code>:doctor</code>) in a subcommand class. They are already inherited, and a second declaration raises an error about a duplicate option. See <a href="../subcommands/">Subcommands</a>.</p>
+<p>Do not declare <code>class_option :debug</code> or <code>class_option :verbose</code> (or <code>:version</code>, <code>:doctor</code>) in a subcommand class. They are already inherited. A second declaration raises no error; it quietly replaces asgard's own option for that class, so the help loses its description and default and shows <code>[--debug], [--no-debug], [--skip-debug]</code> instead. See <a href="../subcommands/">Subcommands</a>.</p>
 </div>
 <h3 id="boolean-class-options-and-no_negate">Boolean Class Options and <code>no_negate</code><a class="headerlink" href="#boolean-class-options-and-no_negate" title="Permanent link">&para;</a></h3>
 <p>For every boolean class option, the help lists three spellings: <code>[--color]</code>, <code>[--no-color]</code> and <code>[--skip-color]</code>. When negating the option makes no sense, call <code>no_negate</code> after the declaration to show only the plain flag:</p>
@@ -1878,7 +1878,7 @@
 <ul>
 <li>inside the task body;</li>
 <li>inside a helper method called from the task body (<code>private</code> methods, <code>no_commands</code> methods, <code>helper</code> methods);</li>
-<li>inside a dependency's body, where it holds the same values: a dependency sees the options given to the task you typed, since the whole run shares one command line.</li>
+<li>inside a dependency's body. The whole run shares one command line, so a value you type (<code>asgard deploy --target x</code>) reaches every dependency that declares that option. An option the dependency declares but you did not type takes the dependency's own default, not the default of the task you typed. An option only the typed task declares is passed through to the dependency as the typed task sees it.</li>
 </ul>
 <p>It is not available:</p>
 <ul>
@@ -1920,7 +1920,7 @@
 <tr>
 <td><code>:hash</code></td>
 <td><code>--vars KEY:val FOO:bar</code></td>
-<td><code>{"KEY"=&gt;"val", "FOO"=&gt;"bar"}</code></td>
+<td><code>{"KEY" =&gt; "val", "FOO" =&gt; "bar"}</code></td>
 </tr>
 </tbody>
 </table>

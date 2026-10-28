@@ -2416,13 +2416,15 @@ class TestRegressionCoreLow < Minitest::Test
 
   # C10: the gem's release prompt survives stdin at end-of-file.
   def test_regression_c10_release_aborts_on_eof
+    # release depends on build; the stub comes after the import so it wins.
     loki = <<~LOKI
+      import "gem_tasks.loki"
       class Tasks
         @@project = "x"
         helper(:project_version) { "0.0.0" }
         desc "quality"; def quality = nil
+        desc "build"; def build = nil
       end
-      import "gem_tasks.loki"
     LOKI
     out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => File.read(File.expand_path("../gem_tasks.loki", __dir__)) })
     assert_equal 0, status.exitstatus, err

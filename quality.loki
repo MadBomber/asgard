@@ -8,14 +8,7 @@ class Tasks
   TEST_LOADER = %q(Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }).shellescape.freeze
 
   desc "Run the test suite"
-  def test_check
-    output = `bundle exec ruby -Ilib:test -e #{TEST_LOADER} 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("test_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /\d+ runs,/ }&.strip || result.to_s
-    puts "Tests: #{summary} (see test_output.txt)"
-    result
-  end
+  def test_check = run_gate(:test, "Tests", "bundle exec ruby -Ilib:test -e #{TEST_LOADER}", summary: /\d+ runs,/)
 
   desc "Run the test suite with verbose output"
   def test_verbose
@@ -28,21 +21,14 @@ class Tasks
   # brakeman_check) is picked up too, with no need to redeclare anything here.
   depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
   def quality
-    check_tasks = self.class._deps.fetch(:quality, []).flatten.map(&:to_s)
-
-    results = check_tasks.to_h { |name| [quality_gate_label(name), dep_result(name)] }
+    results = dep_results.sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
 
     print_quality_summary(results)
   end
 
   desc "Check code style with RuboCop"
   def rubocop_check
-    output = `RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("rubocop_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files inspected/ }&.strip || result.to_s
-    puts "RuboCop: #{summary} (see rubocop_output.txt)"
-    result
+    run_gate(:rubocop, "RuboCop", "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop", summary: /files inspected/)
   end
 
   desc "Auto-correct RuboCop offenses"
@@ -50,85 +36,40 @@ class Tasks
     sh "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop -a"
   end
 
+  FLOG_WARN = 20.0
+  FLOG_FAIL = 50.0
+  FLAY_MASS = 150
+
   desc "Check code complexity with Flog (warn >=20, fail >=50)"
   def flog_check
-    require_with_deps "flog"
-
-    method_warn = 20.0
-    method_fail = 50.0
-
-    flogger = Flog.new(all: true)
-    flogger.flog(*Dir.glob("lib/**/*.rb"))
-
-    warnings = []
-    failures = []
-
-    flogger.each_by_score do |method_name, score|
-      next if method_name.end_with?("#none")
-      if score > method_fail
-        failures << "#{"%.1f" % score}: #{method_name}"
-      elsif score > method_warn
-        warnings << "#{"%.1f" % score}: #{method_name}"
-      end
-    end
-
-    result = failures.empty? ? :pass : :fail
-
-    lines = ["Flog warnings (#{method_warn}–#{method_fail}):"]
-    lines.concat(warnings.empty? ? ["  (none)"] : warnings.map { |w| "  #{w}" })
-    lines << ""
-    lines << "Flog failures (>= #{method_fail}):"
-    lines.concat(failures.empty? ? ["  (none)"] : failures.map { |f| "  #{f}" })
-    File.write("flog_output.txt", "#{lines.join("\n")}\n")
-
-    puts "Flog: #{failures.size} failure(s), #{warnings.size} warning(s) (see flog_output.txt)"
-    result
+    run_gate(:flog, "Flog", "bundle exec flog -a lib",
+             status:  ->(output) { flog_scores(output).any? { |s| s >= FLOG_FAIL } ? :fail : :pass },
+             summary: lambda { |output, _result|
+               scores = flog_scores(output)
+               "#{scores.count { |s| s >= FLOG_FAIL }} failure(s), " \
+                 "#{scores.count { |s| s >= FLOG_WARN && s < FLOG_FAIL }} warning(s)"
+             })
   end
 
   desc "Check for structural code duplication with Flay (mass >= 150)"
   def flay_check
-    require_with_deps "flay"
-
-    mass_threshold = 150
-
-    flay = Flay.new(mass: mass_threshold, diff: false, verbose: false, summary: false, timeout: 60)
-    flay.process(*Dir.glob("lib/**/*.rb"))
-    flay.analyze
-
-    result = flay.hashes.empty? ? :pass : :fail
-
-    File.open("flay_output.txt", "w") do |f|
-      if result == :pass
-        f.puts "Flay: no structural duplication detected (mass >= #{mass_threshold})"
-      else
-        flay.report(f)
-      end
-    end
-    puts "Flay: #{flay.hashes.size} duplication pattern(s) found (mass >= #{mass_threshold}) (see flay_output.txt)"
-    result
+    run_gate(:flay, "Flay", "bundle exec flay --mass #{FLAY_MASS} --timeout 60 lib",
+             status:  ->(output) { output.match?(/^\d+\) /) ? :fail : :pass },
+             summary: lambda { |output, _result|
+               "#{output.lines.grep(/^\d+\) /).size} duplication pattern(s) found (mass >= #{FLAY_MASS})"
+             })
   end
 
   desc "Report code smells with Reek (advisory: warns, never fails)"
-  def reek_check
-    output = `bundle exec reek lib 2>&1`
-    result = $?.success? ? :pass : :warn
-    File.write("reek_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /total warnings?/ }&.strip || result.to_s
-    puts "Reek: #{summary} (see reek_output.txt)"
-    result
-  end
+  def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
 
   desc "Check spelling with typos"
   def typos_check
     return skip_typos unless command_available?("typos")
 
-    output = `typos 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("typos_output.txt", output)
-    count   = output.lines.count { |l| l.start_with?("error:") }
-    summary = result == :pass ? "no typos found" : "#{count} typo(s) found"
-    puts "Typos: #{summary} (see typos_output.txt)"
-    result
+    run_gate(:typos, "Typos", "typos", summary: lambda { |output, result|
+      result == :pass ? "no typos found" : "#{output.lines.count { |l| l.start_with?("error:") }} typo(s) found"
+    })
   end
 
   desc "Auto-correct typos"
@@ -142,45 +83,25 @@ class Tasks
   def erb_lint_check
     return skip_erb_lint if Dir.glob("**/*.erb").empty?
 
-    output = `bundle exec erb_lint --lint-all --enable-all-linters 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("erb_lint_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /error\(s\)|no errors were found/i }&.strip || result.to_s
-    puts "ERBLint: #{summary} (see erb_lint_output.txt)"
-    result
+    run_gate(:erb_lint, "ERBLint", "bundle exec erb_lint --lint-all --enable-all-linters",
+             summary: /error\(s\)|no errors were found/i)
   end
 
   desc "Check for performance suggestions with Fasterer"
   def fasterer_check
-    output = `bundle exec fasterer lib 2>&1`.gsub(/\e\[\d+m/, "")
-    result = $?.success? ? :pass : :warn
-    File.write("fasterer_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files? inspected/ }&.strip || result.to_s
-    puts "Fasterer: #{summary} (see fasterer_output.txt)"
-    result
+    run_gate(:fasterer, "Fasterer", "bundle exec fasterer lib", summary: /files? inspected/, on_fail: :warn)
   end
 
   desc "Check Gemfile.lock for known vulnerabilities with bundler-audit"
   def bundler_audit_check
-    output = `bundle exec bundle-audit check --update 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("bundler_audit_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /vulnerabilit/i }&.strip || result.to_s
-    puts "Bundler Audit: #{summary} (see bundler_audit_output.txt)"
-    result
+    run_gate(:bundler_audit, "Bundler Audit", "bundle exec bundle-audit check --update", summary: /vulnerabilit/i)
   end
 
   desc "Check architecture boundaries with ArchSpec"
   def archspec_check
     return skip_archspec unless command_available?("archspec") && File.exist?("Archspec.rb")
 
-    output = `archspec check 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("archspec_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /architecture violations? found|ArchSpec passed/i }&.strip ||
-      result.to_s
-    puts "ArchSpec: #{summary} (see archspec_output.txt)"
-    result
+    run_gate(:archspec, "ArchSpec", "archspec check", summary: /architecture violations? found|ArchSpec passed/i)
   end
 
   # Curated display labels for the *_check tasks defined in this file. A
@@ -198,16 +119,41 @@ class Tasks
   }.freeze
 
   no_commands do
-    # Requires gem +name+ after activating its runtime dependencies within
-    # its own requirements. RubyGems skips activating a dependency that is a
-    # default gem (prism, in Ruby 4.0), so a bare require "prism" inside
-    # flog or flay takes the newest prism installed, which may be outside
-    # the range they declare.
-    def require_with_deps(name)
-      Gem::Specification.find_by_name(name).runtime_dependencies.each do |dep|
-        gem dep.name, *dep.requirement.as_list
+    # Runs +command+ as one gate: saves its output (stdout and stderr, color
+    # codes removed) to <name>_output.txt, prints "Label: summary" and
+    # returns +on_fail+ when the command exits non-zero. Otherwise it
+    # returns :pass, or what +status+ (a callable given the output) says,
+    # for a tool whose exit status ignores its findings.
+    def run_gate(name, label, command, summary:, on_fail: :fail, status: nil)
+      output = `#{command} 2>&1`.gsub(/\e\[[\d;]*m/, "")
+      result = $?.success? ? status&.call(output) || :pass : on_fail
+      report_gate(name, label, output, result, summary)
+    end
+
+    # Writes +output+ to <name>_output.txt, prints the gate's one-line
+    # summary and returns +result+.
+    def report_gate(name, label, output, result, summary)
+      file = "#{name}_output.txt"
+      File.write(file, output)
+      puts "#{label}: #{gate_summary(output, result, summary)} (see #{file})"
+      result
+    end
+
+    # The summary for a gate's output. +summary+ is a Regexp, matched against
+    # the last line that fits (the result's name when none does), or a
+    # callable given the output and the result.
+    def gate_summary(output, result, summary)
+      return summary.call(output, result) if summary.respond_to?(:call)
+
+      output.lines.reverse.find { |l| l.match?(summary) }&.strip || result.to_s
+    end
+
+    # The per-method scores in `flog -a` output, skipping the total, the
+    # average and each file's top-level code (the "#none" entries).
+    def flog_scores(output)
+      output.scan(/^\s*(\d+\.\d+): (\S*(?:#|::)\S*)/).filter_map do |score, name|
+        score.to_f unless name.end_with?("#none")
       end
-      require name
     end
 
     # true if +name+ resolves to an executable file somewhere on PATH.

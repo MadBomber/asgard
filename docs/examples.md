@@ -416,16 +416,22 @@ end
 
 ### `quality.loki`
 
-The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, prints one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads each result with `dep_result`, and prints a summary table; it aborts only when a gate returned `:fail`.
+The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, prints one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads every result at once with `dep_results`, and prints a summary table; it aborts only when a gate returned `:fail`.
 
 ```ruby
 desc "Run every *_check quality gate task in parallel"
 depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
 def quality
-  check_tasks = self.class._deps.fetch(:quality, []).flatten.map(&:to_s)
-  results = check_tasks.to_h { |name| [quality_gate_label(name), dep_result(name)] }
+  results = dep_results.sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
   print_quality_summary(results)
 end
+```
+
+Most gates are one call to a `run_gate` helper (defined in a `no_commands` block) that runs a command, saves its output, picks the summary line with a Regexp and turns the exit status into `:pass` or the gate's failure status:
+
+```ruby
+desc "Report code smells with Reek (advisory: warns, never fails)"
+def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
 ```
 
 Because a `*_check` task returns `:fail` rather than exiting, every gate runs to the end and the summary shows all failures at once. Run alone (`asgard rubocop_check`), a gate that returns `:fail` still makes asgard exit 1.

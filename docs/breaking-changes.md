@@ -151,14 +151,21 @@ has no hash, so they appear in `schedule list --all` and `watcher list
 --all` under the old name while your project's own entries, once
 reinstalled, appear under the new one.
 
-**Scheduled tasks.** A leftover entry can be stopped by its old slug:
+**Scheduled tasks.** Deal with the leftovers before you run `asgard schedule
+install` under the new version. Until then a leftover entry can be stopped,
+or removed along with its job files, by its old slug:
 
 ```bash
 asgard schedule stop api/nightly      # the old slug was the bare basename
+asgard schedule remove api/nightly    # unload it and delete its files
 ```
 
-Stopping disables the job but leaves its files. To remove them, delete the
-job by hand:
+Once the project's new entries are installed, `api/nightly` matches both
+the old slug `api` and the new `api-9f3a1c2b`, and the command stops with
+`api/nightly is in several projects (api, api-9f3a1c2b); name one as
+project/nightly.` The new entry can still be named by its whole slug,
+`api-9f3a1c2b/nightly`, but the old one no longer can. In that case delete
+the old job by hand:
 
 === "macOS (launchd)"
 
@@ -194,10 +201,11 @@ Then install and start under the new version as described above.
 
 Two smaller changes came with the slug and are worth knowing:
 
-- In a `project/name` argument to `schedule stop`, `start`, `trigger` or
-  `log`, the project may be the whole slug or just the directory name
+- In a `project/name` argument to `schedule stop`, `start`, `trigger`,
+  `log` or `remove`, the project may be the whole slug or just the directory name
   when that is enough to pick one project out: `asgard schedule stop
-  api/nightly` reaches `api-9f3a1c2b/nightly`.
+  api/nightly` reaches `api-9f3a1c2b/nightly` when no leftover `api` entry
+  remains.
 - `schedule list --all` and `watcher list --all` mark a project whose
   directory no longer exists with `[root missing]`. Its jobs were left
   behind by a move or a delete, and the hash will not match the project

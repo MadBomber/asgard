@@ -66,14 +66,14 @@ asgard migrate --env production
 asgard help migrate          # lists --dry-run and --env under Options
 ```
 
-Options come after the task name, class options included: `asgard deploy --env staging` works, `asgard --env staging deploy` does not (asgard sees no task name and complains that `help` got unexpected arguments). The two exceptions are `--version` and `--doctor`, which are asgard's own flags and come first.
+Options come after the task name, class options included: `asgard deploy --env staging` works, while `asgard --env staging deploy` does not run the task; it prints the help for `deploy` and exits 0. The two exceptions are `--version` and `--doctor`, which are asgard's own flags and come first.
 
 ### Class Options and Subcommands
 
 A subcommand class written as `class DBCommands < Tasks` inherits every class option declared on `Tasks`, including asgard's own. Declare new ones in the subcommand class for options only its tasks need.
 
 !!! warning
-    Do not declare `class_option :debug` or `class_option :verbose` (or `:version`, `:doctor`) in a subcommand class. They are already inherited, and a second declaration raises an error about a duplicate option. See [Subcommands](subcommands.md).
+    Do not declare `class_option :debug` or `class_option :verbose` (or `:version`, `:doctor`) in a subcommand class. They are already inherited. A second declaration raises no error; it quietly replaces asgard's own option for that class, so the help loses its description and default and shows `[--debug], [--no-debug], [--skip-debug]` instead. See [Subcommands](subcommands.md).
 
 ### Boolean Class Options and `no_negate`
 
@@ -208,7 +208,7 @@ For a value a task needs at class-load time, read an environment variable with `
 | `:boolean` | `--force` / `--no-force` / `--skip-force` | `true` / `false` |
 | `:numeric` | `--count 3` | `3` |
 | `:array` | `--tags foo bar baz` | `["foo", "bar", "baz"]` |
-| `:hash` | `--vars KEY:val FOO:bar` | `{"KEY"=>"val", "FOO"=>"bar"}` |
+| `:hash` | `--vars KEY:val FOO:bar` | `{"KEY" => "val", "FOO" => "bar"}` |
 
 An option declared without `type:` is a string. A `:numeric` value that is not a number is a usage error.
 

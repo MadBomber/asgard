@@ -155,7 +155,7 @@ end
 
 ### Interpreters You Did Not Register
 
-A name that is not in the registry runs as itself, found on `PATH`, with a `.tmp` file extension. Any interpreter works without declaring it:
+A name that is not in the registry runs as itself, found on `PATH`, with a `.tmp` file extension (zsh, fish, csh and tcsh get their usual extensions instead; see [the registry](#the-shells-registry)). Any interpreter works without declaring it:
 
 ```ruby
 desc "Say hello from Lua"
@@ -165,7 +165,7 @@ def lua_hello = shebang :lua, 'print("Hello from Lua!")'
 If the executable is not found, asgard names the shell and the command it tried, then exits 127:
 
 ```
-asgard: shell :lua not found: lua /var/folders/.../T/asgard_20261024-80545-1x2y3z.tmp
+asgard: shell :lua not found: lua ...
 ```
 
 Register the interpreter with [`shell`](#shell-add-or-replace-an-entry) when it needs a specific extension or options, or when you want the mistake caught while the `.loki` loads rather than the first time the task runs.
@@ -443,7 +443,7 @@ end
 | `sh "script"` | The default shell (`:bash` until changed) | One line or heredoc; echoes; exits asgard on failure |
 | `sh "script", silent: true` | Same | No echo |
 | `sh "script", background: true` | Same, as a managed job | Returns at once; see [Background Jobs](jobs.md) |
-| `sh :name, "script"` | The shell registered as `:name` | Unregistered names run from `PATH` with `.tmp` |
+| `sh :name, "script"` | The shell registered as `:name` | Unregistered names run from `PATH` with `.tmp` (`.sh`, `.fish` or `.csh` for zsh, fish, csh and tcsh) |
 | `shebang ...` | Exactly as `sh` | The same method under its longer name |
 | `shell :name, "path", args:, ext:` | Class level: register a shell | Executable checked at load; returns the name |
 | `default_shell :name` | Class level: select the default | Other forms register and select |

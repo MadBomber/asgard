@@ -130,7 +130,7 @@ asgard compile -o build/ -j 4 --tags debug release --defines VERSION:2 MODE:fast
 ```
 Compiling into build/ with 4 job(s)
 Tags: debug, release
-Defines: {"VERSION"=>"2", "MODE"=>"fast"}
+Defines: {"VERSION" => "2", "MODE" => "fast"}
 ```
 
 ### Reading an Option
@@ -153,7 +153,7 @@ A predicate with an argument compares: `options.format?("md")` is `options[:form
 | `:boolean` | `--verbose` / `--no-verbose` | `true` / `false` |
 | `:numeric` | `--jobs 4` | `4` |
 | `:array` | `--tags foo bar baz` | `["foo", "bar", "baz"]` |
-| `:hash` | `--defines KEY:val FOO:bar` | `{"KEY"=>"val", "FOO"=>"bar"}` |
+| `:hash` | `--defines KEY:val FOO:bar` | `{"KEY" => "val", "FOO" => "bar"}` |
 
 An option with no `type:` is a string. Every boolean also accepts its `--no-` form, and `--skip-name` means the same as `--no-name`.
 

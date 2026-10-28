@@ -200,6 +200,10 @@ class Tasks
 
   desc "Create distribution archive"
   def package = sh "tar czf #{dist_path(app_version)} bin/"
+
+  private
+
+  def app_version = File.read("VERSION").strip
 end
 ```
 

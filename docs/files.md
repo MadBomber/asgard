@@ -37,7 +37,7 @@ asgard jobs list --all
 asgard watcher start          # started watcher for api-9f3a1c2b (pid 123); log: ...
 ```
 
-Moving or renaming the project changes the slug. Its old schedules, watcher state and job records are then listed under the old slug as another project, flagged `[root missing]`; see [Scheduled Tasks](schedule.md#name-collisions) and `asgard schedule prune` in the [Command Reference](commands.md#asgard-schedule).
+Moving or renaming the project changes the slug. Its old schedules, watcher state and job records are then listed under the old slug as another project, flagged `[root missing]`; see [The Project Slug](schedule.md#the-project-slug), [Every Project at Once](schedule.md#every-project-at-once) and `asgard schedule prune` in the [Command Reference](commands.md#asgard-schedule).
 
 ---
 

@@ -25,7 +25,7 @@ import "subdir/import_demo.loki"     # one file from a subdirectory
 Three examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad` and `watcher_examples`.
 
 !!! note
-    `concurrent.loki` and `bad.loki` exist to be run, not read: their point is output that changes from run to run.
+    `concurrent.loki` exists to be run, not read: its point is output that changes from run to run.
 
 ---
 
@@ -51,7 +51,7 @@ asgard                       # the default task, greet
 asgard hello Alice
 asgard compile --jobs 4 --tags debug release --defines VERSION:2 MODE:fast
 asgard deploy --strategy rolling
-asgard deploy                # Error: required option '--strategy' is missing
+asgard deploy                # No value provided for required options '--strategy'
 asgard help report           # the long_desc
 asgard pipeline              # check → compile ∥ spec → pack → pipeline
 asgard status --verbose --debug
@@ -346,19 +346,19 @@ See [Dynamic Dependencies](dependencies.md#dynamic-dependencies).
 
 ## `bad.loki`
 
-What goes wrong when parallel tasks share state through an instance variable, and why `dep_result` exists. Four workers run in one parallel stage and each adds to the same `@hits` counter a thousand times:
+Why an instance variable is the wrong way to pass results out of parallel dependencies, and why `dep_result` exists. Four workers run in one parallel stage; each sets `@hits` to a thousand and also returns it:
 
 ```bash
 asgard bad_race
 ```
 
 ```
-expected @hits == 4000, got 3127
-DATA RACE CONFIRMED: 873 update(s) lost
+@hits after the parallel stage: nil
+dep_result(:racer_1): 1000
+sum of dep_results: 4000
 ```
 
-Parallel dependencies each run on their own instance, so an instance variable is the wrong channel between them and the task that depends on them. Return the value from each task and read it with `dep_result(:worker_1)` instead. See [Passing Results Between Tasks](dependencies.md#passing-results-between-tasks).
-
+Parallel dependencies each run on their own copy of the task object, so the `@hits` each worker sets never reaches `bad_race`. The return values do: read one with `dep_result(:racer_1)` or all of them with `dep_results`. See [Passing Results Between Tasks](dependencies.md#passing-results-between-tasks).
 ---
 
 ## `watcher_examples/`
@@ -460,7 +460,7 @@ All quality gates passed.
 
 ### `gem_tasks.loki`
 
-`console`, `build` (depends on `quality`), `install` (depends on `build`) and `release` (depends on `quality`, asks for confirmation unless `--yes`, refuses a dirty working tree or an existing tag). A plain `sh` sequence does the work; `project_version` comes from the `helper` in `.loki`.
+`console`, `build` (depends on `quality`), `install` (depends on `build`) and `release` (runs only on `main`, then depends on `build`, asks for confirmation unless `--yes`, refuses a dirty working tree or an existing tag). A plain `sh` sequence does the work; `project_version` comes from the `helper` in `.loki`.
 
 ### `git.loki`
 

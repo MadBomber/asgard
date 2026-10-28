@@ -25,9 +25,16 @@ class Tasks
     sh "gem install pkg/#{@@project}-#{project_version}.gem"
   end
 
-  desc "Release gem to RubyGems (builds behind the quality gate first)"
+  # Hidden (no desc): release runs it first, so a release from any branch
+  # but main stops before the quality gate and the build.
+  def main_branch
+    branch = `git rev-parse --abbrev-ref HEAD`.strip
+    abort "Releases are made from main only; this is #{branch}." unless branch == "main"
+  end
+
+  desc "Release gem to RubyGems from main (builds behind the quality gate first)"
   option :yes, aliases: "-y", type: :boolean, default: false, desc: "Skip confirmation prompt"
-  depends_on :build
+  depends_on :main_branch, :build
   def release
     tag      = "v#{project_version}"
     gem_file = "pkg/#{@@project}-#{project_version}.gem"

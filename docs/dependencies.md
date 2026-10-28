@@ -329,7 +329,7 @@ asgard quality
 Both read the dependencies of the task that is running, not of tasks further down the chain. A check that uses backticks or `system` rather than `sh` can report its result as a value instead of ending asgard; see [Exit on Failure](shell.md#exit-on-failure).
 
 !!! warning "Parallel dependencies do not share instance variables"
-    Tasks in one parallel group each run on their own copy of the task object, so an `@ivar` set by a parallel dependency is not visible to the task that depends on it. Sequential dependencies do share it, which is why the difference can surprise you when a `depends_on :a, :b` later becomes `depends_on [:a, :b]`. Pass values with `dep_result` instead; `examples/bad.loki` in the repository shows the lost-update race that shared instance state produces.
+    Tasks in one parallel group each run on their own copy of the task object, so an `@ivar` set by a parallel dependency is not visible to the task that depends on it. Sequential dependencies do share it, which is why the difference can surprise you when a `depends_on :a, :b` later becomes `depends_on [:a, :b]`. Pass values with `dep_result` instead; `examples/bad.loki` in the repository shows an `@ivar` coming back `nil` while `dep_result` carries the value.
 
 ---
 

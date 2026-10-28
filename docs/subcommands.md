@@ -65,7 +65,7 @@ Two consequences of inheritance to know about:
     ```
 
 !!! warning
-    Do not redeclare `class_option :debug` or `class_option :verbose` in a subcommand class. They are inherited; declaring them again is an error.
+    Do not redeclare `class_option :debug` or `class_option :verbose` in a subcommand class. They are inherited. Declaring them again raises no error but replaces asgard's own option in that group, so its help shows `[--debug], [--no-debug], [--skip-debug]` with no description or default.
 
 ---
 
@@ -261,7 +261,7 @@ Commands:
   ...
 ```
 
-The inherited top-level tasks appear in the same listing under the class's namespace, as noted above.
+The listing shows only the group's own tasks. The top-level tasks the group inherits stay out of it, although `asgard db deploy` still runs them, as noted above.
 
 ---
 

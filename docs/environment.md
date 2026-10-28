@@ -42,8 +42,16 @@ end
 
 ```bash
 asgard deploy
-# .loki:3:in 'deploy': key not found: "DEPLOY_TARGET" (KeyError)
 ```
+
+```
+...:in 'fetch': key not found: "DEPLOY_TARGET" (KeyError)
+	from ...
+	from /Users/you/myproject/.loki:3:in 'Tasks#deploy'
+	...
+```
+
+The `KeyError` is not caught, so it arrives as Ruby's usual message and backtrace, and asgard exits 1. The first line names the variable; the first line that points into a `.loki` file is the call. For a one-line message instead, check the variable yourself and `raise Asgard::Error, "set DEPLOY_TARGET first"`; see [Help & Diagnostics](diagnostics.md#runtime-errors).
 
 !!! note
     Environment values are always strings. Convert where it matters: `env(:port, "3000").to_i`, `env(:debug, "false") == "true"`.

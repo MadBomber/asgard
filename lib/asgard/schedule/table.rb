@@ -91,7 +91,7 @@ module Asgard
 
       def state_color(state) = { "active" => :green, "running" => :green, "stopped" => :yellow }.fetch(state.split.first, :red)
 
-      def last_exit_color(last_exit) = last_exit.match?(/\A[1-9]\d*\b/) ? :red : :dim
+      def last_exit_color(last_exit) = last_exit.match?(/\A(?:[1-9]\d*\b|signal )/) ? :red : :dim
     end
   end
 end

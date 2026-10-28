@@ -60,7 +60,58 @@ class TestScheduleDeclaration < Minitest::Test
     spec = SD.normalize(:report, options: "--format md --title 'Week 39' -v", every: 60)
     assert_equal "report", spec[:task]
     assert_equal ["--format", "md", "--title", "Week 39", "-v"], spec[:args]
-    assert_equal "report-format-md-title-week-39-v", spec[:name]
+    # "Week 39" is one word with a capital and a space, so the slug can't spell it: hash suffix
+    assert_match(/\Areport-format-md-title-week-39-v-\h{8}\z/, spec[:name])
+  end
+
+  def test_normalize_rejects_on_with_every
+    error = assert_raises(ArgumentError) { SD.normalize(:sync, every: 60, on: :friday) }
+    assert_match "on: only applies to at:", error.message
+    assert_nil SD.normalize(:sync, every: 60)[:on]
+    assert_equal :daily, SD.normalize(:sync, at: "01:00")[:on]
+  end
+
+  def test_entry_name_keeps_simple_option_names_readable
+    assert_equal "report-format-md-v", SD.entry_name("report", %w[--format md -v])
+    assert_equal "report-period-week", SD.entry_name("report", %w[--period week])
+    assert_equal "sync-dry-run-3", SD.entry_name("sync", %w[--dry-run 3])
+  end
+
+  def test_entry_name_tells_option_spellings_apart
+    spaced = SD.entry_name("report", %w[--period week])
+    equals = SD.entry_name("report", %w[--period=week])
+    assert_match(/\Areport-period-week-\h{8}\z/, equals)
+    refute_equal spaced, equals
+    refute_equal SD.entry_name("report", ["--title", "Week End"]), SD.entry_name("report", %w[--title week end])
+    assert_equal equals, SD.entry_name("report", %w[--period=week]) # stable
+  end
+
+  def test_entry_name_caps_long_options_with_a_hash
+    long  = SD.entry_name("report", Array.new(100) { |i| "--flag#{i}" })
+    other = SD.entry_name("report", Array.new(101) { |i| "--flag#{i}" })
+    assert_operator long.length, :<=, SD::NAME_MAX
+    assert_match(/-\h{8}\z/, long)
+    refute_equal long, other
+  end
+
+  def test_check_lengths_raises_a_schedule_error
+    assert_nil SD.check_lengths!(["/a/#{'x' * 255}"])
+    error = assert_raises(SD::Error) { SD.check_lengths!(["/a/#{'x' * 256}.plist"]) }
+    assert_match "too long", error.message
+  end
+
+  def test_writing_turns_system_errors_into_schedule_errors
+    Dir.mktmpdir do |dir|
+      blocker = File.join(dir, "file")
+      File.write(blocker, "")
+      assert_equal(:ok, SD.writing { :ok })
+      error = assert_raises(SD::Error) { SD.writing { File.write(File.join(blocker, "x"), "") } }
+      assert_match "could not write", error.message
+    end
+  end
+
+  def test_signal_exit
+    assert_equal "signal 15 (Terminated)", SD.signal_exit("15", "Terminated")
   end
 
   def test_normalize_accepts_options_as_array
@@ -296,6 +347,30 @@ class TestScheduleLaunchd < Minitest::Test
     assert_equal({ state: :running, last_exit: "0" }, backend("/h", running).status("demo"))
     signalled = FakeRunner.new("launchctl print gui" => ["state = not running\n\tlast terminating signal = Terminated: 15\n", true])
     assert_equal({ state: :active, last_exit: "signal 15 (Terminated)" }, backend("/h", signalled).status("demo"))
+  end
+
+  def test_uninstall_keeps_the_plist_when_bootout_fails
+    Dir.mktmpdir do |home|
+      runner = FakeRunner.new("launchctl print gui"   => ["\tstate = running\n", true],
+                              "launchctl bootout gui" => ["Boot-out failed: 5: Input/output error", false])
+      b = backend(home, runner)
+      FileUtils.mkdir_p(File.dirname(b.plist_path("demo")))
+      File.write(b.plist_path("demo"), "")
+      error = assert_raises(Asgard::Schedule::Error) { b.uninstall("demo") }
+      assert_match "still loaded", error.message
+      assert_match "Input/output error", error.message
+      assert File.exist?(b.plist_path("demo"))
+      refute(runner.commands.any? { |cmd| cmd.include?("enable") })
+    end
+  end
+
+  def test_install_rejects_names_too_long_for_a_file
+    Dir.mktmpdir do |home|
+      long  = Asgard::Schedule.normalize(:demo, every: 60, as: "x" * 240)
+      error = assert_raises(Asgard::Schedule::Error) { backend(home).install(long, asgard: "/a", direnv: nil) }
+      assert_match "too long", error.message
+      refute Dir.exist?(File.join(home, "Library"))
+    end
   end
 
   def test_install_raises_on_launchctl_failure
@@ -609,6 +684,62 @@ class TestScheduleSystemd < Minitest::Test
       fresh = FakeRunner.new("systemctl --user is-enabled" => ["disabled", false])
       assert_equal :active, backend(home, fresh).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
     end
+  end
+
+  def test_service_unit_lets_background_jobs_outlive_the_run
+    unit = Asgard::Schedule::Systemd.service_unit(description: "d", arguments: ["/a"], working_directory: "/",
+                                                  environment: {}, log_path: "/l")
+    assert_includes unit, "Type=oneshot\nKillMode=process\n"
+  end
+
+  def test_install_leaves_unchanged_units_alone
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new
+      assert_equal :active, backend(home, runner).install(spec(every: 60), asgard: "/a", direnv: nil)
+      assert_equal ["systemctl --user is-enabled --quiet asgard.my-app.demo.timer",
+                    "systemctl --user enable asgard.my-app.demo.timer",
+                    "systemctl --user start asgard.my-app.demo.timer"], runner.commands
+    end
+  end
+
+  def test_install_reloads_and_restarts_changed_units
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new
+      backend(home, runner).install(spec(every: 120), asgard: "/a", direnv: nil)
+      assert_includes runner.commands, "systemctl --user daemon-reload"
+      assert_includes runner.commands, "systemctl --user restart asgard.my-app.demo.timer"
+    end
+  end
+
+  def test_install_rejects_names_too_long_for_a_file
+    Dir.mktmpdir do |home|
+      long  = Asgard::Schedule.normalize(:demo, every: 60, as: "x" * 240)
+      error = assert_raises(Asgard::Schedule::Error) { backend(home).install(long, asgard: "/a", direnv: nil) }
+      assert_match "too long", error.message
+    end
+  end
+
+  def test_uninstall_keeps_units_when_disable_fails
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new("systemctl --user disable" => ["Failed to connect to bus", false])
+      b = backend(home, runner)
+      error = assert_raises(Asgard::Schedule::Error) { b.uninstall("demo") }
+      assert_match "Failed to connect to bus", error.message
+      assert_equal ["demo"], b.installed_names
+    end
+  end
+
+  def test_status_reports_running_and_signal_exits
+    running = FakeRunner.new("systemctl --user show" => ["ActiveState=activating\nSubState=start\nExecMainCode=0\n" \
+                                                         "ExecMainStatus=0\nExecMainExitTimestampMonotonic=0\n", true])
+    assert_equal({ state: :running, last_exit: nil }, backend("/h", running).status("demo"))
+
+    killed = FakeRunner.new("systemctl --user show" => ["ActiveState=inactive\nSubState=dead\nExecMainCode=2\n" \
+                                                        "ExecMainStatus=15\nExecMainExitTimestampMonotonic=99\n", true])
+    assert_equal({ state: :active, last_exit: "signal 15 (SIGTERM)" }, backend("/h", killed).status("demo"))
   end
 
   def test_notes_mention_linger_only_when_off
@@ -1004,6 +1135,8 @@ class TestScheduleTable < Minitest::Test
   def test_table_colors_only_on_request
     rows = [{ name: "a", command: "c", schedule: "s", state: "active", last_exit: "1" }]
     assert_includes SD::Table.new(rows, color: true, width: 100).render, "\e[31m1"
+    killed = [{ **rows.first, last_exit: "signal 15 (Terminated)" }]
+    assert_includes SD::Table.new(killed, color: true, width: 100).render, "\e[31msignal"
   end
 
   def test_terminal_width_for_non_tty_uses_columns_then_default

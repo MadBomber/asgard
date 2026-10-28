@@ -157,6 +157,7 @@ See runbook at wiki/deploy
 
 Maintainer: you@example.com
 
+
 Documentation ... https://madbomber.github.io/asgard
 Github Repo ..... https://github.com/MadBomber/asgard
 ```
@@ -217,8 +218,8 @@ Tasks by file:
 
   quality.loki
     test_check     quality.loki:11
-    rubocop_check  quality.loki:39
     quality        quality.loki:30
+    rubocop_check  quality.loki:39
 
   gem_tasks.loki
     build    gem_tasks.loki:16
@@ -238,7 +239,7 @@ No problems found (1 warning(s)).
 | `[FAIL] load failed: NoMethodError: ...` | A task file raised while loading. The normal run would stop with the same message |
 | `[FAIL] Tasks dependency graph: ...` | A cycle, an undefined dependency, or another graph problem, in the named class |
 
-**Tasks by file** lists every task under the file that defines it, as `name file:line`, a form most editors can jump to. A file that only imports others says `(no tasks defined — imports only)`. Two notes can follow a task:
+**Tasks by file** lists every loaded file and, under each, the tasks it defines in line order, as `name file:line`, a form most editors can jump to. A file that defines no tasks says `(no tasks defined — imports only)`. When the project has [subcommand](subcommands.md) classes, the listing repeats once per class under headings such as `Tasks by file (DocCommands):` and `Tasks by file (Tasks):`. Each section still lists every loaded file, so a file whose tasks all belong to another class shows the imports-only note in this one. Two notes can follow a task:
 
 - `hidden (no desc; not shown by help)`: a public method without a `desc`. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it `private`, put it in `no_commands`, or use `helper`. See [Defining Tasks](tasks.md#hidden-tasks).
 - `OVERRIDDEN by file:line — never callable` and `active — redefines file:line`: the same task name defined twice. Only the last definition exists; the earlier one is dead. Each overridden task counts as one problem in the summary.
@@ -259,23 +260,63 @@ asgard doctor -- /Users/you/asgard
   [INFO] import "doc_tasks.loki" -> /Users/you/asgard/doc_tasks.loki
   [INFO] import "xyzzy.loki" -> /Users/you/asgard/xyzzy.loki
 
-Tasks by file:
+Tasks by file (DocCommands):
+
+  .loki
+    (no tasks defined — imports only)
+
+  quality.loki
+    (no tasks defined — imports only)
+
+  gem_tasks.loki
+    (no tasks defined — imports only)
+
+  git.loki
+    (no tasks defined — imports only)
+
+  doc_tasks.loki
+    install  doc_tasks.loki:43
+    build    doc_tasks.loki:52
+    serve    doc_tasks.loki:63
+    open     doc_tasks.loki:71
+    help     doc_tasks.loki:138
+
+  xyzzy.loki
+    (no tasks defined — imports only)
+
+Tasks by file (Tasks):
 
   .loki
     xyzzy  .loki:26   active — redefines xyzzy.loki:6
 
   quality.loki
-    test_check     quality.loki:11
-    test_verbose   quality.loki:21
-    quality        quality.loki:30
-    rubocop_check  quality.loki:39
+    test_check           quality.loki:11
+    test_verbose         quality.loki:14
+    parallel_test        quality.loki:21
+    quality              quality.loki:37
     ...
+
+  gem_tasks.loki
+    console  gem_tasks.loki:6
+    build    gem_tasks.loki:16
+    install  gem_tasks.loki:24
+    release  gem_tasks.loki:31
+
+  git.loki
+    push   git.loki:6
+    pull   git.loki:9
+    fetch  git.loki:12
+
+  doc_tasks.loki
+    doc  doc_tasks.loki:138
 
   xyzzy.loki
     xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:26 — never callable
 ============================================================
 1 problem(s), 0 warning(s).
 ```
+
+`doc_tasks.loki` defines the `DocCommands` group behind `asgard doc`, so the report has one section for that class and one for `Tasks`. The `xyzzy` override shows up in the `Tasks` section, and a `.loki` further up your tree would add a shadowed-marker warning to the count.
 
 ### When the Files Do Not Load
 

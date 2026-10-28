@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "digest"
 require "open3"
 require "shellwords"
 require "zlib"
@@ -29,6 +30,7 @@ module Asgard
   #   #installed_columns(name)            # => { command:, schedule: } read back from the job files, or nil
   #   #installed_directory(name)          # => the project root the job runs in, or nil
   #   #status(name)                       # => { state: :active|:running|:stopped|:not_loaded, last_exit: String|nil }
+  #                                       #    last_exit: an exit code ("1") or a signal ("signal 15 (Terminated)")
   #   #log_path(name)                     # => path the job's output is appended to
   #   #notes                              # => [String] platform hints to show after install
   module Schedule
@@ -37,6 +39,15 @@ module Asgard
 
     # Weekday numbers follow launchd and cron: 0 (Sunday) through 6 (Saturday).
     DAYS = %i[sunday monday tuesday wednesday thursday friday saturday].freeze
+
+    # Longest derived entry name, hash suffix included, so a job's file
+    # names stay well inside the 255-byte limit.
+    NAME_MAX = 64
+
+    # Options a slug spells out: lowercase words and flags. Any other option
+    # (--period=week, 'Week End') adds a hash suffix, so spellings that slug
+    # alike still name different entries.
+    PLAIN_ARG = /\A-{0,2}[a-z0-9]+(?:-[a-z0-9]+)*\z/
 
     DAY_GROUPS = {
       weekdays: %i[monday tuesday wednesday thursday friday],
@@ -74,18 +85,22 @@ module Asgard
     # task's command-line options as a String, split shell-style with quotes
     # respected ("--period week --title 'Week End'"), or an Array of words.
     # Exactly one of at: ("HH:MM" or an Array of them, with on:) or every:
-    # (seconds or a Duration) is required. as: names the entry.
-    def normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil)
+    # (seconds or a Duration) is required; on: goes only with at:. as: names
+    # the entry.
+    def normalize(task, options: nil, at: nil, on: nil, every: nil, env: {}, as: nil)
       task = task_name(task)
       raise ArgumentError, "schedule :#{task} needs either at: or every:, not both" unless at.nil? ^ every.nil?
 
       if every
+        raise ArgumentError, "schedule :#{task} on: only applies to at: times; every: runs on every day" if on
+
         every = seconds(every)
         unless every&.positive?
           raise ArgumentError,
                 "schedule :#{task} every: must be a positive number of seconds or a Duration (3.minutes)"
         end
       else
+        on ||= :daily
         calendar(at:, on:) # raises on a bad time or day
       end
 
@@ -144,10 +159,22 @@ module Asgard
     # The task alone, or a slug of the whole command when it has arguments,
     # so one task can be scheduled more than once with different flags.
     def entry_name(task, args, as = nil)
-      name = (as || (args.empty? ? task : slug([task, *args].join(" ")))).to_s
+      name = (as || (args.empty? ? task : command_slug(task, args))).to_s
       raise ArgumentError, "schedule as: #{name.inspect} may only contain letters, digits, _ . -" unless name.match?(/\A[\w.-]+\z/)
 
       name
+    end
+
+    # "report-period-week". A short hash of the exact words is appended when
+    # the slug would lose something (an option that isn't PLAIN_ARG, or more
+    # than NAME_MAX characters), so different commands never share a name.
+    def command_slug(task, args)
+      words = [task, *args].map(&:to_s)
+      name  = slug(words.join(" "))
+      return name if name.length <= NAME_MAX && words.drop(1).all? { |arg| arg.match?(PLAIN_ARG) }
+
+      digest = Digest::SHA256.hexdigest(words.join("\0"))[0, 8]
+      "#{name[0, NAME_MAX - 9].delete_suffix('-')}-#{digest}"
     end
 
     def slug(name) = name.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")
@@ -279,6 +306,23 @@ module Asgard
         hour, minute = parse_time(time)
         { hour:, minute:, days: }
       end
+    end
+
+    # A job's last exit when a signal ended it: "signal 15 (Terminated)".
+    def signal_exit(number, name) = "signal #{number} (#{name})"
+
+    # Raises when a job file's name passes the 255-byte filename limit.
+    def check_lengths!(paths)
+      long = paths.map { |path| File.basename(path) }.find { |base| base.bytesize > 255 }
+      raise Error, "schedule: job file name is too long (#{long.bytesize} bytes, limit 255): #{long}; use a shorter as: name" if long
+    end
+
+    # Runs the block that writes job files; a failure there (the system
+    # message names the path) is a Schedule::Error, not a backtrace.
+    def writing
+      yield
+    rescue SystemCallError => e
+      raise Error, "schedule: could not write job files: #{e.message}"
     end
 
     # Writes a job file only its owner can read: it holds the env: values.

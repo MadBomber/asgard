@@ -111,10 +111,10 @@ A relative path is resolved from the directory of the file that contains the `im
 
 ### Return Value
 
-`import` returns `true` when it loaded at least one new file and `false` when every match was already loaded or the glob matched nothing. You rarely need this, but it makes a conditional read naturally:
+`import` returns `true` when it loaded at least one new file and `false` when every match was already loaded or the glob matched nothing. You rarely need this, but it makes a conditional read naturally. Write the name as a glob, so a missing file matches nothing instead of raising `LoadError`:
 
 ```ruby
-import("local_overrides.loki") || puts("no local overrides")
+import("local_overrides*.loki") || puts("no local overrides")
 ```
 
 ---

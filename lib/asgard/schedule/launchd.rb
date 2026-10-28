@@ -143,11 +143,15 @@ module Asgard
       def install(spec, asgard:, direnv:)
         name    = spec[:name]
         plist   = plist_path(name)
+        log     = log_path(name)
         content = files(spec, asgard:, direnv:).fetch(plist)
+        Schedule.check_lengths!([plist, "#{plist}.new", log])
         return :active if self.class.unchanged?(plist, content) && loaded?(name)
 
-        FileUtils.mkdir_p [File.dirname(plist), File.dirname(log_path(name))]
-        write_linted(plist, content)
+        Schedule.writing do
+          FileUtils.mkdir_p [File.dirname(plist), File.dirname(log)]
+          write_linted(plist, content)
+        end
         unload(name)
         return :stopped if stopped?(name)
 
@@ -213,7 +217,7 @@ module Asgard
         return code if code
 
         signal = out.match(/last terminating signal = ([^:\n]+): (\d+)/)
-        "signal #{signal[2]} (#{signal[1]})" if signal
+        Schedule.signal_exit(signal[2], signal[1]) if signal
       end
 
       def notes = []
@@ -241,16 +245,27 @@ module Asgard
       end
 
       # bootout returns before the job is fully gone; bootstrapping the same
-      # label too soon fails with "Input/output error", so wait for it.
+      # label too soon fails with "Input/output error", so wait for it. A job
+      # still loaded afterwards raises, so callers never delete the plist of
+      # a job launchd keeps running.
       def unload(name)
         return unless loaded?(name)
 
-        run "launchctl", "bootout", target(name)
+        out, ok = run("launchctl", "bootout", target(name))
+        return if ok && unloaded?(name)
+        return unless loaded?(name)
+
+        raise Error, "launchctl bootout #{target(name)} left #{label(name)} still loaded: #{out.strip}"
+      end
+
+      # Polls for up to two seconds; true once the job is gone.
+      def unloaded?(name)
         20.times do
-          break unless loaded?(name)
+          return true unless loaded?(name)
 
           sleep 0.1
         end
+        false
       end
 
       def run(*argv) = @runner.call(*argv)

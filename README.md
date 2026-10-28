@@ -16,29 +16,29 @@
 <td width="60%" valign="top">
 <strong>Key Features</strong><br>
 
-- <strong>Thor-Powered CLI</strong> — every Thor DSL feature available inside <code>.loki</code> task files<br>
-- <strong>Task Dependencies</strong> — sequential, parallel, and mixed dependency graphs via <code>depends_on</code><br>
-- <strong>Concurrent Execution</strong> — parallel task groups run in native Ruby threads<br>
-- <strong>Subcommands</strong> — group related tasks under a named namespace<br>
-- <strong>Variables</strong> — shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands<br>
-- <strong>`helper` DSL</strong> — define a method once, available in both class-level DSL calls (<code>header</code>) and inside task instance methods<br>
-- <strong>Shell Helpers</strong> — <code>sh</code> (alias <code>shebang</code>) runs a command or heredoc under the default shell, or under any registered interpreter when you name one<br>
-- <strong>Dotenv Support</strong> — load <code>.env</code> files into the environment with <code>dotenv</code><br>
-- <strong>Auto-Discovery</strong> — <code>.loki</code> root marker searched from CWD upward through parent directories<br>
-- <strong>Multi-File Tasks</strong> — split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
-- <strong>Scheduled Tasks</strong> — run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
-- <strong>Watched Files</strong> — run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code><br>
-- <strong>Background Jobs</strong> — <code>sh "mkdocs serve", background: true</code> starts a job that outlives asgard; <code>asgard jobs</code> lists, stops, restarts and cleans them<br>
-- <strong>Built-in Flags</strong> — <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
+- <strong>Thor-Powered CLI</strong>: every Thor DSL feature available inside <code>.loki</code> task files<br>
+- <strong>Task Dependencies</strong>: sequential, parallel, and mixed dependency graphs via <code>depends_on</code><br>
+- <strong>Concurrent Execution</strong>: parallel task groups run in native Ruby threads<br>
+- <strong>Subcommands</strong>: group related tasks under a named namespace<br>
+- <strong>Variables</strong>: shared configuration via Ruby class variables (<code>@@name</code>), visible across all tasks and subcommands<br>
+- <strong>`helper` DSL</strong>: define a method once, available in both class-level DSL calls (<code>header</code>) and inside task instance methods<br>
+- <strong>Shell Helpers</strong>: <code>sh</code> (alias <code>shebang</code>) runs a command or heredoc under the default shell, or under any registered interpreter when you name one<br>
+- <strong>Dotenv Support</strong>: load <code>.env</code> files into the environment with <code>dotenv</code><br>
+- <strong>Auto-Discovery</strong>: <code>.loki</code> root marker searched from CWD upward through parent directories<br>
+- <strong>Multi-File Tasks</strong>: split tasks across <code>*.loki</code> files, loaded via <code>import</code> from your <code>.loki</code><br>
+- <strong>Scheduled Tasks</strong>: run any task periodically under launchd (macOS) or systemd timers (Linux) with <code>schedule</code> and <code>asgard schedule install</code><br>
+- <strong>Watched Files</strong>: run any task when files change with <code>watch</code> and <code>asgard watcher start</code>; the task reads what changed through <code>changes</code><br>
+- <strong>Background Jobs</strong>: <code>sh "mkdocs serve", background: true</code> starts a job that outlives asgard; <code>asgard jobs</code> lists, stops, restarts and cleans them<br>
+- <strong>Built-in Flags</strong>: <code>--debug</code>, <code>--verbose</code>, <code>--version</code>, and <code>--doctor</code> built-in class options; header/footer DSL for static help text<br>
 </td>
 </tr>
 </table>
 
-<p>Asgard is a <a href="https://github.com/rails/thor">Thor</a>-based task runner for Ruby projects. Define tasks in <code>.loki</code> files, declare dependencies between them, and let Asgard handle ordering and concurrent execution. Anything Thor can do — subcommands, typed options, argument validation — is available inside a <code>.loki</code> file.</p>
+<p>Asgard is a <a href="https://github.com/rails/thor">Thor</a>-based task runner for Ruby projects. Define tasks in <code>.loki</code> files, declare dependencies between them, and let Asgard handle ordering and concurrent execution. Anything Thor can do (subcommands, typed options, argument validation) is available inside a <code>.loki</code> file.</p>
 
 ## Installation
 
-Asgard requires Ruby 4.0 or later. Scheduled tasks and the file watcher need macOS or Linux, and installing compiles one native extension, so a C++17 compiler must be available (Xcode's command-line tools or a distribution's `build-essential` package).
+Asgard requires Ruby 4.0 or later. Scheduled tasks and the file watcher need macOS or Linux, background jobs need a POSIX system (`fork`, `setsid` and `/bin/sh`), and installing compiles one native extension, so a C++17 compiler must be available (Xcode's command-line tools or a distribution's `build-essential` package).
 
 ```bash
 gem install asgard
@@ -54,7 +54,7 @@ bundle add asgard
 
 ## Tasks
 
-Every `.loki` file defines tasks as methods inside `class Tasks`. The `Tasks` class is pre-defined by the gem — just reopen it and add methods.
+Every `.loki` file defines tasks as methods inside `class Tasks`. The `Tasks` class is pre-defined by the gem; just reopen it and add methods.
 
 ### A task with no parameters
 
@@ -87,7 +87,7 @@ asgard hello Alice
 
 ### A task with a formal argument declaration
 
-Use `argument` for richer metadata — type checking, enums, and help text. **Warning: `argument` is a class-level declaration that applies to every task in the class**, not just the one below it. It is best suited for single-command CLIs or when every task genuinely shares the same positional input. In multi-task files, prefer method signature parameters instead.
+Use `argument` for richer metadata: type checking, enums, and help text. **Warning: `argument` is a class-level declaration that applies to every task in the class**, not just the one below it. It is best suited for single-command CLIs or when every task genuinely shares the same positional input. In multi-task files, prefer method signature parameters instead.
 
 ```ruby
 class Tasks
@@ -148,7 +148,7 @@ end
 
 `depends_on` declares what must run before a task. Each dependency runs at most once per `asgard` invocation regardless of how many tasks declare it. Circular dependencies are caught at startup.
 
-`desc` and `depends_on` are independent — either can come first, both must appear before `def`.
+`desc` and `depends_on` are independent: either can come first, but both must appear before `def`.
 
 ### Sequential dependencies
 
@@ -198,7 +198,7 @@ asgard test   # lint ∥ typecheck → test
 
 ### Mixed sequential and parallel
 
-Mix bare symbols (sequential) and arrays (parallel) in a single `depends_on` call. Execution proceeds stage by stage — each stage must complete before the next begins:
+Mix bare symbols (sequential) and arrays (parallel) in a single `depends_on` call. Execution proceeds stage by stage; each stage must complete before the next begins:
 
 ```ruby
 class Tasks
@@ -229,7 +229,7 @@ asgard ci executes:
   ci
 ```
 
-`depends_on` also accepts a `Proc`/lambda (or, equivalently, a block) instead of a fixed list, resolved once every `.loki` file has finished loading rather than immediately — useful when the list can't be known upfront, e.g. "every task whose name ends in `_check`," discovered across several files:
+`depends_on` also accepts a `Proc`/lambda (or, equivalently, a block) instead of a fixed list, resolved once every `.loki` file has finished loading rather than immediately. This is useful when the list can't be known upfront, e.g. "every task whose name ends in `_check`," discovered across several files:
 
 ```ruby
 depends_on -> { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
@@ -238,7 +238,7 @@ def quality = puts "running every *_check task..."
 depends_on { [all_commands.keys.grep(/_check\z/).map(&:to_sym)] }
 def quality2 = puts "same, as a block..."
 
-# do...end for a block spanning multiple statements — braces are for
+# do...end for a block spanning multiple statements; braces are for
 # single-line blocks like the two above. The last expression is still what
 # gets returned and validated.
 depends_on do
@@ -250,7 +250,7 @@ end
 def quality3 = puts "same, minus the slow checks, as a multi-line block..."
 ```
 
-See [Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies-proc-block-form) for the full explanation.
+See [Dependencies](https://madbomber.github.io/asgard/dependencies/#dynamic-dependencies) for the full explanation.
 
 ---
 
@@ -272,13 +272,13 @@ class Tasks
 end
 ```
 
-Class variables are visible in all task instance methods and in subcommand subclasses — unlike class instance variables (`@name`), which are not accessible inside instance methods.
+Class variables are visible in all task instance methods and in subcommand subclasses, unlike class instance variables (`@name`), which are not accessible inside instance methods.
 
 ---
 
 ## Helper methods
 
-Private methods are callable from any task in the same class but are never registered as commands — they won't appear in `--help` output and can't be invoked from the CLI.
+Private methods are callable from any task in the same class but are never registered as commands: they won't appear in `--help` output and can't be invoked from the CLI.
 
 ```ruby
 class Tasks
@@ -303,6 +303,8 @@ class Tasks
   def package(ver)
     sh "tar czf pkg/myapp-#{ver}.tar.gz bin/"
   end
+
+  def version = File.read("VERSION").strip
 end
 ```
 
@@ -334,7 +336,7 @@ def self.version = File.read(...).match(...)[1].freeze
 no_commands { private def version = self.class.version }
 ```
 
-`helper` accepts positional arguments, keyword arguments, and blocks — any signature valid in a Ruby method definition:
+`helper` accepts positional arguments, keyword arguments, and blocks: any signature valid in a Ruby method definition:
 
 ```ruby
 helper(:tag) { |name, ver, prefix: "v"| "#{prefix}#{name}-#{ver}" }
@@ -371,7 +373,7 @@ Add static text above and below the command list in `asgard help` output:
 
 ```ruby
 class Tasks
-  header "my-project — build & release tasks"
+  header "my-project: build & release tasks"
   footer "See https://example.com/docs for details"
 end
 ```
@@ -395,7 +397,10 @@ end
 ```
 
 ```
+asgard v0.6.0 The Mighty Thor and Loki working for you
+
 my-project
+
   deploy targets: staging, production
 
 Commands:
@@ -405,7 +410,12 @@ Options:
   ...
 
 See runbook at wiki/deploy
+
 Maintainer: you@example.com
+
+
+Documentation ... https://madbomber.github.io/asgard
+Github Repo ..... https://github.com/MadBomber/asgard
 ```
 
 Header and footer text is only shown for the general `asgard help` page, not for `asgard help <command>`.
@@ -468,7 +478,7 @@ class Tasks
 end
 ```
 
-Registered shells: `:bash`, `:sh`, `:python3`, `:python`, `:node`, `:ruby`, `:perl`. Any other symbol runs as itself from `PATH` with a `.tmp` extension. Register your own, with a pinned path or options in front of the script, with `shell`:
+Registered shells: `:bash`, `:sh`, `:python3`, `:python`, `:node`, `:ruby`, `:perl`. Any other symbol runs as itself from `PATH` with a `.tmp` extension, except zsh, fish, csh and tcsh, which get `.sh`, `.fish` and `.csh`. Register your own, with a pinned path or options in front of the script, with `shell`:
 
 ```ruby
 class Tasks
@@ -495,7 +505,7 @@ PY
 
 ## Environment variables
 
-`dotenv` loads a `.env` file into the environment before tasks run. Use the `env` Kernel method to read environment variables inside task bodies — it accepts a symbol or string and upcases the key automatically:
+`dotenv` loads a `.env` file into the environment before tasks run. Use the `env` Kernel method to read environment variables inside task bodies. It accepts a symbol or string and upcases the key automatically:
 
 ```ruby
 class Tasks
@@ -518,13 +528,13 @@ end
 |------|-----------|
 | `env(:port, "3000")` | Returns `"3000"` when `PORT` is unset |
 | `env(:api_key)` | Raises `KeyError` when `API_KEY` is missing |
-| `env("DATABASE_URL")` | String name works too — always upcased |
+| `env("DATABASE_URL")` | String name works too; always upcased |
 
 ---
 
 ## Abbreviated command matching
 
-Every task is a Thor command, so you don't have to type the full name — Thor resolves any unambiguous prefix automatically, with no extra code:
+Every task is a Thor command, so you don't have to type the full name: Thor resolves any unambiguous prefix automatically, with no extra code:
 
 ```ruby
 class Tasks
@@ -540,12 +550,12 @@ end
 ```
 
 ```bash
-asgard b        # same as: asgard build   — only task starting with "b"
+asgard b        # same as: asgard build   (only task starting with "b")
 asgard depl     # Ambiguous command depl matches [deploy, deploy_staging]
-asgard deploy   # runs deploy — an exact match always wins, even over a shorter ambiguous prefix
+asgard deploy   # runs deploy; an exact match always wins, even over a shorter ambiguous prefix
 ```
 
-This is Thor's own dispatch behavior, not an Asgard feature — it applies to every task in every `.loki` file automatically. When a prefix matches more than one task, Thor lists the candidates instead of guessing; type enough of the name to disambiguate, or use `map` (below) to pin a short name that stays stable even if a later-added task would otherwise make it ambiguous.
+This is Thor's own dispatch behavior, not an Asgard feature; it applies to every task in every `.loki` file automatically. When a prefix matches more than one task, Thor lists the candidates instead of guessing; type enough of the name to disambiguate, or use `map` (below) to pin a short name that stays stable even if a later-added task would otherwise make it ambiguous.
 
 ---
 
@@ -649,10 +659,10 @@ asgard schedule stop NAME      # stop one entry (persists across reboots and ins
 asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule log NAME [-f]  # print (or follow) the entry's log
-asgard schedule remove         # remove all of this project's entries
+asgard schedule remove [NAME]  # remove one entry, or all of this project's
 ```
 
-`stop`, `start`, `trigger` and `log` also take an entry of another project
+`stop`, `start`, `trigger`, `log` and `remove` also take an entry of another project
 (`list --all` shows them); write `project/name` when two projects share a name.
 
 Jobs run `asgard <task> [options]` from the directory holding `.loki`, with
@@ -742,7 +752,7 @@ for naming, the trampoline, and file locations.
 | `:boolean` | `--force` / `--no-force` | `true` / `false` |
 | `:numeric` | `--count 3` | `3` |
 | `:array` | `--tags foo bar baz` | `["foo", "bar", "baz"]` |
-| `:hash` | `--vars KEY:val FOO:bar` | `{"KEY"=>"val", "FOO"=>"bar"}` |
+| `:hash` | `--vars KEY:val FOO:bar` | `{"KEY" => "val", "FOO" => "bar"}` |
 
 Common `method_option` keys: `aliases`, `type`, `default`, `required`, `desc`, `enum`, `banner`.
 
@@ -761,7 +771,7 @@ myproject/
 
 ### Multiple files
 
-Split tasks across files — each reopens `class Tasks`:
+Split tasks across files; each reopens `class Tasks`:
 
 ```
 myproject/
@@ -804,7 +814,7 @@ class Tasks
 end
 ```
 
-In a single-file project, `.loki` can be completely empty — its presence alone marks the project root. In a multi-file project, add at least an `import` call.
+In a single-file project, `.loki` can be completely empty: its presence alone marks the project root. In a multi-file project, add at least an `import` call.
 
 ### Explicit loading
 
@@ -819,17 +829,6 @@ class Tasks
   # additional tasks
 end
 ```
-
----
-
-## `Asgard` module API
-
-| Method | Description |
-|---|---|
-| `Asgard.run!(argv)` | Entry point — finds `.loki`, loads task files, starts CLI |
-| `Asgard.find_task_file` | Returns a `Pathname` to `.loki` searching from CWD upward, or `nil` |
-
-`run!` handles its own errors — a missing `.loki`, a circular dependency, or a `depends_on` that names a task that doesn't exist all produce a clean one-line message and exit 1.
 
 ---
 

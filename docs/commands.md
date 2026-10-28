@@ -88,7 +88,7 @@ Runs and manages the file watcher for the entries declared with `watch :task, pa
 | `asgard watcher list` | `--all`, `-a` | A table of this project's watches (NAME, TASK, WATCHES, DAEMON, LAST RUN); `--all` covers every project |
 | `asgard watcher preview` | | Prints the exact command and environment each entry would run |
 | `asgard watcher log` | `--follow`, `-f` | Prints the watcher's log; `-f` keeps following it |
-| `asgard watcher run` | | Watches in the foreground until Ctrl-C or TERM; this is what `start` runs detached |
+| `asgard watcher run` | | Watches in the foreground until Ctrl-C or TERM; this is what `start` runs detached. `asgard tree` lists it as `daemon`, and `asgard watcher daemon` is the same command |
 
 DAEMON is `running` or `stopped`. LAST RUN is `never`, `running (pid N)`, `did not finish (pid N)`, or the exit status with duration and time, such as `0 (0.4s, 2026-10-18 23:40:02)`.
 

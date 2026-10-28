@@ -103,6 +103,8 @@ end
 
 An interval that is zero, negative or not a number is rejected: `schedule :sync every: must be a positive number of seconds or a Duration (3.minutes)`.
 
+An interval entry runs on every day, so `on:` goes with `at:` only. Giving `every:` an `on:` is an error rather than a day filter that is quietly ignored: `schedule :sync on: only applies to at: times; every: runs on every day`.
+
 ### Options for the Task
 
 The scheduler runs `asgard <task>` with nothing else unless you say otherwise. `options:` carries the task's own arguments and flags. A String is split the way a shell splits a command line, so quotes group words:
@@ -135,9 +137,14 @@ Every declaration becomes an **entry** with a name, and every `asgard schedule` 
 | `schedule :daily_summary, at: "17:30"` | `daily_summary` |
 | `schedule :report, options: "--format md -v", at: "08:00"` | `report-format-md-v` |
 | `schedule :report, options: "--period week", at: "16:00"` | `report-period-week` |
+| `schedule :report, options: "--period=week", at: "16:00"` | `report-period-week-` plus 8 hex digits |
 | `schedule :notify, options: "--msg 'backup done'", every: 86_400, as: "notify_daily"` | `notify_daily` |
 
-The name defaults to the task name. When the entry has `options:`, the default is a slug of the task plus its options, so one task can be scheduled several times with different flags and each run has its own entry, state and log. `as:` replaces the default with a name you choose; it may contain letters, digits, `_`, `.` and `-`.
+The name defaults to the task name. When the entry has `options:`, the default is a slug of the task plus its options, so one task can be scheduled several times with different flags and each run has its own entry, state and log.
+
+The slug keeps only lowercase letters, digits and dashes, so on its own it could give two different commands the same name. When an option holds anything else (`--period=week`, a capital letter, a quoted `'Week End'`), or the slug would be longer than 64 characters, the name is shortened if needed and ends in a dash and 8 hex digits taken from the exact options. The same options always give the same digits. Run `asgard schedule preview` or `list` to see the name, or choose one with `as:`.
+
+`as:` replaces the default with a name you choose; it may contain letters, digits, `_`, `.` and `-`.
 
 Two different declarations that end up with the same name are an error when the `.loki` loads:
 
@@ -149,7 +156,7 @@ asgard: /proj/.loki:12: schedule: "report" is already declared; give one a disti
 
 ### Task Names with Dashes and Subcommands
 
-A task is always one word. A dash in it is taken as the underscore of the method name, so `schedule :daily-summary` schedules the `daily_summary` task. A subcommand's task cannot be named with a colon; schedule the subcommand itself and put the rest in `options:`:
+A task is always one word. A dash in it is taken as the underscore of the method name, so `schedule :"daily-summary"` schedules the `daily_summary` task. A subcommand's task cannot be named with a colon; schedule the subcommand itself and put the rest in `options:`:
 
 ```ruby
 schedule :db, options: "migrate --dry-run", at: "02:00"   # runs: asgard db migrate --dry-run
@@ -318,7 +325,7 @@ Logs: /Users/you/Library/Logs/asgard  (asgard schedule log NAME)
 | `stopped` | Stopped with `asgard schedule stop`; it will not fire until started |
 | `not loaded` | The job files exist but the scheduler does not have the entry loaded (a reboot that did not reload it, a hand edit); `asgard schedule install` fixes it |
 
-LAST EXIT is the exit status of the last run (`0` is success), `never run` for an active entry that has not fired yet, or `-` for an entry that is stopped or not loaded. On macOS a run ended by a signal shows as `signal 15 (Terminated)`. A non-zero status is shown in red on a terminal; set `NO_COLOR` to turn colour off. Long COMMAND and SCHEDULE cells wrap to the terminal width, and a run of hourly times collapses to `10:00-17:00 hourly weekdays`.
+LAST EXIT is the exit status of the last run (`0` is success), `never run` for an active entry that has not fired yet, or `-` for an entry that is stopped or not loaded. A run ended by a signal shows the signal: `signal 15 (Terminated)` on macOS, `signal 15 (SIGTERM)` on Linux. A non-zero status or a signal is shown in red on a terminal; set `NO_COLOR` to turn colour off. Long COMMAND and SCHEDULE cells wrap to the terminal width, and a run of hourly times collapses to `10:00-17:00 hourly weekdays`.
 
 An entry that is installed but no longer in `.loki` shows `no longer declared` in the SCHEDULE column until the next `install` removes it.
 
@@ -381,6 +388,8 @@ asgard schedule remove
 ```
 
 The log files are left in place.
+
+If the scheduler refuses to unload an entry, `remove` stops with an error and leaves its job files where they are, so the entry still shows in `list` and you can try again. `prune`, and `install` removing an undeclared entry, behave the same way.
 
 ### prune
 
@@ -446,7 +455,7 @@ Each entry runs `asgard <task> [options]` from the directory that holds `.loki`,
 - If the project has a `.envrc`, the job is wrapped in `direnv exec`, so the variables in `.envrc` (API keys, credentials) are loaded at run time and never copied into the job files. If `direnv` is not on your `PATH`, `install` warns: `schedule: .envrc found but direnv is not on PATH; its variables will not be loaded`.
 - Whatever the task's own `.loki` loads with `dotenv`, since that runs inside the task's process as usual.
 
-The job's stdout and stderr are appended to its log file.
+The job's stdout and stderr are appended to its log file. Background jobs the task starts keep running after the task itself finishes, on both platforms.
 
 A calendar entry (`at:`) that was due while the machine was asleep or off runs as soon as the machine is back; on macOS launchd does this on wake, and on Linux the timer is `Persistent`. An interval entry (`every:`) simply resumes its cadence.
 
@@ -483,7 +492,7 @@ See [Shell Commands](shell.md#pinning-a-path).
 
 Any other platform is unsupported: every `asgard schedule` subcommand there exits with `asgard: <platform> is not supported (needs macOS launchd or Linux systemd)`.
 
-Job files are written readable by you alone, since they can hold `env:` values. On macOS a plist is checked with `plutil` before it replaces the installed one, and an unchanged plist whose job is already loaded is left alone by `install`, so a reinstall never interrupts a run in progress.
+Job files are written readable by you alone, since they can hold `env:` values. On macOS a plist is checked with `plutil` before it replaces the installed one. On both platforms `install` leaves an unchanged entry alone, so a reinstall never interrupts a run in progress or restarts an `every:` countdown.
 
 ---
 

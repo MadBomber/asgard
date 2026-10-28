@@ -13,14 +13,11 @@ jobs:
   test:
     name: ${{ matrix.os }} / Ruby ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
-    # 3.2 and 3.4 are below the gemspec's Ruby 4.0 floor and are expected
-    # to fail; they report without turning the run red.
-    continue-on-error: ${{ startsWith(matrix.ruby, '3.') }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        ruby: ["3.2", "3.4", "4.0.9", "4.1.0-preview1"]
+        ruby: ["4.0.9", "4.1.0-preview1"]
     steps:
       - uses: actions/checkout@v4
 

@@ -1701,7 +1701,7 @@
 </ul>
 <p>Two consequences of inheritance to know about:</p>
 <ul>
-<li><strong>The group inherits the top-level tasks as well.</strong> <code>asgard db deploy</code> runs the top-level <code>deploy</code>, and <code>asgard db help</code> lists the inherited tasks above the group's own, under a namespace made from the class name (<code>asgard d_b_commands deploy</code>). Harmless, but it is why the group's help is longer than you might expect.</li>
+<li><strong>The group inherits the top-level tasks as well.</strong> <code>asgard db deploy</code> runs the top-level <code>deploy</code>. <code>asgard db help</code> lists only the group's own tasks, so the inherited ones stay out of the way.</li>
 <li>
 <p><strong>A <code>default_task</code> on <code>Tasks</code> is inherited too.</strong> If <code>.loki</code> says <code>default_task :greet</code>, then <code>asgard db</code> with no further word runs <code>greet</code>, not the group's help. Set the group's own default:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DBCommands</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">Tasks</span>
@@ -1860,7 +1860,7 @@
 </span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"deploy SUBCOMMAND"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Deploy"</span><span class="p">;</span><span class="w">              </span><span class="n">subcommand</span><span class="w"> </span><span class="s2">"deploy"</span><span class="p">,</span><span class="w"> </span><span class="no">DeployCommands</span>
 </span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><code>asgard help</code> lists each group on one line (<code>asgard db SUBCOMMAND  # Manage the database</code>); <code>asgard tree</code> adds a section per group, named after its class (<code>d_b_commands</code>), listing the group's own tasks.</p>
+<p><code>asgard help</code> lists each group on one line (<code>asgard db SUBCOMMAND  # Manage the database</code>); <code>asgard tree</code> adds a section per group, under the name it was registered with (<code>db</code>), listing the group's own tasks.</p>
 <hr />
 <h2 id="subcommands-across-files">Subcommands Across Files<a class="headerlink" href="#subcommands-across-files" title="Permanent link">&para;</a></h2>
 <p>Give each group its own file and register them all in <code>.loki</code>:</p>

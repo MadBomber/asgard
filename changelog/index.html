@@ -2804,6 +2804,12 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>A subcommand group's help lists only its own tasks</strong> — a group that
+  inherits from <code>Tasks</code> also listed every top-level task in its help,
+  under a name made from its class (<code>asgard doc_commands quality</code> for
+  <code>DocCommands</code>). <code>asgard doc</code> now lists just the group's tasks, and
+  <code>asgard tree</code> names the group <code>doc</code>, as registered, instead of
+  <code>doc_commands</code>. The inherited tasks still run.</li>
 <li><strong><code>import_up</code> from an imported file no longer recurses</strong> — the root
   <code>.loki</code> is loaded directly, not through <code>import</code>, so it was never
   recorded as loaded; a child file's <code>import_up</code> found it, reloaded it,

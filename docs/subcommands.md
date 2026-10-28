@@ -54,7 +54,7 @@ Inheriting from `Tasks` gives the group everything a top-level task has:
 
 Two consequences of inheritance to know about:
 
-- **The group inherits the top-level tasks as well.** `asgard db deploy` runs the top-level `deploy`, and `asgard db help` lists the inherited tasks above the group's own, under a namespace made from the class name (`asgard d_b_commands deploy`). Harmless, but it is why the group's help is longer than you might expect.
+- **The group inherits the top-level tasks as well.** `asgard db deploy` runs the top-level `deploy`. `asgard db help` lists only the group's own tasks, so the inherited ones stay out of the way.
 - **A `default_task` on `Tasks` is inherited too.** If `.loki` says `default_task :greet`, then `asgard db` with no further word runs `greet`, not the group's help. Set the group's own default:
 
     ```ruby
@@ -212,7 +212,7 @@ class Tasks
 end
 ```
 
-`asgard help` lists each group on one line (`asgard db SUBCOMMAND  # Manage the database`); `asgard tree` adds a section per group, named after its class (`d_b_commands`), listing the group's own tasks.
+`asgard help` lists each group on one line (`asgard db SUBCOMMAND  # Manage the database`); `asgard tree` adds a section per group, under the name it was registered with (`db`), listing the group's own tasks.
 
 ---
 

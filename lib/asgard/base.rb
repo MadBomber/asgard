@@ -31,6 +31,22 @@ module Asgard
       # so CI and `asgard do` sequences see the failure. Thor's default is 0.
       def exit_on_failure? = true
 
+      # A subcommand group's help lists only the group's own commands. The
+      # tasks it inherits from Tasks still run, but Thor would list them
+      # too, under the class's default namespace (doc_commands for
+      # DocCommands), burying the group's own.
+      def printable_commands(all = true, subcommand = false) # rubocop:disable Style/OptionalBooleanParameter
+        super(all && !subcommand, subcommand)
+      end
+
+      # `subcommand "doc", DocCommands` names the group doc, so `tree` shows
+      # it as doc rather than Thor's doc_commands. A group that set its own
+      # namespace keeps it.
+      def subcommand(name, klass)
+        klass.namespace(name) if klass.namespace == Thor::Util.namespace_from_thor_class(klass)
+        super
+      end
+
       def header(text = nil)
         return @_header if text.nil?
         (@_header ||= []) << text

@@ -401,7 +401,7 @@ class Tasks
   watch :test_check, paths: %w[lib test], only: /\.rb\z/   # rerun the tests on save
 
   helper(:project_version) do
-    @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+    @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
 
   default_task :quality
@@ -468,30 +468,136 @@ Three one-liners: `push`, `pull` (fast-forward only), `fetch`. The smallest usef
 
 ### `doc_tasks.loki`
 
-Tasks that only exist when the project has the matching tool, decided with ordinary Ruby `if` around the `def`s. The documentation server is a background job:
+A subcommand group, `asgard doc ...`, that works with an MkDocs site or a Bridgetown site. Each task first calls the private `doc_engine` helper, which looks in the repo root for `mkdocs.yml` or `bridgetown.config.yml`, sets the engine and the commands to run for it, and stops with an error when neither file is there. `open` depends on `serve`, which depends on `build`, which depends on `install`. The server starts as a background job and asgard returns at once; when the job is already running it is not started again, and `build` skips a site that is newer than every file in its source folder and its config file. `open` waits for the server to answer, then opens the site, `http://localhost:8000/` for MkDocs or `http://localhost:4000/` for Bridgetown, in the default browser, or in Google Chrome with `--chrome`. The commands run from the repo root, so the tasks work from any subdirectory.
 
 ```ruby
-class Tasks
-  root = loki_up.dirname
+class DocCommands < Tasks
+  default_task :open
 
-  if root.join("mkdocs.yml").exist?
-    desc "Documentation builder"
-    def doc_builder = sh "mkdocs build"
+  # Each engine's config file, its default source and output folders, the
+  # commands the doc tasks run for it, and the port its server listens on
+  # by default.
+  DOC_ENGINES = {
+    mkdocs:     { config: "mkdocs.yml", source: "docs", output: "site",
+                  build: "mkdocs build", serve: "mkdocs serve", port: 8000 },
+    bridgetown: { config: "bridgetown.config.yml", source: "src", output: "output",
+                  build: "bin/bridgetown build", serve: "bin/bridgetown start", port: 4000 },
+  }.freeze
 
-    desc "Documentation server, as a background job (see `asgard jobs`)"
-    depends_on :doc_builder
-    def doc_server = sh "mkdocs serve", background: true
+  # Seconds `doc open` waits for a server that has just started to answer.
+  SERVER_WAIT = 30
+
+  desc "Install the documentation engine (mkdocs with Homebrew, Bridgetown with bundle install)"
+  def install
+    case doc_engine
+    when :mkdocs     then install_mkdocs
+    when :bridgetown then Dir.chdir(@doc_root) { sh "bundle install" }
+    end
   end
+
+  desc "Build the documentation site, unless it is up to date"
+  depends_on :install
+  def build
+    doc_engine
+    return puts "doc: #{@output.relative_path_from(@doc_root)} is up to date" if built?(@output, [@config, @source])
+
+    Dir.chdir(@doc_root) { sh @build_command }
+  end
+
+  # A serve job that is already running is not started again: the call
+  # prints "serve-1 already running" and returns.
+  desc "Serve the documentation as a background job (see `asgard jobs`)"
+  depends_on :build
+  def serve
+    doc_engine
+    Dir.chdir(@doc_root) { sh @serve_command, background: true }
+  end
+
+  desc "Open the served documentation in the default browser"
+  option :chrome, type: :boolean, default: false, desc: "Use Google Chrome instead of the default browser"
+  depends_on :serve
+  def open
+    doc_engine
+    abort "doc: nothing answered at #{@doc_url} (see `asgard jobs log serve-1`)" unless server_up?(@port, SERVER_WAIT)
+
+    sh browser_command(@doc_url, chrome: options.chrome?)
+  end
+
+  private
+
+  # Finds the engine whose config file is in +root+ (the repo root by
+  # default), sets @engine, @doc_root, @config, @source, @output,
+  # @build_command, @serve_command, @port and @doc_url, and returns @engine.
+  # Aborts when neither config file is there.
+  def doc_engine(root = loki_up.dirname)
+    @engine, settings = DOC_ENGINES.find { |_, engine| root.join(engine[:config]).file? }
+    abort "doc: found neither mkdocs.yml nor bridgetown.config.yml in #{root}" unless @engine
+
+    @doc_root      = root
+    @config, @source, @output = settings.values_at(:config, :source, :output).map { root.join(it) }
+    @build_command = settings[:build]
+    @serve_command = settings[:serve]
+    @port          = settings[:port]
+    @doc_url       = "http://localhost:#{@port}/"
+    @engine
+  end
+
+  # true when +output+'s index.html is newer than every file in +sources+
+  # (files, or folders searched all the way down).
+  def built?(output, sources)
+    index = output.join("index.html")
+    return false unless index.file?
+
+    files = sources.flat_map { |s| s.directory? ? s.glob("**/*").select(&:file?) : [s] }
+    files.all? { it.mtime <= index.mtime }
+  end
+
+  # true once something accepts connections on localhost:+port+; false
+  # when nothing has within +wait+ seconds.
+  def server_up?(port, wait)
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + wait
+    begin
+      Socket.tcp("localhost", port, connect_timeout: 1).close
+      true
+    rescue SystemCallError
+      return false if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.25
+      retry
+    end
+  end
+
+  # The macOS command that opens +url+ in the default browser, or in Google
+  # Chrome when +chrome+ is true.
+  def browser_command(url, chrome: false)
+    chrome ? "open -a 'Google Chrome' #{url}" : "open #{url}"
+  end
+
+  def install_mkdocs
+    mkdocs = `which mkdocs`.strip
+    return puts "mkdocs: #{mkdocs}" unless mkdocs.empty?
+
+    sh "brew install mkdocs"
+  end
+end
+
+class Tasks
+  desc "doc SUBCOMMAND", "Install, build and serve the documentation (MkDocs or Bridgetown)"
+  subcommand "doc", DocCommands
 end
 ```
 
 ```bash
-asgard doc_server        # started doc_server-1 (pid 48213), log: ...
-asgard jobs              # lists it
-asgard jobs stop doc_server
+asgard doc serve                   # started serve-1 (pid 48213), log: ...
+asgard doc open                    # the site in the default browser
+asgard doc                         # the same: open is the group's default task
+asgard doc open --chrome           # the site in Google Chrome
+asgard jobs                        # lists it
+asgard jobs log serve-1            # what the server has printed so far
+asgard jobs stop serve
 ```
 
-See [Background Jobs](jobs.md).
+The group's `install` and `build` don't clash with the top-level ones in `gem_tasks.loki`: inside `DocCommands` they replace the inherited tasks, and `asgard install` is unchanged. To support another engine, add its config file and commands to `DOC_ENGINES`, plus an `install` branch. See [Subcommands](subcommands.md) and [Background Jobs](jobs.md).
 
 ### `xyzzy.loki`
 

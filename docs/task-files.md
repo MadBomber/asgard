@@ -451,7 +451,7 @@ class Tasks
   watch :test_check, paths: %w[lib test], only: /\.rb\z/
 
   helper(:project_version) do
-    @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+    @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
 
   default_task :quality
@@ -470,7 +470,7 @@ end
 | `quality_rails.loki` | Rails-only checks (Brakeman and friends), loaded only when `RAILS_ROOT` is set; `quality` picks them up with nothing else to change |
 | `gem_tasks.loki` | `console`, `build`, `install` and `release`, each depending on `quality` |
 | `git.loki` | `push`, `pull` and `fetch` |
-| `doc_tasks.loki` | `doc_builder` and `doc_server` (a background job), defined only when `mkdocs.yml` exists |
+| `doc_tasks.loki` | The `doc` subcommand group for an MkDocs or Bridgetown site: `doc install`, `doc build`, `doc serve` (a background job) and `doc open`, each depending on the one before |
 | `xyzzy.loki` | A `xyzzy` task that `.loki` deliberately redefines, so `asgard --doctor` has an override to report |
 
 Clone the repository and run `asgard help`, `asgard tree` and `asgard --doctor` from its root to see each of these in action. The [Examples](examples.md) page walks through the rest of `examples/`.

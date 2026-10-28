@@ -1056,6 +1056,45 @@ class TestAsgardSubclasses < Minitest::Test
   end
 end
 
+class TestAsgardSubcommandGroup < Minitest::Test
+  # A group that inherits the top-level tasks, the way a .loki's
+  # `class DocCommands < Tasks` does.
+  def setup
+    @top = Class.new(Asgard::Base) do
+      desc "Top-level task"
+      def quality = nil
+    end
+    @group = Class.new(@top) do
+      desc "Build the docs"
+      def build = nil
+    end
+  end
+
+  def test_group_help_lists_only_its_own_commands
+    @top.subcommand "doc", @group
+    out, = capture_io { @top.start(%w[doc help]) }
+    assert_match "doc build", out
+    refute_match "quality", out
+  end
+
+  def test_top_level_help_still_lists_everything
+    out, = capture_io { @group.help(Thor::Base.shell.new) }
+    assert_match "build", out
+    assert_match "quality", out
+  end
+
+  def test_subcommand_names_the_group
+    @top.subcommand "doc", @group
+    assert_equal "doc", @group.namespace
+  end
+
+  def test_subcommand_keeps_a_namespace_the_group_set
+    @group.namespace "docs_group"
+    @top.subcommand "doc", @group
+    assert_equal "docs_group", @group.namespace
+  end
+end
+
 class TestAsgardCircularDep < Minitest::Test
   def test_raises_on_circular_dependency
     klass = Class.new(Asgard::Base) do

@@ -157,6 +157,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A subcommand group's help lists only its own tasks** — a group that
+  inherits from `Tasks` also listed every top-level task in its help,
+  under a name made from its class (`asgard doc_commands quality` for
+  `DocCommands`). `asgard doc` now lists just the group's tasks, and
+  `asgard tree` names the group `doc`, as registered, instead of
+  `doc_commands`. The inherited tasks still run.
 - **`import_up` from an imported file no longer recurses** — the root
   `.loki` is loaded directly, not through `import`, so it was never
   recorded as loaded; a child file's `import_up` found it, reloaded it,

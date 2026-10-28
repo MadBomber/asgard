@@ -97,12 +97,12 @@ tasks
     ...
   jobs
     ...
-  d_b_commands
+  db
     ├─ migrate (Run pending migrations)
     └─ seed (Load seed data)
 ```
 
-The built-in groups appear as leaves under their reserved names (`_jobs`, `_schedule`, `_watcher`) and as sections under the names you type (`jobs`, `schedule`, `watcher`). A group of your own gets a section named after its class, so `DBCommands` shows as `d_b_commands`.
+The built-in groups appear as leaves under their reserved names (`_jobs`, `_schedule`, `_watcher`) and as sections under the names you type (`jobs`, `schedule`, `watcher`). A group of your own gets a section under the name it was registered with, so `subcommand "db", DBCommands` shows as `db`.
 
 ---
 
@@ -170,7 +170,7 @@ class Tasks
   @@project ||= "asgard".freeze
 
   helper(:project_version) do
-    @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+    @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
 
   header <<~HEAD

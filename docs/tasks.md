@@ -474,7 +474,7 @@ asgard: working tree is not clean
 ```
 
 !!! note
-    A dependency's return value never stops the task that depends on it: if `rubocop_check` returns `:fail` as a dependency of `build`, `build` still runs. To stop a chain, raise `Asgard::Error` or let a failing `sh` exit. How dependencies report failure is covered on [Dependencies](dependencies.md#when-a-dependency-fails).
+    What a failing dependency means is up to you. A dependency's return value never stops the task that depends on it: if `rubocop_check` returns `:fail` as a dependency of `build`, `build` still runs and can read the result. A dependency that must succeed stops the chain itself, with `abort`, a non-zero `exit`, a failing `sh` or `raise Asgard::Error`. Both patterns are covered on [Dependencies](dependencies.md#when-a-dependency-fails).
 
 ---
 
@@ -493,7 +493,13 @@ end
 asgard: 'run' at /proj/.loki:3 is a name Thor reserves and cannot be a task or helper; rename it
 ```
 
-The reserved names are the ones Thor uses internally, among them `run`, `shell`, `options`, `invoke`, `args`, `action`, `behavior`, `root`, `inside`, `in_root`, `create_file`, `add_file` and `run_ruby_script`. Pick another word (`run_all`, `start`) or put the task in a [subcommand](subcommands.md).
+The reserved names are the ones Thor uses internally, among them `run`, `shell`, `options`, `invoke`, `args`, `action`, `behavior`, `root`, `inside`, `in_root`, `create_file`, `add_file` and `run_ruby_script`, and the helpers asgard gives every task body: `sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `debug?`, `verbose?`, `dep_result`, `dep_results` and `current_task`. A task named `sh` would otherwise replace the helper, and every other task's `sh` would quietly run it instead:
+
+```
+asgard: 'sh' at /proj/.loki:3 is an asgard helper and cannot be a task or helper; rename it
+```
+
+Pick another word (`run_all`, `start`, `shell_in`) or put the task in a [subcommand](subcommands.md).
 
 Names starting with `_` are asgard's own. Asgard's built-in commands use them, and `asgard _anything` is refused with `asgard: unknown command '_anything'`. Do not start a task or helper name with an underscore.
 

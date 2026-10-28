@@ -181,7 +181,7 @@ These work at the top level of the file, inside the class body, and inside task 
 
 ## Names You Cannot Use
 
-- **Names Thor uses internally.** Defining a task or helper called `shell`, `options`, `invoke`, `run`, `args`, `behavior`, `root`, `destination_root`, `action`, `in_root`, `inside` or `parent_options` (among others on Thor's reserved list) stops asgard as the `.loki` loads, with the file and line. Pick another name. This is why the watcher's foreground command is spelled `asgard watcher run` while your own task cannot be named `run`.
+- **Names Thor uses internally.** Defining a task or helper called `shell`, `options`, `invoke`, `run`, `args`, `behavior`, `root`, `destination_root`, `action`, `in_root`, `inside` or `parent_options` (among others on Thor's reserved list), or after one of asgard's own helpers (`sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `dep_result`, `dep_results`, `current_task`), stops asgard as the `.loki` loads, with the file and line. Pick another name. This is why the watcher's foreground command is spelled `asgard watcher run` while your own task cannot be named `run`.
 - **Names beginning with `_`.** The underscore prefix is reserved for asgard's own built-ins. `asgard _anything` is refused as an unknown command, and a `.loki` must not define `_`-prefixed methods.
 - **`schedule`, `watcher`, `jobs`.** You may define tasks with these names, but `asgard schedule`, `asgard watcher` and `asgard jobs` still run the built-ins.
 - **A name defined twice.** The later `def` silently replaces the earlier one; `asgard --doctor` reports it. See [Task Files](task-files.md#task-name-overloading).
@@ -202,4 +202,4 @@ These work at the top level of the file, inside the class body, and inside task 
 | A `.loki` fails to load, or a dependency graph is invalid | 1, after one line of explanation |
 | Ctrl-C | 130 |
 
-A dependency's return value never stops the task that depends on it; only an exit, an `abort` or a `raise` does. Full detail in [Help & Diagnostics](diagnostics.md#exit-status) and [Dependencies](dependencies.md#when-a-dependency-fails).
+A dependency's return value never stops the task that depends on it; only an exit, an `abort` or a `raise` does. Which one a dependency uses is your choice: return a result for the dependent to judge, or stop the chain when the dependency must succeed. Full detail in [Help & Diagnostics](diagnostics.md#exit-status) and [Dependencies](dependencies.md#when-a-dependency-fails).

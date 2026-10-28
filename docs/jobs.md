@@ -129,7 +129,7 @@ end
 | `background:` | Job name | Notes |
 |---|---|---|
 | `nil` or `false` | none | Foreground; the default |
-| `true` | `<task>-<N>` | Named after the task whose body made the call, plus a counter: `doc_server-1`, `servers-1`, `servers-2`. Must be called from inside a task |
+| `true` | `<task>-<N>` | Named after the task whose body made the call, plus a counter: `doc_server-1`, `servers-1`, `servers-2`. Must be called from inside a task. A `?`, `!` or `=` in the task name is spelled `-q`, `-b` or `-e` (`ready?` gives `ready-q-1`), so no two tasks share a job name |
 | a Symbol or String | the name itself | Letters, digits and `_` only; never looks like an automatic name |
 | anything else | | `ArgumentError` |
 
@@ -194,10 +194,11 @@ State: /Users/you/.local/state/asgard/jobs
 | Status | Meaning |
 |---|---|
 | `running` | The recorded pid is alive and is still the process asgard started |
-| `exited N (Ns)` | The job ended with status N after that long; 143 is a TERM, 137 a KILL |
-| `gone` | Neither: the process is not there and no status was written. The machine rebooted, or something killed the job outright |
+| `exited N (Ns)` | The job ended with status N after that long; 143 is a TERM, 137 a KILL by `asgard jobs stop` |
+| `exited N (Ns, processes left)` | The script ended, but processes it started (a `server &` line, say) still run in the job's process group. `stop` still reaches them, and `clean` keeps the job until they are gone |
+| `gone` | Neither: the process is not there and no status was written. The machine rebooted, or something outside asgard killed the job outright |
 
-Run from a directory with no `.loki` above it, `list` covers every project, as `--all` does. With no jobs recorded:
+Run from a directory with no `.loki` above it, `list` covers every project, as `--all` does. A file in the state directory that is not a job's record (a hand edit, a disk that filled up) is left out of the table with a note on stderr, `jobs: skipped <path>: not a job record`, and `clean` removes it. With no jobs recorded:
 
 ```
 No jobs recorded for api-9f3a1c2b. Start one with `sh "...", background: true` inside a task.
@@ -208,7 +209,7 @@ Use `asgard jobs list --all` to see every project's jobs.
 
 Each name is first tried as a job name, then as a task name: `stop servers` ends every job that `servers` started and, through `depends_on`, every job its dependencies started (`db-1`). Resolving a task name reads the project's `.loki`, so that form works inside the project. No name stops every job of the project; `--all` stops every project's. Jobs stop newest first.
 
-Each job gets `TERM` to its whole process group, so the shell and everything it started go together. After a second of waiting the command says so, and when the grace period runs out (`--timeout`, default 10 seconds) it sends `KILL` and waits until the pid is gone. One line per job:
+Each job gets `TERM` to its whole process group, so the shell and everything it started go together, including processes the script left behind when it exited. After a second of waiting the command says so, and when the grace period runs out (`--timeout`, default 10 seconds) it sends `KILL`, waits until the group is empty, and records status 137 so `list` shows `exited 137`. One line per job:
 
 ```
 stopped api (pid 48213)
@@ -217,7 +218,7 @@ killed db-1 (pid 48201) after 10s
 doc_server-1 is not running
 ```
 
-The exit status is 1 when any job had to be killed or any name matched nothing (`jobs: no such job or task: apii`). Records stay, so the log of a stopped job can still be read; `clean` removes them.
+A task that exists but has no jobs on record prints `servers has no running jobs`. The exit status is 1 when any job had to be killed or any name matched neither a job nor a task (`jobs: no such job or task: apii`). Records stay, so the log of a stopped job can still be read; `clean` removes them.
 
 ### log
 
@@ -229,7 +230,7 @@ Stops the job, then runs its owning task again in the same asgard process, depen
 
 ### clean
 
-Removes the record, script, status and log of every job that is not verified running, and prints `removed NAME` for each. Nothing that is running is touched. With nothing to do: `Nothing to clean for api-9f3a1c2b.`
+Removes the record, script, status and log of every job that is not verified running, and prints `removed NAME` for each. Nothing that is running is touched, and neither is a job whose script exited while processes it started still run. A job started again while `clean` runs keeps its fresh record. With nothing to do: `Nothing to clean for api-9f3a1c2b.`
 
 ---
 
@@ -239,9 +240,13 @@ A job starts in a **new session** of its own: it has no controlling terminal, so
 
 The recorded pid belongs to a small `/bin/sh` wrapper that runs your script's shell as its child, waits for it, and writes the exit status to a status file when it ends. That is how `list` can show `exited 1 (2.5s)` for a job nobody was waiting on. The wrapper is always `/bin/sh`, whatever your `default_shell` is; your script still runs under the shell you asked for. Because the recorded pid is the wrapper, an `exec` inside your script replaces only the inner shell and the job stays verifiable.
 
+The wrapper deliberately outlasts a `TERM` so it can write the status, so `kill 48213` on the pid that `started` and `list` show does nothing to the job. Stop a job with `asgard jobs stop`, or signal its whole process group yourself with `kill -- -48213` (the leading `-` addresses the group).
+
 The job's stdin is `/dev/null`, so it can never stop waiting for keyboard input, and its stdout and stderr are appended to the log.
 
-A job is **verified**, not assumed, every time asgard looks at it: the pid must be alive and its command line must still carry the job's script path. A pid reused by an unrelated process after a reboot fails that check and the job shows as `gone` rather than as somebody else's process.
+A job is **verified**, not assumed, every time asgard looks at it: the pid must be alive and its command line must still carry the job's script path. A pid reused by an unrelated process after a reboot fails that check and the job shows as `gone` rather than as somebody else's process. Processes left in the group after the script exited count only if they started before it exited, so a process group that later reuses the number is never mistaken for the job.
+
+Verifying uses `ps -ww -o ... -p PID`, which the system `ps` on macOS and BSD and the procps `ps` on Linux accept. BusyBox `ps`, the default on Alpine, rejects those options; there a `background:` start, and every `asgard jobs` command that looks at a job, stops with an error that says so instead of treating every job as gone and starting duplicates. Install procps (`apk add procps`) to use jobs there.
 
 ---
 
@@ -254,7 +259,7 @@ Everything lives under `~/.local/state/asgard/jobs/<slug>/` (or `$XDG_STATE_HOME
 | `<name>.json` | The record: name, task, pid, start time, working directory, script path, log path, first script line |
 | `<name>.sh` (or the shell's extension) | The script exactly as handed to the shell |
 | `<name>.log` | stdout and stderr of the latest run |
-| `<name>.status` | The exit status, written when the job ends |
+| `<name>.status` | The exit status, written when the job ends (or 137, by `stop` after a `KILL`) |
 | `root` | The project root, so `list --all` can find every project without loading its `.loki` |
 
 The directory is readable by you alone, since logs and scripts can hold secrets. A job's files stay until the next start of that name or `asgard jobs clean`, so the log of a crashed job can still be read. A new start of the same name removes the old record, script and status and empties the log; `clean` deletes all four.

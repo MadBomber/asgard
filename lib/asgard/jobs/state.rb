@@ -28,8 +28,15 @@ module Asgard
         # Whether a record's job is still the process we started: its pid
         # is alive and runs the trampoline whose command line carries the
         # script path. A reused pid after a reboot fails this, and so does
-        # one that is now asgard itself.
-        def verified?(record) = Pid.matches?(record[:pid], record[:script].to_s, self_ok: false) || survives?(record)
+        # one that is now asgard itself, and so does a record that is not
+        # a job's (Jobs.valid_record?). A ps that cannot tell raises
+        # Pid::Unusable rather than calling every job gone.
+        def verified?(record)
+          return false unless Jobs.valid_record?(record)
+
+          Pid.require_ps!
+          Pid.matches?(record[:pid], record[:script], self_ok: false) || survives?(record)
+        end
 
         # Whether the job outlived its trampoline: some process in its group
         # still runs the script. A group id is never reused while the group
@@ -37,9 +44,52 @@ module Asgard
         def survives?(record, ps: Pid.method(:group_command_lines))
           pgid   = record[:pgid]
           script = record[:script].to_s
-          return false unless pgid.is_a?(Integer) && pgid > 1 && pgid != Process.getpgrp && !script.empty?
+          return false unless job_group?(pgid) && !script.empty?
 
           ps.call(pgid).any? { |command| command.include?(script) }
+        end
+
+        # Whether +pgid+ could be a job's group at all: a group id above 1
+        # that is not asgard's own. Nothing else is ever looked up or
+        # signalled.
+        def job_group?(pgid) = Jobs.process_id?(pgid) && pgid != Process.getpgrp
+
+        # Whether the job still owns processes: it is running, or its
+        # script exited and left processes in its group (`sleep 60 &`).
+        # Those are what `stop` signals and why `clean` keeps the record.
+        def active?(record) = verified?(record) || (Jobs.valid_record?(record) && leftovers?(record, exited_at: exited_at(record)))
+
+        # Whether group +pgid+ still holds a process that started before
+        # the trampoline exited at +exited_at+. The id cannot be reused
+        # while the group has members, but once they are gone a later
+        # group may take it, and every member of such a group is younger
+        # than our exit; one second of slack covers ps's resolution.
+        def leftovers?(record, exited_at:, ps: Pid.method(:group_processes))
+          pgid = record[:pgid]
+          return false unless exited_at && job_group?(pgid)
+
+          ps.call(pgid).any? { |member| member.started <= exited_at + 1 }
+        end
+
+        # The status file of a record's job, beside its script.
+        def status_file(record) = File.join(File.dirname(record[:script]), "#{record[:name]}.status")
+
+        # When the trampoline wrote the job's status, or nil.
+        def exited_at(record)
+          path = status_file(record)
+          File.exist?(path) ? File.mtime(path) : nil
+        end
+
+        # Writes 137 (128 + KILL) as the job's status unless one is
+        # written: a group KILL takes the trampoline with it, so nothing
+        # else records how the job ended. A record that is not a job's
+        # writes nothing.
+        def record_kill(record)
+          return unless Jobs.valid_record?(record)
+
+          File.open(status_file(record), "wx", 0o600) { |file| file.puts(128 + 9) }
+        rescue Errno::EEXIST, Errno::ENOENT
+          nil
         end
       end
 
@@ -74,18 +124,48 @@ module Asgard
 
       def write_record(record) = StateDir.write_json(record_path(record[:name]), record)
 
-      def read_record(name) = StateDir.read_json(record_path(name))
+      # The record for +name+, or nil when there is none or it is not a
+      # job's record (Jobs.valid_record?).
+      def read_record(name) = StateDir.read_json(record_path(name)).then { Jobs.valid_record?(it) ? it : nil }
 
       # Every job's record, oldest start first. Only "<name>.json" counts,
-      # never the dot-prefixed tempfile write_json is still filling.
+      # never the dot-prefixed tempfile write_json is still filling, and a
+      # file that is not a job's record is left out (see invalid_records).
       def records
-        Dir.children(dir).grep(RECORD).filter_map { |file| StateDir.read_json(File.join(dir, file)) }
-           .sort_by { |record| [record[:started].to_s, record[:name].to_s] }
+        record_files.filter_map { |path| StateDir.read_json(path) }.select { |record| Jobs.valid_record?(record) }
+                    .sort_by { |record| [record[:started], record[:name]] }
+      end
+
+      # The record files that are not a job's record: unparsable JSON, a
+      # hand edit, another tool's file.
+      def invalid_records = record_files.reject { |path| Jobs.valid_record?(StateDir.read_json(path)) }
+
+      def record_files
+        Dir.children(dir).grep(RECORD).sort.map { |file| File.join(dir, file) }
       rescue Errno::ENOENT
         []
       end
 
       def verified?(record) = State.verified?(record)
+
+      def active?(record) = State.active?(record)
+
+      # Forgets +name+ (record, script, status and log) unless its job
+      # still owns processes; true when it did. Holds the start lock and
+      # reads the record again inside it, so a start that ran meanwhile
+      # keeps the fresh record it wrote. A record that is not a job's is
+      # forgotten too: it cannot be running.
+      def forget_unless_active(name)
+        with_lock(name) do
+          next false unless File.exist?(record_path(name))
+
+          record = read_record(name)
+          next false if record && active?(record)
+
+          remove(name, keep_log: false)
+          true
+        end
+      end
 
       # The exit code the trampoline wrote, or nil while none is written.
       def exit_code(name)

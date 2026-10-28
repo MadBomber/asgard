@@ -694,6 +694,7 @@ Then manage the watcher with the built-in `watcher` command:
 ```bash
 asgard watcher start        # watch this project in the background
 asgard watcher stop         # stop it; a task already running finishes first
+asgard watcher stop --force # stop it and end any running task
 asgard watcher list         # watches, daemon state, each entry's last run (--all: every project's)
 asgard watcher preview      # the command and environment each watch would run
 asgard watcher log [-f]     # print (or follow) the watcher's log

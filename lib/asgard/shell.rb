@@ -2,6 +2,7 @@
 
 require "English"
 require "shellwords"
+require_relative "pid"
 require "tempfile"
 require_relative "schedule/declaration"
 
@@ -190,6 +191,136 @@ module Asgard
 
     def self.included(base) = base.extend(ClassMethods)
 
+    # The scripts `sh` is running right now, so that INT or TERM sent to
+    # asgard alone (`kill <pid>`, a process manager) reaches them too:
+    # asgard passes the signal on, waits for them, then exits with 128
+    # plus the signal's number. Only the child's own pid is signalled,
+    # never a process group, since the children share asgard's group.
+    #
+    # Ctrl-C at a terminal already reaches every process in the foreground
+    # group, children included, so the signal is passed on only to a child
+    # still running GRACE seconds later: a script that stops on its own
+    # Ctrl-C is not signalled a second time.
+    module Children
+      SIGNALS = %w[INT TERM].freeze
+      GRACE   = 0.3
+
+      @pids     = [].freeze # swapped whole, never changed: the trap reads it without a lock
+      @active   = 0
+      @previous = {}
+      @received = nil
+      @mutex    = Mutex.new
+
+      class << self
+        # The signal that arrived while a script ran, or nil.
+        attr_reader :received
+
+        # Runs +argv+ as a child and returns its Process::Status, or nil
+        # when it could not be started.
+        def run(argv)
+          enter
+          pid = Process.spawn(*argv)
+          add(pid)
+          Process.wait2(pid).last
+        rescue SystemCallError
+          nil
+        ensure
+          remove(pid) if pid
+          leave
+        end
+
+        # A pid asgard may signal: an Integer above 1 that is not its own.
+        def signalable?(pid) = pid.is_a?(Integer) && pid > 1 && pid != Process.pid
+
+        def alive?(pid)
+          return false unless signalable?(pid)
+
+          Process.kill(0, pid)
+          true
+        rescue Errno::ESRCH
+          false
+        rescue Errno::EPERM
+          true
+        end
+
+        # 128 plus +signal+'s number, as a shell reports it; nil for nil.
+        def exit_status_for(signal) = signal && (128 + Signal.list.fetch(signal))
+
+        # The status asgard exits with after a signal, or nil.
+        def exit_status = exit_status_for(received)
+
+        # Sends +signal+ to every child still running, then to everything
+        # each child started. A shell killed while it waits does not pass
+        # the signal on, so the command it was running would be left
+        # behind. The tree is read before any signal, since a child that
+        # dies hands its own children to init.
+        def forward(signal, table = process_table)
+          @pids.each do |pid|
+            [pid, *descendants_of(pid, table)].each { |target| signal(signal, target) }
+          end
+        end
+
+        # Every process below +pid+ in +table+ ([pid, parent pid] pairs),
+        # nearest first.
+        def descendants_of(pid, table)
+          children = table.filter_map { |child, parent| child if parent == pid }
+          children + children.flat_map { |child| descendants_of(child, table) }
+        end
+
+        # [pid, parent pid] for every process in +ps_output+ (one pair per
+        # line); lines that are not two numbers are dropped.
+        def process_table(ps_output = IO.popen([Pid::PS, "-A", "-o", "pid=,ppid="], err: File::NULL, &:read))
+          ps_output.to_s.lines.filter_map do |line|
+            pair = line.split.map { Integer(it, exception: false) }
+            pair if pair.size == 2 && pair.all?
+          end
+        rescue SystemCallError
+          []
+        end
+
+        def signal(signal, pid)
+          Process.kill(signal, pid) if alive?(pid)
+        rescue Errno::ESRCH
+          nil
+        end
+
+        private
+
+        def add(pid)    = @mutex.synchronize { @pids = [*@pids, pid].freeze }
+        def remove(pid) = @mutex.synchronize { @pids = (@pids - [pid]).freeze }
+
+        # The first script to start installs the traps; the last to finish
+        # puts the previous handlers back.
+        def enter = @mutex.synchronize { install_traps if (@active += 1) == 1 }
+        def leave = @mutex.synchronize { restore_traps if (@active -= 1).zero? }
+
+        # A signal asgard was started ignoring (INT under `cmd &`) stays
+        # ignored.
+        def install_traps
+          @received = nil
+          SIGNALS.each do |signal|
+            previous = Signal.trap(signal) { on_signal(signal) }
+            previous == "IGNORE" ? Signal.trap(signal, previous) : @previous[signal] = previous || "DEFAULT"
+          end
+        end
+
+        def restore_traps
+          @previous.each { |signal, handler| Signal.trap(signal, handler) }
+          @previous = {}
+        end
+
+        # Runs in trap context, where a Mutex cannot be taken: the thread
+        # does the waiting and the signalling.
+        def on_signal(signal)
+          @received ||= signal
+          Thread.new do
+            sleep GRACE
+            forward(signal)
+          end
+        end
+      end
+    end
+
     # One shebang call: the shell name the task gave, its registry entry and
     # the stripped script.
     Run = Data.define(:name, :shell, :script) do
@@ -238,9 +369,11 @@ module Asgard
       Tempfile.create(["asgard_", run.ext]) do |f|
         f.write(run.script)
         f.flush
-        success = system(*run.argv(f.path))
-        shell_missing!(run) if success.nil?
-        exit(Shell.exit_code($CHILD_STATUS)) unless success
+        status = Children.run(run.argv(f.path))
+        shell_missing!(run) unless status
+        signalled = Children.exit_status
+        exit(signalled) if signalled
+        exit(Shell.exit_code(status)) unless status.success?
         true
       end
     end

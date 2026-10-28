@@ -72,8 +72,11 @@ module Asgard
       # Starts +run+ as the job +name+ owned by +task+, or returns the job
       # already running under that name. A missing shell exits 127 up
       # front, as foreground `sh` does; the trampoline would otherwise
-      # hide it as a status nobody is watching for.
+      # hide it as a status nobody is watching for. A ps that cannot
+      # verify jobs raises Pid::Unusable first: a job nothing could find
+      # again would be started twice.
       def start(run, name:, task:, state:, silent: false, out: $stdout)
+        Pid.require_ps!
         state.with_lock(name) do
           existing = state.read_record(name)
           return already_running(existing, out:) if existing && state.verified?(existing)

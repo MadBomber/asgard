@@ -26,11 +26,16 @@ module Asgard
 
         def row(record, state)
           name    = record[:name]
-          status  = Jobs.status(exit_code: state.exit_code(name), verified: state.verified?(record))
-          seconds = (state.exit_time(name) - Time.iso8601(record[:started])).round(1) if status.is_a?(Array)
+          exited  = state.exit_time(name)
+          status  = Jobs.status(exit_code: state.exit_code(name), verified: state.verified?(record),
+                                leftovers: State.leftovers?(record, exited_at: exited))
+          seconds = (exited - Time.iso8601(record[:started])).round(1) if status.is_a?(Array)
           { name:, task: record[:task], pid: record[:pid], state: Jobs.describe_status(status, seconds:),
             started: Time.iso8601(record[:started]).strftime("%Y-%m-%d %H:%M:%S"), command: record[:command] }
         end
+
+        # One line per record file +states+ left out of the listing.
+        def skipped_lines(states) = states.flat_map(&:invalid_records).map { |path| "jobs: skipped #{path}: not a job record" }
 
         # The argv that follows a log the way `tail -f` does, from the top.
         def tail_argv(path) = ["tail", "-n", "+1", "-f", path]
@@ -86,8 +91,9 @@ module Asgard
       desc "list", "Show this project's jobs: running, exited with a status, or gone (--all: every project's)"
       method_option :all, aliases: "-a", type: :boolean, desc: "List every project's jobs, not just this one's"
       def list
-        groups = every_project? ? all_states.transform_values { |other| Commands.rows(other) } : { nil => Commands.rows(state) }
-        groups = groups.reject { |_, rows| rows.empty? }
+        states = every_project? ? all_states : { nil => state }
+        Commands.skipped_lines(states.values).each { |line| $stderr.puts line }
+        groups = states.transform_values { |each_state| Commands.rows(each_state) }.reject { |_, rows| rows.empty? }
         return puts(no_jobs_message) if groups.empty?
 
         puts groups.map { |title, rows| Schedule::Table.draw(rows, title:, headers: HEADERS, keys: KEYS, flexible: FLEXIBLE) }.join("\n\n")
@@ -99,9 +105,11 @@ module Asgard
       method_option :timeout, aliases: "-t", type: :numeric, desc: "Seconds to wait after TERM before KILL (default #{Stopper::TIMEOUT})"
       def stop(*names)
         abort "jobs: stop --all takes no job names; name the jobs without --all" if options[:all] && names.any?
-        records, unknown = stop_targets(names)
+        records, unmatched = stop_targets(names)
+        idle, unknown = unmatched.partition { |name| Tasks.all_commands.key?(name) }
+        idle.each { |name| puts "#{name} has no running jobs" }
         unknown.each { |name| $stderr.puts "jobs: no such job or task: #{name}" }
-        puts "No jobs recorded for #{jobs_project}." if records.empty? && unknown.empty?
+        puts "No jobs recorded for #{jobs_project}." if records.empty? && unmatched.empty?
         outcomes = records.map { |record| stopper.stop_and_report(record) }
         exit 1 if unknown.any? || outcomes.include?(:killed)
       end
@@ -128,14 +136,15 @@ module Asgard
       end
 
       desc "clean", "Forget every job that is no longer running: its record, script, status and log"
+      # Each removal re-checks under the job's start lock (see
+      # State#forget_unless_active), so a start that ran meanwhile wins.
       def clean
-        gone = state.records.reject { |record| state.verified?(record) }
-        return puts("Nothing to clean for #{jobs_project}.") if gone.empty?
+        invalid = state.invalid_records.map { |path| [File.basename(path, ".json"), " (not a job record)"] }
+        gone    = state.records.reject { |record| state.active?(record) }.map { |record| [record[:name], ""] }
+        removed = (invalid + gone).select { |name, _| state.forget_unless_active(name) }
+        return puts("Nothing to clean for #{jobs_project}.") if removed.empty?
 
-        gone.each do |record|
-          state.remove(record[:name], keep_log: false)
-          puts "removed #{record[:name]}"
-        end
+        removed.each { |name, note| puts "removed #{name}#{note}" }
       end
     end
   end

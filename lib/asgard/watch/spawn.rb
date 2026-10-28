@@ -14,11 +14,12 @@ module Asgard
       # The only variables a task inherits from the daemon. Everything else
       # it sees comes from the declaration's env:, from .env and .envrc
       # loaded in the task's own process, or from the trigger itself.
-      # GEM_*, RUBY* and BUNDLE(R)_* carry the Ruby setup the daemon itself
-      # was started under (an rvm gemset, a vendored bundle, `bundle exec`),
-      # without which the task's own asgard may not load.
-      BASE_ENV_KEYS    = %w[PATH HOME USER LOGNAME SHELL LANG TMPDIR SSH_AUTH_SOCK GEM_HOME GEM_PATH RUBYOPT RUBYLIB].freeze
-      BASE_ENV_PATTERN = /\A(?:LC_|BUNDLER?_)/
+      # RUBYOPT, RUBYLIB, GEM_*, RUBY_*, RBENV_* and BUNDLE(R)_* carry the
+      # Ruby setup the daemon itself was started under (an rvm gemset,
+      # chruby's RUBY_ROOT, rbenv's RBENV_VERSION, a vendored bundle,
+      # `bundle exec`), without which the task's own asgard may not load.
+      BASE_ENV_KEYS    = %w[PATH HOME USER LOGNAME SHELL LANG TMPDIR SSH_AUTH_SOCK RUBYOPT RUBYLIB].freeze
+      BASE_ENV_PATTERN = /\A(?:LC_|BUNDLER?_|GEM_|RUBY_|RBENV_)/
 
       # Bytes of change lists the environment carries; past this they go
       # to a file named in ASGARD_CHANGES_FILE. Argument and environment
@@ -44,12 +45,18 @@ module Asgard
       end
 
       # The trigger variables for +changes+, or only the name of +file+
-      # when they would pass +limit+ bytes and there is a file to use.
+      # when there is a file to use and they would pass +limit+ bytes or
+      # a path holds a newline, which the one-per-line variables cannot
+      # carry.
       def change_env(changes, file, limit: CHANGES_ENV_LIMIT)
         vars = changes.to_env
-        return vars if file.nil? || vars.sum { |key, value| key.bytesize + value.bytesize } <= limit
+        return vars if file.nil? || fits_env?(vars, changes, limit)
 
         { Changes::FILE_VARIABLE => file }
+      end
+
+      def fits_env?(vars, changes, limit)
+        vars.sum { |key, value| key.bytesize + value.bytesize } <= limit && changes.all.none? { |path| path.include?("\n") }
       end
 
       # The spill file for the +sequence+th trigger of +entry+, beside the log.

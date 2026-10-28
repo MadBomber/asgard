@@ -32,6 +32,31 @@ module Asgard
         primary.empty? ? errors : primary
       end
 
+      # A task that is already running further up +chain+ (the tasks this
+      # thread is inside, outermost first) and is asked for again can never
+      # finish: `def a = invoke(:b)` with `def b = invoke(:a)`. It would
+      # wait on itself forever, so name the cycle instead.
+      def self.check_cycle!(chain, target)
+        start = chain.index(target)
+        return unless start
+
+        raise Asgard::CircularDependencyError, [*chain[start..], target].join(" -> ")
+      end
+
+      # The options a dependency runs with: the typed task's, overlaid with
+      # the dependency's own (+declared+, class options included) parsed
+      # from the command line as given (+raw+, an Array of words, or a Hash
+      # when the class was instantiated with one). So the dependency's own
+      # defaults apply, an option typed on the command line reaches every
+      # task that declares it, and one it does not declare passes through
+      # from the typed task unchanged. A required option of the dependency
+      # is not enforced, as it was not before.
+      def self.dep_options(declared, raw, typed)
+        words, given = raw.is_a?(Array) ? [raw, {}] : [[], raw.to_h]
+        own = Thor::Options.new(declared, given, false, true).parse(words)
+        typed.merge(own).freeze
+      end
+
       module ClassMethods
         def _running
           @_running ||= Set.new
@@ -81,17 +106,26 @@ module Asgard
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
+        Dispatch.check_cycle!(task_frames.map(&:task), target)
         case acquire_run_token(target)
         when :done   then return cached_result(target)
         when :failed then raise DepFailed.new(target, self.class._failed[target])
         end
 
         result = nil
+        error  = nil
         begin
-          resolved_deps = run_deps_for(target)
-          result = with_dep_results(resolved_deps) { in_task_frame(target) { command.run(self, *) } }
+          result = in_task_frame(target) do
+            resolved_deps = run_deps_for(target)
+            with_dep_results(resolved_deps) { command.run(self, *) }
+          end
+        rescue Exception => e # rubocop:disable Lint/RescueException -- an exit or interrupt ends the task too
+          # Captured here, not read from $! in an ensure: $! still holds a
+          # caller's exception when this runs inside its rescue block.
+          error = e
+          raise
         ensure
-          signal_done(target, result, $ERROR_INFO)
+          signal_done(target, result, error)
         end
         result
       end
@@ -106,10 +140,12 @@ module Asgard
         dep_results[task.to_sym]
       end
 
-      # One running task body: its name and how many background jobs it has
-      # started so far. Frames live on a thread-local stack, so a task
-      # running as a dependency in a parallel stage sees itself, not the
-      # task the user typed.
+      # One running task, from its dependencies through its body: its name
+      # and how many background jobs it has started so far. Frames live on
+      # a thread-local stack, so a task running as a dependency in a
+      # parallel stage sees itself, not the task the user typed. A parallel
+      # stage's thread starts with a copy of its parent's stack, which is
+      # how a cycle through that stage is still seen (see check_cycle!).
       TaskFrame = Struct.new(:task, :jobs)
 
       # The task whose body is running on this thread, or nil outside one
@@ -232,15 +268,41 @@ module Asgard
       # pass between tasks through dep_result, not through self.
       def dep_thread(task)
         instance = parallel_instance
+        frames   = task_frames.dup
         Thread.new do
-          Thread.current.report_on_exception = false
+          thread = Thread.current
+          thread.report_on_exception = false
+          thread[:asgard_task_frames] = frames
           instance.__send__(:run_dep, task)
         rescue SystemExit => e
           raise DepExit, e.status
         end
       end
 
-      def parallel_instance = self.class.new([], options, {})
+      # Built from the same command line as this instance, so the task it
+      # runs parses its own options from it (see dep_options).
+      def parallel_instance
+        instance = self.class.new([], raw_options, {})
+        instance.options = options
+        instance
+      end
+
+      # The options this instance was created with, before parsing: the
+      # command line's words, or the Hash a caller passed to new.
+      def raw_options = @_initializer[1]
+
+      # Runs the block with +opts+ as this instance's options.
+      def with_options(opts)
+        previous     = options
+        self.options = opts
+        yield
+      ensure
+        self.options = previous
+      end
+
+      def dep_options_for(command)
+        Dispatch.dep_options(self.class.class_options.merge(command.options), raw_options, options)
+      end
 
       # One failure: a dependency that exited ends asgard with its status,
       # as it would have on its own; anything else propagates unchanged.
@@ -252,7 +314,11 @@ module Asgard
         end
       end
 
+      # Every script in the group stopped because asgard was signalled:
+      # that is the one failure, so it exits as asgard would on its own.
       def raise_group_failure(errors)
+        signalled = Shell::Children.exit_status
+        exit(signalled) if signalled
         errors.each { |task, e| $stderr.puts "asgard: dependency '#{task}' failed: #{describe_failure(e)}" } # rubocop:disable Style/StderrPuts
         raise Asgard::Error, "parallel dependencies failed: #{errors.keys.join(', ')}"
       end
@@ -271,7 +337,7 @@ module Asgard
 
       def run_dep(task)
         command = self.class.all_commands[task.to_s]
-        invoke_command(command) if command
+        with_options(dep_options_for(command)) { invoke_command(command) } if command
       end
     end
   end

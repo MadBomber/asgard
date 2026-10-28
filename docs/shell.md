@@ -324,6 +324,8 @@ asgard doc_server
 
 Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.
 
+A signal sent to asgard alone also reaches the command. `timeout`, a CI runner cancelling a job, or `kill -TERM <asgard pid>` signal only asgard's own process, not the group; asgard passes the INT or TERM on to the running script, waits for it to end, and exits 130 or 143. Nothing is left running behind it.
+
 !!! note
     Earlier versions accepted `exec: true` to replace the asgard process with the command. It was removed in 0.6.0 and now raises `ArgumentError (unknown keyword: :exec)`; delete the keyword. See [Breaking Changes](breaking-changes.md#sh-and-shebang-exec-removed).
 

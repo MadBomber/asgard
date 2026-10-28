@@ -35,13 +35,17 @@ module Asgard
 
         # The entry's record after this report: a spawn starts a new record
         # (no finished/status yet, which is how `list` shows "running"), an
-        # exit completes the previous one.
+        # exit completes the previous one when it is the same run (same
+        # pid). A failed spawn (no pid) is a record of its own, with the
+        # error, so it never wears the previous run's pid and start time.
         def entry_record(report, previous = nil)
           entry, task, pid, at = report.values_at(:entry, :task, :pid, :at)
           stamp = Time.at(at).iso8601
           return { entry:, task:, pid:, started: stamp, changes: report[:changes] } if report[:kind] == :spawn
 
-          { entry:, task:, pid:, **previous.to_h, finished: stamp, status: report[:status], seconds: report[:seconds] }
+          run    = previous.to_h[:pid] == pid ? previous.to_h : {}
+          record = { entry:, task:, pid:, **run, finished: stamp, status: report[:status], seconds: report[:seconds] }
+          report[:error] ? record.merge(error: report[:error]) : record
         end
 
         # The changed paths of a trigger or spawn report, space-separated; "" for an exit.
@@ -62,12 +66,15 @@ module Asgard
       end
 
       # state: responds to write_entry(name, record). max_log: is the size
-      # past which the log is rotated (StateDir.rotate).
-      def initialize(reports, log:, state:, max_log: StateDir.log_limit)
-        @reports = reports
-        @log     = log
-        @max_log = max_log
-        @state   = state
+      # past which the log is rotated (StateDir.rotate); on_rotate: is
+      # called after each rotation, so the daemon can move its own output
+      # to the new log.
+      def initialize(reports, log:, state:, max_log: StateDir.log_limit, on_rotate: nil)
+        @reports   = reports
+        @log       = log
+        @max_log   = max_log
+        @on_rotate = on_rotate
+        @state     = state
         @records = {}
         @running = {} # pid => task
         @mutex   = Mutex.new
@@ -90,7 +97,7 @@ module Asgard
         trigger = kind == :trigger
         line    = Reporter.log_line(report, behind: trigger ? running_for(report[:task]) : nil)
         track(report) if %i[spawn exit].include?(kind)
-        StateDir.rotate(@log, max_bytes: @max_log)
+        @on_rotate&.call if StateDir.rotate(@log, max_bytes: @max_log)
         File.open(@log, "a") { |file| file.puts(line) }
       rescue SystemCallError, IOError => e
         $stderr.puts "watcher: could not write #{kind} report for #{report[:entry]}: #{e.message}" # rubocop:disable Style/StderrPuts
@@ -98,6 +105,9 @@ module Asgard
 
       # Pids of tasks in flight, ascending.
       def running = @mutex.synchronize { @running.keys.sort }
+
+      # Tasks in flight, as { pid => task name }.
+      def running_tasks = @mutex.synchronize { @running.dup }
 
       # The in-flight pid of task, or nil.
       def running_for(task) = @mutex.synchronize { @running.key(task) }

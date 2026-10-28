@@ -3,9 +3,9 @@
 module Asgard
   module Jobs
     # Ends one job: TERM to its process group, a poll every 0.2s for up to
-    # the grace period, then KILL and a wait until the pid no longer
-    # verifies. The signal sender, the liveness check and sleep are
-    # injectable so the timing branches test without waiting.
+    # the grace period, then KILL and a wait until the group holds none of
+    # the job's processes. The signal sender, the liveness check and
+    # sleep are injectable so the timing branches test without waiting.
     class Stopper
       POLL        = 0.2
       TIMEOUT     = 10
@@ -58,8 +58,11 @@ module Asgard
         false
       end
 
+      # +alive+ is State.active?: a job whose script exited still counts
+      # while processes it left run in its group, and ps has confirmed
+      # they are there before any signal goes out.
       def initialize(timeout: TIMEOUT, poll: POLL, out: $stdout,
-                     alive: State.method(:verified?), signal: Stopper.method(:signal_group), sleeper: Kernel.method(:sleep))
+                     alive: State.method(:active?), signal: Stopper.method(:signal_group), sleeper: Kernel.method(:sleep))
         @timeout = timeout
         @poll    = poll
         @out     = out
@@ -69,7 +72,9 @@ module Asgard
       end
 
       # :stopped when TERM ended the job within the grace period, :killed
-      # when KILL had to, :not_running when there was nothing to stop.
+      # when KILL had to, :not_running when there was nothing to stop. A
+      # KILL takes the trampoline too, so the 137 is recorded here (a
+      # record that is not a job's, as the timing tests use, writes none).
       def stop(record)
         return :not_running unless @alive.call(record)
 
@@ -77,7 +82,7 @@ module Asgard
         return :stopped if exited?(record, resend: "TERM")
 
         @signal.call("KILL", record[:pgid])
-        exited?(record)
+        State.record_kill(record) if exited?(record)
         :killed
       end
 

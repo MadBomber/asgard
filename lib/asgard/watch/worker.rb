@@ -63,8 +63,9 @@ module Asgard
       end
 
       # One trigger. A spawn that fails (the root or the executable gone,
-      # an environment too large) is reported as an exit with no pid, so
-      # the worker carries on with the next trigger instead of ending.
+      # an environment too large or malformed) is reported as an exit with
+      # no pid, so the worker carries on with the next trigger instead of
+      # ending.
       def run_one(description)
         entry, task = description.values_at(:entry, :task)
         pid = spawn_or_report(description) or return
@@ -77,9 +78,10 @@ module Asgard
         Worker.remove_changes_file(description[:changes_file])
       end
 
-      # The exit code a spawn failure reports, as a shell would: 127 when
-      # something was not found, 126 when it could not be run.
-      def self.spawn_failure_status(error) = error.is_a?(Errno::ENOENT) ? 127 : 126
+      # The exit code a spawn failure reports, as a shell would: 126 when
+      # the system could not run it, 127 when something was not found or
+      # spawn refused its arguments (an ArgumentError: a bad env: name).
+      def self.spawn_failure_status(error) = error.is_a?(SystemCallError) && !error.is_a?(Errno::ENOENT) ? 126 : 127
 
       # The task has exited, so the change lists spilled for it are done.
       def self.remove_changes_file(path)
@@ -92,7 +94,7 @@ module Asgard
 
       def spawn_or_report(description)
         @spawner.spawn(description)
-      rescue SystemCallError => e
+      rescue StandardError => e
         at, = stamp
         report(kind: :exit, entry: description[:entry], task: description[:task], pid: nil, at:,
                status: Worker.spawn_failure_status(e), seconds: 0.0, error: e.message)

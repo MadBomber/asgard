@@ -28,7 +28,8 @@ class Tasks
   # Hidden (no desc): release runs it first, so a release from any branch
   # but main stops before the quality gate and the build.
   def main_branch
-    branch = `git rev-parse --abbrev-ref HEAD`.strip
+    branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+    branch = "not a git checkout" if branch.empty?
     abort "Releases are made from main only; this is #{branch}." unless branch == "main"
   end
 

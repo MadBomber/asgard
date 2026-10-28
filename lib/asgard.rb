@@ -23,6 +23,13 @@ module Asgard
 
   def self.pin_project_root(root) = @project_root = root
 
+  # Whether an import path, as written, is a glob pattern.
+  def self.glob?(path) = path.match?(/[*?\[{]/)
+
+  # +path+ with every glob metacharacter escaped, so Dir.glob matches it
+  # literally: a project in "glob[1]" still finds its own files.
+  def self.glob_escape(path) = path.to_s.gsub(/[\\*?\[\]{}]/) { "\\#{it}" }
+
   # `asgard schedule list`, `asgard watcher list` and `asgard jobs list`
   # report every project's entries, so they work from a directory with no
   # .loki above it.

@@ -18,6 +18,10 @@ module Asgard
       # `start` to the daemon it spawns and across a reload's exec.
       LOCK_ENV = "ASGARD_WATCH_LOCK_FD"
 
+      # Names the file of changes a reloading daemon saw but did not run,
+      # for the daemon its exec starts to run instead.
+      PENDING_ENV = "ASGARD_WATCH_PENDING"
+
       attr_reader :dir, :root
 
       class << self
@@ -33,6 +37,16 @@ module Asgard
         def write_json(path, value) = StateDir.write_json(path, value)
 
         def read_json(path) = StateDir.read_json(path)
+
+        # The pending triggers a reload left at +path+ ([{ entry:, changes: }]),
+        # removing the file so they run once; [] for no path or no file.
+        def take_pending(path)
+          return [] unless path
+
+          pending = read_json(path) || []
+          FileUtils.rm_f(path)
+          pending
+        end
 
         # Whether pid is a watcher daemon, not merely a live process.
         def daemon?(pid) = Reporter.asgard_process?(pid, "watcher", "run")
@@ -66,6 +80,7 @@ module Asgard
       def log_path          = File.join(dir, "watcher.log")
       def root_path         = File.join(dir, ROOT_FILE)
       def declarations_path = File.join(dir, "declarations.json")
+      def pending_path      = File.join(dir, "pending.json")
       def entries_dir       = File.join(dir, "entries")
       def entry_path(name)  = File.join(entries_dir, "#{name}.json")
 
@@ -80,9 +95,13 @@ module Asgard
       # watcher.lock. The open File while held, nil when another process
       # holds it. The lock ends when the last descriptor of this open
       # closes, so a daemon that inherits it keeps it for its lifetime.
+      # The descriptor is close-on-exec: only `start` and a reload hand it
+      # on, by name (see LOCK_ENV); a task the daemon spawns, and anything
+      # that task leaves running, never holds it.
       def acquire_lock
         FileUtils.mkdir_p(dir)
         file = File.open(lock_path, File::RDWR | File::CREAT, 0o600) # rubocop:disable Style/FileOpen -- held, not read
+        file.close_on_exec = true
         return file if file.flock(File::LOCK_EX | File::LOCK_NB)
 
         file.close
@@ -90,14 +109,18 @@ module Asgard
       end
 
       # The lock a parent handed down (see LOCK_ENV), or nil when none was
-      # or the descriptor is not this project's lock file.
+      # or the descriptor is not this project's lock file. Handing it down
+      # cleared close-on-exec, so it is set again here: otherwise every
+      # task spawned would inherit the lock and could outlive the daemon
+      # holding it.
       def adopt_lock(env = ENV)
         fd = Integer(env[LOCK_ENV].to_s, exception: false) or return nil
         io = File.for_fd(fd, autoclose: false)
-        return nil unless File.exist?(lock_path) && File.identical?(io, lock_path)
+        return nil unless File.exist?(lock_path) && File.identical?(io, lock_path) && io.flock(File::LOCK_EX | File::LOCK_NB)
 
-        io.autoclose = true
-        io.flock(File::LOCK_EX | File::LOCK_NB) ? io : nil
+        io.autoclose     = true
+        io.close_on_exec = true
+        io
       rescue Errno::EBADF, ArgumentError
         nil
       end
@@ -119,7 +142,8 @@ module Asgard
 
       def clear = FileUtils.rm_f(pid_path)
 
-      # The declarations at start time, trimmed to what `list` shows.
+      # The declarations of the running daemon (written by every `watcher
+      # run`, a reload included), trimmed to what `list` shows.
       def write_declarations(specs)
         State.write_json(declarations_path, specs.map { |spec| State.declaration_record(spec) })
       end

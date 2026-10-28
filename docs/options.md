@@ -189,7 +189,7 @@ The imports at the top of `.loki` run before the task name is read, so the flags
 
 - inside the task body;
 - inside a helper method called from the task body (`private` methods, `no_commands` methods, `helper` methods);
-- inside a dependency's body, where it holds the same values: a dependency sees the options given to the task you typed, since the whole run shares one command line.
+- inside a dependency's body. The whole run shares one command line, so a value you type (`asgard deploy --target x`) reaches every dependency that declares that option. An option the dependency declares but you did not type takes the dependency's own default, not the default of the task you typed. An option only the typed task declares is passed through to the dependency as the typed task sees it.
 
 It is not available:
 

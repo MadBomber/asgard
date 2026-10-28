@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "time"
+
 module Asgard
   # Background jobs: a process a task starts on purpose, by name, that
   # outlives asgard and that a later `asgard jobs` can list and stop.
@@ -32,19 +34,48 @@ module Asgard
       end
     end
 
-    # A task name may end in ? or !; its job name keeps to [\w-], which is
-    # what a record's file name must be for `jobs list` to find it.
+    # How a task name's characters outside \w are spelled in its job name,
+    # which keeps to [\w-] because a record's file name must for `jobs
+    # list` to find it. Every spelling starts with "-" and none with
+    # "-<digit>", so no two task names share a job name and none reads as
+    # the "-<N>" counter: ready? is ready-q-1, never the ready_-1 of ready_.
+    NAME_ESCAPES = { "?" => "-q", "!" => "-b", "=" => "-e", "-" => "--" }.freeze
+
     def sequenced_name(task, sequence)
       raise ArgumentError, "sh background: true must be called from a task body" unless task
 
-      :"#{task.to_s.gsub(/[^\w-]/, '_')}-#{sequence}"
+      :"#{escape_task(task)}-#{sequence}"
     end
+
+    # Any other character (a non-ASCII letter) is "-u" and six hex digits.
+    def escape_task(task) = task.to_s.gsub(/\W/) { |char| NAME_ESCAPES.fetch(char) { format("-u%06x", char.ord) } }
 
     def chosen_name(value)
       name = value.to_s.strip
       raise ArgumentError, "background: #{value.inspect} is not a job name (letters, digits and _ only)" unless name.match?(NAME)
 
       name.to_sym
+    end
+
+    # Whether +record+ is one a started job wrote: a Hash with a name, a
+    # pid and a group id above 1 (kill(2) reads -1 and 0 as "everyone"
+    # and "us"), a script path to verify against and a start time. A hand
+    # edit or another tool's JSON fails this and stays out of listings.
+    def valid_record?(record)
+      return false unless record.is_a?(Hash)
+
+      name, pid, pgid, script, started = record.values_at(:name, :pid, :pgid, :script, :started)
+      text?(name) && text?(script) && process_id?(pid) && process_id?(pgid) && time?(started)
+    end
+
+    def text?(value) = value.is_a?(String) && !value.empty?
+
+    def process_id?(id) = id.is_a?(Integer) && id > 1
+
+    def time?(value)
+      value.is_a?(String) && Time.iso8601(value).is_a?(Time)
+    rescue ArgumentError
+      false
     end
 
     # The first non-blank line of a script, for the listing.
@@ -94,21 +125,25 @@ module Asgard
     end
 
     # What a record's job is doing now: :running while its pid verifies,
-    # [:exited, code] once the trampoline wrote a status, :gone when
-    # neither (the trampoline died, or the machine rebooted).
-    def status(exit_code:, verified:)
-      return [:exited, exit_code] if exit_code
+    # [:exited, code] once the trampoline wrote a status (with
+    # :processes_left while processes the script started remain in its
+    # group), :gone when neither (the trampoline died, or the machine
+    # rebooted).
+    def status(exit_code:, verified:, leftovers: false)
+      return [:exited, exit_code, (:processes_left if leftovers)].compact if exit_code
       return :running if verified
 
       :gone
     end
 
-    # The STATUS column: "running", "exited 3 (2.5s)" or "gone".
+    # The STATUS column: "running", "exited 3 (2.5s)", "exited 0 (2.5s,
+    # processes left)" or "gone".
     def describe_status(status, seconds: nil)
       return status.to_s unless status.is_a?(Array)
 
-      duration = seconds ? " (#{format('%.1fs', seconds)})" : ""
-      "exited #{status.last}#{duration}"
+      _, code, left = status
+      notes = [(format("%.1fs", seconds) if seconds), ("processes left" if left)].compact
+      notes.empty? ? "exited #{code}" : "exited #{code} (#{notes.join(', ')})"
     end
   end
 end

@@ -41,6 +41,22 @@ reinstalled after.
   and `--debug` and `--verbose` show one spelling in help.
 - **State is private**: state directories are created 0700 and schedule
   job files 0600, since logs, scripts and `env:` values can hold secrets.
+- **asgard's helpers are reserved names.** A task or helper named `sh`,
+  `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`,
+  `dep_result`, `dep_results` or `current_task` is refused at load with
+  file and line; it used to replace the helper silently.
+- **Schedule entry names from `options:` can carry a hash.** When an
+  option is not plain lowercase words, or the name passes 64 characters,
+  an 8-character hash is added, so `--period=week` and `--period week` no
+  longer collide. `asgard schedule install` moves such entries to their
+  new names. `every:` together with `on:` is now an error instead of
+  ignoring `on:`.
+- **Watcher ignores and patterns.** `.git`, `.hg`, `.svn` and
+  `node_modules` are ignored at any depth; `coverage`, `pkg`, `tmp`,
+  `log`, `.bundle`, `bundle`, `vendor/bundle` and `vendor/ruby` only at
+  the project root, so `app/log/` is watched. A path pattern applies only
+  to its own directory, and a bad `env:` is an error when the `.loki`
+  loads.
 
 ### Added
 
@@ -55,6 +71,11 @@ reinstalled after.
   [--dry-run]`.**
 - **Watcher**: triggers that arrive while a task is busy merge into one
   run, and `watcher.log` rotates at 10 MB (`ASGARD_LOG_MAX`).
+  `asgard watcher stop --force` ends running tasks instead of waiting for
+  them, as a second Ctrl-C does in `watcher run`. Globs accept `[ab]`,
+  `[!ab]` and nested braces.
+- **`asgard help jobs`, `help schedule` and `help watcher`** list their
+  subcommands.
 - **CI** on Linux and macOS, Ruby 4.0.9 and 4.1.0-preview1.
 
 ### Fixed
@@ -62,27 +83,47 @@ reinstalled after.
 - **Dependencies**: a failing parallel dependency waits for its siblings
   and every failure is named; a task waiting on a shared dependency that
   failed no longer runs; a raising dependency no longer prints Ruby's
-  thread report.
+  thread report. A dependency's own option defaults apply when it runs
+  for another task; a task run inside a caller's `rescue` is no longer
+  recorded as failed; a runtime `invoke` cycle is reported as a circular
+  dependency instead of crashing; methods every object has (`to_s`,
+  `inspect`) are not tasks.
 - **`sh`**: a command ended by a signal exits 128 plus the signal number
-  instead of crashing; a missing interpreter is named and exits 127.
+  instead of crashing; a missing interpreter is named and exits 127. INT
+  or TERM sent to asgard alone (`timeout`, a cancelled CI job) reaches the
+  running script and everything it started, instead of leaving them
+  running.
 - **Loading**: `import_up` from an imported file no longer recurses until
-  the stack overflows; task and helper names Thor relies on (`args`,
-  `shell`, `options`, ...) are rejected with file and line; a `.loki`
-  directory is not a task file.
+  the stack overflows, and neither do two files that import each other;
+  `import` works in a directory whose name contains `[`, `{`, `?` or `*`;
+  task and helper names Thor relies on (`args`, `shell`, `options`, ...)
+  are rejected with file and line; a `.loki` directory is not a task file.
 - **Subcommand groups** list only their own tasks in help, and
   `asgard tree` shows the name the group was registered under.
 - **Watcher**: it reloads on a `.loki` change instead of silently watching
   nothing; a pidfile is trusted only while its pid is still the watcher; a
   failed spawn no longer kills a worker; an idle daemon no longer spins;
-  two starts at once cannot leave two daemons; plus smaller path, glob,
-  environment and shutdown fixes.
+  two starts at once cannot leave two daemons. Tasks no longer inherit the
+  watcher's lock, so a task that leaves a process behind cannot block the
+  next `start`; a `.loki` edit that drops a watched task keeps the running
+  watcher instead of killing it; changes saved during a reload are not
+  lost; the watcher's own log lines survive rotation and `log -f` follows
+  across it; ignored directories are not scanned; plus smaller path,
+  glob, environment and shutdown fixes.
 - **Background jobs**: concurrent starts of one name start one job;
   `jobs stop` can never signal asgard's own process group; a reused pid
-  shows as `gone`.
+  shows as `gone`. A malformed record is skipped instead of crashing every
+  listing; processes left in a job's group after its script exits are
+  shown and stopped; a job killed by `stop` shows `exited 137`; `clean`
+  cannot remove a job that a concurrent start just recorded; a `ps` that
+  cannot list processes (BusyBox) is a clear error.
 - **Schedules**: a `$` in a systemd `env:` value stays one `$`; empty
   `on:`/`at:`, control characters and invalid env names are rejected; an
-  unchanged launchd install leaves a running job alone; launchd `status`
-  reports running jobs and signal exits.
+  unchanged install leaves a running job alone; `status` reports running
+  jobs and signal exits. `remove`, `prune` and `install` stop with an
+  error instead of reporting success when the scheduler will not unload a
+  job; a long `options:` string no longer makes a file name too long to
+  write; on Linux, background jobs a scheduled task starts survive it.
 - **Packaging**: the gem ships only `lib/`, `bin/asgard`, `sig/`, and the
   README, LICENSE and CHANGELOG.
 

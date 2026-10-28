@@ -44,6 +44,10 @@ module Asgard
         # process group, output to the log, and no stdin, which it would
         # otherwise share with the terminal that ran `start`.
         def daemon_spawn_options(root, log) = { chdir: root, pgroup: true, in: File::NULL, out: [log, "a"], err: %i[child out] }
+
+        # The shell command `log -f` runs. -F, not -f: it keeps following
+        # watcher.log when rotation renames it and a new one starts.
+        def follow_command(path) = "tail -n +1 -F #{path.shellescape}"
       end
 
       desc "tree", "Print a tree of the watcher subcommands", hide: true
@@ -101,8 +105,19 @@ module Asgard
       def daemon
         specs = declared_watches
         refuse_if_another_running
-        config = Daemon::Config.new(declarations: specs, root: watch_root, state:, context: spawn_context, tasks: Tasks.all_commands.keys)
+        config = Daemon::Config.new(declarations: specs, root: watch_root, state:, context: spawn_context, tasks: Tasks.all_commands.keys,
+                                    pending: ENV.delete(State::PENDING_ENV))
         Daemon.new(config).run
+      end
+
+      # What a reload runs before it re-execs: the checks `run` makes,
+      # without running anything. Exits non-zero, saying why on stderr,
+      # when the task files do not load, nothing is watched, or a watch
+      # names a task the project does not define.
+      desc "check", "Exit 0 when the watches would run (what a reload checks first)", hide: true
+      def check
+        declared_watches
+        nil
       end
 
       desc "start", "Start the watcher for this project in the background"
@@ -120,17 +135,32 @@ module Asgard
         puts "started watcher for #{watch_project} (pid #{pid}); log: #{log}"
       end
 
-      desc "stop", "Stop the watcher; a task already running finishes first"
+      desc "stop", "Stop the watcher; a task already running finishes first (--force: end running tasks)"
+      method_option :force, aliases: "-f", type: :boolean, desc: "End running tasks (TERM, then KILL) instead of waiting for them"
       def stop
         pid = state.running_pid or abort("watcher is not running for #{watch_project}.")
         Process.kill("TERM", pid)
+        waited = 0
         while State.daemon?(pid)
           running = state.running_entries.map { |entry| "#{entry[:entry]} (pid #{entry[:pid]})" }
           puts "watcher: waiting for #{running.join(', ')}" unless running.empty?
           sleep STOP_WAIT
+          force_stop(pid) if options[:force] && (waited += 1) == 1
         end
         state.clear
         puts "stopped watcher for #{watch_project}"
+      end
+
+      no_commands do
+        # The second TERM, a moment after the first so the two are not
+        # merged into one pending signal: the daemon takes it as "end the
+        # running tasks", which it does only for groups it can prove are
+        # its own tasks.
+        def force_stop(pid)
+          Process.kill("TERM", pid) if State.daemon?(pid)
+        rescue Errno::ESRCH
+          nil
+        end
       end
 
       no_commands do
@@ -207,11 +237,11 @@ module Asgard
       end
 
       desc "log", "Print this project's watcher log to STDOUT"
-      method_option :follow, aliases: "-f", type: :boolean, desc: "Keep printing new output as it arrives (tail -f)"
+      method_option :follow, aliases: "-f", type: :boolean, desc: "Keep printing new output as it arrives, across rotation (tail -F)"
       def log
         path = state.log_path
         return $stderr.puts "#{watch_project} has no watcher log yet (#{path}); it is created on the first start." unless File.exist?(path)
-        return sh("tail -n +1 -f #{path.shellescape}", silent: true) if options[:follow]
+        return sh(Commands.follow_command(path), silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
       end

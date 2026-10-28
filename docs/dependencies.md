@@ -240,19 +240,35 @@ What does depend on load order is a task name defined twice: the later definitio
 
 ## When a Dependency Fails
 
-A failed prerequisite stops the run. How it stops depends on what failed:
+Asgard does not decide what a failing dependency means. You do, when you write the task. A dependency can fail in two ways, and the difference is entirely in how its body ends:
 
-- **A failing `sh` or `shebang`**, or an `abort`, ends asgard with that command's exit status. The task that depended on it never starts. This is the normal case: `asgard release` with a failing test suite exits with the test runner's status.
-- **An exception** raised inside a dependency propagates and asgard reports it. Raise `Asgard::Error` for a clean one-line message: `asgard: <message>`, exit 1.
+- **It ends the run.** The dependency exits non-zero, aborts or raises. Nothing after it runs: not the task that depends on it, not anything further up the chain. Use this for a prerequisite that must succeed, where carrying on would be wrong or dangerous.
+- **It reports.** The dependency returns a value that says what happened (`:fail`, `false`, a count, a Hash of findings) and finishes normally. The task that depends on it runs and reads that value with [`dep_result`](#passing-results-between-tasks), and decides for itself what to do about it.
+
+Neither is the default for "failure". A test suite can be either: a gate in front of `release`, or one line in a report.
+
+### A Dependency That Must Succeed
+
+Make the dependency stop the run when it fails. Any of these does it:
+
+- **A failing `sh` or `shebang`** ends asgard with the command's exit status. This is the usual case, and it needs no code: `asgard release` with a failing test suite exits with the test runner's status.
+- **`abort "message"`** prints the message to standard error and exits 1.
+- **`exit 2`**, or any other non-zero code, exits with that code.
+- **`raise Asgard::Error, "message"`** prints `asgard: message` and exits 1. Any other exception is reported with its class and exits 1.
 
 ```ruby
 class Tasks
   desc "Refuse to deploy from a dirty tree"
   def clean_tree
-    raise Asgard::Error, "commit or stash your changes first" unless `git status --porcelain`.strip.empty?
+    abort "commit or stash your changes first" unless `git status --porcelain`.strip.empty?
   end
 
-  depends_on :clean_tree
+  desc "Refuse to deploy without credentials"
+  def credentials
+    exit 2 unless ENV["DEPLOY_TOKEN"]
+  end
+
+  depends_on :clean_tree, :credentials
   desc "Deploy to production"
   def deploy = sh "cap production deploy"
 end
@@ -260,13 +276,19 @@ end
 
 ```bash
 asgard deploy
-# asgard: commit or stash your changes first
-# (exit 1)
+# commit or stash your changes first
+# (exit 1; credentials and deploy never ran)
 ```
 
-### A Return Value Never Stops Anything
+`examples/confirm.loki` in the repository is a guard task built this way: it asks "Really run `asgard reset_database`?" and raises `Asgard::Error` on anything but yes. See [Examples](examples.md#confirmloki).
 
-Only an exit or an exception stops a dependent task. A dependency that *returns* something, even `:fail` or `false`, has succeeded as far as the pipeline is concerned. (Returning `:fail` from the task you typed on the command line does make asgard exit 1, which is how the quality-gate pattern below reports failure, but it does not stop a task that depends on it.) To guard a task, raise or let a command fail. `examples/confirm.loki` in the repository is a guard task built this way: it asks "Really run `asgard reset_database`?" and raises `Asgard::Error` on anything but yes. See [Examples](examples.md#confirmloki).
+### A Dependency That Reports
+
+Return a value instead, and let the task that depends on it judge. A return value never stops anything: a dependency that returns `:fail` or `false` has finished as far as the pipeline is concerned, and the dependent runs. This is what you want when every check should run and be reported together, rather than the first failure hiding the rest.
+
+The repository's own `quality` task works this way. Each `*_check` dependency runs its tool and returns `:pass`, `:fail`, `:warn` or `:skip`; none of them stops the run. `quality` runs after all of them, prints one line per check, and only then decides: it calls `abort` when any check returned `:fail`, so `asgard quality` still exits 1 for CI. The code is under [Passing Results Between Tasks](#passing-results-between-tasks).
+
+Returning `:fail` from the task you typed on the command line makes asgard exit 1, so a check run on its own (`asgard test_check`) still reports its result through the exit status.
 
 ### Failure in a Parallel Group
 

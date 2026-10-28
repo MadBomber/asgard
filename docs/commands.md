@@ -84,7 +84,7 @@ Runs and manages the file watcher for the entries declared with `watch :task, pa
 | Command | Arguments and flags | What it does |
 |---|---|---|
 | `asgard watcher start` | | Starts the watcher in the background; prints `started watcher for <slug> (pid N); log: <path>`; refused if one is running |
-| `asgard watcher stop` | | Stops the watcher; a task already running finishes first, and `stop` names it while it waits |
+| `asgard watcher stop` | `--force`, `-f` | Stops the watcher; a task already running finishes first, and `stop` names it while it waits. `--force` ends running tasks (TERM, then KILL after five seconds) instead of waiting |
 | `asgard watcher list` | `--all`, `-a` | A table of this project's watches (NAME, TASK, WATCHES, DAEMON, LAST RUN); `--all` covers every project |
 | `asgard watcher preview` | | Prints the exact command and environment each entry would run |
 | `asgard watcher log` | `--follow`, `-f` | Prints the watcher's log; `-f` keeps following it |

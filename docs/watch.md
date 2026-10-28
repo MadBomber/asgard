@@ -83,10 +83,10 @@ A path is one of three things, judged in the project root:
 | You write | What is watched |
 |---|---|
 | `"docs"` (an existing directory) | Everything beneath it, at any depth |
-| `"Gemfile.lock"` (a file, or a name with an extension) | Just that file; it may not exist yet |
+| `"Gemfile.lock"` (a file, or a name with an extension or a leading dot, like `.env`) | Just that file; it may not exist yet |
 | `"lib/**/*.rb"` (a glob) | The directory before the first wildcard, keeping only paths that match |
 
-Globs follow shell rules: `**` spans directories, `*` and `?` stay within one path segment, and `{a,b}` is an alternative:
+Globs follow shell rules: `**` spans directories, `*` and `?` stay within one path segment, `{a,b}` is an alternative (braces may nest, `{a,{b,c}}`), and `[ab]`, `[a-z]` and `[!ab]` match one character:
 
 ```ruby
 watch :assets, paths: "app/assets/**/*.{js,css}"
@@ -114,7 +114,7 @@ watch :build, paths: "config/*.yml", as: "build-config"
 
 ### Narrowing with only:
 
-`only:` adds a filter on top of the paths. A path must match one of the patterns from `paths:` **and** one of the `only:` expressions. The filter is applied to every directory the declaration watches, so with `paths: %w[lib/**/*.rb docs/**/*.md]` a `.md` file under `lib/` also matches; use separate declarations when that matters.
+`only:` adds a filter on top of the paths. A path must match one of the patterns from `paths:` **and** one of the `only:` expressions. Each directory keeps its own patterns, so with `paths: %w[lib/**/*.rb docs/**/*.md]` a `.md` file under `lib/` does not match, but `only:` applies to every directory the declaration watches.
 
 ```ruby
 watch :test, paths: %w[lib test], only: /\.rb\z/
@@ -125,7 +125,7 @@ watch :docs, paths: "docs", only: [/\.md\z/, /\.yml\z/]
 
 ### Default Ignores
 
-Every watch ignores `.git/`, `coverage/`, `pkg/`, `tmp/`, `log/` and `node_modules/` at any depth, so a task that writes its output inside the project never retriggers itself. `ignore:` adds to that list:
+Every watch ignores `.git/`, `.hg/`, `.svn/` and `node_modules/` at any depth. The project's own output directories, `coverage/`, `pkg/`, `tmp/`, `log/`, `.bundle/`, `bundle/`, `vendor/bundle/` and `vendor/ruby/`, are ignored at the project root, so a task that writes its output there never retriggers itself; a directory of yours with the same name deeper down, such as `app/log/`, is watched like any other. Editor swap and temp files are ignored too. Ignored directories are not even scanned. `ignore:` adds to that list:
 
 ```ruby
 watch :docs, paths: "docs", ignore: %r{\Adrafts/}
@@ -152,7 +152,7 @@ watch :reindex, paths: "data/**/*.json", events: %i[added removed], debounce: 1
 
 ### Environment
 
-`env:` adds variables to the task's process. The task reads them as usual, with `env(:build_env)` or `ENV["BUILD_ENV"]`:
+`env:` adds variables to the task's process. The task reads them as usual, with `env(:build_env)` or `ENV["BUILD_ENV"]`. A name that is empty, contains `=` or a NUL byte, or is not a String or Symbol is rejected when the `.loki` loads, as is a value containing a NUL byte:
 
 ```ruby
 watch :docs, paths: "docs", env: { BUILD_ENV: "dev" }
@@ -216,6 +216,7 @@ Behind `changes` are three environment variables the watcher sets for the task, 
 ```bash
 asgard watcher start        # start the watcher for this project in the background
 asgard watcher stop         # stop it; a task already running finishes first
+asgard watcher stop --force # stop it and end any running task
 asgard watcher list         # this project's watches, daemon state, each entry's last run
 asgard watcher list --all   # every project's
 asgard watcher preview      # the command and environment each entry would run
@@ -254,7 +255,9 @@ watcher: waiting for test (pid 12351)
 stopped watcher for api-9f3a1c2b
 ```
 
-`stop` never signals a running task. A task that hangs keeps `stop` waiting; kill the task and `stop` completes. With no watcher running: `watcher is not running for api-9f3a1c2b.`
+Plain `stop` never signals a running task. A task that hangs keeps `stop` waiting; kill the task, or interrupt `stop` and run `stop --force`, and `stop` completes. With no watcher running: `watcher is not running for api-9f3a1c2b.`
+
+`stop --force` (`-f`) does not wait for running tasks. A second after asking the watcher to stop it asks again, and the watcher ends each running task: TERM to the task's process group (the task and everything it started), then KILL to any still running five seconds later. The task's exit lands in the log and in `list` as usual, `143` for TERM or `137` for KILL. The watcher only signals processes it can confirm are its own running tasks; background jobs a task started are not touched.
 
 ### list
 
@@ -326,7 +329,7 @@ BUILD_ENV=dev
 
 ### log
 
-The watcher writes one log for the project: a line for every trigger, spawn and exit, with each task's own output in between. `log` prints it; `-f` follows it:
+The watcher writes one log for the project: a line for every trigger, spawn and exit, with each task's own output in between, plus the watcher's own messages. `log` prints it; `-f` follows it, and keeps following when the log is rotated:
 
 ```bash
 asgard watcher log
@@ -337,7 +340,7 @@ Before the first `start` there is no log: `api-9f3a1c2b has no watcher log yet (
 
 ### run
 
-`run` is the watcher in the foreground: the same process `start` launches, attached to your terminal instead of detached. It runs until you press Ctrl-C or send it TERM, then shuts down the way `stop` does and prints `watcher: stopped`. Use it to see the watcher's own messages as they happen, or as the process a service manager would supervise.
+`run` is the watcher in the foreground: the same process `start` launches, attached to your terminal instead of detached. It runs until you press Ctrl-C or send it TERM, then shuts down the way `stop` does and prints `watcher: stopped`. If a task is still running it says `watcher: INT or TERM again ends the running tasks`; a second Ctrl-C or TERM ends them the way `stop --force` does. Use it to see the watcher's own messages as they happen, or as the process a service manager would supervise.
 
 ```bash
 asgard watcher run
@@ -377,20 +380,21 @@ The task does not inherit the shell the watcher was started from. It sees the sa
 
 | Layer | Contents |
 |---|---|
-| Base | `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `LANG`, `LC_*`, `TMPDIR`, `SSH_AUTH_SOCK`, and the Ruby setup variables `GEM_HOME`, `GEM_PATH`, `RUBYOPT`, `RUBYLIB`, `BUNDLE_*`, captured when the watcher started |
+| Base | `PATH`, `HOME`, `USER`, `LOGNAME`, `SHELL`, `LANG`, `LC_*`, `TMPDIR`, `SSH_AUTH_SOCK`, and the Ruby setup variables `RUBYOPT`, `RUBYLIB`, `GEM_*`, `RUBY_*` (chruby), `RBENV_*` and `BUNDLE_*`, captured when the watcher started |
 | Declared | The entry's `env:`; the project's `.envrc` through `direnv exec` when direnv is on `PATH`; a `.env` through the `.loki`'s own `dotenv` call |
 | Trigger | `ASGARD_WATCH` (the entry name), `ASGARD_WATCH_ROOT` (the project root), and the changed paths in `ASGARD_MODIFIED`, `ASGARD_ADDED` and `ASGARD_REMOVED`, one per line, relative to the root |
 
-Nothing else from the daemon reaches the task. A change list too large for the environment (a branch switch under a `**` watch can change thousands of files) is written to a file instead, named by `ASGARD_CHANGES_FILE`; `changes` reads it the same way.
+Nothing else from the daemon reaches the task. A change list too large for the environment (a branch switch under a `**` watch can change thousands of files) is written to a file instead, named by `ASGARD_CHANGES_FILE`; `changes` reads it the same way. So is a change list holding a file name with a newline in it, which one-path-per-line variables cannot carry.
 
 ### Editing .loki While the Watcher Runs
 
-The watcher watches its own task files too: every `.loki` the project loaded, and any new `.loki` that appears in the project root. Save one and the watcher restarts itself with the new declarations once any running task has finished; the log ends one run with `watcher: reloading` and the next begins. You never need to `stop` and `start` after changing a `watch` line.
+The watcher watches its own task files too: every `.loki` the project loaded, and any new `.loki` that appears in the project root. Save one and the watcher restarts itself with the new declarations once any running task has finished; the log ends one run with `watcher: reloading` and the next begins. Files saved while it waits are not lost: the restarted watcher runs their triggers. You never need to `stop` and `start` after changing a `watch` line.
 
-If the edited files do not load (a syntax error, a typo), the watcher keeps the declarations it already has and says so in the log:
+Before restarting, the watcher checks the edited project the way `watcher run` would. If the files do not load (a syntax error, a typo), no `watch` is left, or a `watch` names a task that no longer exists (a renamed task), it keeps the declarations it already has and says so in the log, after the reason:
 
 ```
-watcher: the task files do not load; keeping the running declarations
+watcher: no such task(s): lint
+watcher: the task files do not load or declare no runnable watch; keeping the running declarations
 ```
 
 Fix the file and save again.
@@ -404,12 +408,13 @@ The watcher keeps everything outside the repository, under `~/.local/state/asgar
 | File | Contents |
 |---|---|
 | `watcher.pid` | The daemon's pid while it runs |
-| `watcher.lock` | Held by the running daemon, so two cannot start |
-| `watcher.log` | One line per trigger, spawn and exit, plus every task's output |
+| `watcher.lock` | Held by the running daemon (never by its tasks), so two cannot start |
+| `watcher.log` | One line per trigger, spawn and exit, plus every task's output and the watcher's own messages |
 | `watcher.log.1` | The previous log, once `watcher.log` passed 10 MB (set `ASGARD_LOG_MAX` in bytes to change the limit) |
-| `declarations.json` | The declarations recorded at `start`, which `list --all` reads for other projects |
+| `declarations.json` | The running watcher's declarations, rewritten on every start and reload, which `list --all` reads for other projects |
 | `entries/<name>.json` | Each entry's last run |
 | `changes/` | Change lists too large for the environment, one file per trigger |
+| `pending.json` | Briefly, during a reload: triggers that arrived while the watcher waited, for the restarted watcher to run |
 | `root` | The project directory, so `list --all` can find every project |
 
 The directory is readable by you alone, since task output can hold secrets.

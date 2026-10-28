@@ -2650,6 +2650,11 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <h2 id="060-unreleased">[0.6.0] - Unreleased<a class="headerlink" href="#060-unreleased" title="Permanent link">&para;</a></h2>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>BREAKING: Ruby 4.0 or later</strong> — <code>required_ruby_version</code> was
+  <code>&gt;= 3.2.0</code>, but on Ruby 3.4 the file watcher hangs at shutdown: a
+  thread blocked in <code>Ractor.receive</code> is not woken by a message its own
+  Ractor sends once it has received one from another Ractor, so the
+  reporter never sees the closing nil. The gem now requires <code>&gt;= 4.0.0</code>.</li>
 <li><strong><code>sh</code> is <code>shebang</code></strong> — <code>sh</code> took only a script and forwarded it to
   <code>shebang</code>, so <code>sh :python3, "..."</code> was an <code>ArgumentError</code> while
   <code>shebang :python3, "..."</code> worked. <code>sh</code> is now <code>alias_method :sh,
@@ -2795,7 +2800,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <li><strong>Watcher log rotation</strong> — <code>watcher.log</code> moves to <code>watcher.log.1</code> once
   it passes 10 MB (<code>ASGARD_LOG_MAX</code> bytes to change it).</li>
 <li><strong>CI</strong> — <code>.github/workflows/test.yml</code> runs the suite on Linux and macOS,
-  Ruby 3.4 and 4.0.</li>
+  Ruby 4.0.6 and 4.0.9.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>

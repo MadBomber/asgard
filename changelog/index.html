@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://madbomber.github.io/asgard/changelog/">
       
       
-        <link rel="prev" href="../upgrading-0.6/">
+        <link rel="prev" href="../breaking-changes/">
       
       
       
@@ -356,13 +356,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../upgrading-0.6/" class="md-tabs__link">
+      <a href="../breaking-changes/" class="md-tabs__link">
         
   
   
     
   
-  Upgrading to 0.6.0
+  Breaking Changes
 
       </a>
     </li>
@@ -1248,14 +1248,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrading-0.6/" class="md-nav__link">
+      <a href="../breaking-changes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Upgrading to 0.6.0
+    Breaking Changes
   
 
     
@@ -2648,261 +2648,83 @@
 <p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
 and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2 id="060-unreleased">[0.6.0] - Unreleased<a class="headerlink" href="#060-unreleased" title="Permanent link">&para;</a></h2>
+<p>Upgrading from 0.5.x? Read
+<a href="https://madbomber.github.io/asgard/breaking-changes/">Breaking Changes</a>
+first: schedules and watchers must be removed before you upgrade and
+reinstalled after.</p>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>BREAKING: Ruby 4.0 or later</strong> — <code>required_ruby_version</code> was
-  <code>&gt;= 3.2.0</code>, but on Ruby 3.4 the file watcher hangs at shutdown: a
-  thread blocked in <code>Ractor.receive</code> is not woken by a message its own
-  Ractor sends once it has received one from another Ractor, so the
-  reporter never sees the closing nil. The gem now requires <code>&gt;= 4.0.0</code>.</li>
-<li><strong><code>sh</code> is <code>shebang</code></strong> — <code>sh</code> took only a script and forwarded it to
-  <code>shebang</code>, so <code>sh :python3, "..."</code> was an <code>ArgumentError</code> while
-  <code>shebang :python3, "..."</code> worked. <code>sh</code> is now <code>alias_method :sh,
-  :shebang</code>: one method under two names, with the same arguments,
-  keywords and behaviour. Nothing that worked before changes.</li>
-<li><strong><code>--debug</code> and <code>--verbose</code> show one spelling in help</strong> — the two
-  built-in boolean flags were listed as <code>[--debug], [--no-debug],
-  [--skip-debug]</code> and the same for <code>--verbose</code>, the way Thor shows every
-  boolean option. Negating a flag that defaults to off means nothing, so
-  both now use <code>no_negate</code>, as <code>--version</code> and <code>--doctor</code> already did,
-  and help lists just <code>[--debug]</code> and <code>[--verbose]</code>. The negated
-  spellings still parse if typed.</li>
-<li><strong>BREAKING: project slugs carry a hash of the path</strong> — schedule labels,
-  systemd unit names and the watcher's state directory were filed under
-  the basename of the project directory alone, so two projects in
-  directories of the same name shared them: <code>schedule install</code> in one
-  removed the other's jobs, and their watchers fought over one pidfile.
-  The slug is now the basename plus the CRC32 of the real path in hex,
-  <code>api-9f3a1c2b</code>. Nothing migrates. Entries installed by an earlier
-  version stay under the old slug, keep running, and show up in
-  <code>schedule list --all</code> and <code>watcher list --all</code> as another project. Run
-  <code>asgard schedule remove</code> and <code>asgard watcher stop</code> in each project
-  before upgrading, then reinstall and restart afterwards. A leftover
-  schedule entry can still be stopped as <code>oldslug/name</code>; a leftover
-  watcher is stopped with <code>kill $(cat ~/.local/state/asgard/watch/&lt;old
-  slug&gt;/watcher.pid)</code>, and its state directory deleted. In <code>project/name</code>
-  arguments the directory name alone now matches when it is unambiguous,
-  and <code>list --all</code> flags a project whose directory no longer exists with
-  <code>[root missing]</code>. The step-by-step guide is
-  <a href="https://madbomber.github.io/asgard/upgrading-0.6/">Upgrading to 0.6.0</a>.</li>
-<li><strong><code>sh</code> always runs bash</strong> — a one-line <code>sh</code> script used to go through
-  <code>/bin/sh</code> (dash on Debian and Ubuntu) while a heredoc went through <code>bash</code>,
-  so bash syntax failed or passed depending on line count. <code>sh</code> is now
-  <code>shebang :bash</code>: one line or many is written to a tempfile and run by the
-  <code>:bash</code> entry of the <code>shells</code> registry. Fixes <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/asgard/issues/1" title="GitHub Issue: madbomber/asgard #1">#1</a>.</li>
-<li><strong>BREAKING: <code>exec:</code> removed from <code>sh</code> and <code>shebang</code></strong> — <code>sh "cmd",
-  exec: true</code> replaced the asgard process with the command through
-  <code>Kernel.exec</code>. Since <code>sh</code> is <code>shebang :bash</code> and every script runs as a
-  file under its shell, the keyword no longer did what it promised: bash
-  stayed as the parent and the command ran as its child, so a <code>kill</code> of
-  the pid stopped bash and orphaned the command. The shell is the unit of
-  work: the script ends, the shell ends, and Ctrl-C reaches asgard, the
-  shell and the command together. Passing <code>exec:</code> now raises
-  <code>ArgumentError (unknown keyword: :exec)</code>; delete it from the call. See
-  <a href="https://madbomber.github.io/asgard/upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</li>
-<li><strong><code>shebang</code> is the one engine</strong> — every non-Ruby script takes the same
-  path through <code>Kernel#system</code>; <code>sh</code> is <code>shebang</code> with the default shell.</li>
-<li>
-<p><strong>A missing interpreter is reported</strong> — <code>shebang :lua</code> with no <code>lua</code>
-  on <code>PATH</code> prints <code>asgard: shell :lua not found: lua ...</code> and exits 127
-  instead of exiting 127 silently.</p>
-</li>
-<li>
-<p><strong>A public method without a <code>desc</code> is a hidden task</strong> — it used to be
-  no task at all: Thor printed a warning, <code>asgard name</code> was an unknown
-  command, <code>depends_on :name</code> was an undefined task, and a <code>depends_on</code>
-  written above it silently attached to the next task that had a <code>desc</code>.
-  It is now a hidden task: it runs from the command line and as a
-  dependency, <code>help</code> leaves it out, and <code>--doctor</code> lists it as hidden.
-  <code>depends_on</code> always attaches to the very next method. A <code>.loki</code> that used
-  public <code>def</code>s as helper methods now exposes them as runnable hidden
-  tasks; make them <code>private</code>, put them in <code>no_commands</code>, or use <code>helper</code>.</p>
-</li>
-<li><strong>Parallel dependencies each run on their own instance</strong> — tasks in one
-  <code>depends_on [:a, :b]</code> stage used to share one Thor instance and could
-  race on an instance variable. An instance variable set by a <em>parallel</em>
-  dependency is therefore no longer visible to the task that depends on
-  it (sequential dependencies still share it); pass values with
-  <code>dep_result</code>.</li>
-<li><strong>A <code>.loki</code> that fails to load says so in one line</strong> — a missing
-  <code>import</code>, a bad <code>shell</code> path, a syntax error or a typo used to print a
-  Ruby backtrace. Now: <code>asgard: /proj/.loki:2: undefined method
-  'dependz_on' for class Tasks (NoMethodError)</code>, exit 1. Set
-  <code>ASGARD_TRACE=1</code> for the backtrace.</li>
-<li><strong><code>--version</code> and <code>--doctor</code> belong to asgard only before the task
-  name</strong> — after it they are the task's own arguments.</li>
-<li><strong>Background job state is private</strong> — per-project state directories
-  are created 0700 and schedule job files 0600, since logs, scripts and
-  <code>env:</code> values can hold secrets.</li>
+<li><strong>BREAKING: Ruby 4.0 or later.</strong> On Ruby 3.4 the file watcher hangs at
+  shutdown.</li>
+<li><strong>BREAKING: project slugs carry a hash of the path</strong> (<code>api-9f3a1c2b</code>),
+  so two projects in directories of the same name no longer share
+  schedules or a watcher. Nothing migrates: run <code>asgard schedule remove</code>
+  and <code>asgard watcher stop</code> in each project before upgrading, then
+  reinstall and restart. <code>list --all</code> marks a project whose directory is
+  gone with <code>[root missing]</code>.</li>
+<li><strong>BREAKING: <code>exec:</code> removed from <code>sh</code> and <code>shebang</code>.</strong> Passing it raises
+  <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword.</li>
+<li><strong><code>sh</code> runs every script under the default shell.</strong> A script given no
+  shell name, one line or many, runs under the shell set with
+  <code>default_shell</code>, or <code>bash</code> when none is set. A one-liner used to go
+  through <code>/bin/sh</code> while a heredoc ran under bash. Fixes <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/asgard/issues/1" title="GitHub Issue: madbomber/asgard #1">#1</a>.</li>
+<li><strong><code>sh</code> is <code>shebang</code></strong>: one method under two names, so
+  <code>sh :python3, "..."</code> works.</li>
+<li><strong>A public method without a <code>desc</code> is a hidden task.</strong> It runs from the
+  command line and as a dependency, and <code>help</code> leaves it out. Make helper
+  methods <code>private</code>, put them in <code>no_commands</code>, or use <code>helper</code>.</li>
+<li><strong>Parallel dependencies each run on their own instance</strong>, so they no
+  longer race on instance variables; pass values with <code>dep_result</code>.</li>
+<li><strong>A <code>.loki</code> that fails to load says so in one line</strong>, with file and
+  line; set <code>ASGARD_TRACE=1</code> for the backtrace.</li>
+<li><strong><code>--version</code> and <code>--doctor</code> are asgard's only before the task name</strong>,
+  and <code>--debug</code> and <code>--verbose</code> show one spelling in help.</li>
+<li><strong>State is private</strong>: state directories are created 0700 and schedule
+  job files 0600, since logs, scripts and <code>env:</code> values can hold secrets.</li>
 </ul>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>Background jobs: <code>sh ..., background:</code> and <code>asgard jobs</code></strong> — <code>sh
-  "mkdocs serve", background: true</code> starts the script as a job that
-  outlives asgard: a new session under a <code>/bin/sh</code> trampoline that
-  records the exit status, stdin from <code>/dev/null</code>, stdout and stderr
-  appended to a log. <code>true</code> names the job after the calling task and a
-  per-run counter (<code>doc_server-1</code>, <code>servers-2</code>); a Symbol or String names
-  it outright (<code>background: :api</code>) and takes no number. The call echoes
-  the script, prints <code>started &lt;name&gt; (pid N), log: &lt;path&gt;</code> and returns a
-  <code>Jobs::Job</code> (<code>name</code>, <code>task</code>, <code>pid</code>, <code>log</code>) at once; a job of that name
-  already running is returned instead of started. <code>shebang</code> takes the
-  same keyword, so a job may run under any registered shell. <code>asgard jobs
-  list</code> shows each job as running, <code>exited N (duration)</code> or <code>gone</code>
-  (<code>--all</code> across projects); <code>stop [NAME...]</code> resolves job names, task
-  names and the <code>depends_on</code> closure, sends TERM to each job's process
-  group newest first and KILL after <code>--timeout</code> (default 10s); <code>log NAME
-  [-f]</code> prints or follows the log; <code>restart NAME</code> stops the job and runs
-  its task again; <code>clean</code> forgets every job that is not running. Records
-  live under <code>$XDG_STATE_HOME/asgard/jobs/&lt;slug&gt;/</code> and a pid is trusted
-  only while its command line still carries the job's script, so a pid
-  reused after a reboot shows as <code>gone</code>. A trailing <code>&amp;</code> in a script is
-  still the shell's detached mode: asgard reports success and keeps no
-  record. <code>Asgard::Pid</code> and <code>Asgard::StateDir</code> are lifted out of the
-  watcher and shared; <code>Schedule::Table</code> takes <code>headers:</code>, <code>keys:</code> and
-  <code>flexible:</code> and hands tty-table exact content widths, which also stops
-  it squeezing a one-row table. <code>csh</code> and <code>tcsh</code> scripts get <code>.csh</code>.</li>
-<li><strong><code>shells</code> registry and <code>shell</code> DSL</strong> — <code>Tasks.shells</code> maps a name to
-  <code>{ path:, args:, ext: }</code>, seeded with <code>:bash</code>, <code>:sh</code>, <code>:python3</code>,
-  <code>:python</code>, <code>:node</code>, <code>:ruby</code> and <code>:perl</code>. <code>shell :strict, "bash -eu -o
-  pipefail"</code> registers a shell: the path string is Shellwords-split, its
-  first word is the executable and the rest precede <code>args:</code> (a String or
-  an Array); <code>ext:</code> defaults by the executable's basename. Pin a path with
-  <code>shell :bash, "/opt/homebrew/bin/bash"</code> so scheduled and watched tasks,
-  whose <code>PATH</code> lacks Homebrew, run the same bash as the terminal. A
-  <code>Pathname</code> path is the executable whole, never split, so a directory
-  with a space in it needs no quoting. The name may be left out: <code>shell
-  "/usr/local/bin/bash -c -w"</code> registers <code>:bash</code>, named after the
-  executable, with the options parsed into <code>args</code>, and <code>shell :zsh</code> alone
-  registers zsh from <code>PATH</code>. <code>shell</code> returns the name. The executable is
-  checked as the <code>.loki</code> loads: a path with a directory part must be an
-  executable file, a bare name must be on <code>PATH</code>, else <code>ArgumentError</code>
-  naming the shell, rather than an exit 127 the first time a task runs.
-  An unregistered name still runs as itself from <code>PATH</code> with <code>.tmp</code>.</li>
-<li>
-<p><strong><code>default_shell</code></strong> — <code>default_shell :strict</code> at class level picks the
-  registry entry that <code>sh</code>, and <code>shebang</code> called with a script alone, run;
-  it starts as <code>:bash</code> and reads back with no argument. A bare Symbol only
-  selects and never changes the registry. Every other form registers
-  through <code>shell</code> first, then selects: <code>default_shell "/usr/local/bin/bash
-  -c -w"</code> pins and picks <code>:bash</code> in one line, <code>default_shell :strict,
-  "bash", args: "-eu -o pipefail"</code> declares and selects <code>:strict</code>, and the
-  path is the name when only <code>args:</code> or <code>ext:</code> are given. <code>sh</code> and
-  <code>shebang</code> return <code>true</code> on success.</p>
-</li>
-<li>
-<p><strong><code>asgard schedule remove [NAME]</code> and <code>asgard schedule prune
-  [--dry-run]</code></strong> — remove one entry (<code>project/name</code> reaches another
-  project's), or every project's entries whose project directory is gone.</p>
-</li>
-<li><strong>Watcher triggers that wait for a busy task merge</strong> — three saves
-  during a long run now queue one more run with every change, not three.</li>
-<li><strong>Watcher log rotation</strong> — <code>watcher.log</code> moves to <code>watcher.log.1</code> once
-  it passes 10 MB (<code>ASGARD_LOG_MAX</code> bytes to change it).</li>
-<li><strong>CI</strong> — <code>.github/workflows/test.yml</code> runs the suite on Linux and macOS,
-  Ruby 4.0.6 and 4.0.9.</li>
+<li><strong>Background jobs.</strong> <code>sh "mkdocs serve", background: true</code> starts a job
+  that outlives asgard and logs its output; <code>asgard jobs list</code>, <code>stop</code>,
+  <code>log</code>, <code>restart</code> and <code>clean</code> manage them.</li>
+<li><strong>Shells registry.</strong> <code>shell</code> registers an interpreter
+  (<code>shell :strict, "bash -eu -o pipefail"</code>), <code>default_shell</code> picks the one
+  <code>sh</code> uses, and <code>shebang :name, script</code> runs any of them. Each executable
+  is checked as the <code>.loki</code> loads.</li>
+<li><strong><code>asgard schedule remove [NAME]</code> and <code>asgard schedule prune
+  [--dry-run]</code>.</strong></li>
+<li><strong>Watcher</strong>: triggers that arrive while a task is busy merge into one
+  run, and <code>watcher.log</code> rotates at 10 MB (<code>ASGARD_LOG_MAX</code>).</li>
+<li><strong>CI</strong> on Linux and macOS, Ruby 4.0.9 and 4.1.0-preview1.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong>A subcommand group's help lists only its own tasks</strong> — a group that
-  inherits from <code>Tasks</code> also listed every top-level task in its help,
-  under a name made from its class (<code>asgard doc_commands quality</code> for
-  <code>DocCommands</code>). <code>asgard doc</code> now lists just the group's tasks, and
-  <code>asgard tree</code> names the group <code>doc</code>, as registered, instead of
-  <code>doc_commands</code>. The inherited tasks still run.</li>
-<li><strong><code>import_up</code> from an imported file no longer recurses</strong> — the root
-  <code>.loki</code> is loaded directly, not through <code>import</code>, so it was never
-  recorded as loaded; a child file's <code>import_up</code> found it, reloaded it,
-  and the two imported each other until the stack overflowed. <code>asgard
-  --doctor</code> died the same way. The root is now recorded before it loads.</li>
-<li><strong>A child ended by a signal no longer crashes <code>sh</code></strong> — <code>exit</code> was given
-  the nil exit status of a signalled process and raised a TypeError. <code>sh</code>
-  and <code>shebang</code> now exit with 128 plus the signal number, as a shell
-  would, through <code>Asgard::Shell.exit_code</code>, which the watcher's worker
-  shares.</li>
-<li><strong>A failing parallel dependency waits for its siblings</strong> — the first
-  failure in a <code>depends_on [:a, :b]</code> group used to end the process at once,
-  leaving the other tasks' subprocesses running detached. Every thread in
-  the group is now joined first. When more than one fails, each is named
-  on stderr (<code>asgard: dependency 'lint' failed: exit 1</code>) and the error
-  lists them.</li>
-<li><strong>A raising parallel dependency no longer prints Ruby's thread report</strong>
-  — the full "terminated with exception" backtrace preceded asgard's own
-  message. Dependency threads now run with <code>report_on_exception</code> off; the
-  error still reaches the top level and is reported once.</li>
-<li><strong>Task and helper names Thor relies on are rejected at load time</strong> — a
-  task named <code>args</code> broke every command with an arity error pointing at
-  Thor, and names on Thor's own reserved list (<code>shell</code>, <code>options</code>,
-  <code>invoke</code>, ...) raised a bare RuntimeError. Defining any of them, as a
-  task or inside <code>no_commands</code>, now raises <code>Asgard::Error</code> with the file
-  and line, which <code>asgard --doctor</code> reports as a load failure.</li>
-<li><strong>The gem's own <code>doc_tasks.loki</code> ran without direnv</strong> — it built paths
-  from <code>ENV['RR']</code>, which only the repository's <code>.envrc</code> sets, so a fresh
-  clone crashed on <code>asgard help</code>. It now finds the root through <code>loki_up</code>.</li>
-<li>
-<p><strong>The watcher no longer trusts a pid it cannot identify</strong> — a pidfile
-  left by a crash or a reboot can name a pid that an unrelated process now
-  holds; <code>list</code> called it running, <code>start</code> refused, and <code>stop</code> sent TERM
-  to it. The daemon's pid, and each entry's, must now belong to an
-  <code>asgard</code> process with the expected command line (<code>watcher run</code>, or the
-  task's name), read through <code>ps</code>. A stale pidfile is simply not running,
-  and <code>start</code> replaces it.</p>
-</li>
-<li>
-<p><strong>A task waiting on a shared dependency that failed no longer runs</strong> —
-  with <code>top</code> depending on <code>[b, c]</code> and both on <code>a</code>, a failing <code>a</code> let <code>c</code>
-  run anyway. It now stops, and asgard ends with <code>a</code>'s own exit status.</p>
-</li>
-<li><strong><code>asgard jobs stop</code> can no longer signal asgard's own process group</strong>
-  — a stale record whose pid had become asgard's own (pid reuse after a
-  reboot) verified as the job, and the group TERM and KILL reached asgard
-  and its pipeline.</li>
-<li><strong>The watcher reloads on a <code>.loki</code> change</strong> — the reload stopped its
-  own listener from the listener's thread, which Listen refuses, so the
-  daemon kept running but watched nothing. It now re-execs from the main
-  thread once running tasks finish, keeps its lock across the exec, and
-  keeps the running declarations when the edited task files do not load.</li>
-<li><strong>A failed spawn no longer kills a watcher worker</strong> — <code>E2BIG</code> (a huge
-  change list), a missing root or executable now report exit 127/126 and
-  the next trigger still runs. Change lists over 128 KB travel in a file
-  named by <code>ASGARD_CHANGES_FILE</code>, which <code>changes</code> reads. A full queue
-  drops the trigger instead of stalling every other watch.</li>
-<li><strong>Watcher shutdown waits for a trigger being routed</strong>, and leaves no
-  task running unrecorded; tasks and the daemon get <code>/dev/null</code> as stdin;
-  an idle daemon no longer spins (about 6% of a core before); two
-  <code>watcher start</code>s at once can no longer leave two daemons (<code>watcher.lock</code>);
-  signal traps are set before Listen starts; a failed start cleans up;
-  <code>list</code> shows "did not finish" for a task that died without an exit; plain
-  paths are judged in the project root and a dotted directory is a
-  directory; globs inside <code>{}</code> work; GEM_<em>, RUBYOPT, RUBYLIB and
-  BUNDLE(R)_</em> reach tasks; a report that cannot be written no longer ends
-  the reporter; only loaded and root-level <code>.loki</code> files trigger a reload;
-  a task name matches only as a whole word.</li>
-<li><strong>Background jobs</strong>: concurrent starts of one name start one job; a
-  start returns only once the job runs its trampoline (an immediate second
-  start used to miss it under load); TERM is re-sent during the grace
-  period; <code>ps -ww</code> keeps long command lines whole on Linux; a failed exec
-  reports and exits 127; <code>close_others</code>; a task named <code>ready?</code> gets a
-  listable job; a job whose trampoline alone died is still verified and
-  stoppable; <code>stop --all NAME</code> is refused; bare <code>asgard jobs</code> works outside
-  a project; a task that changes directory still files its jobs under its
-  project; the <code>log</code> help text says the log holds the latest run.</li>
-<li><strong>Schedules</strong>: a <code>$</code> in a systemd <code>env:</code> value stays one <code>$</code>; <code>on: []</code>
-  and <code>at: []</code> are rejected; "weekends" reads back as weekends; a dashed
-  task name schedules its underscored command and a <code>:</code> gets a clear
-  message; newlines and other control characters in options and env, and
-  env names that are not identifiers, are rejected; an unchanged launchd
-  install leaves a running job alone; a plist that fails <code>plutil</code> never
-  replaces the installed one; a failed first systemd install is not taken
-  for a stop; launchd <code>status</code> reports running jobs and signal exits.</li>
-<li><strong>Core</strong>: a <code>.loki</code> directory is not a task file; an unregistered zsh or
-  fish keeps its script extension, and <code>default_shell :name</code> checks that
-  the shell exists; <code>Tasks.subclasses</code> is Ruby's again; a corrupt state
-  record no longer crashes a listing; the gem's <code>release</code> prompt survives
-  stdin at end of input.</li>
-<li><strong>Packaging</strong>: the gem ships only <code>lib/</code>, <code>bin/asgard</code>, <code>sig/</code> and the
-  README, LICENSE and CHANGELOG; the description and changelog link are
-  corrected.</li>
+<li><strong>Dependencies</strong>: a failing parallel dependency waits for its siblings
+  and every failure is named; a task waiting on a shared dependency that
+  failed no longer runs; a raising dependency no longer prints Ruby's
+  thread report.</li>
+<li><strong><code>sh</code></strong>: a command ended by a signal exits 128 plus the signal number
+  instead of crashing; a missing interpreter is named and exits 127.</li>
+<li><strong>Loading</strong>: <code>import_up</code> from an imported file no longer recurses until
+  the stack overflows; task and helper names Thor relies on (<code>args</code>,
+  <code>shell</code>, <code>options</code>, ...) are rejected with file and line; a <code>.loki</code>
+  directory is not a task file.</li>
+<li><strong>Subcommand groups</strong> list only their own tasks in help, and
+  <code>asgard tree</code> shows the name the group was registered under.</li>
+<li><strong>Watcher</strong>: it reloads on a <code>.loki</code> change instead of silently watching
+  nothing; a pidfile is trusted only while its pid is still the watcher; a
+  failed spawn no longer kills a worker; an idle daemon no longer spins;
+  two starts at once cannot leave two daemons; plus smaller path, glob,
+  environment and shutdown fixes.</li>
+<li><strong>Background jobs</strong>: concurrent starts of one name start one job;
+  <code>jobs stop</code> can never signal asgard's own process group; a reused pid
+  shows as <code>gone</code>.</li>
+<li><strong>Schedules</strong>: a <code>$</code> in a systemd <code>env:</code> value stays one <code>$</code>; empty
+  <code>on:</code>/<code>at:</code>, control characters and invalid env names are rejected; an
+  unchanged launchd install leaves a running job alone; launchd <code>status</code>
+  reports running jobs and signal exits.</li>
+<li><strong>Packaging</strong>: the gem ships only <code>lib/</code>, <code>bin/asgard</code>, <code>sig/</code>, and the
+  README, LICENSE and CHANGELOG.</li>
 </ul>
 <h2 id="051-2026-10-19">[0.5.1] - 2026-10-19<a class="headerlink" href="#051-2026-10-19" title="Permanent link">&para;</a></h2>
 <h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
@@ -3363,7 +3185,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../upgrading-0.6/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Upgrading to 0.6.0">
+          <a href="../breaking-changes/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Breaking Changes">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3373,7 +3195,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
                 Previous
               </span>
               <div class="md-ellipsis">
-                Upgrading to 0.6.0
+                Breaking Changes
               </div>
             </div>
           </a>

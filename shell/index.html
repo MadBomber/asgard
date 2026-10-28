@@ -360,13 +360,13 @@
   
   
     <li class="md-tabs__item">
-      <a href="../upgrading-0.6/" class="md-tabs__link">
+      <a href="../breaking-changes/" class="md-tabs__link">
         
   
   
     
   
-  Upgrading to 0.6.0
+  Breaking Changes
 
       </a>
     </li>
@@ -1493,14 +1493,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../upgrading-0.6/" class="md-nav__link">
+      <a href="../breaking-changes/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Upgrading to 0.6.0
+    Breaking Changes
   
 
     
@@ -1881,7 +1881,7 @@
 <p>The shell is bash until a <code>.loki</code> says otherwise (see <a href="#default_shell-the-shell-used-when-none-is-named"><code>default_shell</code></a>). Bash syntax such as <code>[[ ... ]]</code>, arrays and <code>$PIPESTATUS</code> works in a one-liner as well as in a heredoc.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Before 0.6.0 a one-line <code>sh</code> went through <code>/bin/sh</code> and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See <a href="../upgrading-0.6/#sh-and-shebang-every-script-runs-under-bash">Upgrading to 0.6.0</a>.</p>
+<p>Before 0.6.0 a one-line <code>sh</code> went through <code>/bin/sh</code> and a heredoc through bash, so bash syntax passed or failed depending on line count. Both now take the same path. See <a href="../breaking-changes/#sh-and-shebang-every-script-runs-under-the-default-shell">Breaking Changes</a>.</p>
 </div>
 <h3 id="silent-mode">Silent Mode<a class="headerlink" href="#silent-mode" title="Permanent link">&para;</a></h3>
 <p>Pass <code>silent: true</code> to skip the echo. The script still runs and still stops asgard on failure:</p>
@@ -2114,7 +2114,7 @@
 <p>Asgard exits with the shell's status, so a command that ends on a signal exits 128 plus the signal number.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0 and now raises <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword. See <a href="../upgrading-0.6/#sh-and-shebang-exec-removed">Upgrading to 0.6.0</a>.</p>
+<p>Earlier versions accepted <code>exec: true</code> to replace the asgard process with the command. It was removed in 0.6.0 and now raises <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword. See <a href="../breaking-changes/#sh-and-shebang-exec-removed">Breaking Changes</a>.</p>
 </div>
 <h3 id="0-is-a-tempfile"><code>$0</code> Is a Tempfile<a class="headerlink" href="#0-is-a-tempfile" title="Permanent link">&para;</a></h3>
 <p>Because the script runs from a file, <code>$0</code> inside it is the path of that tempfile, such as <code>/var/folders/.../T/asgard_20261024-80545-bmbloc.sh</code>, and the file is deleted when the script ends. A usage message that printed <code>$0</code> should print a name you choose instead.</p>

@@ -52,7 +52,7 @@ class Tasks
 
   desc "Check code complexity with Flog (warn >=20, fail >=50)"
   def flog_check
-    require "flog"
+    require_with_deps "flog"
 
     method_warn = 20.0
     method_fail = 50.0
@@ -87,7 +87,7 @@ class Tasks
 
   desc "Check for structural code duplication with Flay (mass >= 150)"
   def flay_check
-    require "flay"
+    require_with_deps "flay"
 
     mass_threshold = 150
 
@@ -198,6 +198,18 @@ class Tasks
   }.freeze
 
   no_commands do
+    # Requires gem +name+ after activating its runtime dependencies within
+    # its own requirements. RubyGems skips activating a dependency that is a
+    # default gem (prism, in Ruby 4.0), so a bare require "prism" inside
+    # flog or flay takes the newest prism installed, which may be outside
+    # the range they declare.
+    def require_with_deps(name)
+      Gem::Specification.find_by_name(name).runtime_dependencies.each do |dep|
+        gem dep.name, *dep.requirement.as_list
+      end
+      require name
+    end
+
     # true if +name+ resolves to an executable file somewhere on PATH.
     def command_available?(name)
       ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).any? do |dir|

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require_relative "job_files"
 
 module Asgard
   module Schedule
@@ -27,6 +28,9 @@ module Asgard
       # Labels marked disabled in `launchctl print-disabled` output
       # ("label" => disabled, or "label" => true on older macOS).
       def self.disabled_labels(output) = output.scan(/"([^"]+)"\s*=>\s*(disabled|true)\b/).map(&:first)
+
+      # Whether the installed file at +path+ already holds +content+.
+      def self.unchanged?(path, content) = File.exist?(path) && File.read(path) == content
 
       def self.plist(label:, arguments:, working_directory:, environment:, log_path:, intervals: nil, every: nil)
         dict = {
@@ -134,12 +138,21 @@ module Asgard
         { plist_path(name) => plist }
       end
 
+      # An unchanged plist whose job is loaded is left alone: a bootout
+      # would kill a run in progress for nothing. A changed one is linted
+      # before it replaces the installed file, then reloaded.
       def install(spec, asgard:, direnv:)
-        name  = spec[:name]
-        plist = plist_path(name)
-        FileUtils.mkdir_p [File.dirname(plist), File.dirname(log_path(name))]
-        files(spec, asgard:, direnv:).each { |path, content| File.write(path, content) }
-        run! "plutil", "-lint", "-s", plist
+        name    = spec[:name]
+        plist   = plist_path(name)
+        log     = log_path(name)
+        content = files(spec, asgard:, direnv:).fetch(plist)
+        Schedule.check_lengths!([plist, "#{plist}.new", log])
+        return :active if self.class.unchanged?(plist, content) && loaded?(name)
+
+        Schedule.writing do
+          FileUtils.mkdir_p [File.dirname(plist), File.dirname(log)]
+          write_linted(plist, content)
+        end
         unload(name)
         return :stopped if stopped?(name)
 
@@ -171,11 +184,7 @@ module Asgard
       end
 
       # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
-      def installed_entries
-        paths = Dir.glob(File.join(@home, "Library", "LaunchAgents", "#{LABEL_PREFIX}.*.plist"))
-        paths.map { |path| File.basename(path, ".plist").delete_prefix("#{LABEL_PREFIX}.").split(".", 2) }
-             .select { |entry| entry.size == 2 }.sort
-      end
+      def installed_entries = JobFiles.entries_in(File.join(@home, "Library", "LaunchAgents"), prefix: LABEL_PREFIX, ext: ".plist")
 
       # { command:, schedule: } as installed, read from the plist; nil when there isn't one.
       def installed_columns(name)
@@ -186,17 +195,23 @@ module Asgard
       end
 
       # The project root the job runs in, read from the plist; nil when there isn't one.
-      def installed_directory(name)
-        path = plist_path(name)
-        self.class.parse_directory(File.read(path)) if File.exist?(path)
-      end
+      def installed_directory(name) = JobFiles.directory(plist_path(name), self.class.method(:parse_directory))
 
       def status(name)
         out, ok = run("launchctl", "print", target(name))
         return { state: stopped?(name) ? :stopped : :not_loaded, last_exit: nil } unless ok
 
+        { state: out.include?("state = running") ? :running : :active, last_exit: self.class.last_exit(out) }
+      end
+
+      # The last exit from `launchctl print`: its code, or the signal that
+      # ended it ("signal 15 (Terminated)"); nil when it never exited.
+      def self.last_exit(out)
         code = out[/last exit code = (\d+)/, 1]
-        { state: :active, last_exit: code }
+        return code if code
+
+        signal = out.match(/last terminating signal = ([^:\n]+): (\d+)/)
+        Schedule.signal_exit(signal[2], signal[1]) if signal
       end
 
       def notes = []
@@ -204,6 +219,17 @@ module Asgard
       private
 
       def target(name) = "#{@domain}/#{label(name)}"
+
+      # Written beside the plist (not *.plist, so never listed), linted,
+      # then renamed over it; a plist plutil rejects never lands.
+      def write_linted(plist, content)
+        draft = "#{plist}.new"
+        Schedule.write_private(draft, content)
+        run! "plutil", "-lint", "-s", draft
+        File.rename(draft, plist)
+      ensure
+        FileUtils.rm_f(draft)
+      end
 
       def loaded?(name) = run("launchctl", "print", target(name)).last
 
@@ -213,16 +239,27 @@ module Asgard
       end
 
       # bootout returns before the job is fully gone; bootstrapping the same
-      # label too soon fails with "Input/output error", so wait for it.
+      # label too soon fails with "Input/output error", so wait for it. A job
+      # still loaded afterwards raises, so callers never delete the plist of
+      # a job launchd keeps running.
       def unload(name)
         return unless loaded?(name)
 
-        run "launchctl", "bootout", target(name)
+        out, ok = run("launchctl", "bootout", target(name))
+        return if ok && unloaded?(name)
+        return unless loaded?(name)
+
+        raise Error, "launchctl bootout #{target(name)} left #{label(name)} still loaded: #{out.strip}"
+      end
+
+      # Polls for up to two seconds; true once the job is gone.
+      def unloaded?(name)
         20.times do
-          break unless loaded?(name)
+          return true unless loaded?(name)
 
           sleep 0.1
         end
+        false
       end
 
       def run(*argv) = @runner.call(*argv)

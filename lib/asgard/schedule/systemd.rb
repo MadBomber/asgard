@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "etc"
+require_relative "job_files"
 
 module Asgard
   module Schedule
@@ -15,6 +16,8 @@ module Asgard
     class Systemd
       UNIT_PREFIX = "asgard"
       DAY_ABBREVIATIONS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
+      # The service properties status asks `systemctl show` for.
+      SHOW_PROPERTIES = %w[ActiveState SubState ExecMainCode ExecMainStatus ExecMainExitTimestampMonotonic].freeze
 
       # ---- pure helpers -----------------------------------------------------
 
@@ -31,14 +34,23 @@ module Asgard
       # systemd expands %specifiers everywhere; % must be doubled to be literal.
       def self.escape_specifiers(text) = text.to_s.gsub("%", "%%")
 
-      # A double-quoted word for ExecStart=/Environment=. $ is doubled too so
-      # ExecStart= doesn't expand it as a variable.
-      def self.quote(text)
-        %("#{escape_specifiers(text).gsub('\\') { '\\\\' }.gsub('"', '\\"').gsub('$', '$$')}")
-      end
+      # A double-quoted word for ExecStart=. $ is doubled too so ExecStart=
+      # doesn't expand it as a variable.
+      def self.quote(text) = %("#{quote_body(text).gsub('$', '$$')}")
 
+      # A double-quoted Environment= assignment. Environment= does no
+      # variable expansion, so a $ there is already literal and doubling it
+      # would leave $$ in the value (systemd.exec(5)).
+      def self.quote_env(text) = %("#{quote_body(text)}")
+
+      # % doubled, \ and " backslash-escaped: what both kinds of quoting share.
+      def self.quote_body(text) = escape_specifiers(text).gsub('\\') { '\\\\' }.gsub('"', '\\"')
+
+      # KillMode=process: when the run ends, systemd kills only the task's own
+      # process, so background jobs it started (setsid alone can't leave the
+      # unit's cgroup) keep running, as they do under launchd.
       def self.service_unit(description:, arguments:, working_directory:, environment:, log_path:)
-        env_lines = environment.map { |key, value| "Environment=#{quote("#{key}=#{value}")}" }
+        env_lines = environment.map { |key, value| "Environment=#{quote_env("#{key}=#{value}")}" }
         log       = escape_specifiers(log_path)
         <<~UNIT
           [Unit]
@@ -46,6 +58,7 @@ module Asgard
 
           [Service]
           Type=oneshot
+          KillMode=process
           WorkingDirectory=#{escape_specifiers(working_directory)}
           #{env_lines.join("\n")}
           ExecStart=#{arguments.map { |arg| quote(arg) }.join(' ')}
@@ -103,6 +116,22 @@ module Asgard
       # `systemctl show -p A -p B` output => { "A" => "...", "B" => "..." }
       def self.parse_show(output) = output.lines.to_h { |line| line.chomp.split("=", 2) }.reject { |k, _| k.to_s.empty? }
 
+      # parse_show of SHOW_PROPERTIES => { running: Boolean, last_exit: String|nil }.
+      # A oneshot service is "activating" while its command runs. ExecMainCode
+      # 2 (killed) or 3 (dumped) means ExecMainStatus is a signal number.
+      def self.service_status(props)
+        stamp  = props["ExecMainExitTimestampMonotonic"].to_s
+        status = props["ExecMainStatus"] unless stamp.empty? || stamp == "0"
+        signal = status if %w[2 3].include?(props["ExecMainCode"])
+        {
+          running:   props["ActiveState"] == "activating" || props["SubState"] == "running",
+          last_exit: signal ? Schedule.signal_exit(signal, "SIG#{Signal.signame(signal.to_i)}") : status
+        }
+      end
+
+      # The { path => content } entries whose file is missing or differs.
+      def self.changed_files(files) = files.reject { |path, content| File.exist?(path) && File.read(path) == content }
+
       # ---- backend API ------------------------------------------------------
 
       def initialize(project:, root:, home: Dir.home, runner: Schedule.runner, env: ENV, user: Etc.getpwuid(Process.uid).name)
@@ -144,25 +173,36 @@ module Asgard
         { service_path(name) => service, timer_path(name) => timer }
       end
 
-      # A timer that exists but is disabled was stopped on purpose; keep it so.
+      # A timer that exists but is disabled was stopped on purpose; keep it
+      # so. That is only true once an install has finished, so a first
+      # install that fails takes its unit files back out. Unchanged units are
+      # left alone: restarting a timer would restart an every: countdown, and
+      # `start` is a no-op for a timer already running.
       def install(spec, asgard:, direnv:)
         name       = spec[:name]
         timer_file = timer_path(name)
         timer_unit = timer(name)
-        stopped    = File.exist?(timer_file) && !enabled?(name)
-        FileUtils.mkdir_p [File.dirname(timer_file), File.dirname(log_path(name))]
-        files(spec, asgard:, direnv:).each { |path, content| File.write(path, content) }
-        systemctl! "daemon-reload"
+        job        = files(spec, asgard:, direnv:)
+        Schedule.check_lengths!([*job.keys, log_path(name)])
+        first      = !File.exist?(timer_file)
+        stopped    = !first && !enabled?(name)
+        changed    = write_changed(job, name).any?
+        systemctl! "daemon-reload" if changed
         return :stopped if stopped
 
         systemctl! "enable", timer_unit
-        systemctl! "restart", timer_unit # picks up a changed schedule
+        systemctl! changed ? "restart" : "start", timer_unit # restart picks up a changed schedule
         :active
+      rescue Error
+        FileUtils.rm_f([service_path(name), timer_file]) if first
+        raise
       end
 
+      # A timer that won't disable is left installed, files and all, rather
+      # than deleted while systemd keeps it running.
       def uninstall(name)
         service_unit = service(name)
-        systemctl "disable", "--now", timer(name)
+        systemctl! "disable", "--now", timer(name)
         systemctl "stop", service_unit
         FileUtils.rm_f [service_path(name), timer_path(name)]
         systemctl "daemon-reload"
@@ -181,11 +221,7 @@ module Asgard
       end
 
       # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
-      def installed_entries
-        paths = Dir.glob(File.join(@config, "systemd", "user", "#{UNIT_PREFIX}.*.timer"))
-        paths.map { |path| File.basename(path, ".timer").delete_prefix("#{UNIT_PREFIX}.").split(".", 2) }
-             .select { |entry| entry.size == 2 }.sort
-      end
+      def installed_entries = JobFiles.entries_in(File.join(@config, "systemd", "user"), prefix: UNIT_PREFIX, ext: ".timer")
 
       # { command:, schedule: } as installed, read from the unit files; nil when there are none.
       def installed_columns(name)
@@ -198,10 +234,7 @@ module Asgard
       end
 
       # The project root the job runs in, read from the service unit; nil when there isn't one.
-      def installed_directory(name)
-        path = service_path(name)
-        self.class.parse_directory(File.read(path)) if File.exist?(path)
-      end
+      def installed_directory(name) = JobFiles.directory(service_path(name), self.class.method(:parse_directory))
 
       def status(name)
         _, active = systemctl("is-active", "--quiet", timer(name))
@@ -209,11 +242,10 @@ module Asgard
                 elsif enabled?(name) then :not_loaded
                 else :stopped
                 end
-        out, = systemctl("show", service(name), "-p", "ExecMainStatus", "-p", "ExecMainExitTimestampMonotonic")
-        props = self.class.parse_show(out)
-        stamp = props["ExecMainExitTimestampMonotonic"].to_s
-        ran   = !stamp.empty? && stamp != "0"
-        { state:, last_exit: ran ? props["ExecMainStatus"] : nil }
+        klass = self.class
+        out,  = systemctl("show", service(name), *SHOW_PROPERTIES.flat_map { |prop| ["-p", prop] })
+        running, last_exit = klass.service_status(klass.parse_show(out)).values_at(:running, :last_exit)
+        { state: running ? :running : state, last_exit: }
       end
 
       def notes
@@ -228,6 +260,16 @@ module Asgard
       def timer(name) = "#{unit(name)}.timer"
 
       def service(name) = "#{unit(name)}.service"
+
+      # Writes the unit files whose content changed (and the log directory);
+      # returns them as { path => content }.
+      def write_changed(job, name)
+        changed = self.class.changed_files(job)
+        Schedule.writing do
+          FileUtils.mkdir_p [File.dirname(timer_path(name)), File.dirname(log_path(name))]
+          changed.each { |path, content| Schedule.write_private(path, content) }
+        end
+      end
 
       def enabled?(name) = systemctl("is-enabled", "--quiet", timer(name)).last
 

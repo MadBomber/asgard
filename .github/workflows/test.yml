@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Ruby ${{ matrix.ruby }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        ruby: ["4.0.9", "4.1.0-preview1"]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The shell tests select zsh as a default_shell; macOS ships it,
+      # the Ubuntu image does not.
+      - name: Install zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      # archspec's rubydex builds a Rust extension that can require a
+      # newer rustc than the runner image ships.
+      - name: Update Rust
+        run: rustup update stable && rustup default stable
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      # Forked workers; the parent merges their coverage and enforces the
+      # 95% minimum (see test/test_helper.rb and test/parallel_runner.rb).
+      - name: Run the test suite
+        run: bundle exec ruby -Ilib:test test/parallel_runner.rb

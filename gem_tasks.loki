@@ -15,35 +15,40 @@ class Tasks
   depends_on :quality
   def build
     sh "mkdir -p pkg"
-    sh "gem build asgard.gemspec"
-    sh "mv asgard-#{project_version}.gem pkg/"
+    sh "gem build #{@@project}.gemspec"
+    sh "mv #{@@project}-#{project_version}.gem pkg/"
   end
 
   desc "Build and install gem locally"
   depends_on :build
   def install
-    sh "gem install pkg/asgard-#{project_version}.gem"
+    sh "gem install pkg/#{@@project}-#{project_version}.gem"
   end
 
-  desc "release", "Release gem to RubyGems (runs quality gate first)"
+  # Hidden (no desc): release runs it first, so a release from any branch
+  # but main stops before the quality gate and the build.
+  def main_branch
+    branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+    branch = "not a git checkout" if branch.empty?
+    abort "Releases are made from main only; this is #{branch}." unless branch == "main"
+  end
+
+  desc "Release gem to RubyGems from main (builds behind the quality gate first)"
   option :yes, aliases: "-y", type: :boolean, default: false, desc: "Skip confirmation prompt"
-  depends_on :quality
+  depends_on :main_branch, :build
   def release
     tag      = "v#{project_version}"
-    gem_file = "pkg/asgard-#{project_version}.gem"
+    gem_file = "pkg/#{@@project}-#{project_version}.gem"
 
-    unless options[:yes]
+    unless options.yes?
       print "Release #{@@project} v#{project_version} to RubyGems? [y/N] "
       $stdout.flush
-      return puts "Aborted." unless $stdin.gets.strip.downcase == "y"
+      return puts "Aborted." unless $stdin.gets.to_s.strip.downcase == "y" # nil at end of input
     end
 
     abort "Working directory is not clean — commit or stash changes first." unless `git status --porcelain`.strip.empty?
     abort "Tag #{tag} already exists." unless `git tag -l #{tag}`.strip.empty?
 
-    sh "mkdir -p pkg"
-    sh "gem build asgard.gemspec"
-    sh "mv asgard-#{project_version}.gem pkg/"
     sh "git tag #{tag}"
     sh "git push origin #{tag}"
     sh "gem push #{gem_file}"

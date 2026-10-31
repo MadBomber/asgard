@@ -1,5 +1,15 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# --version needs nothing but the constant, so answer it before loading
+# Thor and the rest of the gem. Only before the task name: after it,
+# --version is the task's own argument.
+require_relative "../lib/asgard/leading_flag"
+if Asgard.leading_flag?(ARGV, "--version")
+  require_relative "../lib/asgard/version"
+  puts Asgard::VERSION
+  exit
+end
+
 require_relative "../lib/asgard"
 Asgard.run!(ARGV)

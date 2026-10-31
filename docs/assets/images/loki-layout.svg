@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" width="100%" role="img" aria-labelledby="loki-layout-title" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14">
+  <title id="loki-layout-title">How asgard finds and loads task files: the .loki marker imports sibling task files, may import a shared file from a parent directory, and is found from any subdirectory.</title>
+  <defs>
+    <marker id="loki-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" fill-opacity="0.7"/>
+    </marker>
+  </defs>
+
+  <!-- shared library above the project -->
+  <rect x="40" y="16" width="250" height="40" rx="8" fill="#a78bfa" fill-opacity="0.22" stroke="#a78bfa" stroke-width="1.5"/>
+  <text x="165" y="41" text-anchor="middle" fill="currentColor">~/sandbox/gem_tasks.loki</text>
+  <text x="310" y="41" fill="currentColor" fill-opacity="0.7" font-size="12">shared by every project below it</text>
+
+  <!-- project box -->
+  <rect x="20" y="96" width="720" height="318" rx="10" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="34" y="118" fill="currentColor" fill-opacity="0.8" font-size="13">myproject/</text>
+
+  <!-- .loki marker -->
+  <rect x="290" y="136" width="200" height="44" rx="8" fill="#a78bfa" fill-opacity="0.22" stroke="#a78bfa" stroke-width="2.5"/>
+  <text x="390" y="156" text-anchor="middle" fill="currentColor" font-weight="600">.loki</text>
+  <text x="390" y="172" text-anchor="middle" fill="currentColor" fill-opacity="0.75" font-size="12">root marker, loaded first</text>
+
+  <!-- import_up arrow to shared library -->
+  <path d="M 330 136 C 300 90, 280 70, 262 50" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#loki-arrow)"/>
+  <text x="398" y="100" fill="currentColor" fill-opacity="0.8" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">import_up "gem_tasks.loki"</text>
+
+  <!-- sibling task files -->
+  <rect x="110" y="244" width="150" height="40" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="185" y="269" text-anchor="middle" fill="currentColor">build.loki</text>
+
+  <rect x="315" y="244" width="150" height="40" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="390" y="269" text-anchor="middle" fill="currentColor">deploy.loki</text>
+
+  <rect x="520" y="244" width="150" height="40" rx="8" fill="#2dd4bf" fill-opacity="0.22" stroke="#2dd4bf" stroke-width="1.5"/>
+  <text x="595" y="269" text-anchor="middle" fill="currentColor">test.loki</text>
+
+  <!-- import arrows from .loki to siblings -->
+  <path d="M 370 180 L 200 244" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#loki-arrow)"/>
+  <path d="M 390 180 L 390 244" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#loki-arrow)"/>
+  <path d="M 410 180 L 580 244" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" marker-end="url(#loki-arrow)"/>
+  <text x="402" y="216" fill="currentColor" fill-opacity="0.8" font-size="12" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">import "*.loki"</text>
+
+  <!-- subdirectory with a terminal -->
+  <rect x="40" y="318" width="300" height="80" rx="8" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="52" y="338" fill="currentColor" fill-opacity="0.8" font-size="13">src/app/</text>
+  <rect x="56" y="348" width="268" height="38" rx="8" fill="#fbbf24" fill-opacity="0.22" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="190" y="372" text-anchor="middle" fill="currentColor" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13">$ asgard build</text>
+
+  <!-- walk-up arrow from the terminal to .loki -->
+  <path d="M 60 348 C 20 290, 40 190, 288 158" fill="none" stroke="currentColor" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#loki-arrow)"/>
+  <text x="60" y="212" fill="currentColor" fill-opacity="0.8" font-size="12">walks up to the</text>
+  <text x="60" y="228" fill="currentColor" fill-opacity="0.8" font-size="12">nearest .loki</text>
+
+  <!-- what the tasks resolve to -->
+  <rect x="400" y="330" width="320" height="68" rx="8" fill="#fbbf24" fill-opacity="0.12" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="560" y="352" text-anchor="middle" fill="currentColor" font-size="13">one Tasks class, reopened by every file</text>
+  <text x="560" y="372" text-anchor="middle" fill="currentColor" fill-opacity="0.8" font-size="12">asgard help lists build, deploy, test and</text>
+  <text x="560" y="388" text-anchor="middle" fill="currentColor" fill-opacity="0.8" font-size="12">the tasks gem_tasks.loki defines</text>
+</svg>

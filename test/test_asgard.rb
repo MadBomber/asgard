@@ -2,8 +2,6 @@
 
 require "test_helper"
 require "tempfile"
-require "open3"
-require "rbconfig"
 
 class TestAsgardVersion < Minitest::Test
   def test_version_is_defined
@@ -1058,6 +1056,45 @@ class TestAsgardSubclasses < Minitest::Test
   end
 end
 
+class TestAsgardSubcommandGroup < Minitest::Test
+  # A group that inherits the top-level tasks, the way a .loki's
+  # `class DocCommands < Tasks` does.
+  def setup
+    @top = Class.new(Asgard::Base) do
+      desc "Top-level task"
+      def quality = nil
+    end
+    @group = Class.new(@top) do
+      desc "Build the docs"
+      def build = nil
+    end
+  end
+
+  def test_group_help_lists_only_its_own_commands
+    @top.subcommand "doc", @group
+    out, = capture_io { @top.start(%w[doc help]) }
+    assert_match "doc build", out
+    refute_match "quality", out
+  end
+
+  def test_top_level_help_still_lists_everything
+    out, = capture_io { @group.help(Thor::Base.shell.new) }
+    assert_match "build", out
+    assert_match "quality", out
+  end
+
+  def test_subcommand_names_the_group
+    @top.subcommand "doc", @group
+    assert_equal "doc", @group.namespace
+  end
+
+  def test_subcommand_keeps_a_namespace_the_group_set
+    @group.namespace "docs_group"
+    @top.subcommand "doc", @group
+    assert_equal "docs_group", @group.namespace
+  end
+end
+
 class TestAsgardCircularDep < Minitest::Test
   def test_raises_on_circular_dependency
     klass = Class.new(Asgard::Base) do
@@ -1434,30 +1471,240 @@ class TestAsgardShell < Minitest::Test
     assert_raises(SystemExit) { sh "exit 1", silent: true }
   end
 
-  def test_shell_argv_passes_single_line_script_directly
-    assert_equal ["echo hi"], send(:shell_argv, "echo hi")
+  # Issue #1: a one-line script used to go through /bin/sh (dash on Debian)
+  # while a heredoc went through bash. Both now run the :bash entry.
+  def test_sh_runs_a_single_line_script_with_bash
+    f = Tempfile.new("asgard_sh_bash")
+    sh "echo $BASH_VERSION > #{f.path}", silent: true
+    refute_empty File.read(f.path).strip
+  ensure
+    f.unlink
   end
 
-  def test_shell_argv_wraps_multiline_script_in_bash
-    assert_equal ["bash", "-c", "a\nb"], send(:shell_argv, "a\nb")
+  def test_shells_is_seeded_with_the_known_interpreters
+    assert_equal %i[bash sh python3 python node ruby perl], Asgard::Shell.shells.keys
+    assert_equal({ path: "bash", args: [], ext: ".sh" }, Asgard::Shell.shells[:bash])
+    assert_equal({ path: "node", args: [], ext: ".js" }, Asgard::Shell.shells[:node])
   end
 
-  def test_sh_exec_true_replaces_process_for_single_line_script
-    ruby_pid, shell_pid = exec_replacement_check("echo $$ > SHELL_PID_FILE")
-    assert_equal ruby_pid, shell_pid
+  def test_entry_splits_path_words_into_executable_and_args
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" },
+                 Asgard::Shell.entry("bash -eu -o pipefail"))
   end
 
-  def test_sh_exec_true_replaces_process_for_multiline_script
-    ruby_pid, shell_pid = exec_replacement_check("echo $$ > SHELL_PID_FILE\ntrue")
-    assert_equal ruby_pid, shell_pid
+  def test_entry_accepts_args_as_a_string_or_an_array_after_the_path_words
+    expected = { path: "bash", args: %w[-eu -o pipefail -x], ext: ".sh" }
+    assert_equal expected, Asgard::Shell.entry("bash -eu", args: "-o pipefail -x")
+    assert_equal expected, Asgard::Shell.entry("bash -eu", args: %w[-o pipefail -x])
   end
 
-  def test_sh_exec_true_prints_command_when_not_silent
-    out, = run_child_script(<<~RUBY)
-      require "asgard/shell"
-      Object.new.extend(Asgard::Shell).sh "true", exec: true
-    RUBY
-    assert_match "true", out
+  def test_entry_derives_the_extension_from_the_executable_basename
+    assert_equal ".sh",  Asgard::Shell.entry("/opt/homebrew/bin/bash")[:ext]
+    assert_equal ".py",  Asgard::Shell.entry("uv run --script", ext: ".py")[:ext]
+    assert_equal ".tmp", Asgard::Shell.entry("uv run --script")[:ext]
+  end
+
+  def test_entry_honours_shell_quoting_in_the_path
+    entry = Asgard::Shell.entry("'/Applications/Some App/bin/tool' -q")
+    assert_equal ["/Applications/Some App/bin/tool", ["-q"]], entry.values_at(:path, :args)
+  end
+
+  def test_entry_rejects_an_empty_path
+    assert_raises(ArgumentError) { Asgard::Shell.entry("  ") }
+    assert_raises(ArgumentError) { Asgard::Shell.entry(Pathname.new("")) }
+  end
+
+  def test_entry_takes_a_pathname_whole_without_splitting_it
+    entry = Asgard::Shell.entry(Pathname.new("/Applications/Some App/bin/bash"), args: "-eu")
+    assert_equal({ path: "/Applications/Some App/bin/bash", args: ["-eu"], ext: ".sh" }, entry)
+  end
+
+  # A directory of executable stand-ins named +names+, so registration
+  # tests exercise real files without depending on what this machine has.
+  def with_executables(*names)
+    Dir.mktmpdir("asgard_shells") do |dir|
+      names.each do |name|
+        file = File.join(dir, name)
+        File.write(file, "#!/bin/sh\nexit 0\n")
+        File.chmod(0o755, file)
+      end
+      yield dir
+    end
+  end
+
+  def test_shell_with_a_bare_path_names_the_entry_after_the_executable_and_parses_its_options
+    with_executables("bash", "fish") do |dir|
+      assert_equal :bash, Tasks.shell("#{dir}/bash -c -w")
+      assert_equal({ path: "#{dir}/bash", args: %w[-c -w], ext: ".sh" }, Tasks.shells[:bash])
+
+      assert_equal :fish, Tasks.shell(Pathname.new(dir).join("fish"))
+      assert_equal({ path: "#{dir}/fish", args: [], ext: ".fish" }, Tasks.shells[:fish])
+    end
+
+    assert_equal :ruby, Tasks.shell("ruby -w", ext: ".rbx")
+    assert_equal({ path: "ruby", args: %w[-w], ext: ".rbx" }, Tasks.shells[:ruby])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_with_a_symbol_alone_registers_that_name_from_path
+    Tasks.shells.delete(:ruby)
+    assert_equal :ruby, Tasks.shell(:ruby)
+    assert_equal({ path: "ruby", args: [], ext: ".rb" }, Tasks.shells[:ruby])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_rejects_a_path_that_is_not_an_executable_file
+    with_executables("bash") do |dir|
+      File.write(File.join(dir, "notes.txt"), "")
+      missing = assert_raises(ArgumentError) { Tasks.shell "#{dir}/zsh -f" }
+      assert_equal "shell :zsh: #{dir}/zsh is not an executable file", missing.message
+      plain = assert_raises(ArgumentError) { Tasks.shell :notes, "#{dir}/notes.txt" }
+      assert_equal "shell :notes: #{dir}/notes.txt is not an executable file", plain.message
+    end
+    refute Tasks.shells.key?(:zsh)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_rejects_a_bare_name_that_is_not_on_path
+    error = assert_raises(ArgumentError) { Tasks.shell :missing, "no_such_interpreter_xyz --flag" }
+    assert_equal "shell :missing: no_such_interpreter_xyz is not an executable on PATH", error.message
+    assert_raises(ArgumentError) { Tasks.shell :no_such_interpreter_xyz }
+    assert_raises(ArgumentError) { Tasks.default_shell "no_such_interpreter_xyz" }
+    assert_equal :bash, Tasks.default_shell
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_resolve_checks_a_path_as_a_file_and_a_bare_name_on_the_given_path
+    with_executables("bash") do |dir|
+      assert_equal "#{dir}/bash", Asgard::Shell.resolve("#{dir}/bash")
+      assert_nil Asgard::Shell.resolve("#{dir}/zsh")
+      assert_equal "#{dir}/bash", Asgard::Shell.resolve("bash", dir)
+      assert_nil Asgard::Shell.resolve("zsh", dir)
+      assert_nil Asgard::Shell.resolve("bash", "")
+    end
+  end
+
+  def test_default_shell_with_a_bare_path_registers_then_selects_and_a_bare_name_only_selects
+    with_executables("bash", "zsh") do |dir|
+      Tasks.shell "#{dir}/bash -c -w"
+      Tasks.default_shell :bash
+      thing = Tasks.default_shell
+      assert_equal :bash, thing
+      assert_equal({ path: "#{dir}/bash", args: %w[-c -w], ext: ".sh" }, Tasks.shells[:bash],
+                   "selecting by name must not re-register the pinned entry")
+
+      assert_equal :zsh, Tasks.default_shell("#{dir}/zsh -f")
+      assert_equal :zsh, Tasks.default_shell
+      assert_equal({ path: "#{dir}/zsh", args: ["-f"], ext: ".sh" }, Tasks.shells[:zsh])
+    end
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_default_shell_registers_and_selects_in_one_call
+    Tasks.default_shell :strict, "bash", args: "-eu -o pipefail"
+    assert_equal :strict, Tasks.default_shell
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" }, Tasks.shells[:strict])
+
+    Tasks.default_shell :traced, Pathname.new("/bin/bash"), args: %w[-x]
+    assert_equal({ path: "/bin/bash", args: ["-x"], ext: ".sh" }, Tasks.shells[:traced])
+
+    Tasks.default_shell :ruby, args: "-w"
+    assert_equal :ruby, Tasks.default_shell
+    assert_equal({ path: "ruby", args: ["-w"], ext: ".rb" }, Tasks.shells[:ruby])
+
+    Tasks.default_shell :python3 # a bare name only selects
+    assert_equal({ path: "python3", args: [], ext: ".py" }, Tasks.shells[:python3])
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_sh_runs_a_shell_declared_by_default_shell_in_one_call
+    Tasks.default_shell :traced, Pathname.new("/bin/bash"), args: "-x"
+    _, err = capture_subprocess_io { sh "echo one_call_marker", silent: true }
+    assert_match(/^\+ echo one_call_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shell_for_falls_back_to_the_bare_name_on_path
+    assert_equal({ path: "fish", args: [], ext: ".fish" }, Asgard::Shell.shell_for(:fish), "a known shell keeps its extension (C7)")
+    assert_equal ".tmp", Asgard::Shell.shell_for(:no_such_shell_xyz)[:ext]
+    assert_equal Asgard::Shell.shells[:ruby], Asgard::Shell.shell_for("ruby")
+  end
+
+  def test_argv_places_the_file_after_the_args
+    entry = Asgard::Shell.entry("bash -x")
+    assert_equal ["bash", "-x", "/tmp/asgard_1.sh"], Asgard::Shell.argv(entry, "/tmp/asgard_1.sh")
+  end
+
+  def test_default_shell_starts_as_bash_and_is_set_at_class_level
+    assert_equal :bash, Tasks.default_shell
+    Tasks.default_shell :zsh
+    assert_equal :zsh, Tasks.default_shell
+    assert_equal :zsh, Class.new(Tasks).default_shell
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_without_a_name_and_sh_both_run_the_default_shell
+    Tasks.shell :traced, "bash -x"
+    Tasks.default_shell :traced
+    _, err = capture_subprocess_io do
+      shebang "echo nameless_marker", silent: true
+      sh "echo sh_marker", silent: true
+    end
+    assert_match(/^\+ echo nameless_marker/, err)
+    assert_match(/^\+ echo sh_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_sh_is_the_same_method_as_shebang_and_takes_a_shell_name
+    assert_equal Asgard::Shell.instance_method(:shebang), Asgard::Shell.instance_method(:sh)
+    out, = capture_subprocess_io { sh :ruby, "puts RUBY_VERSION", silent: true }
+    assert_equal RUBY_VERSION, out.strip
+  end
+
+  def test_shebang_returns_true_on_success
+    assert_equal true, sh("true", silent: true)
+    assert_equal true, shebang(:ruby, "exit 0", silent: true)
+  end
+
+  def test_shell_class_method_registers_an_entry_shared_by_every_tasks_subclass
+    Tasks.shell :strict, "bash -eu -o pipefail"
+    assert_equal({ path: "bash", args: %w[-eu -o pipefail], ext: ".sh" }, Tasks.shells[:strict])
+    assert_same Tasks.shells, Class.new(Tasks).shells
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_runs_a_registered_shell_with_its_args
+    Tasks.shell :traced, "bash -x"
+    _, err = capture_subprocess_io { shebang :traced, "echo traced_marker", silent: true }
+    assert_match(/^\+ echo traced_marker/, err)
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  def test_shebang_names_a_missing_shell_and_exits_127
+    status = nil
+    _, err = capture_io do
+      status = assert_raises(SystemExit) { shebang :nonexistent_interpreter_xyz, "echo hi", silent: true }
+    end
+    assert_equal 127, status.status
+    assert_match "shell :nonexistent_interpreter_xyz not found: nonexistent_interpreter_xyz ...", err
+  end
+
+  # Removed in 0.6.0: the shell is the unit of work, so there is nothing for
+  # exec: to hand the process to.
+  def test_sh_and_shebang_no_longer_accept_exec
+    assert_raises(ArgumentError) { sh "true", exec: true }
+    assert_raises(ArgumentError) { shebang :bash, "true", exec: true }
   end
 
   def test_shebang_runs_ruby_script
@@ -1492,40 +1739,6 @@ class TestAsgardShell < Minitest::Test
     assert_raises(SystemExit) do
       shebang :nonexistent_interpreter_xyz, "echo hi", silent: true
     end
-  end
-
-  private
-
-  # Runs +script+ (containing the placeholder SHELL_PID_FILE) in a real child
-  # process via sh(script, exec: true), and returns [ruby_pid, shell_pid].
-  # If exec: true genuinely replaced the process image (instead of forking),
-  # the pid the child ruby process recorded for itself and the pid the
-  # exec'd shell command sees ($$) are the same process — proving no
-  # separate asgard process was left resident alongside the command.
-  def exec_replacement_check(script)
-    ruby_pid_file  = Tempfile.new("asgard_exec_ruby_pid")
-    shell_pid_file = Tempfile.new("asgard_exec_shell_pid")
-    ruby_pid_file.close
-    shell_pid_file.close
-
-    resolved_script = script.sub("SHELL_PID_FILE", shell_pid_file.path)
-    run_child_script(<<~RUBY)
-      require "asgard/shell"
-      File.write(#{ruby_pid_file.path.inspect}, Process.pid.to_s)
-      Object.new.extend(Asgard::Shell).sh(#{resolved_script.inspect}, exec: true, silent: true)
-    RUBY
-
-    [File.read(ruby_pid_file.path), File.read(shell_pid_file.path).strip]
-  ensure
-    ruby_pid_file.unlink
-    shell_pid_file.unlink
-  end
-
-  # Runs +ruby_code+ in a fresh ruby process with this gem's lib/ on the load
-  # path, and returns [stdout, status] — a real subprocess, not a mock.
-  def run_child_script(ruby_code)
-    lib_dir = File.expand_path("../lib", __dir__)
-    Open3.capture2(RbConfig.ruby, "-I#{lib_dir}", "-e", ruby_code)
   end
 end
 
@@ -1726,6 +1939,58 @@ class TestDoctor < Minitest::Test
     Tasks._reset_ran!
   end
 
+  def test_import_tracer_keeps_only_loki_files
+    added = ["/a/x.loki", "/gems/uri.rb", "/ruby/socket.bundle", "/a/y.loki"]
+    assert_equal ["/a/x.loki", "/a/y.loki"], Asgard::Doctor::ImportTracer.loki_files(added)
+  end
+
+  def test_definition_site_keeps_a_normal_location
+    loc = ["/proj/.loki", 12]
+    assert_equal loc, Asgard::Base.definition_site(loc, caller_locations)
+  end
+
+  def test_definition_site_credits_thor_generated_methods_to_the_caller
+    thor_loc = [File.join(Asgard::Base::THOR_LIB, "thor.rb"), 334]
+    eval_loc = ["(eval at #{thor_loc.first}:643)", 2]
+    here     = caller_locations(0, 1).first
+    assert_equal [here.path, here.lineno + 1], Asgard::Base.definition_site(thor_loc, caller_locations(0))
+    assert_equal [here.path, here.lineno + 2], Asgard::Base.definition_site(eval_loc, caller_locations(0))
+  end
+
+  def test_requires_and_subcommands_do_not_pollute_the_report
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, "helper_lib.rb"), "DOCTOR_HELPER_LIB = true")
+      File.write(File.join(dir, "sub.loki"), <<~RUBY)
+        require_relative "helper_lib"
+        class DoctorSubCommands < Asgard::Base
+          desc "go", "go"
+          def go = nil
+        end
+        class Tasks
+          desc "doctor_test_sub", "sub"
+          subcommand "doctor_test_sub", DoctorSubCommands
+        end
+      RUBY
+      File.write(File.join(dir, ".loki"), 'import "*.loki"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}\e/, out)
+      refute_match "helper_lib.rb", out
+      refute_match "thor", out
+      assert_match "doctor_test_sub  sub.loki:8", out
+      assert_match "help  sub.loki:8", out
+    end
+  ensure
+    $LOADED_FEATURES.delete_if { |f| f.end_with?("sub.loki", "helper_lib.rb") }
+    Tasks.class_eval { remove_method(:doctor_test_sub) rescue nil }
+    Tasks._method_log.delete(:doctor_test_sub)
+    Tasks.subcommands.delete("doctor_test_sub")
+    Tasks.subcommand_classes.delete("doctor_test_sub")
+    Tasks.commands.delete("doctor_test_sub")
+    Tasks._reset_ran!
+  end
+
   def test_relative_import_still_resolves_against_the_loki_file_not_doctor
     # Regression guard: Doctor's import tracer prepends `import` and calls
     # `super`, which used to shift `caller_locations` by one frame and break
@@ -1742,5 +2007,999 @@ class TestDoctor < Minitest::Test
     end
   ensure
     $LOADED_FEATURES.delete_if { |f| f.end_with?("sibling.loki") }
+  end
+end
+
+# The six problems from notes/review_20261024.md, each pinned by a test.
+class TestAsgardReviewFixes < Minitest::Test
+  include Asgard::Shell
+
+  def teardown
+    Tasks._reset_ran!
+    %i[iu_root iu_child].each do |name|
+      Tasks.class_eval { remove_method(name) rescue nil }
+      Tasks.commands.delete(name.to_s)
+      Tasks._method_log.delete(name)
+    end
+  end
+
+  # A project whose child file pulls the root in with import_up: the root
+  # was never recorded as loaded, so the two files imported each other
+  # until the stack overflowed.
+  def with_import_up_project
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      Dir.mkdir(File.join(dir, "sub"))
+      File.write(File.join(dir, "sub", "child.loki"), <<~RUBY)
+        import_up
+        class Tasks; desc "iu_child", "child"; def iu_child = nil; end
+      RUBY
+      File.write(File.join(dir, ".loki"), <<~RUBY)
+        import "sub/*.loki"
+        class Tasks; desc "iu_root", "root"; def iu_root = nil; end
+      RUBY
+      yield dir
+    ensure
+      $LOADED_FEATURES.delete_if { |f| f.start_with?(dir) }
+    end
+  end
+
+  def test_import_up_from_an_imported_file_loads_the_root_once
+    with_import_up_project do |dir|
+      capture_io { Dir.chdir(dir) { Asgard.run!(["help"]) } }
+      assert Tasks.method_defined?(:iu_child)
+      assert_equal 1, Tasks._method_log[:iu_root].size, "the root .loki should load exactly once"
+    end
+  end
+
+  def test_doctor_survives_import_up_from_an_imported_file
+    with_import_up_project do |dir|
+      out, = capture_io { Dir.chdir(dir) { Asgard::Doctor.new(dir).run } }
+      refute_match "load failed", out
+      assert_match "iu_child", out
+    end
+  end
+
+  def test_sh_reports_a_signalled_child_as_128_plus_the_signal
+    e = assert_raises(SystemExit) { sh "kill -9 $$", silent: true }
+    assert_equal 137, e.status
+  end
+
+  def test_shell_exit_code_prefers_the_status_and_falls_back_to_the_signal
+    exited   = Struct.new(:exitstatus, :termsig).new(3, nil)
+    killed   = Struct.new(:exitstatus, :termsig).new(nil, 15)
+    assert_equal 3,   Asgard::Shell.exit_code(exited)
+    assert_equal 143, Asgard::Shell.exit_code(killed)
+  end
+
+  def parallel_group(first_body, &second_body)
+    completed = []
+    mu        = Mutex.new
+    klass     = Class.new(Asgard::Base) do
+      desc "first", "first"
+      define_method(:first, &first_body)
+
+      desc "second", "second"
+      define_method(:second) do
+        sleep 0.05
+        mu.synchronize { completed << :second }
+        second_body&.call
+      end
+
+      depends_on %i[first second]
+      desc "target", "target"
+      define_method(:target) {}
+    end
+    [klass, completed]
+  end
+
+  def test_a_failing_sh_in_a_parallel_group_waits_for_its_siblings
+    klass, completed = parallel_group(-> { exit 7 })
+    e = assert_raises(SystemExit) { klass.new([], {}, {}).invoke(:target) }
+    assert_equal 7, e.status
+    assert_includes completed, :second
+  end
+
+  def test_a_raising_parallel_dep_does_not_print_a_thread_report
+    klass, = parallel_group(-> { raise "boom" })
+    _, err = capture_io { assert_raises(RuntimeError) { klass.new([], {}, {}).invoke(:target) } }
+    refute_match(/terminated with exception/, err)
+  end
+
+  def test_several_failing_parallel_deps_are_each_named
+    klass, = parallel_group(-> { exit 3 }) { raise "boom" }
+    error  = nil
+    _, err = capture_io { error = assert_raises(Asgard::Error) { klass.new([], {}, {}).invoke(:target) } }
+    assert_equal "parallel dependencies failed: first, second", error.message
+    assert_match "dependency 'first' failed: exit 3", err
+    assert_match "dependency 'second' failed: RuntimeError: boom", err
+  end
+
+  def test_a_task_named_after_a_thor_internal_is_rejected_with_its_location
+    e = assert_raises(Asgard::Error) do
+      Class.new(Asgard::Base) do
+        desc "args", "args"
+        define_method(:args) {}
+      end
+    end
+    assert_match(/'args' at .*test_asgard\.rb:\d+ is a name Thor reserves/, e.message)
+  end
+
+  def test_a_helper_named_after_a_thor_reserved_word_is_rejected
+    e = assert_raises(Asgard::Error) do
+      Class.new(Asgard::Base) { no_commands { define_method(:shell) {} } }
+    end
+    assert_match "'shell' at", e.message
+  end
+
+  def test_run_reports_a_reserved_task_name_as_an_asgard_error
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "class Tasks; desc 'args', 'x'; def args = nil; end")
+      _, err = capture_io { assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["help"]) } } }
+      assert_match "asgard: 'args' at #{dir}/.loki:1 is a name Thor reserves", err
+    ensure
+      $LOADED_FEATURES.delete_if { |f| f.start_with?(dir) }
+    end
+  end
+end
+
+class TestAsgardCurrentTask < Minitest::Test
+  def setup
+    @seen  = {}
+    seen   = @seen
+    mutex  = Mutex.new
+    @klass = Class.new(Asgard::Base) do
+      desc "db", "db"
+      define_method(:db) { mutex.synchronize { seen[:db] = [current_task, _next_job_sequence, _next_job_sequence] } }
+
+      desc "api", "api"
+      define_method(:api) { mutex.synchronize { seen[:api] = [current_task, _next_job_sequence] } }
+
+      depends_on %i[db api]
+      desc "servers", "servers"
+      define_method(:servers) { mutex.synchronize { seen[:servers] = [current_task, _next_job_sequence] } }
+    end
+  end
+
+  def test_each_task_body_sees_its_own_name_even_in_a_parallel_stage
+    @klass.new([], {}, {}).invoke(:servers)
+    assert_equal [:db, 1, 2], @seen[:db]
+    assert_equal [:api, 1],   @seen[:api]
+    assert_equal [:servers, 1], @seen[:servers]
+  end
+
+  def test_the_sequence_starts_over_on_each_run_and_the_frame_is_popped
+    runner = @klass.new([], {}, {})
+    runner.invoke(:api)
+    @klass._reset_ran!
+    runner.invoke(:api)
+    assert_equal [:api, 1], @seen[:api], "a new run of the body counts from 1 again"
+    assert_nil runner.current_task, "no task is running once invoke returns"
+  end
+
+  def test_outside_a_task_there_is_no_current_task_and_no_sequence
+    runner = @klass.new([], {}, {})
+    assert_nil runner.current_task
+    error = assert_raises(Asgard::Error) { runner._next_job_sequence }
+    assert_match(/no task is running/, error.message)
+  end
+end
+
+# C1: a task waiting on a shared dependency that failed must not run.
+class TestRegressionSharedDependencyFailure < Minitest::Test
+  include AsgardProcess
+
+  def test_regression_c1_waiter_does_not_run_after_shared_dep_fails
+    ran  = []
+    lock = Mutex.new
+    klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) do
+        sleep 0.2
+        raise Asgard::Error, "a broke"
+      end
+      depends_on :a
+      desc "b", "b"
+      define_method(:b) { lock.synchronize { ran << :b } }
+      depends_on :a
+      desc "c", "c"
+      define_method(:c) { lock.synchronize { ran << :c } }
+      depends_on %i[b c]
+      desc "top", "top"
+      define_method(:top) { lock.synchronize { ran << :top } }
+    end
+    klass.validate_deps!
+    capture_io { assert_raises(Asgard::Error) { klass.new([], {}, {}).invoke(:top) } }
+    assert_empty ran, "no task that depends on the failed :a may run"
+  end
+
+  def test_regression_c1_shared_dep_exit_status_ends_asgard_and_no_waiter_runs
+    loki = <<~LOKI
+      class Tasks
+        desc "a"; def a = sh("sleep 0.3; exit 3", silent: true)
+        depends_on :a
+        desc "b"; def b = puts("B RAN")
+        depends_on :a
+        desc "c"; def c = puts("C RAN")
+        depends_on [:b, :c]
+        desc "top"; def top = puts("TOP RAN")
+      end
+    LOKI
+    out, _err, status = run_asgard(loki, "top")
+    assert_equal 3, status.exitstatus, "the failing dependency's own status"
+    refute_match(/[BC] RAN|TOP RAN/, out)
+  end
+
+  def test_regression_c1_primary_failures_drop_the_ones_caused_by_another
+    dispatch = Asgard::Base::Dispatch
+    primary  = dispatch::DepExit.new(3)
+    derived  = dispatch::DepFailed.new(:a, primary)
+    assert_equal({ b: primary }, dispatch.primary_failures({ b: primary, c: derived }))
+    assert_equal({ c: derived }, dispatch.primary_failures({ c: derived }), "only derived: keep them")
+  end
+end
+
+# C3 (decision D3): a public method with no desc is a hidden task, and a
+# depends_on always attaches to the very next method.
+class TestRegressionHiddenTasks < Minitest::Test
+  include AsgardProcess
+
+  def build
+    ran = @ran = []
+    Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { ran << :a }
+
+      depends_on :a
+      define_method(:setup_x) { ran << :setup_x }
+
+      desc "later", "later"
+      define_method(:later) { ran << :later }
+
+      depends_on :setup_x
+      desc "uses", "uses"
+      define_method(:uses) { ran << :uses }
+
+      no_commands { define_method(:inner) { :inner } }
+      helper(:helped) { :helped }
+      define_method(:_gem_owned) { :gem }
+
+      private
+
+      define_method(:secret_helper) { :private }
+    end
+  end
+
+  def test_regression_c3_depends_on_attaches_to_the_next_method_without_desc
+    klass = nil
+    capture_io { klass = build }
+    assert_equal [[:a]], klass._deps[:setup_x]
+    refute klass._deps.key?(:later), "later declared no dependency"
+  end
+
+  def test_regression_c3_a_method_without_desc_is_a_hidden_command_and_no_warning
+    klass = nil
+    out, = capture_io { klass = build }
+    refute_match(/"setup_x" without usage or description/, out)
+    assert_kind_of Thor::HiddenCommand, klass.all_commands["setup_x"]
+    help, = capture_io { klass.new([], {}, {}).help }
+    refute_match(/setup_x/, help)
+    assert_match(/later/, help)
+  end
+
+  def test_regression_c3_a_hidden_task_is_a_dependency_and_runs_once
+    klass = nil
+    capture_io { klass = build }
+    klass.validate_deps!
+    klass.new([], {}, {}).invoke(:uses)
+    assert_equal %i[a setup_x uses], @ran
+  end
+
+  def test_regression_c3_helpers_private_and_gem_methods_stay_out
+    klass = nil
+    capture_io { klass = build }
+    %w[inner helped _gem_owned secret_helper].each { |name| refute klass.all_commands.key?(name), name }
+  end
+
+  def test_regression_c3_a_hidden_task_runs_from_the_command_line
+    out, _err, status = run_asgard(%(class Tasks\n  def setup_x = puts("SETUP RAN")\nend\n), "setup_x")
+    assert_equal 0, status.exitstatus
+    assert_equal "SETUP RAN\n", out
+  end
+
+  def test_regression_c3_doctor_lists_hidden_tasks
+    out, = run_asgard(%(class Tasks\n  def setup_x = nil\n  desc "shown"\n  def shown = nil\nend\n), "--doctor")
+    assert_match(/setup_x.*hidden/, out)
+    refute_match(/shown.*hidden/, out)
+  end
+end
+
+# C4: a .loki that fails to load says so in one line, not a backtrace.
+class TestRegressionLoadErrors < Minitest::Test
+  include AsgardProcess
+
+  CASES = {
+    "missing import" => ['import "missing.loki"', /missing\.loki/],
+    "bad shell path" => ["class Tasks\n  shell :x, \"/no/such/shell\"\nend", %r{/no/such/shell}],
+    "syntax error"   => ["class Tasks\n  def oops(\nend", /syntax/i],
+    "typo"           => ["class Tasks\n  dependz_on :x\nend", /dependz_on/]
+  }.freeze
+
+  def test_regression_c4_load_errors_are_one_line_with_the_loki_location
+    CASES.each do |label, (loki, pattern)|
+      _out, err, status = run_asgard(loki, "help")
+      assert_equal 1, status.exitstatus, "#{label}: exit status"
+      lines = err.lines.reject { |line| line.strip.empty? }
+      assert_equal 1, lines.size, "#{label}: one line, got:\n#{err}"
+      assert_match(/\Aasgard: .*\.loki:\d+/, lines.first, label)
+      assert_match pattern, lines.first, label
+    end
+  end
+
+  def test_regression_c4_asgard_trace_shows_the_backtrace
+    _out, err, status = run_asgard(CASES["typo"].first, "help", env: { "ASGARD_TRACE" => "1" })
+    refute_equal 0, status.exitstatus
+    assert_match(/^\s+from |:in /, err)
+  end
+
+  def test_regression_c4_load_error_message_is_pure
+    error = NameError.new("undefined local variable or method 'dependz_on'")
+    error.set_backtrace(["/lib/asgard/x.rb:1:in 'y'", "/proj/.loki:2:in '<class:Tasks>'", "/proj/.loki:1:in '<top>'"])
+    assert_equal "/proj/.loki:2: undefined local variable or method 'dependz_on' (NameError)", Asgard.load_error_message(error)
+  end
+end
+
+# J8, J9: background jobs from the command line.
+class TestRegressionJobsFromTheCommandLine < Minitest::Test
+  include AsgardProcess
+
+  def test_regression_j8_bare_asgard_jobs_lists_outside_a_project
+    assert Asgard.machine_wide?(%w[jobs])
+  end
+
+  # A task that changes directory into a nested project before starting a
+  # job still files the job under the project asgard was run in.
+  def test_regression_j9_a_job_is_filed_under_the_project_asgard_ran_in
+    Dir.mktmpdir do |state_home|
+      loki = <<~LOKI
+        class Tasks
+          desc "serve"
+          def serve
+            Dir.chdir("sub")
+            sh "sleep 30", background: :srv
+          end
+        end
+      LOKI
+      out, err, status = run_asgard(loki, "serve", files: { "sub/.loki" => "" }, env: { "XDG_STATE_HOME" => state_home })
+      assert_equal 0, status.exitstatus, err
+      log = out[/log: (\S+)/, 1]
+      assert log, out
+      assert_match(%r{/jobs/d\d+-\d+-\w+-\h{8}/srv\.log\z}, log, "the root project's slug, not sub's")
+    ensure
+      Dir.glob(File.join(state_home, "asgard", "jobs", "*", "*.json")).each do |file|
+        record = Asgard::StateDir.read_json(file)
+        Asgard::Jobs::Stopper.signal_group("KILL", record[:pgid]) if Asgard::Jobs::State.verified?(record)
+      end
+    end
+  end
+end
+
+# Phase 3 core regressions.
+class TestRegressionCoreLow < Minitest::Test
+  include AsgardProcess
+
+  ECHO_ARGS = %(class Tasks\n  desc "echo_args [ARGS]"\n  def echo_args(*args) = puts(args.inspect)\nend\n)
+
+  # C5: --version and --doctor are asgard's only before the task name.
+  def test_regression_c5_flags_after_the_task_name_belong_to_the_task
+    out, _err, status = run_asgard(ECHO_ARGS, "echo_args", "--", "--version")
+    assert_equal 0, status.exitstatus
+    assert_equal %(["--version"]\n), out
+    assert Asgard.leading_flag?(%w[--version], "--version")
+    refute Asgard.leading_flag?(%w[echo_args --version], "--version")
+    assert Asgard.leading_flag?(%w[--debug --doctor], "--doctor")
+  end
+
+  # C6: a directory named .loki is not a task file.
+  def test_regression_c6_a_loki_directory_is_skipped
+    Dir.mktmpdir do |dir|
+      real = File.realpath(dir)
+      File.write(File.join(real, ".loki"), "")
+      FileUtils.mkdir_p(File.join(real, "sub", ".loki"))
+      Dir.chdir(File.join(real, "sub")) do
+        assert_equal File.join(real, ".loki"), loki_up.to_s
+        assert_equal [File.join(real, ".loki")], Asgard::Doctor.ancestor_markers(Dir.pwd).first(1)
+      end
+    end
+  end
+
+  # C7: an unregistered shell gets its known extension, and selecting one
+  # that is not there fails as the .loki loads.
+  def test_regression_c7_unregistered_shells
+    assert_equal ".sh",   Asgard::Shell.shell_for(:zsh)[:ext]
+    assert_equal ".fish", Asgard::Shell.shell_for(:fish)[:ext]
+    assert_raises(ArgumentError) { Tasks.default_shell(:no_such_shell_xyz) }
+  ensure
+    Asgard::Shell.reset_shells!
+  end
+
+  # C8: parallel dependencies each get their own instance.
+  def test_regression_c8_parallel_dependencies_do_not_share_instance_variables
+    seen = {}
+    lock = Mutex.new
+    klass = Class.new(Asgard::Base) do
+      { a: 0.1, b: 0.0 }.each do |name, pause|
+        desc name.to_s, name.to_s
+        define_method(name) do
+          @mine = name
+          sleep pause + 0.1
+          lock.synchronize { seen[name] = @mine }
+        end
+      end
+      depends_on %i[a b]
+      desc "top", "top"
+      define_method(:top) { nil }
+    end
+    klass.validate_deps!
+    klass.new([], {}, {}).invoke(:top)
+    assert_equal({ a: :a, b: :b }, seen)
+  end
+
+  # C9: Tasks.subclasses is Ruby's Class#subclasses.
+  def test_regression_c9_subclasses_is_rubys
+    child = Class.new(Tasks)
+    assert_includes Tasks.subclasses, child
+    assert_includes Asgard::Base._asgard_subclasses, child
+  end
+
+  # C10: the gem's release prompt survives stdin at end-of-file.
+  def test_regression_c10_release_aborts_on_eof
+    # release depends on main_branch and build; the stubs come after the
+    # import so they win.
+    loki = <<~LOKI
+      import "gem_tasks.loki"
+      class Tasks
+        @@project = "x"
+        helper(:project_version) { "0.0.0" }
+        desc "quality"; def quality = nil
+        desc "build"; def build = nil
+        def main_branch = nil
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => File.read(File.expand_path("../gem_tasks.loki", __dir__)) })
+    assert_equal 0, status.exitstatus, err
+    assert_match(/Aborted\./, out)
+  end
+
+  # The gem's release runs only on main; anywhere else it stops before
+  # the build. The temp project is not a git checkout at all.
+  def test_release_refuses_outside_main
+    loki = <<~LOKI
+      import "gem_tasks.loki"
+      class Tasks
+        desc "quality"; def quality = abort("quality ran")
+        desc "build"; def build = abort("build ran")
+      end
+    LOKI
+    gem_tasks = File.read(File.expand_path("../gem_tasks.loki", __dir__))
+    _out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => gem_tasks })
+    assert_equal 1, status.exitstatus
+    assert_equal "Releases are made from main only; this is not a git checkout.\n", err
+  end
+end
+
+# Core review: dependency options, import paths, invoke cycles, reserved
+# helper names, object methods and built-in group help.
+class TestRegressionCoreReview < Minitest::Test
+  include AsgardProcess
+
+  # R1: a dependency's options are its own command's, with its defaults.
+  def options_class(seen, parallel: false)
+    Class.new(Asgard::Base) do
+      class_option :verbose, type: :boolean, default: false
+
+      desc "build", "build"
+      method_option :target, default: "debug"
+      define_method(:build) { seen[:build] = options.to_h.slice("target", "env", "verbose") }
+
+      desc "lint", "lint"
+      define_method(:lint) { seen[:lint] = true }
+
+      depends_on(*(parallel ? [%i[build lint]] : [:build]))
+      desc "deploy", "deploy"
+      method_option :target, default: "release"
+      method_option :env, default: "staging"
+      define_method(:deploy) { seen[:deploy] = options.to_h.slice("target", "env") }
+    end
+  end
+
+  def test_regression_r1_a_dependency_gets_its_own_option_defaults
+    [false, true].each do |parallel|
+      seen  = {}
+      klass = options_class(seen, parallel:)
+      klass.validate_deps!
+      klass.start(%w[deploy])
+      assert_equal({ "target" => "debug", "env" => "staging", "verbose" => false }, seen[:build], "parallel: #{parallel}")
+      assert_equal({ "target" => "release", "env" => "staging" }, seen[:deploy])
+    end
+  end
+
+  def test_regression_r1_an_option_typed_for_the_target_reaches_a_dependency_that_declares_it
+    seen  = {}
+    klass = options_class(seen, parallel: true)
+    klass.validate_deps!
+    klass.start(%w[deploy --target arm --env prod --verbose])
+    assert_equal({ "target" => "arm", "env" => "prod", "verbose" => true }, seen[:build])
+  end
+
+  def test_regression_r1_dep_options_is_pure
+    dispatch = Asgard::Base::Dispatch
+    declared = { target: Thor::Option.new(:target, default: "debug") }
+    typed    = Thor::CoreExt::HashWithIndifferentAccess.new("target" => "release", "env" => "prod")
+    assert_equal({ "target" => "debug", "env" => "prod" }, dispatch.dep_options(declared, declared, [], typed).to_h)
+    assert_equal({ "target" => "x", "env" => "prod" }, dispatch.dep_options(declared, declared, %w[--target x], typed).to_h)
+    assert_equal "y", dispatch.dep_options(declared, declared, { "target" => "y" }, typed)[:target]
+  end
+
+  # R2: a project directory whose name holds glob characters.
+  def test_regression_r2_import_and_import_up_in_a_directory_named_like_a_glob
+    loki = <<~LOKI
+      import "extra.loki"
+      import "more/*.loki"
+      class Tasks; desc "show"; def show = puts([defined?(EXTRA_R2), defined?(MORE_R2), defined?(UP_R2)].inspect); end
+    LOKI
+    files = { "extra.loki" => "EXTRA_R2 = 1", "more/one.loki" => "MORE_R2 = 1",
+              "up.loki" => "UP_R2 = 1", "more/sub.loki" => %(import_up "up.loki") }
+    Dir.mktmpdir do |base|
+      dir = File.join(base, "glob[1]{a,b}?*")
+      Dir.mkdir(dir)
+      File.write(File.join(dir, ".loki"), loki)
+      files.each do |name, body|
+        FileUtils.mkdir_p(File.dirname(File.join(dir, name)))
+        File.write(File.join(dir, name), body)
+      end
+      out, err, status = Open3.capture3(Gem.ruby, "-I", LIB, BIN, "show", chdir: dir)
+      assert_equal 0, status.exitstatus, err
+      assert_equal %(["constant", "constant", "constant"]\n), out
+    end
+  end
+
+  def test_regression_r2_glob_escape_is_pure
+    assert_equal "/a/glob\\[1\\]\\{x,y\\}\\?\\*/f.loki", Asgard.glob_escape("/a/glob[1]{x,y}?*/f.loki")
+  end
+
+  # R3: two imported files that import each other load once each.
+  def test_regression_r3_mutual_imports_between_non_root_files
+    files = { "a.loki" => %(import "b.loki"\nA_R3 = 1), "b.loki" => %(import "a.loki"\nB_R3 = 1) }
+    out, err, status = run_asgard(%(import "a.loki"\nclass Tasks; desc "x"; def x = puts(:ok); end), "x", files:)
+    assert_equal 0, status.exitstatus, err
+    assert_equal "ok\n", out
+    refute_match(/already initialized|stack level/, err)
+  end
+
+  # R4: a task run from inside a caller's rescue block succeeded.
+  def test_regression_r4_a_task_run_inside_a_rescue_is_not_recorded_as_failed
+    ran   = []
+    klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { ran << :a }
+      depends_on :a
+      desc "b", "b"
+      define_method(:b) { ran << :b }
+    end
+    klass.validate_deps!
+    runner = klass.new([], {}, {})
+    begin
+      raise "the caller's own error"
+    rescue RuntimeError
+      runner.invoke(:a)
+    end
+    assert_empty klass._failed
+    runner.invoke(:b)
+    assert_equal %i[a b], ran
+  end
+
+  # R8: tasks that invoke each other at runtime form a cycle.
+  def test_regression_r8_a_runtime_invoke_cycle_is_a_circular_dependency
+    klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { invoke(:b) }
+      desc "b", "b"
+      define_method(:b) { invoke(:a) }
+      desc "c", "c"
+      define_method(:c) { invoke(:c) }
+    end
+    error = assert_raises(Asgard::CircularDependencyError) { klass.new([], {}, {}).invoke(:a) }
+    assert_equal "a -> b -> a", error.message
+    klass._reset_ran!
+    error = assert_raises(Asgard::CircularDependencyError) { klass.new([], {}, {}).invoke(:c) }
+    assert_equal "c -> c", error.message
+  end
+
+  def test_regression_r8_a_cycle_through_a_parallel_stage_is_detected
+    klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { invoke(:top) }
+      desc "b", "b"
+      define_method(:b) { nil }
+      depends_on %i[a b]
+      desc "top", "top"
+      define_method(:top) { nil }
+    end
+    klass.validate_deps!
+    error = assert_raises(Asgard::CircularDependencyError) { klass.new([], {}, {}).invoke(:top) }
+    assert_equal "top -> a -> top", error.message
+  end
+
+  def test_regression_r8_run_reports_a_runtime_cycle
+    _out, err, status = run_asgard(%(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n), "a")
+    assert_equal 1, status.exitstatus
+    assert_match "asgard: circular dependency — a -> b -> a", err
+  end
+
+  # R7: a task or helper named after an asgard helper.
+  def test_regression_r7_asgard_helper_names_are_reserved
+    %i[sh shebang env import import_up loki_up changes dep_result dep_results current_task
+       debug? verbose? invoke_command].each do |name|
+      error = assert_raises(Asgard::Error, name.to_s) do
+        Class.new(Asgard::Base) do
+          desc name.to_s, "x"
+          define_method(name) { nil }
+        end
+      end
+      assert_match(/'#{Regexp.escape(name.to_s)}' at .*test_asgard\.rb:\d+ is an asgard helper/, error.message)
+    end
+  end
+
+  def test_regression_r7_a_helper_dsl_named_after_an_asgard_helper_is_rejected
+    error = assert_raises(Asgard::Error) { Class.new(Asgard::Base) { helper(:env) { nil } } }
+    assert_match "'env' at", error.message
+  end
+
+  # R9: methods every object already has are not tasks.
+  def test_regression_r9_object_methods_are_not_hidden_tasks
+    klass = Class.new(Asgard::Base) do
+      define_method(:to_s) { "x" }
+      define_method(:inspect) { "x" }
+      define_method(:respond_to_missing?) { |*| false }
+      define_method(:method_missing) { |*| nil }
+      define_method(:display) { nil }
+      define_method(:test) { nil }
+    end
+    %w[to_s inspect respond_to_missing? method_missing display].each { |name| refute klass.all_commands.key?(name), name }
+    assert klass.all_commands.key?("test"), "Kernel#test is a module function: a task may take its name"
+  end
+
+  # R10: help for the built-in groups lists their subcommands.
+  def test_regression_r10_help_for_a_built_in_group_lists_its_subcommands
+    %w[jobs schedule watcher].each do |group|
+      Tasks._reset_ran! # each help is its own asgard run
+      out, = capture_io { Tasks.start(["help", group]) }
+      assert_match "#{group} list", out, group
+    end
+  ensure
+    Tasks._reset_ran!
+  end
+
+  def test_regression_r10_help_target_maps_only_subcommands
+    assert_equal "_jobs", Tasks.help_target("jobs")
+    assert_equal "list", Tasks.help_target("list")
+    assert_nil Tasks.help_target(nil)
+  end
+end
+
+# R6: a signal sent to asgard alone reaches the script it is running.
+class TestRegressionSignalForwarding < Minitest::Test
+  include AsgardProcess
+
+  SCRIPT = <<~LOKI
+    class Tasks
+      desc "wait_here"
+      def wait_here
+        sh <<~SH, silent: true
+          trap 'echo got >> marker; exit 0' INT TERM
+          echo $$ > child.pid
+          while true; do sleep 0.05; done
+        SH
+      end
+    end
+  LOKI
+
+  # Starts asgard in its own process group (so no signal reaches the test
+  # runner), waits for its script to start and yields asgard's pid.
+  # Returns [asgard's exit status, the lines the script's trap wrote].
+  # Whatever happens, both processes it started are gone afterwards.
+  def with_waiting_asgard
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, ".loki"), SCRIPT)
+      pid = Process.spawn(Gem.ruby, "-I", LIB, BIN, "wait_here", chdir: dir, pgroup: true,
+                                                                  in: File::NULL, out: File::NULL, err: File::NULL)
+      child = wait_for_pid_file(File.join(dir, "child.pid"))
+      yield pid
+      status = wait_or_kill(pid)
+      pid    = nil # reaped: the number may belong to another process now
+      marker = File.join(dir, "marker")
+      return [status&.exitstatus, File.exist?(marker) ? File.readlines(marker, chomp: true) : []]
+    ensure
+      wait_or_kill(pid, 0) if pid
+      kill_script(child)
+    end
+  end
+
+  def wait_for_pid_file(file, deadline = Time.now + 10)
+    sleep 0.05 until File.size?(file) || Time.now > deadline
+    File.read(file).to_i if File.size?(file)
+  end
+
+  def started_here?(pid) = pid.is_a?(Integer) && pid > 1 && pid != Process.pid
+
+  # asgard's status, or nil (and asgard killed and reaped) when it has not
+  # exited within +seconds+. +pid+ is asgard's, spawned and not yet reaped
+  # by this test, so it cannot have been reused.
+  def wait_or_kill(pid, seconds = 10)
+    deadline = Time.now + seconds
+    loop do
+      _, status = Process.wait2(pid, Process::WNOHANG)
+      return status if status
+      break if Time.now > deadline
+
+      sleep 0.05
+    end
+    Process.kill("KILL", pid) if started_here?(pid)
+    Process.wait(pid)
+    nil
+  end
+
+  # SIGKILL to the script asgard ran, if it outlived asgard: only a pid
+  # above 1 whose command line is still an asgard tempfile script.
+  def kill_script(pid)
+    return unless started_here?(pid)
+    return unless IO.popen(["ps", "-o", "command=", "-p", pid.to_s], &:read).include?("asgard_")
+
+    Process.kill("KILL", pid)
+  rescue Errno::ESRCH
+    nil
+  end
+
+  def test_regression_r6_term_to_asgard_alone_reaches_its_script
+    status, marker = with_waiting_asgard { |pid| Process.kill("TERM", pid) }
+    assert_equal 143, status
+    assert_equal ["got"], marker
+  end
+
+  def test_regression_r6_int_to_asgard_alone_reaches_its_script
+    status, marker = with_waiting_asgard { |pid| Process.kill("INT", pid) }
+    assert_equal 130, status
+    assert_equal ["got"], marker
+  end
+
+  # Ctrl-C at a terminal signals the whole group: the script sees it once.
+  # The group is the one Process.spawn just created for asgard (pgroup:
+  # true), so its id is asgard's own pid, never ours, 0 or 1.
+  def test_regression_r6_int_to_the_whole_group_is_not_forwarded_twice
+    status, marker = with_waiting_asgard do |pid|
+      Process.kill("INT", -pid) if pid.is_a?(Integer) && pid > 1 && pid != Process.getpgrp
+    end
+    assert_equal 130, status
+    assert_equal ["got"], marker
+  end
+
+  def test_regression_r6_signal_targets_are_positive_pids_other_than_ours
+    children = Asgard::Shell::Children
+    assert children.signalable?(4242)
+    [0, 1, -5, Process.pid, "12", nil].each { |pid| refute children.signalable?(pid), pid.inspect }
+    assert_equal 143, children.exit_status_for("TERM")
+    assert_equal 130, children.exit_status_for("INT")
+    assert_nil children.exit_status_for(nil)
+  end
+
+  def test_regression_r6_descendants_walks_the_whole_tree
+    table = [[10, 1], [11, 10], [12, 11], [13, 10], [20, 1]]
+    assert_equal [11, 13, 12], Asgard::Shell::Children.descendants_of(10, table)
+    assert_empty Asgard::Shell::Children.descendants_of(20, table)
+  end
+
+  def test_regression_r6_process_table_reads_pid_and_parent_pairs
+    assert_equal [[10, 1], [11, 10]], Asgard::Shell::Children.process_table("   10     1\n 11 10\nbad\n")
+  end
+
+  # A shell killed while it waits does not pass the signal to the command
+  # it runs; that command must not be left behind. The script's foreground
+  # child writes its own pid, then waits.
+  def test_regression_r6_term_to_asgard_alone_reaches_the_scripts_children
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, ".loki"), <<~LOKI)
+        class Tasks
+          desc "nested"
+          def nested = sh("sh -c 'echo $$ > grand.pid; exec sleep 47'; echo done > done", silent: true)
+        end
+      LOKI
+      pid = Process.spawn(Gem.ruby, "-I", LIB, BIN, "nested", chdir: dir, pgroup: true,
+                                                             in: File::NULL, out: File::NULL, err: File::NULL)
+      grand = wait_for_pid_file(File.join(dir, "grand.pid"))
+      Process.kill("TERM", pid) if started_here?(pid)
+      assert_equal 143, wait_or_kill(pid)&.exitstatus
+      pid = nil
+      sleep 0.1 while grand_alive?(grand) && (waited = (waited || 0) + 1) < 50
+      refute grand_alive?(grand), "the script's child outlived asgard"
+      refute File.exist?(File.join(dir, "done")), "the rest of the script ran"
+    ensure
+      wait_or_kill(pid, 0) if pid
+      Process.kill("KILL", grand) if grand_alive?(grand)
+    end
+  end
+
+  # Only the sleep this test's script started: a pid above 1 that is not
+  # ours and still runs `sleep 47`.
+  def grand_alive?(pid)
+    started_here?(pid) && IO.popen(["ps", "-o", "command=", "-p", pid.to_s], &:read).strip == "sleep 47"
+  end
+end
+
+# Findings from the review of PR 5 (the 0.6.0 release).
+class TestRegressionReleaseReview < Minitest::Test
+  include AsgardProcess
+
+  # A task of the same name in another class is not a cycle: a subcommand
+  # group's `build` runs inside the `build` that dispatches to it.
+  def test_check_cycle_tells_classes_apart
+    dispatch = Asgard::Base::Dispatch
+    outer    = Class.new
+    inner    = Class.new
+    assert_nil dispatch.check_cycle!([[outer, :build]], [inner, :build])
+    assert_nil dispatch.check_cycle!([[outer, :_jobs], [inner, :restart]], [outer, :restart])
+    error = assert_raises(Asgard::CircularDependencyError) do
+      dispatch.check_cycle!([[outer, :a], [outer, :b]], [outer, :a])
+    end
+    assert_equal "a -> b -> a", error.message
+  end
+
+  def test_a_subcommand_task_named_like_its_group_runs
+    loki = <<~LOKI
+      class BuildCmds < Asgard::Base
+        desc "build", "inner build"
+        def build = puts("inner build ran")
+      end
+
+      class Tasks
+        desc "build SUBCOMMAND", "build group"
+        subcommand "build", BuildCmds
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "build", "build")
+    assert status.success?, err
+    assert_match "inner build ran", out
+  end
+
+  # A parallel stage's instance is built with the typed command's options
+  # in scope, so check_unknown_options! knows them.
+  def test_parallel_dependencies_work_under_check_unknown_options
+    loki = <<~LOKI
+      class Tasks
+        check_unknown_options!
+
+        desc "b", "b"
+        def b = puts("b ran")
+
+        desc "c", "c"
+        def c = puts("c ran")
+
+        depends_on [:b, :c]
+        desc "pdeploy", "deploy"
+        method_option :env, default: "dev"
+        def pdeploy = puts("deploy \#{options[:env]}")
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "pdeploy", "--env", "prod")
+    assert status.success?, err
+    assert_match "b ran", out
+    assert_match "c ran", out
+    assert_match "deploy prod", out
+  end
+
+  # -f means --force to the typed task; the dependency's own -f (--file)
+  # must not receive it.
+  def test_a_shared_short_alias_does_not_leak_into_a_dependency
+    [false, true].each do |parallel|
+      seen  = {}
+      klass = Class.new(Asgard::Base) do
+        desc "b", "b"
+        method_option :file, aliases: "-f", type: :string
+        define_method(:b) { seen[:b] = options.to_h.slice("file", "force") }
+
+        desc "lint", "lint"
+        define_method(:lint) { nil }
+
+        depends_on(*(parallel ? [%i[b lint]] : [:b]))
+        desc "deploy", "deploy"
+        method_option :force, aliases: "-f", type: :boolean
+        define_method(:deploy) { seen[:deploy] = options.to_h.slice("file", "force") }
+      end
+      klass.validate_deps!
+      klass.start(%w[deploy -f])
+      assert_equal({ "force" => true }, seen[:deploy], "parallel: #{parallel}")
+      assert_equal({ "force" => true }, seen[:b], "parallel: #{parallel}")
+    end
+  end
+
+  def test_given_options_leave_out_defaults
+    declared = { env: Thor::Option.new(:env, default: "dev", aliases: "-e"), quiet: Thor::Option.new(:quiet, type: :boolean, default: false) }
+    dispatch = Asgard::Base::Dispatch
+    assert_equal({}, dispatch.given_options(declared, []))
+    assert_equal({ "env" => "prod" }, dispatch.given_options(declared, %w[-e prod]))
+    assert_equal({ "quiet" => false }, dispatch.given_options(declared, %w[--no-quiet]))
+    assert_equal({ "env" => "x" }, dispatch.given_options(declared, { env: "x" }))
+  end
+
+  # `private def` makes the method private after method_added saw it.
+  def test_a_private_helper_is_not_a_hidden_task
+    klass = Class.new(Asgard::Base) do
+      private def helper_x = "hx" # rubocop:disable Style/AccessModifierDeclarations -- the form under test
+
+      def plain_hidden = nil
+
+      protected def guarded = nil # rubocop:disable Style/AccessModifierDeclarations -- the form under test
+
+      private
+
+      def after_bare_private = nil
+    end
+    refute klass.all_commands.key?("helper_x")
+    refute klass.all_commands.key?("guarded")
+    refute klass.all_commands.key?("after_bare_private")
+    assert klass.all_commands.key?("plain_hidden")
+    refute klass.public_method_defined?(:after_bare_private)
+  end
+
+  def test_doctor_does_not_list_a_private_helper
+    loki = <<~LOKI
+      class Tasks
+        desc "real", "real"
+        def real = helper_x
+
+        private def helper_x = "hx"
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "--doctor")
+    assert status.success?, err
+    assert_match "real", out
+    refute_match "helper_x", out
+  end
+
+  # Internal method names are no longer reserved: a project's own
+  # run_script or start_job loads.
+  def test_internal_method_names_are_free_for_tasks
+    %i[run_script start_job run_dep with_options next_job_sequence parallel_instance].each do |name|
+      klass = Class.new(Asgard::Base) do
+        desc name.to_s, "x"
+        define_method(name) { name }
+      end
+      assert klass.all_commands.key?(name.to_s), name
+    end
+  end
+
+  # A missing ps must not stop forward from reaching the children.
+  def test_ps_listing_without_ps_is_empty
+    children = Asgard::Shell::Children
+    assert_equal "", children.ps_listing("/nonexistent/ps-#{Process.pid}")
+    assert_equal [], children.process_table(children.ps_listing("/nonexistent/ps-#{Process.pid}"))
+    refute_empty children.process_table
+  end
+
+  def test_run_missing_exits_127_with_the_message
+    run = Asgard::Shell::Run.new(name: :nope, shell: { path: "nope-xyz", args: [], ext: ".tmp" }, script: "x")
+    _out, err = capture_io do
+      error = assert_raises(SystemExit) { run.missing! }
+      assert_equal 127, error.status
+    end
+    assert_match "asgard: shell :nope not found", err
+  end
+
+  def test_leading_flag_is_loadable_alone
+    out, status = Open3.capture2e(Gem.ruby, "-e", "require #{File.join(LIB, 'asgard/leading_flag').inspect}; " \
+                                                  "print Asgard.leading_flag?(%w[--version], '--version'), defined?(Thor).inspect")
+    assert status.success?, out
+    assert_equal "truenil", out
   end
 end

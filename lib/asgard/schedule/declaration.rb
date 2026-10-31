@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
+require "digest"
 require "open3"
 require "shellwords"
+require "zlib"
 
 module Asgard
   # Scheduled asgard tasks, run by the platform's own scheduler: launchd on
@@ -27,7 +29,8 @@ module Asgard
   #   #installed_entries                  # => [[project_slug, "demo"], ...] for every project
   #   #installed_columns(name)            # => { command:, schedule: } read back from the job files, or nil
   #   #installed_directory(name)          # => the project root the job runs in, or nil
-  #   #status(name)                       # => { state: :active|:stopped|:not_loaded, last_exit: String|nil }
+  #   #status(name)                       # => { state: :active|:running|:stopped|:not_loaded, last_exit: String|nil }
+  #                                       #    last_exit: an exit code ("1") or a signal ("signal 15 (Terminated)")
   #   #log_path(name)                     # => path the job's output is appended to
   #   #notes                              # => [String] platform hints to show after install
   module Schedule
@@ -36,6 +39,15 @@ module Asgard
 
     # Weekday numbers follow launchd and cron: 0 (Sunday) through 6 (Saturday).
     DAYS = %i[sunday monday tuesday wednesday thursday friday saturday].freeze
+
+    # Longest derived entry name, hash suffix included, so a job's file
+    # names stay well inside the 255-byte limit.
+    NAME_MAX = 64
+
+    # Options a slug spells out: lowercase words and flags. Any other option
+    # (--period=week, 'Week End') adds a hash suffix, so spellings that slug
+    # alike still name different entries.
+    PLAIN_ARG = /\A-{0,2}[a-z0-9]+(?:-[a-z0-9]+)*\z/
 
     DAY_GROUPS = {
       weekdays: %i[monday tuesday wednesday thursday friday],
@@ -73,27 +85,67 @@ module Asgard
     # task's command-line options as a String, split shell-style with quotes
     # respected ("--period week --title 'Week End'"), or an Array of words.
     # Exactly one of at: ("HH:MM" or an Array of them, with on:) or every:
-    # (seconds or a Duration) is required. as: names the entry.
-    def normalize(task, options: nil, at: nil, on: :daily, every: nil, env: {}, as: nil)
-      task = task.to_s
-      unless task.match?(/\A[\w:-]+\z/)
-        raise ArgumentError,
-              "schedule: task name #{task.inspect} must be a single word; put its flags in options:"
-      end
+    # (seconds or a Duration) is required; on: goes only with at:. as: names
+    # the entry.
+    def normalize(task, options: nil, at: nil, on: nil, every: nil, env: {}, as: nil)
+      task = task_name(task)
       raise ArgumentError, "schedule :#{task} needs either at: or every:, not both" unless at.nil? ^ every.nil?
 
       if every
+        raise ArgumentError, "schedule :#{task} on: only applies to at: times; every: runs on every day" if on
+
         every = seconds(every)
         unless every&.positive?
           raise ArgumentError,
                 "schedule :#{task} every: must be a positive number of seconds or a Duration (3.minutes)"
         end
       else
+        on ||= :daily
         calendar(at:, on:) # raises on a bad time or day
       end
 
       args = options.is_a?(Array) ? options.map(&:to_s) : Shellwords.split(options.to_s)
-      { name: entry_name(task, args, as), task:, args:, at:, on:, every:, env: env.to_h { |key, value| [key.to_s, value.to_s] } }
+      args.each { |arg| reject_control_characters!(task, "options:", arg) }
+      { name: entry_name(task, args, as), task:, args:, at:, on:, every:, env: environment_variables(task, env) }
+    end
+
+    # The command a declaration names, as Thor dispatches it: a dash is the
+    # underscore of the method name (`asgard daily-summary` runs
+    # daily_summary). A colon would name a subcommand, which is its own
+    # command word plus arguments.
+    def task_name(task)
+      name = task.to_s
+      if name.include?(":")
+        raise ArgumentError,
+              "schedule: #{name.inspect} names a subcommand; schedule its command and pass the rest in options: " \
+              "(schedule :#{name.split(':').first}, options: #{name.split(':', 2).last.inspect}, ...)"
+      end
+      unless name.match?(/\A[\w-]+\z/)
+        raise ArgumentError, "schedule: task name #{name.inspect} must be a single word; put its flags in options:"
+      end
+
+      name.tr("-", "_")
+    end
+
+    # env: as String pairs. Names must be shell-style identifiers, and no
+    # name, value or option may hold a control character other than tab: a
+    # newline would end the line it is written on in a unit file and start
+    # another directive, and plists cannot hold most of them at all.
+    def environment_variables(task, env)
+      env.to_h do |key, value|
+        key = key.to_s
+        raise ArgumentError, "schedule :#{task} env: #{key.inspect} is not a variable name" unless key.match?(/\A[A-Za-z_]\w*\z/)
+
+        value = value.to_s
+        reject_control_characters!(task, "env: #{key}", value)
+        [key, value]
+      end
+    end
+
+    def reject_control_characters!(task, what, text)
+      return unless text.match?(/[\x00-\x08\x0a-\x1f\x7f]/)
+
+      raise ArgumentError, "schedule :#{task} #{what} holds a control character (#{text.inspect})"
     end
 
     # Integer seconds from an Integer or anything Duration-like (ActiveSupport's
@@ -107,13 +159,50 @@ module Asgard
     # The task alone, or a slug of the whole command when it has arguments,
     # so one task can be scheduled more than once with different flags.
     def entry_name(task, args, as = nil)
-      name = (as || (args.empty? ? task : slug([task, *args].join(" ")))).to_s
+      name = (as || (args.empty? ? task : command_slug(task, args))).to_s
       raise ArgumentError, "schedule as: #{name.inspect} may only contain letters, digits, _ . -" unless name.match?(/\A[\w.-]+\z/)
 
       name
     end
 
+    # "report-period-week". A short hash of the exact words is appended when
+    # the slug would lose something (an option that isn't PLAIN_ARG, or more
+    # than NAME_MAX characters). Plain slugs can still meet: `--period week`
+    # and `period week` both give report-period-week, so do `report` with
+    # `period week` and `report_period` with `week`. Schedule.declare
+    # gives each of two such rivals its hashed_slug, so different commands
+    # never share a name.
+    def command_slug(task, args)
+      words = [task, *args].map(&:to_s)
+      name  = slug(words.join(" "))
+      return name if name.length <= NAME_MAX && words.drop(1).all? { |arg| arg.match?(PLAIN_ARG) }
+
+      hashed_slug(task, args)
+    end
+
+    # The slug with a short hash of the exact words appended, capped at
+    # NAME_MAX: "report-period-week-1a2b3c4d".
+    def hashed_slug(task, args)
+      words  = [task, *args].map(&:to_s)
+      digest = Digest::SHA256.hexdigest(words.join("\0"))[0, 8]
+      "#{slug(words.join(' '))[0, NAME_MAX - 9].delete_suffix('-')}-#{digest}"
+    end
+
     def slug(name) = name.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")
+
+    # The slug a project's jobs and watcher state are filed under: the
+    # basename of its root plus the CRC32 of the real path in hex
+    # ("api-9f3a1c2b"), so two projects in directories of the same name
+    # never share labels, units or state. Symlinked paths to one project
+    # agree, since the real path is hashed.
+    def project_slug(root)
+      real = File.realpath(root.to_s)
+      "#{slug(File.basename(real))}-#{format('%08x', Zlib.crc32(real))}"
+    end
+
+    # Whether +slug+ is the project the user named: the whole slug, or its
+    # basename alone when that is enough to pick it out.
+    def project_match?(slug, name) = slug == name || slug.sub(/-\h{8}\z/, "") == name
 
     # For display: the command line the job runs.
     def command_line(task, args = []) = Shellwords.join(["asgard", task.to_s, *args])
@@ -142,7 +231,18 @@ module Asgard
     # The state and last-exit columns of a `list` row, from a backend's live status.
     def live_columns(backend, name)
       state, last_exit = backend.status(name).values_at(:state, :last_exit)
-      { state: state.to_s.tr("_", " "), last_exit: state == :active ? (last_exit || "never run") : "-" }
+      { state: state.to_s.tr("_", " "), last_exit: %i[active running].include?(state) ? (last_exit || "never run") : "-" }
+    end
+
+    # The [slug, name] entries whose job files name a project directory
+    # that no longer exists: the project moved or was deleted, and its jobs
+    # fire in a directory that is not there. An entry whose directory
+    # cannot be read is left alone.
+    def orphaned_entries(entries, directory_of:, exists: File.method(:directory?))
+      entries.select do |slug, name|
+        dir = directory_of.call(slug, name)
+        dir && !exists.call(dir)
+      end
     end
 
     # The command a job runs, from its program arguments: everything from
@@ -172,7 +272,7 @@ module Asgard
       return :daily unless days
 
       names = days.map { |day| DAYS.fetch(day) }
-      DAY_GROUPS.key(names) || names
+      DAY_GROUPS.find { |_group, members| members.sort == names.sort }&.first || names
     end
 
     def compact_times(times)
@@ -200,6 +300,8 @@ module Asgard
       return nil if on.to_s == "daily"
 
       names = DAY_GROUPS.fetch(on.is_a?(Array) ? nil : on.to_sym) { Array(on) }
+      raise ArgumentError, "on: needs at least one day" if names.empty?
+
       names.map do |day|
         DAYS.index(day.to_sym) or raise ArgumentError, "on: unknown day #{day.inspect}"
       end
@@ -208,11 +310,36 @@ module Asgard
     # One entry per time: [{ hour: 17, minute: 30, days: [1, 2, 3, 4, 5] }];
     # days is nil for every day.
     def calendar(at:, on: :daily)
+      raise ArgumentError, "at: needs at least one time" if Array(at).empty?
+
       days = weekdays(on)
       Array(at).map do |time|
         hour, minute = parse_time(time)
         { hour:, minute:, days: }
       end
+    end
+
+    # A job's last exit when a signal ended it: "signal 15 (Terminated)".
+    def signal_exit(number, name) = "signal #{number} (#{name})"
+
+    # Raises when a job file's name passes the 255-byte filename limit.
+    def check_lengths!(paths)
+      long = paths.map { |path| File.basename(path) }.find { |base| base.bytesize > 255 }
+      raise Error, "schedule: job file name is too long (#{long.bytesize} bytes, limit 255): #{long}; use a shorter as: name" if long
+    end
+
+    # Runs the block that writes job files; a failure there (the system
+    # message names the path) is a Schedule::Error, not a backtrace.
+    def writing
+      yield
+    rescue SystemCallError => e
+      raise Error, "schedule: could not write job files: #{e.message}"
+    end
+
+    # Writes a job file only its owner can read: it holds the env: values.
+    def write_private(path, content)
+      File.write(path, content, perm: 0o600)
+      File.chmod(0o600, path) # perm: applies only when the file is created
     end
 
     # PATH captured at install time, plus the declaration's env:.

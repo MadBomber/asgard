@@ -4,45 +4,74 @@
 require "shellwords"
 
 class Tasks
-  # One process for every test/test_*.rb, so SimpleCov sees the whole suite.
+  # One process for every test/test_*.rb, for test_verbose: serial, in load
+  # order, which is what to reach for when a test only fails beside others.
   TEST_LOADER = %q(Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }).shellescape.freeze
 
-  desc "Run the test suite"
-  def test_check
-    output = `bundle exec ruby -Ilib:test -e #{TEST_LOADER} 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("test_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /\d+ runs,/ }&.strip || result.to_s
-    puts "Tests: #{summary} (see test_output.txt)"
-    result
-  end
+  # Forked workers (test/parallel_runner.rb): most of the suite waits on real
+  # processes, so it runs in a fraction of the serial time. The parent merges
+  # the workers coverage and enforces the minimum.
+  PARALLEL_RUNNER = "bundle exec ruby -Ilib:test test/parallel_runner.rb"
 
-  desc "Run the test suite with verbose output"
+  desc "Run the test suite in parallel worker processes"
+  def test_check = run_gate(:test, "Tests", PARALLEL_RUNNER, summary: /\d+ runs,/)
+
+  desc "Run the test suite serially, in one process, with verbose output"
   def test_verbose
     sh "bundle exec ruby -Ilib:test -e #{TEST_LOADER} -- -v"
   end
+
+  desc "Run the test suite in parallel worker processes, with full output"
+  option :workers, aliases: "-w", type: :numeric, desc: "Worker processes (default: CPU count, at most 8)"
+  option :times, type: :boolean, default: false, desc: "Print each test's name and time"
+  def parallel_test
+    flags = []
+    flags << "--workers #{options.workers}" if options.workers
+    flags << "-v" if options.times?
+    sh [PARALLEL_RUNNER, *flags].join(" ")
+  end
+
+  # Every *_check task, in the order the summary lists them.
+  def self.quality_checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
 
   desc "Run every *_check quality gate task in parallel"
   # A Proc defers resolution to validate_deps!, after every .loki file has
   # loaded — so a *_check task from another file (e.g. quality_rails.loki's
   # brakeman_check) is picked up too, with no need to redeclare anything here.
-  depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+  # quality_board runs first so every gate has its row before any starts.
+  depends_on -> { [:quality_board, quality_checks] }
   def quality
-    check_tasks = self.class._deps.fetch(:quality, []).flatten.map(&:to_s)
+    results = dep_results.except(:quality_board).sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
 
-    results = check_tasks.to_h { |name| [quality_gate_label(name), dep_result(name)] }
+    print_quality_summary(results, rows: QUALITY_BOARD.empty?)
+  end
 
-    print_quality_summary(results)
+  # Gate task name => its spinner row; empty unless quality_board drew one.
+  QUALITY_BOARD = {}
+
+  desc "Draw the live quality board: one spinner row per gate", hide: true
+  def quality_board
+    return unless $stdout.tty?
+
+    require "io/console"
+    require "tty-spinner"
+
+    print_quality_header
+    labels = self.class.quality_checks.to_h { |check| [check, quality_gate_label(check.to_s)] }
+    width  = labels.values.map(&:length).max
+    board  = TTY::Spinner::Multi.new(output: $stdout, hide_cursor: true, success_mark: "",
+                                     frames: %w[●··· ·●·· ··●· ···● ··●· ·●··])
+    labels.each do |check, label|
+      row = board.register("  [:spinner:badge] #{label.ljust(width)}  :note")
+      row.update(badge: "", note: "")
+      row.auto_spin
+      QUALITY_BOARD[check] = row
+    end
   end
 
   desc "Check code style with RuboCop"
   def rubocop_check
-    output = `RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("rubocop_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files inspected/ }&.strip || result.to_s
-    puts "RuboCop: #{summary} (see rubocop_output.txt)"
-    result
+    run_gate(:rubocop, "RuboCop", "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop", summary: /files inspected/)
   end
 
   desc "Auto-correct RuboCop offenses"
@@ -50,85 +79,50 @@ class Tasks
     sh "RUBOCOP_CACHE_ROOT=tmp/rubocop_cache bundle exec rubocop -a"
   end
 
+  FLOG_WARN = 20.0
+  FLOG_FAIL = 50.0
+  FLAY_MASS = 150
+
   desc "Check code complexity with Flog (warn >=20, fail >=50)"
   def flog_check
-    require "flog"
-
-    method_warn = 20.0
-    method_fail = 50.0
-
-    flogger = Flog.new(all: true)
-    flogger.flog(*Dir.glob("lib/**/*.rb"))
-
-    warnings = []
-    failures = []
-
-    flogger.each_by_score do |method_name, score|
-      next if method_name.end_with?("#none")
-      if score > method_fail
-        failures << "#{"%.1f" % score}: #{method_name}"
-      elsif score > method_warn
-        warnings << "#{"%.1f" % score}: #{method_name}"
-      end
-    end
-
-    result = failures.empty? ? :pass : :fail
-
-    lines = ["Flog warnings (#{method_warn}–#{method_fail}):"]
-    lines.concat(warnings.empty? ? ["  (none)"] : warnings.map { |w| "  #{w}" })
-    lines << ""
-    lines << "Flog failures (>= #{method_fail}):"
-    lines.concat(failures.empty? ? ["  (none)"] : failures.map { |f| "  #{f}" })
-    File.write("flog_output.txt", "#{lines.join("\n")}\n")
-
-    puts "Flog: #{failures.size} failure(s), #{warnings.size} warning(s) (see flog_output.txt)"
-    result
+    run_gate(:flog, "Flog", "bundle exec flog -a lib",
+             status:  ->(output) { flog_scores(output).any? { |s| s >= FLOG_FAIL } ? :fail : :pass },
+             summary: lambda { |output, _result|
+               scores = flog_scores(output)
+               "#{scores.count { |s| s >= FLOG_FAIL }} failure(s), " \
+                 "#{scores.count { |s| s >= FLOG_WARN && s < FLOG_FAIL }} warning(s)"
+             })
   end
 
   desc "Check for structural code duplication with Flay (mass >= 150)"
   def flay_check
-    require "flay"
-
-    mass_threshold = 150
-
-    flay = Flay.new(mass: mass_threshold, diff: false, verbose: false, summary: false, timeout: 60)
-    flay.process(*Dir.glob("lib/**/*.rb"))
-    flay.analyze
-
-    result = flay.hashes.empty? ? :pass : :fail
-
-    File.open("flay_output.txt", "w") do |f|
-      if result == :pass
-        f.puts "Flay: no structural duplication detected (mass >= #{mass_threshold})"
-      else
-        flay.report(f)
-      end
-    end
-    puts "Flay: #{flay.hashes.size} duplication pattern(s) found (mass >= #{mass_threshold}) (see flay_output.txt)"
-    result
+    run_gate(:flay, "Flay", "bundle exec flay --mass #{FLAY_MASS} --timeout 60 lib",
+             status:  ->(output) { output.match?(/^\d+\) /) ? :fail : :pass },
+             summary: lambda { |output, _result|
+               "#{output.lines.grep(/^\d+\) /).size} duplication pattern(s) found (mass >= #{FLAY_MASS})"
+             })
   end
 
-  desc "Check code smells with Reek"
-  def reek_check
-    output = `bundle exec reek lib 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("reek_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /total warnings?/ }&.strip || result.to_s
-    puts "Reek: #{summary} (see reek_output.txt)"
-    result
+  # exhale dry exits 1 while the code holds duplication the Contract
+  # (contract/) does not keep, and 2 when it cannot run (a file that does
+  # not parse): both fail the gate. It sweeps the whole tree and labels each
+  # finding against the merge base with the default branch.
+  desc "Check for duplication the Contract does not keep with exhale dry"
+  def exhale_check
+    run_gate(:exhale, "Exhale DRY", "bundle exec exhale dry",
+             summary: ->(output, result) { output[/^exhale dry: (.+)$/, 1]&.strip || result.to_s })
   end
+
+  desc "Report code smells with Reek (advisory: warns, never fails)"
+  def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
 
   desc "Check spelling with typos"
   def typos_check
     return skip_typos unless command_available?("typos")
 
-    output = `typos 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("typos_output.txt", output)
-    count   = output.lines.count { |l| l.start_with?("error:") }
-    summary = result == :pass ? "no typos found" : "#{count} typo(s) found"
-    puts "Typos: #{summary} (see typos_output.txt)"
-    result
+    run_gate(:typos, "Typos", "typos", summary: lambda { |output, result|
+      result == :pass ? "no typos found" : "#{output.lines.count { |l| l.start_with?("error:") }} typo(s) found"
+    })
   end
 
   desc "Auto-correct typos"
@@ -142,45 +136,25 @@ class Tasks
   def erb_lint_check
     return skip_erb_lint if Dir.glob("**/*.erb").empty?
 
-    output = `bundle exec erb_lint --lint-all --enable-all-linters 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("erb_lint_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /error\(s\)|no errors were found/i }&.strip || result.to_s
-    puts "ERBLint: #{summary} (see erb_lint_output.txt)"
-    result
+    run_gate(:erb_lint, "ERBLint", "bundle exec erb_lint --lint-all --enable-all-linters",
+             summary: /error\(s\)|no errors were found/i)
   end
 
   desc "Check for performance suggestions with Fasterer"
   def fasterer_check
-    output = `bundle exec fasterer lib 2>&1`.gsub(/\e\[\d+m/, "")
-    result = $?.success? ? :pass : :warn
-    File.write("fasterer_output.txt", output)
-    summary = output.lines.find { |l| l =~ /files? inspected/ }&.strip || result.to_s
-    puts "Fasterer: #{summary} (see fasterer_output.txt)"
-    result
+    run_gate(:fasterer, "Fasterer", "bundle exec fasterer lib", summary: /files? inspected/, on_fail: :warn)
   end
 
   desc "Check Gemfile.lock for known vulnerabilities with bundler-audit"
   def bundler_audit_check
-    output = `bundle exec bundle-audit check --update 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("bundler_audit_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /vulnerabilit/i }&.strip || result.to_s
-    puts "Bundler Audit: #{summary} (see bundler_audit_output.txt)"
-    result
+    run_gate(:bundler_audit, "Bundler Audit", "bundle exec bundle-audit check --update", summary: /vulnerabilit/i)
   end
 
   desc "Check architecture boundaries with ArchSpec"
   def archspec_check
     return skip_archspec unless command_available?("archspec") && File.exist?("Archspec.rb")
 
-    output = `archspec check 2>&1`
-    result = $?.success? ? :pass : :fail
-    File.write("archspec_output.txt", output)
-    summary = output.lines.reverse.find { |l| l =~ /architecture violations? found|ArchSpec passed/i }&.strip ||
-      result.to_s
-    puts "ArchSpec: #{summary} (see archspec_output.txt)"
-    result
+    run_gate(:archspec, "ArchSpec", "archspec check", summary: /architecture violations? found|ArchSpec passed/i)
   end
 
   # Curated display labels for the *_check tasks defined in this file. A
@@ -192,12 +166,78 @@ class Tasks
     "rubocop_check"  => "RuboCop",
     "flog_check"     => "Flog Complexity",
     "flay_check"     => "Flay Duplication",
+    "exhale_check"   => "Exhale DRY",
     "reek_check"     => "Reek Smells",
     "erb_lint_check" => "ERBLint",
     "archspec_check" => "ArchSpec",
   }.freeze
 
   no_commands do
+    # Runs +command+ as one gate: saves its output (stdout and stderr, color
+    # codes removed) to <name>_output.txt, prints "Label: summary" and
+    # returns +on_fail+ when the command exits non-zero. Otherwise it
+    # returns :pass, or what +status+ (a callable given the output) says,
+    # for a tool whose exit status ignores its findings.
+    def run_gate(name, label, command, summary:, on_fail: :fail, status: nil)
+      output = `#{command} 2>&1`.gsub(/\e\[[\d;]*m/, "")
+      result = $?.success? ? status&.call(output) || :pass : on_fail
+      report_gate(name, label, output, result, summary)
+    end
+
+    # Writes +output+ to <name>_output.txt, reports the gate's one-line
+    # summary and returns +result+.
+    def report_gate(name, label, output, result, summary)
+      file = "#{name}_output.txt"
+      File.write(file, output)
+      finish_gate(name, label, result, "#{gate_summary(output, result, summary)} (see #{file})")
+    end
+
+    # Settles gate +name+ (:rubocop for rubocop_check): its row on the live
+    # board gets the badge and +note+, or, with no board, prints
+    # "Label: note". Returns +result+.
+    def finish_gate(name, label, result, note)
+      row = QUALITY_BOARD[:"#{name}_check"]
+      if row
+        row.update(badge: status_badge(result), note: fit_note(note, row.message))
+        row.success
+      else
+        puts "#{label}: #{note}"
+      end
+      result
+    end
+
+    # +note+ cut to fit on one terminal line after +pattern+'s visible text.
+    # A wrapped row would throw off the board's cursor moves.
+    def fit_note(note, pattern, columns = $stdout.winsize[1].nonzero? || 80)
+      room = columns - pattern.sub(":spinner:badge", "PASS").sub(":note", "").length - 1
+      note.length <= room ? note : "#{note[0, [room - 1, 0].max]}…"
+    end
+
+    # The colored badge text for a status, e.g. PASS in green.
+    def status_badge(status)
+      text, code = STATUS_BADGES.fetch(status)
+      colorize(code, text)
+    end
+
+    def colorize(code, text) = "\e[#{code}m#{text}\e[0m"
+
+    # The summary for a gate's output. +summary+ is a Regexp, matched against
+    # the last line that fits (the result's name when none does), or a
+    # callable given the output and the result.
+    def gate_summary(output, result, summary)
+      return summary.call(output, result) if summary.respond_to?(:call)
+
+      output.lines.reverse.find { |l| l.match?(summary) }&.strip || result.to_s
+    end
+
+    # The per-method scores in `flog -a` output, skipping the total, the
+    # average and each file's top-level code (the "#none" entries).
+    def flog_scores(output)
+      output.scan(/^\s*(\d+\.\d+): (\S*(?:#|::)\S*)/).filter_map do |score, name|
+        score.to_f unless name.end_with?("#none")
+      end
+    end
+
     # true if +name+ resolves to an executable file somewhere on PATH.
     def command_available?(name)
       ENV.fetch("PATH", "").split(File::PATH_SEPARATOR).any? do |dir|
@@ -212,20 +252,18 @@ class Tasks
     end
 
     def skip_typos
-      puts "Typos: SKIPPED — `typos` command not found. Install it with `brew install typos-cli`."
-      :skip
+      finish_gate(:typos, "Typos", :skip,
+                  "SKIPPED — `typos` command not found. Install it with `brew install typos-cli`.")
     end
 
     def skip_erb_lint
-      puts "ERBLint: SKIPPED — no .erb files found."
-      :skip
+      finish_gate(:erb_lint, "ERBLint", :skip, "SKIPPED — no .erb files found.")
     end
 
     def skip_archspec
       reason = command_available?("archspec") ? "no Archspec.rb found" : "`archspec` command not found"
-      puts "ArchSpec: SKIPPED — #{reason}. Install it with `gem install archspec` " \
-        "and run `archspec init` to generate one."
-      :skip
+      finish_gate(:archspec, "ArchSpec", :skip,
+                  "SKIPPED — #{reason}. Install it with `gem install archspec` and run `archspec init` to generate one.")
     end
 
     # Status badges. Only :fail is blocking (aborts the quality task);
@@ -238,29 +276,37 @@ class Tasks
       skip: ["SKIP", 36], # cyan
     }.freeze
 
+    def print_quality_header
+      puts <<~HEADER
+
+        #{"=" * 60}
+        Quality Gate Summary
+        #{"=" * 60}
+      HEADER
+    end
+
     # Colorized status badges plus a pass/fail/warn/skip tally; aborts only
     # if any gate failed — skip and warn are informational, not blocking.
-    def print_quality_summary(results)
-      colorize_badge = ->(code, text) { "\e[#{code}m#{text}\e[0m" }
-      width = results.keys.map(&:length).max
-
-      puts "\n#{"=" * 60}"
-      puts "Quality Gate Summary"
-      puts "=" * 60
-      results.each do |label, status|
-        text, code = STATUS_BADGES.fetch(status)
-        puts "  [#{colorize_badge.call(code, text)}] #{label.ljust(width)}"
+    # +rows+ is false when the live board already showed the header and a
+    # row per gate.
+    def print_quality_summary(results, rows: true)
+      if rows
+        print_quality_header
+        width = results.keys.map(&:length).max
+        results.each { |label, status| puts "  [#{status_badge(status)}] #{label.ljust(width)}" }
       end
-      puts "-" * 60
 
       counts = results.values.tally
       failed = counts[:fail] || 0
       tally  = STATUS_BADGES.keys.filter_map { |s| "#{counts[s]} #{s}" if counts[s]&.positive? }.join(", ")
-      puts "  #{colorize_badge.call(failed.zero? ? 32 : 31, tally)}"
-      puts "=" * 60
+      puts <<~FOOTER
+        #{"-" * 60}
+          #{colorize(failed.zero? ? 32 : 31, tally)}
+        #{"=" * 60}
+      FOOTER
 
-      abort "\n#{colorize_badge.call(31, "Quality gate failed.")}" unless failed.zero?
-      puts "\n#{colorize_badge.call(32, "All quality gates passed.")}"
+      abort "\n#{colorize(31, "Quality gate failed.")}" unless failed.zero?
+      puts "\n#{colorize(32, "All quality gates passed.")}"
     end
   end
 end

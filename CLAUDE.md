@@ -10,18 +10,20 @@ Asgard is a Ruby task runner. Users define tasks in `.loki` files by reopening t
 
 ```bash
 bundle install
-bundle exec rake test          # run tests (enforces 95% SimpleCov coverage)
-bundle exec rake quality       # test + flog complexity check
-bundle exec rake build         # build .gem into pkg/
-bundle exec rake install       # install locally
-
-# or use the gem's own .loki file:
-asgard test_check
-asgard quality
-asgard release
+bin/asgard test_check          # run tests in forked workers (enforces 95% SimpleCov coverage), summary to test_output.txt
+bin/asgard parallel_test       # the same run with full output (-w N workers, --times per-test times)
+bin/asgard test_verbose        # run tests serially in one process, with full output
+bin/asgard quality             # every *_check gate in parallel (tests, rubocop, flog, flay, reek, ...)
+bin/asgard build               # quality gate, then build .gem into pkg/
+bin/asgard install             # build, then install locally
+bin/asgard release             # quality gate, tag, push, gem push
 ```
 
-Whole suite (one process, so SimpleCov sees everything): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
+There is no Rakefile: the gem's own `.loki` files (`quality.loki`, `gem_tasks.loki`, ...) are its task runner.
+
+Whole suite in parallel: `ruby -Ilib:test test/parallel_runner.rb`. It loads every file once, then forks workers; SimpleCov merges their coverage. Threads (Minitest `parallelize_me!`) do not fit: tests chdir, set ENV and swap `$stdout`, all process-wide.
+
+Whole suite serially (one process): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
 
 Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fall below the coverage minimum)
 
@@ -51,6 +53,7 @@ Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fal
 | `lib/asgard/watch/declaration.rb` | Pure declaration validation: globs to directories plus `only:` Regexps, events, ignores |
 | `lib/asgard/watch/changes.rb` | `Asgard::Changes` (the trigger's path lists) and `Watch.filter_events` |
 | `lib/asgard/watch/spawn.rb` | Pure: the frozen, Ractor-shareable description of one task run (argv, whitelisted env) |
+| `lib/asgard/watch/mailbox.rb` | `Watch::Mailbox` — a bounded RactorQueue whose consumer sleeps in `Ractor.receive` and is woken by each push (no idle spin) |
 | `lib/asgard/watch/worker.rb` | One Ractor per task; runs its triggers serially and reports each spawn and exit |
 | `lib/asgard/watch/reporter.rb`, `dispatcher.rb` | Single writer of log and entry records; batch routing to worker queues |
 | `lib/asgard/watch/state.rb`, `daemon.rb` | Pidfile, log and records under XDG state; the foreground `watcher run` process |
@@ -96,8 +99,9 @@ depends_on :a, [:b, :c], :d   # stages: [[:a], [:b, :c], [:d]]
 
 ### Shell Helpers
 
-- `sh(script, silent: false)` — single-line strings use `system(script)`; multi-line strings pipe through `bash -c`; exits with the command's status on failure
-- `shebang(interpreter, script)` — writes script to a tempfile and executes with the named interpreter (`:python3`, `:node`, `:ruby`, `:perl`, `:bash`, etc.)
+- `shebang(name, script, silent: false, exec: false)` — writes the script to a tempfile and runs it with the shell registered as `name` in `Tasks.shells` (`name => { path:, args:, ext: }`); an unregistered name runs as itself from `PATH` with `.tmp`; a missing executable prints the name and exits 127; `exec: true` unlinks the tempfile and execs on `/dev/fd/N`
+- `sh` is `alias_method :sh, :shebang`: the same method, so `sh :python3, script` works. Either name with no shell runs the `default_shell` (`:bash` until a `.loki` calls `default_shell :name`); one line or many take the same path (issue #1); both return `true`
+- `shell(name, path, args: nil, ext: nil)` — class-level DSL that registers a shell; `path` is Shellwords-split, first word is the executable, the rest precede `args:`; `ext:` defaults by executable basename
 
 ### Kernel Methods
 
@@ -115,7 +119,7 @@ Asgard adds the following `module_function` methods to `Kernel`, making them ava
 
 ## Testing
 
-Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. Watcher tests are in `test/test_watcher.rb`: pure functions directly, the worker and reporter loops in threads with recording stand-ins, and a few real-process tests (a real Ractor worker, a real daemon with a fake Listen, one real Listen run) with no mocks. SimpleCov minimum is 95%; the Rakefile configures this with a prelude that loads coverage before the library.
+Engine tests are in `test/test_asgard.rb`; scheduling tests are in `test/test_schedule.rb`, which uses a `FakeRunner` (records launchctl/systemctl argv) so both backends test on any platform. Watcher tests are in `test/test_watcher.rb`: pure functions directly, the worker and reporter loops in threads with recording stand-ins, and a few real-process tests (a real Ractor worker, a real daemon with a fake Listen, one real Listen run) with no mocks. SimpleCov minimum is 95%; `test/test_helper.rb` starts coverage before it loads the library.
 
 Key test patterns: tests frequently subclass `Asgard::Base` directly (not `Tasks`) to test the engine in isolation, and use `capture_io` for output assertions.
 

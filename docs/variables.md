@@ -1,97 +1,100 @@
 # Variables
 
-Asgard task files are plain Ruby. Shared configuration values are declared using Ruby class variables (`@@name`) at the top of the `Tasks` class body.
+A `.loki` file is plain Ruby, so the values your tasks share, an application name, a port, a build directory, are plain Ruby variables. One kind of variable is the right one for a task file, and this page explains which and why, with enough Ruby for a reader who has never written any.
+
+The short version: declare shared values as `@@name` at the top of `class Tasks`, with `||=` and `.freeze`:
+
+```ruby
+class Tasks
+  @@app  ||= "myapp".freeze
+  @@port ||= 3000
+
+  desc "Print app info"
+  def info = puts "#{@@app} on port #{@@port}"
+end
+```
+
+```bash
+asgard info
+# myapp on port 3000
+```
 
 ---
 
-## Ruby Variable Types
+## Ruby Variable Kinds
 
-Ruby has four kinds of variables plus constants, each with a distinct prefix and scope. Understanding the differences matters because tasks are instance methods — the wrong variable type will simply not be visible where you expect it.
+Ruby has four kinds of variable plus constants, each with its own prefix and its own scope. Tasks are methods, so the wrong kind is simply invisible where you expect it:
 
-| Kind | Prefix | Example | Scope |
-|------|--------|---------|-------|
-| Local | none | `count = 0` | The method or block it is defined in only |
-| Instance | `@` | `@name = "myapp"` | One specific object instance |
-| Class | `@@` | `@@name = "myapp"` | The class and all its subclasses |
-| Global | `$` | `$DEBUG = true` | Everywhere in the process |
-| Constant | uppercase first letter | `APP = "myapp"` | Everywhere (namespaced to where defined) |
+| Kind | Prefix | Example | Visible in |
+|------|--------|---------|------------|
+| Local | none | `count = 0` | The method or block it is set in |
+| Instance | `@` | `@sha = "abc"` | One object; inside a task, that task run |
+| Class | `@@` | `@@app = "myapp"` | The class body, every task, every subcommand |
+| Global | `$` | `$DEBUG = true` | The whole process |
+| Constant | Capital letter | `APP = "myapp"` | Everywhere |
 
-### Local variables
+### Local Variables
+
+A local variable lives in the method it is set in and disappears when the method returns:
 
 ```ruby
 def build
-  output_dir = "dist"   # only visible inside this method
+  output_dir = "dist"            # only this method can see it
   sh "rake build OUTDIR=#{output_dir}"
 end
 ```
 
-`output_dir` disappears when the method returns. It cannot be seen by any other task.
+No other task can see `output_dir`. Locals are for values a single task computes and uses.
 
-### Instance variables (`@`)
+### Instance Variables (`@`)
 
-```ruby
-class Tasks
-  @app = "myapp"   # class instance variable — lives on the Tasks class object
-
-  def build
-    puts @app      # nil — this @app is on the instance, not the class
-  end
-end
-```
-
-`@` in the class body sets a variable on the class object itself, not on the instances that run tasks. Inside a task method body, `@name` refers to the instance, which is a different object. They do not share state.
-
-`@` inside a method is useful for memoization within a single task invocation:
+Inside a task, `@name` belongs to the object running that task. It is handy for caching a value within one run:
 
 ```ruby
 def version
-  @version ||= `git describe --tags`.strip   # computed once, cached for this run
+  @version ||= `git describe --tags`.strip   # computed once per run, then reused
 end
 ```
 
-### Class variables (`@@`)
+In the class body, outside any method, `@name` sets a variable on the class itself, which is a different object from the one that runs tasks. So this does not work:
 
 ```ruby
 class Tasks
-  @@app = "myapp"   # visible in every task method and every subclass
+  @app = "myapp"         # on the class, not on the task runner
 
   def build
-    puts @@app      # "myapp"
+    puts @app            # nil
   end
 end
 ```
 
-`@@` is shared across the class body, all instance methods, and all subclasses (including Thor subcommand classes). This makes it the right choice for configuration values in Asgard task files.
+Two more cautions. An instance variable set by one task is visible to a later task in the same run only when they run one after another; tasks in a parallel `depends_on` group each get their own object, so pass values with `dep_result` instead (see [Dependencies](dependencies.md#passing-results-between-tasks)). And a value that should be shared belongs in `@@`, below.
 
-### Global variables (`$`)
+### Class Variables (`@@`)
+
+`@@name` is shared by the class body, every task method and every subclass, which includes [subcommand](subcommands.md) classes. That is exactly the set of places a task file's configuration needs to reach, so `@@` is the kind to use:
 
 ```ruby
-$DEBUG   = true   # visible everywhere in the Ruby process
-$VERBOSE = true
+class Tasks
+  @@app = "myapp"        # visible in every task and every subcommand
+
+  def build
+    puts @@app           # "myapp"
+  end
+end
 ```
 
-Asgard uses `$DEBUG` and `$VERBOSE` internally — they are set by the `--debug` and `--verbose` CLI flags. Avoid declaring your own `$` variables in `.loki` files; they affect the entire Ruby process including all loaded gems.
+### Global Variables (`$`)
 
-Several important Ruby globals you may encounter in task files:
-
-| Variable | Purpose |
-|----------|---------|
-| `$stdout` / `$STDOUT` | Standard output stream — `puts` writes here |
-| `$stderr` / `$STDERR` | Standard error stream — `warn` writes here |
-| `$DEBUG` | Enables debug mode when `true` |
-| `$VERBOSE` | Enables verbose warnings when `true` |
-| `$PROGRAM_NAME` / `$0` | The name of the running script |
-
-The uppercase versions (`$STDOUT`, `$STDERR`) are the original stream objects. The lowercase versions (`$stdout`, `$stderr`) are reassignable aliases — libraries sometimes redirect them temporarily to capture output. In task files, use `$stdout.puts` or `$stderr.puts` when you need explicit stream control; use plain `puts` and `warn` for normal output.
+`$name` is visible everywhere in the process, including inside every gem asgard loads. Asgard itself uses two: `--debug` sets `$DEBUG` and `--verbose` sets `$VERBOSE`, which you read with `debug?` and `verbose?` (see [Options & Flags](options.md)). `$stdout` and `$stderr` are the output streams `puts` and `warn` write to. Avoid declaring your own globals; `@@` does the job without leaking into everything else.
 
 ### Constants
 
-Any name that begins with an uppercase letter is a constant in Ruby. Constants are available everywhere — inside methods, across files, and across classes — without any prefix:
+A name that starts with a capital letter is a constant. Constants are visible everywhere, with no prefix, inside and outside the class:
 
 ```ruby
-APP_NAME    = "myapp".freeze
-MAX_RETRIES = 3
-BASE_URL    = "https://example.com".freeze
+APP_NAME = "myapp".freeze
+BASE_URL = "https://example.com".freeze
 
 class Tasks
   desc "Deploy the app"
@@ -102,58 +105,63 @@ class Tasks
 end
 ```
 
-The convention is `ALL_CAPS_WITH_UNDERSCORES` for values that are truly fixed. Class and module names are also constants — `Tasks`, `Asgard`, `String`, `Integer` all start with an uppercase letter.
-
-Ruby will issue a warning if you reassign a constant but will not prevent it. Use `.freeze` to make the value itself immutable:
-
-```ruby
-APP_NAME = "myapp".freeze   # value cannot be mutated; reassignment still warns
-```
-
-**Constants vs `@@` class variables in task files:**
+Ruby warns when a constant is assigned twice but does not prevent it, which matters when two `.loki` files both define `APP_NAME`. Use `.freeze` so the value itself cannot be changed.
 
 | | Constant | `@@` class variable |
 |---|---|---|
-| Accessible in task methods | Yes | Yes |
-| Accessible in subcommand subclasses | Yes | Yes |
-| Visible outside the class | Yes — anywhere | Only within the class hierarchy |
-| Reassignment warning | Yes | No |
+| Visible in tasks and subcommands | Yes | Yes |
+| Visible outside `Tasks` | Yes | No |
+| Second assignment | Warning | Silent (so use `\|\|=`) |
 | Convention | `ALL_CAPS` | `snake_case` |
 
-For fixed values that will never change — app names, version strings, URLs, port numbers — constants are often the clearest choice. For values that might reasonably vary across environments or be overridden in a different `.loki` file, `@@` with `||=` is more flexible.
+Constants suit values that never change: an application name, a URL, a port. `@@` with `||=` suits values a later file might want to set first or override.
+
+---
+
+## The Pattern
+
+```ruby
+class Tasks
+  @@app  ||= "myapp".freeze
+  @@port ||= 3000
+  @@env  ||= "production".freeze
+end
+```
+
+**Why `||=` and not `=`?** Every `.loki` file reopens the same `class Tasks`. With `||=`, the first file to set a value wins and a later file that reopens the class does not overwrite it. That lets a shared task library ship a default that a project's own `.loki` sets first.
+
+**Why `.freeze`?** It makes the value itself unchangeable, so `@@app << "-extra"` raises an error instead of quietly altering a name every task uses. Numbers and symbols are already frozen; freeze strings, arrays and hashes.
+
+**Why `@@` and not `@`?** A single `@` in the class body is not visible inside task methods, as shown above. `@@` is visible everywhere a task file needs.
 
 ---
 
 ## Strings and Interpolation
 
-### Always use double quotes
+### Use Double Quotes
 
-Ruby supports both single and double quoted strings. In Asgard task files, always use double quotes:
+Ruby has single and double quoted strings. Task files use double quotes throughout, because only double quotes support interpolation, and shell commands almost always need a value embedded:
 
 ```ruby
-@@app ||= "myapp".freeze     # correct
-sh "bundle exec rake test"   # correct
+@@app ||= "myapp".freeze
+sh "bundle exec rake test"
 ```
 
-Single-quoted strings look similar but behave differently — they do not support interpolation or escape sequences. Mixing the two styles adds confusion for no benefit. Double quotes work everywhere single quotes do, and more.
+### Interpolation
 
-### String interpolation
-
-Embedding a variable's value inside a string uses the `#{}` syntax. Everything inside the braces is Ruby code — the result is converted to a string and inserted in place:
+`#{...}` inside a double-quoted string inserts the value of any Ruby expression:
 
 ```ruby
 class Tasks
-  @@app  ||= "myapp".freeze
-  @@env  ||= "production".freeze
+  @@app ||= "myapp".freeze
+  @@env ||= "production".freeze
 
   desc "Deploy the app"
-  def deploy
-    sh "cap #{@@env} deploy APP=#{@@app}"
-  end
+  def deploy = sh "cap #{@@env} deploy APP=#{@@app}"
 end
 ```
 
-Any Ruby expression works inside `#{}`:
+Any expression works, not just a variable name:
 
 ```ruby
 puts "build started at #{Time.now}"
@@ -161,11 +169,9 @@ sh "puma -p #{env(:port, '3000').to_i + 1}"
 sh "git tag #{@@app}-#{`git describe --tags`.strip}"
 ```
 
-Interpolation only works inside double-quoted strings. This is the primary reason Asgard tasks use double quotes exclusively — shell commands almost always need to embed variable values.
+### Multi-line Scripts
 
-### Multi-line strings
-
-For shell scripts with multiple lines, use a heredoc. The `~` modifier strips leading indentation so the script aligns with your code:
+For a script with several lines, use a heredoc. `<<~` strips the leading indentation so the script lines up with your Ruby, and interpolation works inside it:
 
 ```ruby
 desc "Bootstrap the project"
@@ -178,86 +184,50 @@ def bootstrap
 end
 ```
 
-Interpolation works inside heredocs the same as in double-quoted strings.
+The word after `<<~` (here `SHELL`) is any marker you like; the heredoc ends at a line holding only that marker. See [Shell Commands](shell.md) for what happens when the script runs.
 
 ---
 
-## System Environment Variables
+## Sharing Values Across Files
 
-System environment variables are set outside Ruby — in the shell, a CI environment, or a `.env` file — and are accessed inside tasks via the `env` Kernel method:
-
-```ruby
-class Tasks
-  desc "Start the server"
-  def start
-    sh "puma -p #{env(:port, '3000')} -e #{env(:rack_env, 'development')}"
-  end
-
-  desc "Deploy the app"
-  def deploy
-    sh "cap #{env(:deploy_target)} deploy"  # raises KeyError if DEPLOY_TARGET is not set
-  end
-end
-```
-
-`env` accepts a symbol or string and converts it to an uppercase `ENV` key automatically:
-
-| Call | Equivalent | Behaviour |
-|------|-----------|-----------|
-| `env(:port, "3000")` | `ENV.fetch("PORT", "3000")` | Returns `"3000"` if `PORT` is unset |
-| `env(:api_key)` | `ENV.fetch("API_KEY")` | Raises `KeyError` if `API_KEY` is unset |
-| `env("DATABASE_URL")` | `ENV.fetch("DATABASE_URL")` | Raises `KeyError` if unset |
-| `env("database_url")` | `ENV.fetch("DATABASE_URL")` | Same — name is always upcased |
-
-!!! note
-    All environment variable values are strings. Convert to other types explicitly: `env(:port, "3000").to_i`, `env(:debug, "false") == "true"`.
-
-Use `dotenv` to load a `.env` file before tasks run — see [Environment](environment.md).
-
----
-
-## The Pattern
+All `.loki` files reopen one `Tasks` class, so a `@@` variable set in one file is visible in every file loaded in the same run:
 
 ```ruby
+# config.loki
 class Tasks
   @@app  ||= "myapp".freeze
-  @@port ||= 3000
-  @@env  ||= "production".freeze
-
-  desc "Print app info"
-  def info
-    puts "#{@@app} running on port #{@@port} in #{@@env}"
-  end
+  @@port ||= 8080
 end
 ```
 
-**Why `||=` instead of `=`?**
-Because multiple `.loki` files reopen the same `class Tasks`. Using `||=` means the first file to declare a value wins, and subsequent files that reopen `Tasks` won't accidentally overwrite it.
+```ruby
+# deploy.loki
+class Tasks
+  desc "Deploy the app"
+  def deploy = sh "cap deploy APP=#{@@app} PORT=#{@@port}"
+end
+```
 
-**Why `.freeze`?**
-It prevents mutation of the value (e.g. `@@app << "-extra"` raises a `FrozenError`). Numbers and symbols are already frozen. Use `.freeze` on strings, arrays, and hashes.
-
-**Why `@@` instead of `@`?**
-A single `@` in the class body sets a class instance variable — it lives on the `Tasks` class object and is **not** accessible inside task method bodies. `@@` is a class variable and is visible everywhere: in all instance methods, and in any subclass (including Thor subcommand classes).
+The file that sets the value must load before the task that reads it *runs*, which is always true: every file loads before any task runs. Only the class body itself runs at load time, so a `header` line that interpolates `@@app` must come after the file that sets it has been imported. See [Task Files](task-files.md) for load order.
 
 ---
 
-## Sharing Values Across Subcommands
+## Sharing Values With Subcommands
 
-Class variables are visible in subclasses, which makes them the right choice when you have Thor subcommands defined in separate classes:
+Subcommand classes inherit from `Tasks`, so they see its `@@` variables:
 
 ```ruby
 # config.loki
 class Tasks
   @@app ||= "myapp".freeze
 end
+```
 
+```ruby
 # deploy.loki
 class DeployCommands < Tasks
   desc "Deploy to production"
-  def production
-    sh "cap production deploy APP=#{@@app}"  # @@app is visible here
-  end
+  def production = sh "cap production deploy APP=#{@@app}"    # visible here
 end
 
 class Tasks
@@ -270,53 +240,73 @@ end
 
 ## Computed Values
 
-For values that require a shell call, file read, or any runtime computation, define a method instead:
+A value that comes from a command, a file or any other runtime computation is a method, not a variable. Make it `private` so it is not a task:
 
 ```ruby
 class Tasks
-  def version = `git describe --tags`.strip
-  def sha     = `git rev-parse --short HEAD`.strip
-
   desc "Show version info"
   def info = puts "#{version} (#{sha})"
+
+  private
+
+  def version = `git describe --tags`.strip
+  def sha     = `git rev-parse --short HEAD`.strip
 end
 ```
 
-Methods defined without `desc` do not appear in `--help` output or as CLI commands. If you need memoization (the computation is expensive and called multiple times), use `||=` on an instance variable inside the method:
+!!! warning
+    A public method without a `desc` is a hidden task: it runs from the command line and can be a dependency, it is just left out of `asgard help`. Helpers must be `private`, inside a `no_commands` block, or defined with `helper`. See [Helper Methods](helpers.md).
+
+Cache an expensive value with `@name ||=` inside the method, so it is computed once per run:
+
+```ruby
+def version
+  @version ||= `git describe --tags`.strip
+end
+```
+
+When the value is also needed in the class body, in a `header` line for instance, define it with `helper`, which makes it available in both places at once:
 
 ```ruby
 class Tasks
-  def version
-    @version ||= `git describe --tags`.strip
-  end
+  @@project ||= "myapp".freeze
+
+  helper(:version) { File.read("lib/myapp/version.rb")[/VERSION\s*=\s*"([^"]+)"/, 1] }
+
+  header "#{@@project} v#{version}"       # class body
+
+  desc "Show the current version"
+  def show_version = puts version          # task body
 end
 ```
+
+[Helper Methods](helpers.md#the-helper-dsl-method) has the details.
 
 ---
 
-## Sharing Values Across Files
+## Environment Variables
 
-Because all `.loki` files reopen the same `class Tasks`, a `@@` variable declared in one file is available in all other files loaded in the same session:
+Values that come from outside the task file, from the shell, CI or a `.env` file, are read with `env`, which upcases the name and takes a default:
 
 ```ruby
-# config.loki
 class Tasks
-  @@app  ||= "myapp".freeze
-  @@port ||= 8080
-end
+  dotenv                                   # load .env, if there is one
 
-# deploy.loki
-class Tasks
+  desc "Start the server"
+  def start = sh "puma -p #{env(:port, '3000')}"     # "3000" when PORT is unset
+
   desc "Deploy the app"
-  def deploy = sh "cap deploy APP=#{@@app} PORT=#{@@port}"
+  def deploy = sh "cap #{env(:deploy_target)} deploy"  # error when DEPLOY_TARGET is unset
 end
 ```
 
+Environment values are always strings; convert with `.to_i` or compare with `== "true"`. The whole story, including `dotenv`, `.env` files and the variables asgard itself sets, is on the [Environment Variables](environment.md) page.
+
 ---
 
-## Naming Conventions
+## Naming
 
-Class variable names use `snake_case` — the standard Ruby convention for variables and methods:
+Class variables use `snake_case`, words separated by underscores:
 
 ```ruby
 class Tasks
@@ -326,13 +316,5 @@ class Tasks
 end
 ```
 
-Multi-word names are separated by underscores, not camelCase or hyphens.
-
----
-
-## Naming Caution
-
-!!! warning
-    Avoid `@@` names that conflict with built-in Ruby or Thor internals. Safe practice: use descriptive names that are unlikely to clash.
-
-Names to avoid: `options`, `shell`, `invoke`, `command`, `args`.
+!!! warning "Names to avoid"
+    Methods and variables share a namespace with the words asgard and Thor use internally. Do not name a method `shell`, `options`, `invoke`, `run`, `args` or any other name on that list; a `.loki` that does is refused at load time with the file and line. The list is in [Defining Tasks](tasks.md#reserved-names). `@@options` or `@@shell` as variables are legal but confusing next to the `options` and `shell` methods, so pick something more specific.

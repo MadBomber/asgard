@@ -17,10 +17,14 @@ module Asgard
         # The child's pid. The task runs in the project root with exactly
         # the description's environment, in its own process group, with
         # its output appended to the log.
-        def spawn(description)
-          Process.spawn(description[:env], *description[:argv],
-                        chdir: description[:root], pgroup: true, unsetenv_others: true,
-                        out: [description[:log], "a"], err: %i[child out])
+        def spawn(description) = Process.spawn(description[:env], *description[:argv], **spawn_options(description))
+
+        # stdin is /dev/null: the task's group is a background group on any
+        # terminal the daemon has, where a read would stop it with SIGTTIN
+        # and leave its worker waiting forever.
+        def spawn_options(description)
+          { chdir: description[:root], pgroup: true, unsetenv_others: true, in: File::NULL,
+            out: [description[:log], "a"], err: %i[child out] }
         end
 
         # Blocks until the child exits; its exit code.
@@ -30,13 +34,17 @@ module Asgard
         end
 
         # A signalled child reports 128 + the signal number, as shells do.
-        def exit_code(status) = status.exitstatus || (128 + status.termsig)
+        def exit_code(status) = Shell.exit_code(status)
       end
 
-      # The worker loop in its own Ractor. The Ractor is handed the two
-      # queues and the spawner (all shareable) and nothing else.
+      # The worker loop in its own Ractor. The Ractor is handed its queue,
+      # the reports and the spawner (all shareable) and nothing else, and
+      # pops through a Mailbox so it sleeps while idle: whoever pushes onto
+      # +queue+ must wake it, through Mailbox.new(queue, the_ractor).
       def self.start(queue, reports, spawner: Spawner)
-        Ractor.new(queue, reports, spawner) { |inbox, outbox, runner| Asgard::Watch::Worker.new(inbox, outbox, spawner: runner).run }
+        Ractor.new(queue, reports, spawner) do |inbox, outbox, runner|
+          Asgard::Watch::Worker.new(Asgard::Watch::Mailbox.new(inbox, Ractor.current), outbox, spawner: runner).run
+        end
       end
 
       def initialize(queue, reports, spawner: Spawner, clock: Process)
@@ -54,17 +62,44 @@ module Asgard
         end
       end
 
+      # One trigger. A spawn that fails (the root or the executable gone,
+      # an environment too large or malformed) is reported as an exit with
+      # no pid, so the worker carries on with the next trigger instead of
+      # ending.
       def run_one(description)
         entry, task = description.values_at(:entry, :task)
-        pid = @spawner.spawn(description)
+        pid = spawn_or_report(description) or return
         started_at, started = stamp
         report(kind: :spawn, entry:, task:, pid:, at: started_at, changes: description[:changes])
         status = @spawner.wait(pid)
         finished_at, finished = stamp
         report(kind: :exit, entry:, task:, pid:, at: finished_at, status:, seconds: finished - started)
+      ensure
+        Worker.remove_changes_file(description[:changes_file])
+      end
+
+      # The exit code a spawn failure reports, as a shell would: 126 when
+      # the system could not run it, 127 when something was not found or
+      # spawn refused its arguments (an ArgumentError: a bad env: name).
+      def self.spawn_failure_status(error) = error.is_a?(SystemCallError) && !error.is_a?(Errno::ENOENT) ? 126 : 127
+
+      # The task has exited, so the change lists spilled for it are done.
+      def self.remove_changes_file(path)
+        File.delete(path) if path
+      rescue Errno::ENOENT
+        nil
       end
 
       private
+
+      def spawn_or_report(description)
+        @spawner.spawn(description)
+      rescue StandardError => e
+        at, = stamp
+        report(kind: :exit, entry: description[:entry], task: description[:task], pid: nil, at:,
+               status: Worker.spawn_failure_status(e), seconds: 0.0, error: e.message)
+        nil
+      end
 
       # [wall-clock seconds since the epoch, monotonic seconds]
       def stamp = [@clock.clock_gettime(Process::CLOCK_REALTIME), @clock.clock_gettime(Process::CLOCK_MONOTONIC)]

@@ -7,6 +7,14 @@ module Asgard
     # more than one recorded location (the each/each_gem class of bug) —
     # earlier ones OVERRIDDEN (dead), the last one the active redefinition.
     module TaskSections
+      # A hidden task (one defined without a desc) says so, after any
+      # override note.
+      def self.with_hidden(status, hidden)
+        return status unless hidden
+
+        [status, "hidden (no desc; not shown by help)"].compact.join("; ")
+      end
+
       private
 
       def build_task_sections
@@ -20,12 +28,12 @@ module Asgard
         file_map = Hash.new { |h, k| h[k] = [] }
         @loaded_files.each { |f| file_map[f] }
 
-        commands = klass.all_commands.keys
+        commands = klass.all_commands
         klass._method_log.each do |name, locations|
-          next unless commands.include?(name.to_s)
+          command = commands[name.to_s] or next
 
           locations.each_with_index do |(file, line), idx|
-            file_map[file] << [name, line, task_status(locations, idx)]
+            file_map[file] << [name, line, TaskSections.with_hidden(task_status(locations, idx), command.hidden?)]
           end
         end
         file_map.each_value { |tasks| tasks.sort_by! { |t| t[1] } }

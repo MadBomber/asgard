@@ -26,7 +26,7 @@ class Tasks
   def xyzzy = puts "everything in Ruby metaprogramming is magic"
 
   helper(:project_version) do
-    @@project_version ||= File.read("lib/#{@@project}/version.rb").match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
+    @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
 
   default_task :quality

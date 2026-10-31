@@ -1,0 +1,3 @@
+[default.extend-words]
+# docs/getting-started.md shows an ambiguous task prefix
+hel = "hel"

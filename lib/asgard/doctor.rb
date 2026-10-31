@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "pathname"
-
 require_relative "doctor/task_sections"
 require_relative "doctor/report"
 
@@ -41,7 +39,7 @@ module Asgard
       current = Pathname.new(dir)
       loop do
         candidate = current + ".loki"
-        markers << candidate.to_s if candidate.exist?
+        markers << candidate.to_s if candidate.file?
         parent = current.parent
         break if parent == current
 
@@ -82,9 +80,9 @@ module Asgard
       ImportTracer.doctor = self
       @loaded_files << @marker
 
-      before = Asgard::Base.subclasses.dup
-      load @marker
-      @new_subclasses = (Asgard::Base.subclasses - before + [Tasks]).uniq
+      before = Asgard::Base._asgard_subclasses.dup
+      Asgard.load_root(@marker)
+      @new_subclasses = (Asgard::Base._asgard_subclasses - before + [Tasks]).uniq
     rescue StandardError, ScriptError => e
       @findings << Finding.new(level: :error, message: "load failed: #{e.class}: #{e.message}")
     ensure
@@ -123,7 +121,7 @@ module Asgard
         loc    = caller_locations(1, 1).first
         before = $LOADED_FEATURES.dup
         result = super(path, from: loc)
-        added  = $LOADED_FEATURES - before
+        added  = ImportTracer.loki_files($LOADED_FEATURES - before)
         ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import", path, added), added) unless
           loc&.absolute_path&.end_with?("kernel_methods.rb")
         result
@@ -132,9 +130,15 @@ module Asgard
       def import_up(name = ".loki")
         before = $LOADED_FEATURES.dup
         result = super
-        added  = $LOADED_FEATURES - before
+        added  = ImportTracer.loki_files($LOADED_FEATURES - before)
         ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import_up", name, added), added)
         result
+      end
+
+      # $LOADED_FEATURES also grows with every `require` a .loki file runs
+      # (net/http, uri, ...); only .loki paths were brought in by import.
+      def self.loki_files(added)
+        added.select { |f| f.end_with?(".loki") }
       end
 
       def self.trace_message(verb, arg, added)

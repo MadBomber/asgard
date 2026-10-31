@@ -7,13 +7,16 @@ module Asgard
     # --doctor`) uses to detect a silently-overridden `def`, same file or
     # across files.
     module Registry
-      def subclasses
-        @subclasses ||= []
+      # Every subclass of Asgard::Base, at any depth, in definition order.
+      # Not `subclasses`: that is Ruby's own Class#subclasses (direct
+      # subclasses only), which a .loki may well call.
+      def _asgard_subclasses
+        @_asgard_subclasses ||= []
       end
 
       def inherited(subclass)
         super
-        Asgard::Base.subclasses << subclass
+        Asgard::Base._asgard_subclasses << subclass
         subclass.instance_variable_set(:@_deps,              {})
         subclass.instance_variable_set(:@_method_log,        Hash.new { |h, k| h[k] = [] })
         subclass.instance_variable_set(:@_pending_deps,      [])
@@ -23,6 +26,7 @@ module Asgard
         subclass.instance_variable_set(:@_done,       Set.new)
         subclass.instance_variable_set(:@_cond,       Hash.new { |h, k| h[k] = ConditionVariable.new })
         subclass.instance_variable_set(:@_ran_mutex,  Mutex.new)
+        subclass.instance_variable_set(:@_failed,     {})
       end
 
       # Every source_location a method name has ever been defined at, in

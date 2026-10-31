@@ -1,0 +1,30 @@
+# frozen_string_literal: true
+# examples/robots/.loki — drive the Claude Code CLI as a shell.
+#
+# `shell` registers an interpreter for `sh`/`shebang`. The task's heredoc
+# is written to a tempfile and the file's path is appended as the last
+# argument, which is why the shell below is not simply
+# "env -u ANTHROPIC_API_KEY claude -p": claude would take that path as the
+# prompt text. A one-line bash wrapper reads the file onto claude's stdin
+# instead, so the heredoc is the prompt.
+#
+# `env -u ANTHROPIC_API_KEY` unsets the API key for the child process so
+# claude uses the logged-in subscription rather than metered API billing.
+#
+# Run from this directory:
+#   asgard ask
+#   asgard ask "Explain Thor's `map` in two sentences."
+
+class Tasks
+  shell :claude, "bash", args: ["-c", 'env -u ANTHROPIC_API_KEY claude -p < "$1"', "claude"], ext: ".md"
+
+  desc "ask [PROMPT]", "Send a prompt to the Claude robot and print its reply"
+  def ask(prompt = nil)
+    sh :claude, prompt || <<~PROMPT, silent: true
+      You are a robot living in an Asgard `.loki` task file.
+
+      In three short lines, introduce yourself and name one thing a task
+      runner could ask you to do.
+    PROMPT
+  end
+end

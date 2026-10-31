@@ -60,7 +60,58 @@ class TestScheduleDeclaration < Minitest::Test
     spec = SD.normalize(:report, options: "--format md --title 'Week 39' -v", every: 60)
     assert_equal "report", spec[:task]
     assert_equal ["--format", "md", "--title", "Week 39", "-v"], spec[:args]
-    assert_equal "report-format-md-title-week-39-v", spec[:name]
+    # "Week 39" is one word with a capital and a space, so the slug can't spell it: hash suffix
+    assert_match(/\Areport-format-md-title-week-39-v-\h{8}\z/, spec[:name])
+  end
+
+  def test_normalize_rejects_on_with_every
+    error = assert_raises(ArgumentError) { SD.normalize(:sync, every: 60, on: :friday) }
+    assert_match "on: only applies to at:", error.message
+    assert_nil SD.normalize(:sync, every: 60)[:on]
+    assert_equal :daily, SD.normalize(:sync, at: "01:00")[:on]
+  end
+
+  def test_entry_name_keeps_simple_option_names_readable
+    assert_equal "report-format-md-v", SD.entry_name("report", %w[--format md -v])
+    assert_equal "report-period-week", SD.entry_name("report", %w[--period week])
+    assert_equal "sync-dry-run-3", SD.entry_name("sync", %w[--dry-run 3])
+  end
+
+  def test_entry_name_tells_option_spellings_apart
+    spaced = SD.entry_name("report", %w[--period week])
+    equals = SD.entry_name("report", %w[--period=week])
+    assert_match(/\Areport-period-week-\h{8}\z/, equals)
+    refute_equal spaced, equals
+    refute_equal SD.entry_name("report", ["--title", "Week End"]), SD.entry_name("report", %w[--title week end])
+    assert_equal equals, SD.entry_name("report", %w[--period=week]) # stable
+  end
+
+  def test_entry_name_caps_long_options_with_a_hash
+    long  = SD.entry_name("report", Array.new(100) { |i| "--flag#{i}" })
+    other = SD.entry_name("report", Array.new(101) { |i| "--flag#{i}" })
+    assert_operator long.length, :<=, SD::NAME_MAX
+    assert_match(/-\h{8}\z/, long)
+    refute_equal long, other
+  end
+
+  def test_check_lengths_raises_a_schedule_error
+    assert_nil SD.check_lengths!(["/a/#{'x' * 255}"])
+    error = assert_raises(SD::Error) { SD.check_lengths!(["/a/#{'x' * 256}.plist"]) }
+    assert_match "too long", error.message
+  end
+
+  def test_writing_turns_system_errors_into_schedule_errors
+    Dir.mktmpdir do |dir|
+      blocker = File.join(dir, "file")
+      File.write(blocker, "")
+      assert_equal(:ok, SD.writing { :ok })
+      error = assert_raises(SD::Error) { SD.writing { File.write(File.join(blocker, "x"), "") } }
+      assert_match "could not write", error.message
+    end
+  end
+
+  def test_signal_exit
+    assert_equal "signal 15 (Terminated)", SD.signal_exit("15", "Terminated")
   end
 
   def test_normalize_accepts_options_as_array
@@ -140,6 +191,37 @@ class TestScheduleDeclaration < Minitest::Test
   end
 end
 
+# Phase 3 schedule regressions: declaration validation and read-back.
+class TestRegressionScheduleDeclaration < Minitest::Test
+  S = Asgard::Schedule
+
+  def test_regression_s4_empty_at_or_on_is_rejected
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", on: []) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: []) }
+  end
+
+  def test_regression_s5_weekends_reads_back_as_weekends
+    assert_equal "09:00 weekends", S.describe_calendar(S.calendar(at: "09:00", on: :weekends))
+    assert_equal :weekends, S.day_names([0, 6])
+    assert_equal :weekdays, S.day_names([5, 1, 2, 3, 4])
+  end
+
+  def test_regression_s6_a_dashed_task_is_the_underscored_command
+    spec = S.normalize(:'daily-summary', at: "09:00")
+    assert_equal "daily_summary", spec[:task]
+    error = assert_raises(ArgumentError) { S.normalize("db:migrate", at: "09:00") }
+    assert_match(/subcommand/, error.message)
+  end
+
+  def test_regression_s7_control_characters_and_bad_env_names_are_rejected
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "A" => "x\nExecStartPre=/bin/evil" }) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", options: ["--x", "a\nb"]) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "BAD-NAME" => "1" }) }
+    assert_raises(ArgumentError) { S.normalize(:t, at: "09:00", env: { "1ST" => "1" }) }
+    assert_equal({ "OK_1" => "tab\there" }, S.normalize(:t, at: "09:00", env: { OK_1: "tab\there" })[:env], "a tab is fine")
+  end
+end
+
 class TestScheduleLaunchd < Minitest::Test
   def spec(**) = Asgard::Schedule.normalize(:demo, **)
 
@@ -209,6 +291,85 @@ class TestScheduleLaunchd < Minitest::Test
       )
       assert_equal :stopped, backend(home, runner).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       refute(runner.commands.any? { |cmd| cmd.include?("bootstrap") })
+    end
+  end
+
+  # S3: reinstalling an unchanged entry must not bootout a run in progress.
+  def test_regression_s3_an_unchanged_install_leaves_the_loaded_job_alone
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      running = FakeRunner.new("launchctl print gui" => ["state = running\n", true])
+      assert_equal :active, backend(home, running).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      refute(running.commands.any? { |cmd| cmd.include?("bootout") }, running.commands.join("\n"))
+      refute(running.commands.any? { |cmd| cmd.include?("bootstrap") })
+    end
+  end
+
+  def test_regression_s3_a_changed_install_still_reloads
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      loaded = FakeRunner.new("launchctl print gui" => ["", false],
+                              "launchctl print gui/501/com.madbomber.asgard.my-app.demo" => ["", true])
+      def loaded.call(*argv)
+        super.tap { @responses.delete("launchctl print gui/501/com.madbomber.asgard.my-app.demo") if argv[1] == "bootout" }
+      end
+      assert_equal :active, backend(home, loaded).install(spec(every: 120), asgard: "/bin/asgard", direnv: nil)
+      assert(loaded.commands.any? { |cmd| cmd.include?("bootout") })
+      assert(loaded.commands.any? { |cmd| cmd.include?("bootstrap") })
+    end
+  end
+
+  # S10: a plist that fails plutil must not replace the good one on disk.
+  def test_regression_s10_a_plist_that_fails_lint_never_replaces_the_installed_one
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      good = File.read(b.plist_path("demo"))
+      failing = FakeRunner.new("launchctl print gui" => ["", false], "plutil" => ["bad plist", false])
+      assert_raises(Asgard::Schedule::Error) { backend(home, failing).install(spec(every: 120), asgard: "/bin/asgard", direnv: nil) }
+      assert_equal good, File.read(b.plist_path("demo"))
+      assert_equal [File.basename(b.plist_path("demo"))], Dir.children(File.dirname(b.plist_path("demo"))), "no temp file left"
+    end
+  end
+
+  # S8: job files carry env: values, so only their owner may read them.
+  def test_regression_s8_the_plist_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o600, File.stat(b.plist_path("demo")).mode & 0o777
+    end
+  end
+
+  # S11: a running job and a job a signal ended both show as such.
+  def test_regression_s11_status_reads_running_and_signal_exits
+    running = FakeRunner.new("launchctl print gui" => ["state = running\n\tlast exit code = 0\n", true])
+    assert_equal({ state: :running, last_exit: "0" }, backend("/h", running).status("demo"))
+    signalled = FakeRunner.new("launchctl print gui" => ["state = not running\n\tlast terminating signal = Terminated: 15\n", true])
+    assert_equal({ state: :active, last_exit: "signal 15 (Terminated)" }, backend("/h", signalled).status("demo"))
+  end
+
+  def test_uninstall_keeps_the_plist_when_bootout_fails
+    Dir.mktmpdir do |home|
+      runner = FakeRunner.new("launchctl print gui"   => ["\tstate = running\n", true],
+                              "launchctl bootout gui" => ["Boot-out failed: 5: Input/output error", false])
+      b = backend(home, runner)
+      FileUtils.mkdir_p(File.dirname(b.plist_path("demo")))
+      File.write(b.plist_path("demo"), "")
+      error = assert_raises(Asgard::Schedule::Error) { b.uninstall("demo") }
+      assert_match "still loaded", error.message
+      assert_match "Input/output error", error.message
+      assert File.exist?(b.plist_path("demo"))
+      refute(runner.commands.any? { |cmd| cmd.include?("enable") })
+    end
+  end
+
+  def test_install_rejects_names_too_long_for_a_file
+    Dir.mktmpdir do |home|
+      long  = Asgard::Schedule.normalize(:demo, every: 60, as: "x" * 240)
+      error = assert_raises(Asgard::Schedule::Error) { backend(home).install(long, asgard: "/a", direnv: nil) }
+      assert_match "too long", error.message
+      refute Dir.exist?(File.join(home, "Library"))
     end
   end
 
@@ -405,6 +566,17 @@ class TestScheduleSystemd < Minitest::Test
     assert_includes unit, "StandardOutput=append:/log/x.log\nStandardError=append:/log/x.log\n"
   end
 
+  # S1: Environment= does no $ expansion (systemd.exec(5)), so a $ must
+  # reach it as is; ExecStart= still needs it doubled.
+  def test_regression_s1_dollar_in_an_env_value_is_literal
+    unit = Asgard::Schedule::Systemd.service_unit(
+      description: "d", arguments: ["/bin/asgard", "pay$day"], working_directory: "/proj",
+      environment: { "PW" => %(a$b%c"d\\e) }, log_path: "/log/x.log"
+    )
+    assert_includes unit, %(Environment="PW=a$b%%c\\"d\\\\e"\n)
+    assert_includes unit, %(ExecStart="/bin/asgard" "pay$$day"\n)
+  end
+
   def test_timer_unit_calendar
     unit = Asgard::Schedule::Systemd.timer_unit(description: "d", service: "s.service",
                                                 calendar: Asgard::Schedule.calendar(at: %w[08:00 16:00], on: :friday))
@@ -494,6 +666,82 @@ class TestScheduleSystemd < Minitest::Test
     assert_equal :stopped, backend("/h", stopped).status("demo")[:state]
   end
 
+  def test_regression_s8_unit_files_are_private
+    Dir.mktmpdir do |home|
+      b = backend(home)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      [b.service_path("demo"), b.timer_path("demo")].each { |path| assert_equal 0o600, File.stat(path).mode & 0o777, path }
+    end
+  end
+
+  # S9: a first install that fails part way must not look, next time,
+  # like a timer the user stopped on purpose.
+  def test_regression_s9_a_failed_first_install_is_not_taken_for_a_stop
+    Dir.mktmpdir do |home|
+      failing = FakeRunner.new("systemctl --user is-enabled" => ["disabled", false], "systemctl --user enable" => ["boom", false])
+      assert_raises(Asgard::Schedule::Error) { backend(home, failing).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil) }
+      refute File.exist?(backend(home).timer_path("demo")), "the half-written first install is rolled back"
+      fresh = FakeRunner.new("systemctl --user is-enabled" => ["disabled", false])
+      assert_equal :active, backend(home, fresh).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+    end
+  end
+
+  def test_service_unit_lets_background_jobs_outlive_the_run
+    unit = Asgard::Schedule::Systemd.service_unit(description: "d", arguments: ["/a"], working_directory: "/",
+                                                  environment: {}, log_path: "/l")
+    assert_includes unit, "Type=oneshot\nKillMode=process\n"
+  end
+
+  def test_install_leaves_unchanged_units_alone
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new
+      assert_equal :active, backend(home, runner).install(spec(every: 60), asgard: "/a", direnv: nil)
+      assert_equal ["systemctl --user is-enabled --quiet asgard.my-app.demo.timer",
+                    "systemctl --user enable asgard.my-app.demo.timer",
+                    "systemctl --user start asgard.my-app.demo.timer"], runner.commands
+    end
+  end
+
+  def test_install_reloads_and_restarts_changed_units
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new
+      backend(home, runner).install(spec(every: 120), asgard: "/a", direnv: nil)
+      assert_includes runner.commands, "systemctl --user daemon-reload"
+      assert_includes runner.commands, "systemctl --user restart asgard.my-app.demo.timer"
+    end
+  end
+
+  def test_install_rejects_names_too_long_for_a_file
+    Dir.mktmpdir do |home|
+      long  = Asgard::Schedule.normalize(:demo, every: 60, as: "x" * 240)
+      error = assert_raises(Asgard::Schedule::Error) { backend(home).install(long, asgard: "/a", direnv: nil) }
+      assert_match "too long", error.message
+    end
+  end
+
+  def test_uninstall_keeps_units_when_disable_fails
+    Dir.mktmpdir do |home|
+      backend(home).install(spec(every: 60), asgard: "/a", direnv: nil)
+      runner = FakeRunner.new("systemctl --user disable" => ["Failed to connect to bus", false])
+      b = backend(home, runner)
+      error = assert_raises(Asgard::Schedule::Error) { b.uninstall("demo") }
+      assert_match "Failed to connect to bus", error.message
+      assert_equal ["demo"], b.installed_names
+    end
+  end
+
+  def test_status_reports_running_and_signal_exits
+    running = FakeRunner.new("systemctl --user show" => ["ActiveState=activating\nSubState=start\nExecMainCode=0\n" \
+                                                         "ExecMainStatus=0\nExecMainExitTimestampMonotonic=0\n", true])
+    assert_equal({ state: :running, last_exit: nil }, backend("/h", running).status("demo"))
+
+    killed = FakeRunner.new("systemctl --user show" => ["ActiveState=inactive\nSubState=dead\nExecMainCode=2\n" \
+                                                        "ExecMainStatus=15\nExecMainExitTimestampMonotonic=99\n", true])
+    assert_equal({ state: :active, last_exit: "signal 15 (SIGTERM)" }, backend("/h", killed).status("demo"))
+  end
+
   def test_notes_mention_linger_only_when_off
     off = FakeRunner.new("loginctl" => ["no\n", true])
     assert_match(/enable-linger/, backend("/h", off).notes.first)
@@ -503,6 +751,8 @@ class TestScheduleSystemd < Minitest::Test
 end
 
 class TestScheduleRegistry < Minitest::Test
+  SD = Asgard::Schedule
+
   def setup    = Asgard::Schedule.declarations.clear
   def teardown = Asgard::Schedule.declarations.clear
 
@@ -519,6 +769,41 @@ class TestScheduleRegistry < Minitest::Test
   def test_redeclaring_a_name_differently_raises
     Tasks.schedule :tree, every: 60
     assert_raises(ArgumentError) { Tasks.schedule :tree, every: 120 }
+  end
+
+  # Different commands whose plain names slug alike both take hashed
+  # names, whatever order they are declared in.
+  def test_rival_commands_both_take_hashed_names
+    rivals = [[:report, "--period week"], [:report, "period week"], [:report_period, "week"]]
+    expected = rivals.map { |task, options| SD.hashed_slug(task.to_s, Shellwords.split(options)) }
+
+    [rivals, rivals.reverse, rivals.rotate].each do |order|
+      SD.declarations.clear
+      order.each { |task, options| Tasks.schedule task, options:, every: 60 }
+      assert_equal expected.sort, SD.declarations.keys.sort, order.inspect
+      SD.declarations.each { |name, spec| assert_equal name, spec[:name] }
+    end
+    refute_includes SD.declarations.keys, "report-period-week"
+  end
+
+  def test_a_rival_declared_twice_is_still_one_entry
+    2.times do
+      Tasks.schedule :report, options: "--period week", every: 60
+      Tasks.schedule :report, options: "period week", every: 60
+    end
+    assert_equal 2, SD.declarations.size
+  end
+
+  def test_the_same_command_with_another_schedule_still_raises
+    Tasks.schedule :report, options: "--period week", every: 60
+    Tasks.schedule :report, options: "period week", every: 60
+    assert_raises(ArgumentError) { Tasks.schedule :report, options: "period week", every: 120 }
+  end
+
+  def test_an_unrivalled_command_keeps_its_plain_name
+    Tasks.schedule :report, options: "--period week", every: 60
+    Tasks.schedule :report, options: "--period month", every: 60
+    assert_equal %w[report-period-month report-period-week], SD.declarations.keys.sort
   end
 
   def test_backend_class_by_platform
@@ -550,6 +835,7 @@ class TestScheduleCommands < Minitest::Test
     @bin     = File.join(@tmp, "bin")
     FileUtils.mkdir_p [@project, @bin]
     File.write(File.join(@project, ".loki"), "")
+    @slug    = Asgard::Schedule.project_slug(@project)
     File.write(File.join(@bin, "asgard"), "")
     File.chmod(0o755, File.join(@bin, "asgard"))
     ENV["HOME"] = @tmp
@@ -576,12 +862,12 @@ class TestScheduleCommands < Minitest::Test
     Dir.chdir(@project) { Asgard::Schedule::Commands.start(argv) }
   end
 
-  def backend = Asgard::Schedule.backend_class.new(project: "proj", root: File.realpath(@project))
+  def backend = Asgard::Schedule.backend_class.new(project: @slug, root: File.realpath(@project))
 
   def test_asgard_schedule_maps_to_the_subcommand
     Asgard::Schedule::Commands._reset_ran! # each task runs once per process; an earlier test may have run `list`
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[schedule list]) } }
-    assert_match "No scheduled tasks installed for proj", out
+    assert_match "No scheduled tasks installed for #{@slug}", out
     assert_match "asgard schedule list --all", out
   end
 
@@ -644,9 +930,10 @@ class TestScheduleCommands < Minitest::Test
     refute_match "elsewhere", out
 
     out, = capture_io { schedule("list", "--all") }
-    assert_equal ["Project: elsewhere (#{@tmp})", "Project: proj (#{File.realpath(@project)})"], out.lines.grep(/^Project:/).map(&:chomp)
+    assert_equal ["Project: elsewhere (#{@tmp})", "Project: #{@slug} (#{File.realpath(@project)})"],
+                 out.lines.grep(/^Project:/).map(&:chomp)
     assert_match(/^Project: elsewhere .*\n┌.*?│ nightly\s+│ asgard tree\s+│ every 60s/m, out)
-    assert_match(/^Project: proj .*\n┌.*?│ tree\s+│ asgard tree/m, out)
+    assert_match(/^Project: #{@slug} .*\n┌.*?│ tree\s+│ asgard tree/m, out)
     assert_equal 1, out.scan(/^Logs:/).size
 
     File.delete(File.join(@project, ".loki"))
@@ -741,10 +1028,66 @@ class TestScheduleCommands < Minitest::Test
     Asgard::Schedule.declarations.clear
 
     assert_match "stopped tree", capture_io { schedule("stop", "tree") }.first # this project wins a bare name
-    assert disabled?("asgard.proj.tree")
+    assert disabled?("asgard.#{@slug}.tree")
     refute disabled?("asgard.elsewhere.tree")
     assert_match "stopped elsewhere/tree", capture_io { schedule("stop", "elsewhere/tree") }.first
     assert disabled?("asgard.elsewhere.tree")
+  end
+
+  def test_the_project_basename_alone_names_this_project_in_a_prefixed_argument
+    install_elsewhere(also_here: true)
+    Asgard::Schedule.declarations.clear
+
+    assert_match "stopped proj/tree", capture_io { schedule("stop", "proj/tree") }.first
+    assert disabled?("asgard.#{@slug}.tree")
+    refute disabled?("asgard.elsewhere.tree")
+  end
+
+  # S2: entries of a project that moved or was deleted keep firing; they
+  # must be removable by project/name, and prune removes them all.
+  def install_gone(name = :tree)
+    gone = File.join(@tmp, "gone")
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone)
+                    .install(Asgard::Schedule.normalize(name, every: 60), asgard: File.join(@bin, "asgard"), direnv: nil)
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone)
+  end
+
+  def test_regression_s2_remove_takes_another_projects_entry
+    gone = install_gone
+    out, = capture_io { schedule("remove", "gone/tree") }
+    assert_match "removed gone/tree", out
+    assert_empty gone.installed_names
+  end
+
+  def test_regression_s2_prune_removes_only_entries_whose_root_is_gone
+    gone = install_gone
+    install_elsewhere # its root, @tmp, exists
+    out, = capture_io { schedule("prune", "--dry-run") }
+    assert_match "would remove gone/tree", out
+    assert_equal ["tree"], gone.installed_names, "a dry run removes nothing"
+    out, = capture_io { schedule("prune") }
+    assert_match "removed gone/tree", out
+    refute_match "elsewhere", out
+    assert_empty gone.installed_names
+    assert_equal ["tree"], Asgard::Schedule.backend_class.new(project: "elsewhere", root: @tmp).installed_names
+    out, = capture_io { schedule("prune") }
+    assert_match "Nothing to prune", out
+  end
+
+  def test_regression_s2_orphaned_entries_is_pure
+    entries = [%w[a x], %w[b y], %w[c z]]
+    dirs    = { %w[a x] => "/exists", %w[b y] => "/gone", %w[c z] => nil }
+    assert_equal [%w[b y]], Asgard::Schedule.orphaned_entries(entries, directory_of: ->(slug, name) { dirs[[slug, name]] },
+                                                                          exists: ->(dir) { dir == "/exists" })
+  end
+
+  def test_list_all_flags_a_project_whose_directory_is_gone
+    spec = Asgard::Schedule.normalize(:tree, every: 60)
+    gone = File.join(@tmp, "gone")
+    Asgard::Schedule.backend_class.new(project: "gone", root: gone).install(spec, asgard: File.join(@bin, "asgard"), direnv: nil)
+    out, = capture_io { schedule("list", "--all") }
+    assert_match "Project: gone (#{gone}) [root missing]", out
+    refute_match "#{@slug} (#{File.realpath(@project)}) [root missing]", out
   end
 
   def test_a_bare_name_found_in_several_other_projects_is_ambiguous
@@ -770,7 +1113,7 @@ class TestScheduleCommands < Minitest::Test
 
   def test_remove_with_nothing_installed
     out, = capture_io { schedule("remove") }
-    assert_match "No scheduled tasks installed for proj.", out
+    assert_match "No scheduled tasks installed for #{@slug}.", out
   end
 end
 
@@ -815,9 +1158,22 @@ class TestScheduleTable < Minitest::Test
     assert_equal 90, tight.total_width
   end
 
+  def test_table_draws_a_one_row_table_at_its_natural_widths
+    headers = %w[JOB TASK PID STATUS STARTED COMMAND]
+    keys    = %i[name task pid state started command]
+    row     = { name: "jtdb", task: "jobs_test_db", pid: 63_962, state: "running", started: "2026-10-24 15:55:48", command: "sleep 30" }
+    table   = SD::Table.new([row], color: false, width: 120, headers:, keys:, flexible: [5])
+    out     = table.render
+    assert_equal [6, 14, 7, 9, 21, 10], table.column_widths, "content plus a space either side"
+    assert_equal 5, out.lines.size, "nothing wraps: top, header, rule, one row, bottom"
+    assert_match(/│ jtdb │ jobs_test_db │ 63962 │ running │ 2026-10-24 15:55:48 │ sleep 30 │/, out)
+  end
+
   def test_table_colors_only_on_request
     rows = [{ name: "a", command: "c", schedule: "s", state: "active", last_exit: "1" }]
     assert_includes SD::Table.new(rows, color: true, width: 100).render, "\e[31m1"
+    killed = [{ **rows.first, last_exit: "signal 15 (Terminated)" }]
+    assert_includes SD::Table.new(killed, color: true, width: 100).render, "\e[31msignal"
   end
 
   def test_terminal_width_for_non_tty_uses_columns_then_default
@@ -825,5 +1181,80 @@ class TestScheduleTable < Minitest::Test
     assert_equal 120, SD::Table.terminal_width(io, env: {})
     assert_equal 90,  SD::Table.terminal_width(io, env: { "COLUMNS" => "90" })
     assert_equal 120, SD::Table.terminal_width(io, env: { "COLUMNS" => "wide" })
+  end
+end
+
+# Project slugs: the basename plus a hash of the real path, and the matching
+# that lets a `project/name` argument name a project by basename alone.
+class TestScheduleProjectSlug < Minitest::Test
+  def test_project_slug_is_the_basename_plus_a_hash_of_the_real_path
+    Dir.mktmpdir do |dir|
+      real = File.realpath(dir)
+      slug = Asgard::Schedule.project_slug(dir)
+      assert_match(/\A#{Regexp.escape(File.basename(real).downcase)}-\h{8}\z/, slug)
+      assert_equal slug, Asgard::Schedule.project_slug(real), "the same path, however spelled, gives one slug"
+      Dir.mktmpdir do |other|
+        link = File.join(other, "link")
+        File.symlink(real, link)
+        assert_equal slug, Asgard::Schedule.project_slug(link), "a symlink to the project gives the project's slug"
+      end
+    end
+  end
+
+  def test_same_basename_in_two_directories_gives_two_slugs
+    Dir.mktmpdir do |a|
+      Dir.mktmpdir do |b|
+        FileUtils.mkdir_p [File.join(a, "api"), File.join(b, "api")]
+        refute_equal Asgard::Schedule.project_slug(File.join(a, "api")), Asgard::Schedule.project_slug(File.join(b, "api"))
+      end
+    end
+  end
+
+  def test_project_match_takes_the_whole_slug_or_the_basename
+    assert Asgard::Schedule.project_match?("api-9f3a1c2b", "api-9f3a1c2b")
+    assert Asgard::Schedule.project_match?("api-9f3a1c2b", "api")
+    refute Asgard::Schedule.project_match?("api-9f3a1c2b", "ap")
+    refute Asgard::Schedule.project_match?("api-9f3a1c2b", "api-9f3a1c2c")
+    assert Asgard::Schedule.project_match?("elsewhere", "elsewhere"), "an entry from before the hash still matches by its slug"
+  end
+end
+
+# The helpers schedule and watch share, and the backends' job-file reading.
+class TestSharedDeclarationHelpers < Minitest::Test
+  def test_record_stores_an_entry_and_ignores_an_identical_one
+    declarations = {}
+    spec = { name: "lint", task: "lint" }
+    assert_equal spec, Asgard::Declarations.record(declarations, spec, "watch")
+    Asgard::Declarations.record(declarations, spec.dup, "watch")
+    assert_equal({ "lint" => spec }, declarations)
+  end
+
+  def test_record_refuses_a_different_entry_under_the_same_name
+    declarations = { "lint" => { name: "lint", every: 60 } }
+    error = assert_raises(ArgumentError) { Asgard::Declarations.record(declarations, { name: "lint", every: 120 }, "schedule") }
+    assert_equal 'schedule: "lint" is already declared; give one a distinct as: name', error.message
+  end
+
+  def test_job_file_entries_split_project_and_name
+    paths = %w[/a/asgard.api-9f3a1c2b.report.timer /a/asgard.web-1a2b3c4d.sync.timer /a/asgard.loose.timer]
+    assert_equal [%w[api-9f3a1c2b report], %w[web-1a2b3c4d sync]],
+                 Asgard::Schedule::JobFiles.entries(paths, prefix: "asgard", ext: ".timer")
+  end
+
+  def test_job_file_entries_in_globs_the_directory
+    Dir.mktmpdir do |dir|
+      %w[asgard.p.one.timer asgard.p.two.timer asgard.p.one.service other.timer].each { FileUtils.touch(File.join(dir, it)) }
+      assert_equal [%w[p one], %w[p two]], Asgard::Schedule::JobFiles.entries_in(dir, prefix: "asgard", ext: ".timer")
+    end
+  end
+
+  def test_job_file_directory_reads_with_the_parser_or_is_nil
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "job")
+      parser = ->(text) { text[/^WorkingDirectory=(.*)$/, 1] }
+      assert_nil Asgard::Schedule::JobFiles.directory(path, parser)
+      File.write(path, "WorkingDirectory=/proj\n")
+      assert_equal "/proj", Asgard::Schedule::JobFiles.directory(path, parser)
+    end
   end
 end

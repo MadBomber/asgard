@@ -834,6 +834,40 @@ end
 
 ---
 
+## Tips
+
+- **Start from working files.** The task files at this repository's root (`.loki`, `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`) are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and a deliberate override for `--doctor`. Copy what fits.
+
+- **More examples.** [MadBomber/dev](https://github.com/MadBomber/dev) holds shared `.loki` libraries used across many repos: gem, git, Rails quality, schedule, status report and iTerm tasks. The [examples directory](examples/) here has one small file per feature.
+
+- **One setup for every project.** Put the tasks, shells and helpers you want everywhere in `~/.loki`, then start each project's `.loki` with `import "~/.loki"`. Outside any project the same file is found by the walk up the tree, so those tasks work in any directory.
+
+- **Give busy tasks a short name with `map`.** `map "t" => "test"` stays stable when a later task would otherwise make the prefix `t` ambiguous. Thor's prefix matching is handy; an alias is dependable.
+
+- **Make bare `asgard` do the common thing.** `default_task :test` (or `:quality`, as this repo does) saves typing on the task you run most.
+
+- **Flags go after the task name.** `asgard build --verbose` runs the task; `asgard --verbose build` prints the help for `build`. Only `--version` and `--doctor` go first.
+
+- **See the tasks by file with `asgard --doctor`.** It lists every `.loki` file that loaded and, under each, the tasks that file defines with their line numbers, plus which `.loki` won the walk up the tree, what every `import` loaded, tasks hidden because they lack a `desc`, and definitions silently replaced by a later one. It works even when the `.loki` will not load.
+
+- **See the commands as a tree with `asgard tree`.** Every command with its description, each subcommand group expanded under its own heading, header and footer included. `help` shows what you can type; `tree` shows how it is organised.
+
+- **Keep helpers out of the command list.** A public method without a `desc` is a hidden task: it runs from the command line and as a dependency. Make helpers `private`, wrap them in `no_commands`, or define them with `helper`.
+
+- **Pass results, not instance variables.** Parallel dependencies each run on their own copy of the task object, so an `@ivar` set in one never reaches the task that depends on it. Return a value and read it with `dep_result(:name)` or `dep_results`; [`examples/bad.loki`](examples/bad.loki) shows the trap.
+
+- **Let gates report, let guards stop.** A quality gate returns `:fail` so every gate runs and the summary shows all failures at once. A guard such as [`examples/confirm.loki`](examples/confirm.loki) raises `Asgard::Error` so nothing after it runs. A dependency's return value never stops its dependent; only an exit, `abort` or `raise` does.
+
+- **Name shell configurations, not shells.** The name you give `shell` is yours: `shell :strict, "bash -eu -o pipefail"` names a bash configuration that stops at the first failing line, and `shell :uv, "uv run --script", ext: ".py"` names a way of running Python. `sh` and `shebang` take a name as an optional first argument (`sh :strict, "..."`); without one they run the `default_shell`, so `default_shell :strict` makes every plain `sh` fail fast.
+
+- **Prefer `background: true` to a trailing `&`.** A managed job gets a name, a log and `asgard jobs stop`; a process detached with `&` leaves no record and must be found with `ps`.
+
+- **Import conditionally.** `.loki` is plain Ruby: `import "quality_rails.loki" if ENV["RAILS_ROOT"]` keeps Rails-only gates out of non-Rails projects, and a block-form `depends_on` picks up whatever `*_check` tasks are loaded.
+
+- **Trace loading when something is missing.** `RUBYOPT=-w asgard help` prints each file as `import` loads it; `ASGARD_TRACE=1` turns a one-line load error into the full backtrace with Ruby's "Did you mean?" hint.
+
+---
+
 ## Development
 
 ```bash

@@ -3,13 +3,19 @@
 unless defined?(SimpleCov)
   require "simplecov"
   SimpleCov.start do
-    add_filter "/test/"
+    skip "/test/"
     minimum_coverage 95
   end
 end
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "asgard"
+
+# Schedule::Table requires tty-table lazily, and its unicode_utils prints
+# Ruby warnings to $stderr on load. Loaded here, before parallel_runner
+# forks, so no test's capture_io catches them.
+require "tty-table"
+require "tty-screen"
 
 require "minitest/autorun"
 

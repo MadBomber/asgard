@@ -27,6 +27,11 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y zsh
 
+      # archspec's rubydex builds a Rust extension that can require a
+      # newer rustc than the runner image ships.
+      - name: Update Rust
+        run: rustup update stable && rustup default stable
+
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}

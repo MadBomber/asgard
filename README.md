@@ -860,6 +860,8 @@ end
 
 - **Name shell configurations, not shells.** The name you give `shell` is yours: `shell :strict, "bash -eu -o pipefail"` names a bash configuration that stops at the first failing line, and `shell :uv, "uv run --script", ext: ".py"` names a way of running Python. `sh` and `shebang` take a name as an optional first argument (`sh :strict, "..."`); without one they run the `default_shell`, so `default_shell :strict` makes every plain `sh` fail fast.
 
+- **An AI agent is just another shell.** Register a coding agent's CLI with `shell` and a heredoc becomes the prompt: [`examples/robots/.loki`](examples/robots/.loki) wires up `claude -p` in one line, and its `ask` task sends a prompt with a plain `sh :claude, <<~PROMPT`. Any agent that reads a prompt from stdin fits the same way, so a task can review a diff, draft release notes or explain a failing test alongside the tasks that run them.
+
 - **Prefer `background: true` to a trailing `&`.** A managed job gets a name, a log and `asgard jobs stop`; a process detached with `&` leaves no record and must be found with `ps`.
 
 - **Import conditionally.** `.loki` is plain Ruby: `import "quality_rails.loki" if ENV["RAILS_ROOT"]` keeps Rails-only gates out of non-Rails projects, and a block-form `depends_on` picks up whatever `*_check` tasks are loaded.

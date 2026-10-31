@@ -2688,7 +2688,9 @@ reinstalled after.</p>
 <li><strong>Schedule entry names from <code>options:</code> can carry a hash.</strong> When an
   option is not plain lowercase words, or the name passes 64 characters,
   an 8-character hash is added, so <code>--period=week</code> and <code>--period week</code> no
-  longer collide. <code>asgard schedule install</code> moves such entries to their
+  longer collide. Two different commands whose names still slug alike
+  (<code>--period week</code> and <code>period week</code>) both take a hashed name.
+  <code>asgard schedule install</code> moves such entries to their
   new names. <code>every:</code> together with <code>on:</code> is now an error instead of
   ignoring <code>on:</code>.</li>
 <li><strong>Watcher ignores and patterns.</strong> <code>.git</code>, <code>.hg</code>, <code>.svn</code> and
@@ -2717,6 +2719,9 @@ reinstalled after.</p>
 <li><strong><code>asgard help jobs</code>, <code>help schedule</code> and <code>help watcher</code></strong> list their
   subcommands.</li>
 <li><strong>CI</strong> on Linux and macOS, Ruby 4.0.9 and 4.1.0-preview1.</li>
+<li><strong>Runtime dependencies are bounded</strong> to the versions asgard is built
+  against: <code>thor ~&gt; 1.5</code>, <code>listen ~&gt; 3.10</code>, <code>ractor_queue ~&gt; 0.2</code>,
+  <code>dotenv ~&gt; 3.2</code>, <code>tty-table ~&gt; 0.12</code> and <code>tsort ~&gt; 0.2</code>.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>

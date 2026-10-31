@@ -2091,14 +2091,16 @@ these names are now refused:</p>
 <td><code>sh</code>, <code>shebang</code>, <code>env</code>, <code>import</code>, <code>import_up</code>, <code>loki_up</code>, <code>changes</code>, <code>debug?</code>, <code>verbose?</code>, <code>dep_result</code>, <code>dep_results</code>, <code>current_task</code></td>
 </tr>
 <tr>
-<td>Names asgard uses to run tasks</td>
-<td><code>invoke_command</code>, <code>acquire_run_token</code>, <code>cached_result</code>, <code>dep_options_for</code>, <code>dep_thread</code>, <code>describe_failure</code>, <code>in_task_frame</code>, <code>next_job_sequence</code>, <code>parallel_instance</code>, <code>raise_dep_failure</code>, <code>raise_group_failure</code>, <code>raw_options</code>, <code>run_dep</code>, <code>run_dep_group</code>, <code>run_deps_for</code>, <code>run_script</code>, <code>shell_missing!</code>, <code>signal_done</code>, <code>start_job</code>, <code>background_job_name</code>, <code>task_frames</code>, <code>with_dep_results</code>, <code>with_options</code></td>
+<td>The method Thor runs every task through</td>
+<td><code>invoke_command</code></td>
 </tr>
 </tbody>
 </table>
+<p>asgard's other internal methods start with <code>_</code>, a prefix that is
+already asgard's own, so they never clash with a name in your <code>.loki</code>.</p>
 <p><strong>What to do:</strong> rename the method. The error names the file and line.
-A helper of your own that happened to share a name, such as <code>run_script</code>
-or <code>start_job</code>, only needs a new name and its callers updated.</p>
+A helper of your own that happened to share a name, such as <code>env</code> or
+<code>changes</code>, only needs a new name and its callers updated.</p>
 <p>An <code>invoke_command</code> that wrapped every task has no direct replacement.
 Move the work it did into the tasks that need it, or into a task of its
 own that the others name with <code>depends_on</code>:</p>

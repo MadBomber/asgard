@@ -1472,6 +1472,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#reserved-names-invoke_command-and-asgards-other-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reserved names: invoke_command and asgard's other methods
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1701,6 +1712,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#reserved-names-invoke_command-and-asgards-other-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reserved names: invoke_command and asgard's other methods
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1761,6 +1783,9 @@ runs under the shell set with <code>default_shell</code>, one line or many. A <c
 that never calls <code>default_shell</code> gets <code>bash</code>, which must then be on
 <code>PATH</code>. Both are covered at the end of this page,
 starting at <a href="#sh-and-shebang-exec-removed"><code>sh</code> and <code>shebang</code>: <code>exec:</code> removed</a>.
+Methods named after asgard's own, such as <code>invoke_command</code>, are now refused when
+<code>.loki</code> loads; see
+<a href="#reserved-names-invoke_command-and-asgards-other-methods">Reserved names</a>.
 The other changes in the release are listed in the <a href="../changelog/">Changelog</a>.</p>
 <hr />
 <h3 id="what-changed">What Changed<a class="headerlink" href="#what-changed" title="Permanent link">&para;</a></h3>
@@ -2038,6 +2063,63 @@ reads it.</p>
 <li>A missing interpreter is named in the error message and exits 127
   instead of exiting 127 silently.</li>
 </ul>
+<hr />
+<h3 id="reserved-names-invoke_command-and-asgards-other-methods">Reserved names: <code>invoke_command</code> and asgard's other methods<a class="headerlink" href="#reserved-names-invoke_command-and-asgards-other-methods" title="Permanent link">&para;</a></h3>
+<p>Before 0.6.0 a <code>.loki</code> could define a method with the same name as one
+asgard uses itself, and the <code>.loki</code> version silently replaced asgard's.
+From 0.6.0 a task or helper with such a name is refused while the <code>.loki</code>
+loads, and asgard exits 1 before running anything:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard: 'invoke_command' at /proj/.loki:6 is an asgard helper and cannot be a task or helper; rename it
+</span></code></pre></div>
+<p>This applies whether the method is a task or a helper inside <code>no_commands</code>.
+The most common case in older <code>.loki</code> files is <code>invoke_command</code>, defined
+to run code around every task (timing, logging, a banner) and then call
+<code>super</code>. That worked in 0.5 and is refused in 0.6.0.</p>
+<p>Besides the names Thor reserves (<code>run</code>, <code>shell</code>, <code>options</code>, <code>invoke</code>,
+<code>args</code> and the rest listed in <a href="../tasks/#reserved-names">Reserved Names</a>),
+these names are now refused:</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Helpers a task body calls</td>
+<td><code>sh</code>, <code>shebang</code>, <code>env</code>, <code>import</code>, <code>import_up</code>, <code>loki_up</code>, <code>changes</code>, <code>debug?</code>, <code>verbose?</code>, <code>dep_result</code>, <code>dep_results</code>, <code>current_task</code></td>
+</tr>
+<tr>
+<td>Names asgard uses to run tasks</td>
+<td><code>invoke_command</code>, <code>acquire_run_token</code>, <code>cached_result</code>, <code>dep_options_for</code>, <code>dep_thread</code>, <code>describe_failure</code>, <code>in_task_frame</code>, <code>next_job_sequence</code>, <code>parallel_instance</code>, <code>raise_dep_failure</code>, <code>raise_group_failure</code>, <code>raw_options</code>, <code>run_dep</code>, <code>run_dep_group</code>, <code>run_deps_for</code>, <code>run_script</code>, <code>shell_missing!</code>, <code>signal_done</code>, <code>start_job</code>, <code>background_job_name</code>, <code>task_frames</code>, <code>with_dep_results</code>, <code>with_options</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to do:</strong> rename the method. The error names the file and line.
+A helper of your own that happened to share a name, such as <code>run_script</code>
+or <code>start_job</code>, only needs a new name and its callers updated.</p>
+<p>An <code>invoke_command</code> that wrapped every task has no direct replacement.
+Move the work it did into the tasks that need it, or into a task of its
+own that the others name with <code>depends_on</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># before: ran before every task</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">no_commands</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">invoke_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="n">command</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="k">super</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="k">end</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="c1"># from 0.6.0</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"banner"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Print the run banner"</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">banner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:banner</span>
+</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"build"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Build the project"</span>
+</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"make"</span>
+</span></code></pre></div>
+<p>A dependency runs once per <code>asgard</code> invocation, so <code>banner</code> prints once
+however many tasks depend on it.</p>
 
 
 

@@ -169,5 +169,6 @@ nav:
       - Command Reference: commands.md
       - Files & Directories: files.md
       - Examples: examples.md
+  - Tips: tips.md
   - Breaking Changes: breaking-changes.md
   - Changelog: changelog.md

@@ -868,6 +868,8 @@ end
 
 - **Trace loading when something is missing.** `RUBYOPT=-w asgard help` prints each file as `import` loads it; `ASGARD_TRACE=1` turns a one-line load error into the full backtrace with Ruby's "Did you mean?" hint.
 
+More tips live in the manual at [Tips](https://madbomber.github.io/asgard/tips/).
+
 ---
 
 ## Development

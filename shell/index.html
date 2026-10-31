@@ -2172,7 +2172,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>asgard<span class="w"> </span>doc_server
 </span></code></pre></div>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>mkdocs serve
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>started doc_server-1 (pid 48213), log: ~/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>started doc_server-1 (pid 48213), log: /Users/you/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
 </span></code></pre></div>
 <p>A trailing <code>&amp;</code> in a script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal. You stop it yourself with <code>ps</code> and <code>kill</code>. Use <code>background:</code> for anything you expect to come back to. The whole story, including naming rules, the commands and the files on disk, is on the <a href="../jobs/">Background Jobs</a> page.</p>
 <hr />

@@ -2337,7 +2337,7 @@
 </tr>
 <tr>
 <td><code>gem_tasks.loki</code></td>
-<td><code>console</code>, <code>build</code>, <code>install</code> and <code>release</code>, each depending on <code>quality</code></td>
+<td><code>console</code>, plus <code>build</code> (depends on <code>quality</code>), <code>install</code> (depends on <code>build</code>) and <code>release</code> (depends on <code>build</code>, after checking the branch is <code>main</code>)</td>
 </tr>
 <tr>
 <td><code>git.loki</code></td>

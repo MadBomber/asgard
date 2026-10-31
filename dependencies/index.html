@@ -2141,7 +2141,7 @@
 <li><strong>A failing <code>sh</code> or <code>shebang</code></strong> ends asgard with the command's exit status. This is the usual case, and it needs no code: <code>asgard release</code> with a failing test suite exits with the test runner's status.</li>
 <li><strong><code>abort "message"</code></strong> prints the message to standard error and exits 1.</li>
 <li><strong><code>exit 2</code></strong>, or any other non-zero code, exits with that code.</li>
-<li><strong><code>raise Asgard::Error, "message"</code></strong> prints <code>asgard: message</code> and exits 1. Any other exception is reported with its class and exits 1.</li>
+<li><strong><code>raise Asgard::Error, "message"</code></strong> prints <code>asgard: message</code> and exits 1. Any other exception prints Ruby's usual message and backtrace, and exits 1.</li>
 </ul>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Refuse to deploy from a dirty tree"</span>

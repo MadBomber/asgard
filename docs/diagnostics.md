@@ -55,13 +55,15 @@ Usage:
   asgard deploy ENV
 
 Options:
-  -b, [--branch=BRANCH]          # Git branch to deploy
-                                 # Default: main
+  -b, [--branch=BRANCH]                              # Git branch to deploy
+                                                     # Default: main
   -n, [--dry-run], [--no-dry-run], [--skip-dry-run]  # Print commands without running
-  [--debug]                      # Enable debug mode ($DEBUG = true)
+                                                     # Default: false
+      [--debug]                                      # Enable debug mode ($DEBUG = true)
+                                                     # Default: false
   ...
 
-Deploy ENV
+Deploy to ENV
 ```
 
 Per-task help does not show the header or footer. For a subcommand group, `asgard help db`, `asgard db help` and `asgard db help migrate` all work; see [Subcommands](subcommands.md#help-for-a-group).
@@ -241,7 +243,7 @@ No problems found (1 warning(s)).
 
 **Tasks by file** lists every loaded file and, under each, the tasks it defines in line order, as `name file:line`, a form most editors can jump to. A file that defines no tasks says `(no tasks defined — imports only)`. When the project has [subcommand](subcommands.md) classes, the listing repeats once per class under headings such as `Tasks by file (DocCommands):` and `Tasks by file (Tasks):`. Each section still lists every loaded file, so a file whose tasks all belong to another class shows the imports-only note in this one. Two notes can follow a task:
 
-- `hidden (no desc; not shown by help)`: a public method without a `desc`. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it `private`, put it in `no_commands`, or use `helper`. See [Defining Tasks](tasks.md#hidden-tasks).
+- `hidden (no desc; not shown by help)`: a public method without a `desc`, or one described with `desc "...", hide: true`. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it `private`, put it in `no_commands`, or use `helper`. See [Defining Tasks](tasks.md#hidden-tasks).
 - `OVERRIDDEN by file:line — never callable` and `active — redefines file:line`: the same task name defined twice. Only the last definition exists; the earlier one is dead. Each overridden task counts as one problem in the summary.
 
 The summary line is `No problems found.`, `No problems found (N warning(s)).` or `N problem(s), M warning(s).`
@@ -290,17 +292,19 @@ Tasks by file (Tasks):
     xyzzy  .loki:26   active — redefines xyzzy.loki:6
 
   quality.loki
-    test_check           quality.loki:11
-    test_verbose         quality.loki:14
-    parallel_test        quality.loki:21
-    quality              quality.loki:37
+    test_check           quality.loki:17
+    test_verbose         quality.loki:20
+    parallel_test        quality.loki:27
+    quality              quality.loki:43
+    quality_board        quality.loki:53   hidden (no desc; not shown by help)
     ...
 
   gem_tasks.loki
-    console  gem_tasks.loki:6
-    build    gem_tasks.loki:16
-    install  gem_tasks.loki:24
-    release  gem_tasks.loki:31
+    console      gem_tasks.loki:6
+    build        gem_tasks.loki:16
+    install      gem_tasks.loki:24
+    main_branch  gem_tasks.loki:30   hidden (no desc; not shown by help)
+    release      gem_tasks.loki:39
 
   git.loki
     push   git.loki:6

@@ -64,6 +64,7 @@ Each `<slug>` directory is created readable by its owner only (mode 0700), becau
 | `declarations.json` | The `watch` declarations recorded at `start`, which `list --all` shows for other projects |
 | `entries/<name>.json` | One record per entry with its last run: pid, status, duration, finish time |
 | `changes/<name>-<n>.json` | A change list too large for the environment, handed to the task through `ASGARD_CHANGES_FILE` |
+| `pending.json` | Briefly, during a reload: triggers that arrived while the watcher waited, for the restarted watcher to run |
 | `root` | The project directory |
 
 See [Watched Files](watch.md#files-and-logs).

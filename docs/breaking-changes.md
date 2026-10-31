@@ -101,7 +101,7 @@ stop` waits for any running task, then prints `stopped watcher for
 **3. Check that nothing is left:**
 
 ```bash
-asgard schedule list --all   # No scheduled tasks installed
+asgard schedule list --all   # No scheduled tasks installed (launchd).
 asgard watcher list --all    # every project shows DAEMON stopped
 ```
 

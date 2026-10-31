@@ -113,7 +113,9 @@ end
 ```
 
 ```bash
-asgard help | head -3
+asgard help
+# asgard v0.6.0 The Mighty Thor and Loki working for you
+#
 # myapp v1.4.0
 # ...
 asgard show_version

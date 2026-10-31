@@ -254,7 +254,7 @@ Make the dependency stop the run when it fails. Any of these does it:
 - **A failing `sh` or `shebang`** ends asgard with the command's exit status. This is the usual case, and it needs no code: `asgard release` with a failing test suite exits with the test runner's status.
 - **`abort "message"`** prints the message to standard error and exits 1.
 - **`exit 2`**, or any other non-zero code, exits with that code.
-- **`raise Asgard::Error, "message"`** prints `asgard: message` and exits 1. Any other exception is reported with its class and exits 1.
+- **`raise Asgard::Error, "message"`** prints `asgard: message` and exits 1. Any other exception prints Ruby's usual message and backtrace, and exits 1.
 
 ```ruby
 class Tasks

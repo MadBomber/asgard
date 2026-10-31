@@ -660,6 +660,7 @@ asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule log NAME [-f]  # print (or follow) the entry's log
 asgard schedule remove [NAME]  # remove one entry, or all of this project's
+asgard schedule prune [-n]     # remove every project's entries whose directory is gone (-n: list only)
 ```
 
 `stop`, `start`, `trigger`, `log` and `remove` also take an entry of another project
@@ -815,7 +816,7 @@ class Tasks
 end
 ```
 
-In a single-file project, `.loki` can be completely empty: its presence alone marks the project root. In a multi-file project, add at least an `import` call.
+`.loki` is the only file asgard loads on its own, so in a single-file project it holds the tasks. In a multi-file project it needs at least the `import` calls that load the others, and may hold nothing else.
 
 ### Explicit loading
 

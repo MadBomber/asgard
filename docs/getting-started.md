@@ -96,9 +96,13 @@ Commands:
 
 Options:
   [--debug]    # Enable debug mode ($DEBUG = true)
+               # Default: false
   [--verbose]  # Enable verbose output ($VERBOSE = true)
+               # Default: false
   [--version]  # Show asgard version and exit
+               # Default: false
   [--doctor]   # Diagnose .loki resolution, imports, and task definitions for the CWD, then exit
+               # Default: false
 
 Documentation ... https://madbomber.github.io/asgard
 Github Repo ..... https://github.com/MadBomber/asgard
@@ -118,6 +122,7 @@ Usage:
 
 Options:
   [--debug]    # Enable debug mode ($DEBUG = true)
+               # Default: false
   ...
 
 Say hello to the world

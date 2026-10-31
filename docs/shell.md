@@ -367,7 +367,7 @@ asgard doc_server
 
 ```
 mkdocs serve
-started doc_server-1 (pid 48213), log: ~/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
+started doc_server-1 (pid 48213), log: /Users/you/.local/state/asgard/jobs/asgard-5d41402a/doc_server-1.log
 ```
 
 A trailing `&` in a script is not a managed job. The shell detaches the process and exits, asgard reports success and keeps no record, and the process runs on with its output still in your terminal. You stop it yourself with `ps` and `kill`. Use `background:` for anything you expect to come back to. The whole story, including naming rules, the commands and the files on disk, is on the [Background Jobs](jobs.md) page.

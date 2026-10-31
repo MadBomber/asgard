@@ -468,7 +468,7 @@ end
 |---|---|
 | `quality.loki` | One `*_check` task per quality tool (tests, RuboCop, Flog, Flay, Reek, typos, ...) and a `quality` task whose block-form `depends_on` runs every `*_check` in parallel and prints a summary from their results |
 | `quality_rails.loki` | Rails-only checks (Brakeman and friends), loaded only when `RAILS_ROOT` is set; `quality` picks them up with nothing else to change |
-| `gem_tasks.loki` | `console`, `build`, `install` and `release`, each depending on `quality` |
+| `gem_tasks.loki` | `console`, plus `build` (depends on `quality`), `install` (depends on `build`) and `release` (depends on `build`, after checking the branch is `main`) |
 | `git.loki` | `push`, `pull` and `fetch` |
 | `doc_tasks.loki` | The `doc` subcommand group for an MkDocs or Bridgetown site: `doc install`, `doc build`, `doc serve` (a background job) and `doc open`, each depending on the one before |
 | `xyzzy.loki` | A `xyzzy` task that `.loki` deliberately redefines, so `asgard --doctor` has an override to report |

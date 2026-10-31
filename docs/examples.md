@@ -22,7 +22,7 @@ import "*.loki"                      # every sibling task file, alphabetically
 import "subdir/import_demo.loki"     # one file from a subdirectory
 ```
 
-Three examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad` and `watcher_examples`.
+Three examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad` and `watcher_examples`. `subdir/` has a `.loki` of its own as well, so it works both as part of `examples/` and on its own.
 
 !!! note
     `concurrent.loki` exists to be run, not read: its point is output that changes from run to run.
@@ -400,6 +400,9 @@ class Tasks
 
   watch :test_check, paths: %w[lib test], only: /\.rb\z/   # rerun the tests on save
 
+  desc "xyzzy"                                             # redefines xyzzy.loki's task, for --doctor
+  def xyzzy = puts "everything in Ruby metaprogramming is magic"
+
   helper(:project_version) do
     @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
   end
@@ -416,14 +419,18 @@ end
 
 ### `quality.loki`
 
-The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, prints one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads every result at once with `dep_results`, and prints a summary table; it aborts only when a gate returned `:fail`.
+The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, reports one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads every result at once with `dep_results`, and prints a summary table; it aborts only when a gate returned `:fail`. The first stage of its dependency list is `quality_board`, a hidden task that draws one spinner row per gate when standard output is a terminal, so each gate fills in its own row as it finishes; without a terminal, each gate prints its summary line instead.
 
 ```ruby
+# Every *_check task, in the order the summary lists them.
+def self.quality_checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
+
 desc "Run every *_check quality gate task in parallel"
-depends_on -> { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }
+depends_on -> { [:quality_board, quality_checks] }
 def quality
-  results = dep_results.sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
-  print_quality_summary(results)
+  results = dep_results.except(:quality_board).sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
+
+  print_quality_summary(results, rows: QUALITY_BOARD.empty?)
 end
 ```
 
@@ -434,10 +441,10 @@ desc "Report code smells with Reek (advisory: warns, never fails)"
 def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
 ```
 
-Because a `*_check` task returns `:fail` rather than exiting, every gate runs to the end and the summary shows all failures at once. Run alone (`asgard rubocop_check`), a gate that returns `:fail` still makes asgard exit 1.
+Because a `*_check` task returns `:fail` rather than exiting, every gate runs to the end and the summary shows all failures at once. Run alone (`asgard rubocop_check`), a gate that returns `:fail` still makes asgard exit 1. Piped, or anywhere standard output is not a terminal, the run looks like this:
 
 ```bash
-asgard quality
+asgard quality | cat
 ```
 
 ```
@@ -601,7 +608,7 @@ The group's `install` and `build` don't clash with the top-level ones in `gem_ta
 
 ### `xyzzy.loki`
 
-Defines a `xyzzy` task; `.loki`, loaded after it, defines `xyzzy` again. The first definition is silently dead, and `asgard --doctor` says so:
+Defines a `xyzzy` task; `.loki` imports the file and then, further down, defines `xyzzy` again. The first definition is silently dead, and `asgard --doctor` says so:
 
 ```
   .loki

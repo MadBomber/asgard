@@ -493,7 +493,7 @@ end
 asgard: 'run' at /proj/.loki:3 is a name Thor reserves and cannot be a task or helper; rename it
 ```
 
-The reserved names are the ones Thor uses internally, among them `run`, `shell`, `options`, `invoke`, `args`, `action`, `behavior`, `root`, `inside`, `in_root`, `create_file`, `add_file` and `run_ruby_script`, and the helpers asgard gives every task body: `sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `debug?`, `verbose?`, `dep_result`, `dep_results` and `current_task`. A task named `sh` would otherwise replace the helper, and every other task's `sh` would quietly run it instead:
+The reserved names are the ones Thor uses internally, among them `run`, `shell`, `options`, `invoke`, `args`, `action`, `behavior`, `root`, `inside`, `in_root`, `create_file`, `add_file` and `run_ruby_script`, and the helpers asgard gives every task body: `sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `debug?`, `verbose?`, `dep_result`, `dep_results`, `current_task` and `invoke_command`. A task named `sh` would otherwise replace the helper, and every other task's `sh` would quietly run it instead:
 
 ```
 asgard: 'sh' at /proj/.loki:3 is an asgard helper and cannot be a task or helper; rename it

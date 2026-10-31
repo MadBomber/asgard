@@ -16,6 +16,9 @@ runs under the shell set with `default_shell`, one line or many. A `.loki`
 that never calls `default_shell` gets `bash`, which must then be on
 `PATH`. Both are covered at the end of this page,
 starting at [`sh` and `shebang`: `exec:` removed](#sh-and-shebang-exec-removed).
+Methods named after asgard's own, such as `invoke_command`, are now refused when
+`.loki` loads; see
+[Reserved names](#reserved-names-invoke_command-and-asgards-other-methods).
 The other changes in the release are listed in the [Changelog](changelog.md).
 
 ---
@@ -332,3 +335,59 @@ reads it.
   shell would. It used to raise a `TypeError` from a nil exit status.
 - A missing interpreter is named in the error message and exits 127
   instead of exiting 127 silently.
+
+---
+
+### Reserved names: `invoke_command` and asgard's other methods
+
+Before 0.6.0 a `.loki` could define a method with the same name as one
+asgard uses itself, and the `.loki` version silently replaced asgard's.
+From 0.6.0 a task or helper with such a name is refused while the `.loki`
+loads, and asgard exits 1 before running anything:
+
+```
+asgard: 'invoke_command' at /proj/.loki:6 is an asgard helper and cannot be a task or helper; rename it
+```
+
+This applies whether the method is a task or a helper inside `no_commands`.
+The most common case in older `.loki` files is `invoke_command`, defined
+to run code around every task (timing, logging, a banner) and then call
+`super`. That worked in 0.5 and is refused in 0.6.0.
+
+Besides the names Thor reserves (`run`, `shell`, `options`, `invoke`,
+`args` and the rest listed in [Reserved Names](tasks.md#reserved-names)),
+these names are now refused:
+
+| Kind | Names |
+|---|---|
+| Helpers a task body calls | `sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `debug?`, `verbose?`, `dep_result`, `dep_results`, `current_task` |
+| Names asgard uses to run tasks | `invoke_command`, `acquire_run_token`, `cached_result`, `dep_options_for`, `dep_thread`, `describe_failure`, `in_task_frame`, `next_job_sequence`, `parallel_instance`, `raise_dep_failure`, `raise_group_failure`, `raw_options`, `run_dep`, `run_dep_group`, `run_deps_for`, `run_script`, `shell_missing!`, `signal_done`, `start_job`, `background_job_name`, `task_frames`, `with_dep_results`, `with_options` |
+
+**What to do:** rename the method. The error names the file and line.
+A helper of your own that happened to share a name, such as `run_script`
+or `start_job`, only needs a new name and its callers updated.
+
+An `invoke_command` that wrapped every task has no direct replacement.
+Move the work it did into the tasks that need it, or into a task of its
+own that the others name with `depends_on`:
+
+```ruby
+# before: ran before every task
+no_commands do
+  def invoke_command(command, *args)
+    puts "== #{command.name}"
+    super
+  end
+end
+
+# from 0.6.0
+desc "banner", "Print the run banner"
+def banner = puts "== #{ARGV.first}"
+
+depends_on :banner
+desc "build", "Build the project"
+def build = sh "make"
+```
+
+A dependency runs once per `asgard` invocation, so `banner` prints once
+however many tasks depend on it.

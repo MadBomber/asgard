@@ -10,6 +10,7 @@ gemspec  # declares the production gems
 
 gem "archspec"       # Architecture linter for Ruby and Rails.
 gem "bundler-audit"  # Patch-level verification for Bundler
+gem "exhale"         # Contraction checks: fails while the code holds duplication the Contract does not keep
 gem "fasterer"       # Run Ruby more than fast. Fasterer
 gem "flay"           # Flay analyzes code for structural similarities
 gem "flog"           # Flog reports the most tortured code in an easy to read pain report

@@ -48,7 +48,9 @@ reinstalled after.
 - **Schedule entry names from `options:` can carry a hash.** When an
   option is not plain lowercase words, or the name passes 64 characters,
   an 8-character hash is added, so `--period=week` and `--period week` no
-  longer collide. `asgard schedule install` moves such entries to their
+  longer collide. Two different commands whose names still slug alike
+  (`--period week` and `period week`) both take a hashed name.
+  `asgard schedule install` moves such entries to their
   new names. `every:` together with `on:` is now an error instead of
   ignoring `on:`.
 - **Watcher ignores and patterns.** `.git`, `.hg`, `.svn` and
@@ -77,6 +79,9 @@ reinstalled after.
 - **`asgard help jobs`, `help schedule` and `help watcher`** list their
   subcommands.
 - **CI** on Linux and macOS, Ruby 4.0.9 and 4.1.0-preview1.
+- **Runtime dependencies are bounded** to the versions asgard is built
+  against: `thor ~> 1.5`, `listen ~> 3.10`, `ractor_queue ~> 0.2`,
+  `dotenv ~> 3.2`, `tty-table ~> 0.12` and `tsort ~> 0.2`.
 
 ### Fixed
 

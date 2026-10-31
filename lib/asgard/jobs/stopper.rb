@@ -19,33 +19,41 @@ module Asgard
       #
       # A valid id is still refused (false) when it is our own group, or
       # when no process leads it any more: a job's pgid is its trampoline's
-      # pid, so a group whose leader is gone or moved is not the job.
-      def self.signal_group(signal, pgid, own_pgrp: Process.getpgrp, pgid_of: Process.method(:getpgid))
+      # pid, so a group whose leader is gone or moved is not the job. So is
+      # a group we may not signal (EPERM): its id now belongs to another
+      # user's processes. +kill+ is Process.kill, injectable for tests.
+      def self.signal_group(signal, pgid, own_pgrp: Process.getpgrp, pgid_of: Process.method(:getpgid),
+                            kill: Process.method(:kill))
         unless pgid.is_a?(Integer) && pgid > 1
           raise ArgumentError,
                 "refusing to signal process group #{pgid.inspect}: not a group id above 1"
         end
-        return false unless led_or_orphaned?(pgid, own_pgrp:, pgid_of:)
+        return false unless led_or_orphaned?(pgid, own_pgrp:, pgid_of:, kill:)
 
-        Process.kill(signal, -pgid)
+        kill.call(signal, -pgid)
       rescue Errno::ESRCH
         nil
+      rescue Errno::EPERM
+        false
       end
 
       # A group may be signalled when its leader (the trampoline) still
       # leads it, or when the leader is gone but members remain: then the
-      # id cannot have been reused. Never our own group. ESRCH from the
-      # group check means nobody is left: nil from signal_group.
-      def self.led_or_orphaned?(pgid, own_pgrp:, pgid_of:)
+      # id cannot have been reused. Never our own group, and never one we
+      # may not signal (EPERM). ESRCH from the group check means nobody is
+      # left: nil from signal_group.
+      def self.led_or_orphaned?(pgid, own_pgrp:, pgid_of:, kill: Process.method(:kill))
         return false if pgid == own_pgrp
 
         leader_group = begin
           pgid_of.call(pgid)
         rescue Errno::ESRCH
-          Process.kill(0, -pgid) # members without their leader, or ESRCH
+          kill.call(0, -pgid) # members without their leader, or ESRCH
           pgid
         end
         safe_group?(pgid, pid: pgid, own_pgrp:, pgid_of: ->(_) { leader_group })
+      rescue Errno::EPERM
+        false
       end
 
       # Whether +pgid+ may be signalled as the group +pid+ leads: a group id

@@ -75,10 +75,10 @@ module Asgard
         def status_file(record) = File.join(File.dirname(record[:script]), "#{record[:name]}.status")
 
         # When the trampoline wrote the job's status, or nil.
-        def exited_at(record)
-          path = status_file(record)
-          File.exist?(path) ? File.mtime(path) : nil
-        end
+        def exited_at(record) = mtime_of(status_file(record))
+
+        # When +path+ was last written, or nil when it does not exist.
+        def mtime_of(path) = File.exist?(path) ? File.mtime(path) : nil
 
         # Writes 137 (128 + KILL) as the job's status unless one is
         # written: a group KILL takes the trampoline with it, so nothing
@@ -174,7 +174,7 @@ module Asgard
       end
 
       # When the status was written, or nil.
-      def exit_time(name) = File.exist?(status_path(name)) ? File.mtime(status_path(name)) : nil
+      def exit_time(name) = State.mtime_of(status_path(name))
 
       # Forgets a job: its record, script and status go; the log is kept
       # but emptied, so a restart appends to a fresh file, unless

@@ -167,14 +167,25 @@ module Asgard
 
     # "report-period-week". A short hash of the exact words is appended when
     # the slug would lose something (an option that isn't PLAIN_ARG, or more
-    # than NAME_MAX characters), so different commands never share a name.
+    # than NAME_MAX characters). Plain slugs can still meet: `--period week`
+    # and `period week` both give report-period-week, so do `report` with
+    # `period week` and `report_period` with `week`. Schedule.declare
+    # gives each of two such rivals its hashed_slug, so different commands
+    # never share a name.
     def command_slug(task, args)
       words = [task, *args].map(&:to_s)
       name  = slug(words.join(" "))
       return name if name.length <= NAME_MAX && words.drop(1).all? { |arg| arg.match?(PLAIN_ARG) }
 
+      hashed_slug(task, args)
+    end
+
+    # The slug with a short hash of the exact words appended, capped at
+    # NAME_MAX: "report-period-week-1a2b3c4d".
+    def hashed_slug(task, args)
+      words  = [task, *args].map(&:to_s)
       digest = Digest::SHA256.hexdigest(words.join("\0"))[0, 8]
-      "#{name[0, NAME_MAX - 9].delete_suffix('-')}-#{digest}"
+      "#{slug(words.join(' '))[0, NAME_MAX - 9].delete_suffix('-')}-#{digest}"
     end
 
     def slug(name) = name.to_s.downcase.gsub(/[^a-z0-9]+/, "-").delete_prefix("-").delete_suffix("-")

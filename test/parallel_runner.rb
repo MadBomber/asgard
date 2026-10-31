@@ -170,12 +170,12 @@ class ParallelRunner
   end
 
   # The worker loop: read a test index, run it, send back its result.
-  def work(number, tests, input, output)
+  def work(_number, tests, input, output)
     while (line = input.gets)
       klass, name = tests.fetch(line.to_i)
       send_result(output, klass.new(name).run)
     end
-    store_coverage(number)
+    store_coverage
     exit!(0)
   end
 
@@ -199,10 +199,13 @@ class ParallelRunner
     FileUtils.rm_f(SimpleCov::ResultMerger.resultset_path)
   end
 
-  def store_coverage(number)
-    return unless defined?(SimpleCov) && SimpleCov.running
+  # SimpleCov hooks fork: its at_fork names each worker by a stable serial
+  # and marks it a subprocess, so SimpleCov.result stores this worker slice
+  # for the parent to merge instead of reporting. exit! skips the at_exit
+  # hook that would store it, so this does.
+  def store_coverage
+    return unless defined?(SimpleCov) && defined?(Coverage) && Coverage.running?
 
-    SimpleCov.command_name "parallel worker #{number}"
     SimpleCov.result
   end
 end
@@ -210,5 +213,9 @@ end
 if $PROGRAM_NAME == __FILE__
   options = ParallelRunner.parse(ARGV)
   passed  = ParallelRunner.new(**options).run(Dir["test/test_*.rb"])
+  # Minitest autorun (disabled above) would run these after the suite.
+  # SimpleCov defers to one: it merges the workers coverage, reports it
+  # and enforces the minimum, exiting non-zero when coverage falls short.
+  Minitest.class_variable_get(:@@after_run).reverse_each(&:call)
   exit passed
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require_relative "job_files"
 
 module Asgard
   module Schedule
@@ -183,11 +184,7 @@ module Asgard
       end
 
       # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
-      def installed_entries
-        paths = Dir.glob(File.join(@home, "Library", "LaunchAgents", "#{LABEL_PREFIX}.*.plist"))
-        paths.map { |path| File.basename(path, ".plist").delete_prefix("#{LABEL_PREFIX}.").split(".", 2) }
-             .select { |entry| entry.size == 2 }.sort
-      end
+      def installed_entries = JobFiles.entries_in(File.join(@home, "Library", "LaunchAgents"), prefix: LABEL_PREFIX, ext: ".plist")
 
       # { command:, schedule: } as installed, read from the plist; nil when there isn't one.
       def installed_columns(name)
@@ -198,10 +195,7 @@ module Asgard
       end
 
       # The project root the job runs in, read from the plist; nil when there isn't one.
-      def installed_directory(name)
-        path = plist_path(name)
-        self.class.parse_directory(File.read(path)) if File.exist?(path)
-      end
+      def installed_directory(name) = JobFiles.directory(plist_path(name), self.class.method(:parse_directory))
 
       def status(name)
         out, ok = run("launchctl", "print", target(name))

@@ -142,7 +142,7 @@ Every declaration becomes an **entry** with a name, and every `asgard schedule` 
 
 The name defaults to the task name. When the entry has `options:`, the default is a slug of the task plus its options, so one task can be scheduled several times with different flags and each run has its own entry, state and log.
 
-The slug keeps only lowercase letters, digits and dashes, so on its own it could give two different commands the same name. When an option holds anything else (`--period=week`, a capital letter, a quoted `'Week End'`), or the slug would be longer than 64 characters, the name is shortened if needed and ends in a dash and 8 hex digits taken from the exact options. The same options always give the same digits. Run `asgard schedule preview` or `list` to see the name, or choose one with `as:`.
+The slug keeps only lowercase letters, digits and dashes, so on its own it could give two different commands the same name. When an option holds anything else (`--period=week`, a capital letter, a quoted `'Week End'`), or the slug would be longer than 64 characters, the name is shortened if needed and ends in a dash and 8 hex digits taken from the exact options. The same options always give the same digits. Plain slugs can still meet: `schedule :report, options: "--period week"` and `schedule :report, options: "period week"` are different commands that both slug to `report-period-week`. When two declarations in a `.loki` do that, both take the dash-and-digits form, whichever comes first. Run `asgard schedule preview` or `list` to see the name, or choose one with `as:`.
 
 `as:` replaces the default with a name you choose; it may contain letters, digits, `_`, `.` and `-`.
 

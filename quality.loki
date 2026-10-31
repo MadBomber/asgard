@@ -4,25 +4,31 @@
 require "shellwords"
 
 class Tasks
-  # One process for every test/test_*.rb, so SimpleCov sees the whole suite.
+  # One process for every test/test_*.rb, for test_verbose: serial, in load
+  # order, which is what to reach for when a test only fails beside others.
   TEST_LOADER = %q(Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }).shellescape.freeze
 
-  desc "Run the test suite"
-  def test_check = run_gate(:test, "Tests", "bundle exec ruby -Ilib:test -e #{TEST_LOADER}", summary: /\d+ runs,/)
+  # Forked workers (test/parallel_runner.rb): most of the suite waits on real
+  # processes, so it runs in a fraction of the serial time. The parent merges
+  # the workers coverage and enforces the minimum.
+  PARALLEL_RUNNER = "bundle exec ruby -Ilib:test test/parallel_runner.rb"
 
-  desc "Run the test suite with verbose output"
+  desc "Run the test suite in parallel worker processes"
+  def test_check = run_gate(:test, "Tests", PARALLEL_RUNNER, summary: /\d+ runs,/)
+
+  desc "Run the test suite serially, in one process, with verbose output"
   def test_verbose
     sh "bundle exec ruby -Ilib:test -e #{TEST_LOADER} -- -v"
   end
 
-  desc "Run the test suite in forked worker processes (experimental)"
+  desc "Run the test suite in parallel worker processes, with full output"
   option :workers, aliases: "-w", type: :numeric, desc: "Worker processes (default: CPU count, at most 8)"
   option :times, type: :boolean, default: false, desc: "Print each test's name and time"
   def parallel_test
     flags = []
     flags << "--workers #{options.workers}" if options.workers
     flags << "-v" if options.times?
-    sh ["bundle exec ruby -Ilib:test test/parallel_runner.rb", *flags].join(" ")
+    sh [PARALLEL_RUNNER, *flags].join(" ")
   end
 
   # Every *_check task, in the order the summary lists them.
@@ -97,6 +103,16 @@ class Tasks
              })
   end
 
+  # exhale dry exits 1 while the code holds duplication the Contract
+  # (contract/) does not keep, and 2 when it cannot run (a file that does
+  # not parse): both fail the gate. It sweeps the whole tree and labels each
+  # finding against the merge base with the default branch.
+  desc "Check for duplication the Contract does not keep with exhale dry"
+  def exhale_check
+    run_gate(:exhale, "Exhale DRY", "bundle exec exhale dry",
+             summary: ->(output, result) { output[/^exhale dry: (.+)$/, 1]&.strip || result.to_s })
+  end
+
   desc "Report code smells with Reek (advisory: warns, never fails)"
   def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
 
@@ -150,6 +166,7 @@ class Tasks
     "rubocop_check"  => "RuboCop",
     "flog_check"     => "Flog Complexity",
     "flay_check"     => "Flay Duplication",
+    "exhale_check"   => "Exhale DRY",
     "reek_check"     => "Reek Smells",
     "erb_lint_check" => "ERBLint",
     "archspec_check" => "ArchSpec",

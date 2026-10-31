@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "declarations"
 require_relative "watch/declaration"
 require_relative "watch/changes"
 require_relative "watch/spawn"
@@ -31,17 +32,8 @@ module Asgard
         @declarations ||= {}
       end
 
-      # Records one declaration. Redeclaring an identical entry is a no-op
-      # (a .loki file loaded twice); a different entry under the same name
-      # is an error.
-      def declare(task, **settings)
-        spec  = normalize(task, **settings)
-        name  = spec[:name]
-        taken = declarations[name]
-        raise ArgumentError, "watch: #{name.inspect} is already declared; give one a distinct as: name" if taken && taken != spec
-
-        declarations[name] = spec
-      end
+      # Records one declaration (see Declarations.record).
+      def declare(task, **) = Declarations.record(declarations, normalize(task, **), "watch")
     end
 
     # The class-level `watch` declaration helper for Tasks.

@@ -348,17 +348,35 @@ class TestJobsState < Minitest::Test
     state.prepare
     script = state.script_path("api", ".sh")
     # Two commands, as in the trampoline, so sh keeps its argv instead of
-    # exec'ing sleep away; the script path rides along as $0.
-    child  = Process.spawn("/bin/sh", "-c", "sleep 30; :", script)
+    # exec'ing sleep away; the script path rides along as $0. Its own
+    # group, as a job's is: TERM to sh alone would orphan the sleep, which
+    # then holds the test runner's output pipe open for thirty seconds.
+    child  = Process.spawn("/bin/sh", "-c", "sleep 30; :", script, pgroup: true)
     other  = Process.spawn("/bin/sleep", "30")
     wait_until { state.verified?(fixture("api", pid: child, pgid: child, script:)) }
     refute state.verified?(fixture("api", pid: other, pgid: other, script:)), "a live process without the script is not ours"
-    Process.kill("TERM", child)
-    Process.wait(child)
-    refute state.verified?(fixture("api", pid: child, pgid: child, script:))
+    ended = child
+    child = nil
+    end_spawned_group(ended)
+    refute state.verified?(fixture("api", pid: ended, pgid: ended, script:))
   ensure
+    end_spawned_group(child) if child
     Process.kill("TERM", other)
     Process.wait(other)
+  end
+
+  # Ends the group +leader+ leads: a pid this test just spawned with
+  # pgroup: true, so the group holds only its own processes. Anything but
+  # an Integer above 1 that is not our own group is refused, not signalled.
+  def end_spawned_group(leader)
+    unless leader.is_a?(Integer) && leader > 1 && leader != Process.getpgrp
+      raise ArgumentError, "not a group this test spawned: #{leader.inspect}"
+    end
+
+    Process.kill("TERM", -leader)
+    Process.wait(leader)
+  rescue Errno::ESRCH, Errno::ECHILD
+    nil
   end
 end
 
@@ -702,6 +720,29 @@ class TestJobsStopper < Minitest::Test
     child = Process.spawn("true", pgroup: true)
     Process.wait(child)
     assert_nil Stopper.signal_group("TERM", child)
+  end
+
+  # A group we may not signal (EPERM: its id now belongs to another
+  # user's processes) is refused, never a crash. Only the recording
+  # stand-in for Process.kill sees a signal here.
+  def test_signal_group_refuses_a_group_it_may_not_signal
+    eperm = ->(*) { raise Errno::EPERM }
+    sent  = []
+    kill  = lambda do |signal, target|
+      sent << [signal, target]
+      raise Errno::EPERM
+    end
+
+    assert_equal false, Stopper.signal_group("TERM", 4242, own_pgrp: 99_999, pgid_of: eperm, kill:)
+    assert_empty sent
+
+    gone = ->(*) { raise Errno::ESRCH }
+    assert_equal false, Stopper.signal_group("TERM", 4242, own_pgrp: 99_999, pgid_of: gone, kill:)
+    assert_equal [[0, -4242]], sent
+
+    sent.clear
+    assert_equal false, Stopper.signal_group("TERM", 4242, own_pgrp: 99_999, pgid_of: ->(_) { 4242 }, kill:)
+    assert_equal [["TERM", -4242]], sent
   end
 
   # J1: a stale record whose pid is now asgard itself must never verify,

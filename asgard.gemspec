@@ -34,12 +34,16 @@ Gem::Specification.new do |spec|
   spec.executables = ["asgard"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "thor"          # Thor is a toolkit for building powerful command-line interfaces.
-  spec.add_dependency "dotenv"        # Loads environment variables from `.env`.
-  spec.add_dependency "tty-table"     # A flexible and intuitive table generator
-  spec.add_dependency "ractor_queue"  # Ractor-shareable bounded queue for Ruby parallel workloads
-  spec.add_dependency "listen"        # Listen to file modifications
-  spec.add_dependency "tsort"         # Topological sorting using Tarjan's algorithm
+  # Bounded to the major version (minor for the 0.x gems) the code was
+  # built against: asgard reads Thor internals (THOR_RESERVED_WORDS,
+  # @_initializer, Thor::Options.new's positional form), Listen's
+  # silencer defaults and RactorQueue's non-blocking API.
+  spec.add_dependency "thor",         "~> 1.5"   # Thor is a toolkit for building powerful command-line interfaces.
+  spec.add_dependency "dotenv",       "~> 3.2"   # Loads environment variables from `.env`.
+  spec.add_dependency "tty-table",    "~> 0.12"  # A flexible and intuitive table generator
+  spec.add_dependency "ractor_queue", "~> 0.2"   # Ractor-shareable bounded queue for Ruby parallel workloads
+  spec.add_dependency "listen",       "~> 3.10"  # Listen to file modifications
+  spec.add_dependency "tsort",        "~> 0.2"   # Topological sorting using Tarjan's algorithm
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://guides.rubygems.org/make-your-own-gem/

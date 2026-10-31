@@ -36,25 +36,48 @@ module Asgard
       # thread is inside, outermost first) and is asked for again can never
       # finish: `def a = invoke(:b)` with `def b = invoke(:a)`. It would
       # wait on itself forever, so name the cycle instead.
+      #
+      # Each entry, +target+ included, is [class, task name]: a task of the
+      # same name in another class is a different task. A subcommand
+      # group's `build` runs inside the `build` that dispatches to it, and
+      # `jobs restart` runs a project task that may itself be `restart`.
       def self.check_cycle!(chain, target)
         start = chain.index(target)
         return unless start
 
-        raise Asgard::CircularDependencyError, [*chain[start..], target].join(" -> ")
+        raise Asgard::CircularDependencyError, [*chain[start..], target].map(&:last).join(" -> ")
       end
 
-      # The options a dependency runs with: the typed task's, overlaid with
-      # the dependency's own (+declared+, class options included) parsed
-      # from the command line as given (+raw+, an Array of words, or a Hash
-      # when the class was instantiated with one). So the dependency's own
-      # defaults apply, an option typed on the command line reaches every
-      # task that declares it, and one it does not declare passes through
-      # from the typed task unchanged. A required option of the dependency
-      # is not enforced, as it was not before.
-      def self.dep_options(declared, raw, typed)
-        words, given = raw.is_a?(Array) ? [raw, {}] : [[], raw.to_h]
-        own = Thor::Options.new(declared, given, false, true).parse(words)
-        typed.merge(own).freeze
+      # The options a dependency runs with. They start as the typed task's
+      # (+typed+), so an option the dependency does not declare passes
+      # through unchanged. The dependency's own defaults (+declared+, class
+      # options included) apply over those. Last, each option the user
+      # actually gave (+raw+, read against +typed_declared+, the typed
+      # task's declarations) reaches the dependency when it declares an
+      # option of that name. Words are read only as the typed task means
+      # them: a short alias that names something else in the dependency
+      # (-f for --file, not --force) never reaches it. A required option
+      # of the dependency is not enforced, as it was not before.
+      def self.dep_options(declared, typed_declared, raw, typed)
+        defaults = Thor::Options.new(declared, {}, false, true).parse([])
+        given    = given_options(typed_declared, raw).slice(*declared.values.map(&:human_name))
+        typed.merge(defaults).merge(given).freeze
+      end
+
+      # Only the options +raw+ spells out, by name, with no defaults filled
+      # in: an Array of command-line words read against +declared+, or the
+      # Hash a caller passed to new.
+      def self.given_options(declared, raw)
+        return raw.to_h.transform_keys(&:to_s) unless raw.is_a?(Array)
+
+        bare = declared.transform_values { without_default(it) }
+        Thor::Options.new(bare, {}, false, true).parse(raw).to_h
+      end
+
+      # A copy of +option+ that parses the same words but has no default.
+      def self.without_default(option)
+        Thor::Option.new(option.name, type: option.type, aliases: option.aliases, enum: option.enum,
+                                      repeatable: option.repeatable, lazy_default: option.lazy_default)
       end
 
       module ClassMethods
@@ -106,18 +129,18 @@ module Asgard
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
-        Dispatch.check_cycle!(task_frames.map(&:task), target)
-        case acquire_run_token(target)
-        when :done   then return cached_result(target)
+        Dispatch.check_cycle!(_task_frames.map { [it.owner, it.task] }, [self.class, target])
+        case _acquire_run_token(target)
+        when :done   then return _cached_result(target)
         when :failed then raise DepFailed.new(target, self.class._failed[target])
         end
 
         result = nil
         error  = nil
         begin
-          result = in_task_frame(target) do
-            resolved_deps = run_deps_for(target)
-            with_dep_results(resolved_deps) { command.run(self, *) }
+          result = _in_task_frame(target) do
+            resolved_deps = _run_deps_for(target)
+            _with_dep_results(resolved_deps) { command.run(self, *) }
           end
         rescue Exception => e # rubocop:disable Lint/RescueException -- an exit or interrupt ends the task too
           # Captured here, not read from $! in an ensure: $! still holds a
@@ -125,7 +148,7 @@ module Asgard
           error = e
           raise
         ensure
-          signal_done(target, result, error)
+          _signal_done(target, result, error)
         end
         result
       end
@@ -140,22 +163,23 @@ module Asgard
         dep_results[task.to_sym]
       end
 
-      # One running task, from its dependencies through its body: its name
-      # and how many background jobs it has started so far. Frames live on
+      # One running task, from its dependencies through its body: the class
+      # it belongs to, its name and how many background jobs it has started
+      # so far. Frames live on
       # a thread-local stack, so a task running as a dependency in a
       # parallel stage sees itself, not the task the user typed. A parallel
       # stage's thread starts with a copy of its parent's stack, which is
       # how a cycle through that stage is still seen (see check_cycle!).
-      TaskFrame = Struct.new(:task, :jobs)
+      TaskFrame = Struct.new(:owner, :task, :jobs)
 
       # The task whose body is running on this thread, or nil outside one
       # (a helper called at .loki top level).
-      def current_task = task_frames.last&.task
+      def current_task = _task_frames.last&.task
 
       # The next sequence number for a background job of the current task:
       # 1 on the first call of each run of the body, then 2, 3, ...
-      def next_job_sequence
-        frame = task_frames.last
+      def _next_job_sequence
+        frame = _task_frames.last
         raise Asgard::Error, "no task is running on this thread" unless frame
 
         frame.jobs += 1
@@ -163,17 +187,17 @@ module Asgard
 
       private
 
-      def task_frames = Thread.current[:asgard_task_frames] ||= []
+      def _task_frames = Thread.current[:asgard_task_frames] ||= []
 
-      def in_task_frame(task)
-        frames = task_frames
-        frames.push(TaskFrame.new(task, 0))
+      def _in_task_frame(task)
+        frames = _task_frames
+        frames.push(TaskFrame.new(self.class, task, 0))
         yield
       ensure
         frames.pop
       end
 
-      def with_dep_results(results)
+      def _with_dep_results(results)
         thread   = Thread.current
         previous = thread[:asgard_dep_results]
         thread[:asgard_dep_results] = results
@@ -182,7 +206,7 @@ module Asgard
         thread[:asgard_dep_results] = previous
       end
 
-      def cached_result(target)
+      def _cached_result(target)
         klass = self.class
         klass._ran_mutex.synchronize { klass._results[target] }
       end
@@ -190,7 +214,7 @@ module Asgard
       # :run when this thread is to run +target+, :done when another
       # already ran it, :failed when that run raised or exited. A thread
       # that finds it running waits for the outcome.
-      def acquire_run_token(target)
+      def _acquire_run_token(target)
         klass   = self.class
         mutex   = klass._ran_mutex
         done    = klass._done
@@ -207,17 +231,17 @@ module Asgard
         end
       end
 
-      def run_deps_for(target)
+      def _run_deps_for(target)
         stages = self.class._deps[target]
         return {} unless stages&.any?
 
-        stages.each_with_object({}) { |group, acc| acc.merge!(run_dep_group(group)) }
+        stages.each_with_object({}) { |group, acc| acc.merge!(_run_dep_group(group)) }
       end
 
-      def run_dep_group(group)
-        return { group.first => run_dep(group.first) } unless group.size > 1
+      def _run_dep_group(group)
+        return { group.first => _run_dep(group.first) } unless group.size > 1
 
-        threads = group.map { |task| [task, dep_thread(task)] }
+        threads = group.map { |task| [task, _dep_thread(task)] }
         errors  = {}
         results = {}
         # Join every thread before raising, so one failure never ends the
@@ -229,8 +253,8 @@ module Asgard
         end
 
         errors = Dispatch.primary_failures(errors)
-        raise_dep_failure(errors.values.first) if errors.size == 1
-        raise_group_failure(errors) if errors.any?
+        _raise_dep_failure(errors.values.first) if errors.size == 1
+        _raise_group_failure(errors) if errors.any?
 
         results
       end
@@ -266,33 +290,51 @@ module Asgard
       # Each parallel task runs on its own instance (same options), so two
       # tasks in one stage never race on an instance variable; results
       # pass between tasks through dep_result, not through self.
-      def dep_thread(task)
-        instance = parallel_instance
-        frames   = task_frames.dup
+      def _dep_thread(task)
+        instance = _parallel_instance
+        frames   = _task_frames.dup
         Thread.new do
           thread = Thread.current
           thread.report_on_exception = false
           thread[:asgard_task_frames] = frames
-          instance.__send__(:run_dep, task)
+          instance.__send__(:_run_dep, task)
         rescue SystemExit => e
           raise DepExit, e.status
         end
       end
 
-      # Built from the same command line as this instance, so the task it
-      # runs parses its own options from it (see dep_options).
-      def parallel_instance
-        instance = self.class.new([], raw_options, {})
+      # Built as Thor built this instance: the same command line and the
+      # same config, which names the typed command. Thor then reads the
+      # words against that command's options, as it did the first time,
+      # so check_unknown_options! knows them. The task the copy runs reads
+      # its own options from the same words (see dep_options).
+      def _parallel_instance
+        config   = _initializer_config
+        typed    = config[:current_command]
+        config   = config.merge(command_options: typed.options) if typed
+        instance = self.class.new([], _raw_options, config)
         instance.options = options
         instance
       end
 
       # The options this instance was created with, before parsing: the
       # command line's words, or the Hash a caller passed to new.
-      def raw_options = @_initializer[1]
+      def _raw_options = @_initializer[1]
+
+      # The config Thor created this instance with; its :current_command
+      # is the task that was typed (or invoked).
+      def _initializer_config = @_initializer[2] || {}
+
+      # What the command line's words are read against: the class options
+      # plus the typed task's own.
+      def _typed_declared
+        typed = _initializer_config[:current_command]
+        declared = self.class.class_options
+        typed ? declared.merge(typed.options) : declared
+      end
 
       # Runs the block with +opts+ as this instance's options.
-      def with_options(opts)
+      def _with_options(opts)
         previous     = options
         self.options = opts
         yield
@@ -300,13 +342,13 @@ module Asgard
         self.options = previous
       end
 
-      def dep_options_for(command)
-        Dispatch.dep_options(self.class.class_options.merge(command.options), raw_options, options)
+      def _dep_options_for(command)
+        Dispatch.dep_options(self.class.class_options.merge(command.options), _typed_declared, _raw_options, options)
       end
 
       # One failure: a dependency that exited ends asgard with its status,
       # as it would have on its own; anything else propagates unchanged.
-      def raise_dep_failure(error)
+      def _raise_dep_failure(error)
         error = error.error while error.is_a?(DepFailed) && error.error
         case error
         when DepExit, SystemExit then exit(error.status)
@@ -316,16 +358,16 @@ module Asgard
 
       # Every script in the group stopped because asgard was signalled:
       # that is the one failure, so it exits as asgard would on its own.
-      def raise_group_failure(errors)
+      def _raise_group_failure(errors)
         signalled = Shell::Children.exit_status
         exit(signalled) if signalled
-        errors.each { |task, e| $stderr.puts "asgard: dependency '#{task}' failed: #{describe_failure(e)}" } # rubocop:disable Style/StderrPuts
+        errors.each { |task, e| $stderr.puts "asgard: dependency '#{task}' failed: #{_describe_failure(e)}" } # rubocop:disable Style/StderrPuts
         raise Asgard::Error, "parallel dependencies failed: #{errors.keys.join(', ')}"
       end
 
-      def describe_failure(error) = error.is_a?(DepExit) ? error.message : "#{error.class}: #{error.message}"
+      def _describe_failure(error) = error.is_a?(DepExit) ? error.message : "#{error.class}: #{error.message}"
 
-      def signal_done(target, result, error = nil)
+      def _signal_done(target, result, error = nil)
         klass = self.class
         klass._ran_mutex.synchronize do
           klass._done.add(target)
@@ -335,9 +377,9 @@ module Asgard
         end
       end
 
-      def run_dep(task)
+      def _run_dep(task)
         command = self.class.all_commands[task.to_s]
-        with_options(dep_options_for(command)) { invoke_command(command) } if command
+        _with_options(_dep_options_for(command)) { invoke_command(command) } if command
       end
     end
   end

@@ -2,6 +2,7 @@
 
 require_relative "asgard/errors"
 require_relative "asgard/version"
+require_relative "asgard/leading_flag"
 require_relative "asgard/kernel_methods"
 require_relative "asgard/shell"
 require_relative "asgard/base"
@@ -71,11 +72,6 @@ module Asgard
 
     abort "asgard: #{load_error_message(e)}"
   end
-
-  # Whether +flag+ is one of asgard's own options: among the options
-  # before the first word that is not one (the task name). After it, the
-  # word belongs to the task, which may take --version as an argument.
-  def self.leading_flag?(argv, flag) = argv.take_while { |word| word.start_with?("-") }.include?(flag)
 
   # --version and --doctor answer and exit before any task file loads.
   def self.answer_flags(argv)

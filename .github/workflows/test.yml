@@ -32,7 +32,7 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
-      # One process for every test file, so SimpleCov sees the whole suite
-      # and enforces its 95% minimum (see test/test_helper.rb).
+      # Forked workers; the parent merges their coverage and enforces the
+      # 95% minimum (see test/test_helper.rb and test/parallel_runner.rb).
       - name: Run the test suite
-        run: bundle exec ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'
+        run: bundle exec ruby -Ilib:test test/parallel_runner.rb

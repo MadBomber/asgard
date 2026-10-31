@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "etc"
+require_relative "job_files"
 
 module Asgard
   module Schedule
@@ -220,11 +221,7 @@ module Asgard
       end
 
       # Every asgard entry on this machine, whatever its project: [[project_slug, name], ...].
-      def installed_entries
-        paths = Dir.glob(File.join(@config, "systemd", "user", "#{UNIT_PREFIX}.*.timer"))
-        paths.map { |path| File.basename(path, ".timer").delete_prefix("#{UNIT_PREFIX}.").split(".", 2) }
-             .select { |entry| entry.size == 2 }.sort
-      end
+      def installed_entries = JobFiles.entries_in(File.join(@config, "systemd", "user"), prefix: UNIT_PREFIX, ext: ".timer")
 
       # { command:, schedule: } as installed, read from the unit files; nil when there are none.
       def installed_columns(name)
@@ -237,10 +234,7 @@ module Asgard
       end
 
       # The project root the job runs in, read from the service unit; nil when there isn't one.
-      def installed_directory(name)
-        path = service_path(name)
-        self.class.parse_directory(File.read(path)) if File.exist?(path)
-      end
+      def installed_directory(name) = JobFiles.directory(service_path(name), self.class.method(:parse_directory))
 
       def status(name)
         _, active = systemctl("is-active", "--quiet", timer(name))

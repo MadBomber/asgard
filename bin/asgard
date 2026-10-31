@@ -2,9 +2,10 @@
 # frozen_string_literal: true
 
 # --version needs nothing but the constant, so answer it before loading
-# Thor and the rest of the gem. Only before the task name, as in
-# Asgard.leading_flag?: after it, --version is the task's own argument.
-if ARGV.take_while { |word| word.start_with?("-") }.include?("--version")
+# Thor and the rest of the gem. Only before the task name: after it,
+# --version is the task's own argument.
+require_relative "../lib/asgard/leading_flag"
+if Asgard.leading_flag?(ARGV, "--version")
   require_relative "../lib/asgard/version"
   puts Asgard::VERSION
   exit

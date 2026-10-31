@@ -127,6 +127,28 @@ module Asgard
         raise Asgard::Error, "'#{method_name}' at #{file}:#{line} is #{what} and cannot be a task or helper; rename it"
       end
 
+      # `private def helper = ...` makes the method private only after
+      # method_added has seen it public and made it a hidden task, and Ruby
+      # has no hook for the change (overriding `private` would break its
+      # no-argument form in every subclass). So whenever the command table
+      # is read (dispatch, help, doctor), a hidden task whose method is no
+      # longer public is dropped from it.
+      def all_commands
+        super.tap { _drop_non_public_hidden_tasks(it) }
+      end
+
+      # Removes from +all+ (and this class's own table) each hidden task,
+      # one defined without a desc, whose method is private or protected,
+      # with any depends_on attached to it.
+      def _drop_non_public_hidden_tasks(all)
+        stale = all.select { |name, command| command.description == HIDDEN_DESC && !public_method_defined?(name) }
+        stale.each_key do |name|
+          all.delete(name)
+          commands.delete(name)
+          _deps.delete(name.to_sym)
+        end
+      end
+
       # A redefined to_s or inspect with no desc of its own: not a task, and
       # not worth Thor's "without usage or description" warning either.
       def plain_object_method?(method_name) = !@usage && !@_pending_single_desc && object_method?(method_name)

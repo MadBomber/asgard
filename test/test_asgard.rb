@@ -2151,14 +2151,14 @@ class TestAsgardCurrentTask < Minitest::Test
     mutex  = Mutex.new
     @klass = Class.new(Asgard::Base) do
       desc "db", "db"
-      define_method(:db) { mutex.synchronize { seen[:db] = [current_task, next_job_sequence, next_job_sequence] } }
+      define_method(:db) { mutex.synchronize { seen[:db] = [current_task, _next_job_sequence, _next_job_sequence] } }
 
       desc "api", "api"
-      define_method(:api) { mutex.synchronize { seen[:api] = [current_task, next_job_sequence] } }
+      define_method(:api) { mutex.synchronize { seen[:api] = [current_task, _next_job_sequence] } }
 
       depends_on %i[db api]
       desc "servers", "servers"
-      define_method(:servers) { mutex.synchronize { seen[:servers] = [current_task, next_job_sequence] } }
+      define_method(:servers) { mutex.synchronize { seen[:servers] = [current_task, _next_job_sequence] } }
     end
   end
 
@@ -2181,7 +2181,7 @@ class TestAsgardCurrentTask < Minitest::Test
   def test_outside_a_task_there_is_no_current_task_and_no_sequence
     runner = @klass.new([], {}, {})
     assert_nil runner.current_task
-    error = assert_raises(Asgard::Error) { runner.next_job_sequence }
+    error = assert_raises(Asgard::Error) { runner._next_job_sequence }
     assert_match(/no task is running/, error.message)
   end
 end
@@ -2537,9 +2537,9 @@ class TestRegressionCoreReview < Minitest::Test
     dispatch = Asgard::Base::Dispatch
     declared = { target: Thor::Option.new(:target, default: "debug") }
     typed    = Thor::CoreExt::HashWithIndifferentAccess.new("target" => "release", "env" => "prod")
-    assert_equal({ "target" => "debug", "env" => "prod" }, dispatch.dep_options(declared, [], typed).to_h)
-    assert_equal({ "target" => "x", "env" => "prod" }, dispatch.dep_options(declared, %w[--target x], typed).to_h)
-    assert_equal "y", dispatch.dep_options(declared, { "target" => "y" }, typed)[:target]
+    assert_equal({ "target" => "debug", "env" => "prod" }, dispatch.dep_options(declared, declared, [], typed).to_h)
+    assert_equal({ "target" => "x", "env" => "prod" }, dispatch.dep_options(declared, declared, %w[--target x], typed).to_h)
+    assert_equal "y", dispatch.dep_options(declared, declared, { "target" => "y" }, typed)[:target]
   end
 
   # R2: a project directory whose name holds glob characters.
@@ -2641,7 +2641,7 @@ class TestRegressionCoreReview < Minitest::Test
   # R7: a task or helper named after an asgard helper.
   def test_regression_r7_asgard_helper_names_are_reserved
     %i[sh shebang env import import_up loki_up changes dep_result dep_results current_task
-       next_job_sequence debug? verbose? invoke_command run_dep].each do |name|
+       debug? verbose? invoke_command].each do |name|
       error = assert_raises(Asgard::Error, name.to_s) do
         Class.new(Asgard::Base) do
           desc name.to_s, "x"
@@ -2834,5 +2834,172 @@ class TestRegressionSignalForwarding < Minitest::Test
   # ours and still runs `sleep 47`.
   def grand_alive?(pid)
     started_here?(pid) && IO.popen(["ps", "-o", "command=", "-p", pid.to_s], &:read).strip == "sleep 47"
+  end
+end
+
+# Findings from the review of PR 5 (the 0.6.0 release).
+class TestRegressionReleaseReview < Minitest::Test
+  include AsgardProcess
+
+  # A task of the same name in another class is not a cycle: a subcommand
+  # group's `build` runs inside the `build` that dispatches to it.
+  def test_check_cycle_tells_classes_apart
+    dispatch = Asgard::Base::Dispatch
+    outer    = Class.new
+    inner    = Class.new
+    assert_nil dispatch.check_cycle!([[outer, :build]], [inner, :build])
+    assert_nil dispatch.check_cycle!([[outer, :_jobs], [inner, :restart]], [outer, :restart])
+    error = assert_raises(Asgard::CircularDependencyError) do
+      dispatch.check_cycle!([[outer, :a], [outer, :b]], [outer, :a])
+    end
+    assert_equal "a -> b -> a", error.message
+  end
+
+  def test_a_subcommand_task_named_like_its_group_runs
+    loki = <<~LOKI
+      class BuildCmds < Asgard::Base
+        desc "build", "inner build"
+        def build = puts("inner build ran")
+      end
+
+      class Tasks
+        desc "build SUBCOMMAND", "build group"
+        subcommand "build", BuildCmds
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "build", "build")
+    assert status.success?, err
+    assert_match "inner build ran", out
+  end
+
+  # A parallel stage's instance is built with the typed command's options
+  # in scope, so check_unknown_options! knows them.
+  def test_parallel_dependencies_work_under_check_unknown_options
+    loki = <<~LOKI
+      class Tasks
+        check_unknown_options!
+
+        desc "b", "b"
+        def b = puts("b ran")
+
+        desc "c", "c"
+        def c = puts("c ran")
+
+        depends_on [:b, :c]
+        desc "pdeploy", "deploy"
+        method_option :env, default: "dev"
+        def pdeploy = puts("deploy \#{options[:env]}")
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "pdeploy", "--env", "prod")
+    assert status.success?, err
+    assert_match "b ran", out
+    assert_match "c ran", out
+    assert_match "deploy prod", out
+  end
+
+  # -f means --force to the typed task; the dependency's own -f (--file)
+  # must not receive it.
+  def test_a_shared_short_alias_does_not_leak_into_a_dependency
+    [false, true].each do |parallel|
+      seen  = {}
+      klass = Class.new(Asgard::Base) do
+        desc "b", "b"
+        method_option :file, aliases: "-f", type: :string
+        define_method(:b) { seen[:b] = options.to_h.slice("file", "force") }
+
+        desc "lint", "lint"
+        define_method(:lint) { nil }
+
+        depends_on(*(parallel ? [%i[b lint]] : [:b]))
+        desc "deploy", "deploy"
+        method_option :force, aliases: "-f", type: :boolean
+        define_method(:deploy) { seen[:deploy] = options.to_h.slice("file", "force") }
+      end
+      klass.validate_deps!
+      klass.start(%w[deploy -f])
+      assert_equal({ "force" => true }, seen[:deploy], "parallel: #{parallel}")
+      assert_equal({ "force" => true }, seen[:b], "parallel: #{parallel}")
+    end
+  end
+
+  def test_given_options_leave_out_defaults
+    declared = { env: Thor::Option.new(:env, default: "dev", aliases: "-e"), quiet: Thor::Option.new(:quiet, type: :boolean, default: false) }
+    dispatch = Asgard::Base::Dispatch
+    assert_equal({}, dispatch.given_options(declared, []))
+    assert_equal({ "env" => "prod" }, dispatch.given_options(declared, %w[-e prod]))
+    assert_equal({ "quiet" => false }, dispatch.given_options(declared, %w[--no-quiet]))
+    assert_equal({ "env" => "x" }, dispatch.given_options(declared, { env: "x" }))
+  end
+
+  # `private def` makes the method private after method_added saw it.
+  def test_a_private_helper_is_not_a_hidden_task
+    klass = Class.new(Asgard::Base) do
+      private def helper_x = "hx" # rubocop:disable Style/AccessModifierDeclarations -- the form under test
+
+      def plain_hidden = nil
+
+      protected def guarded = nil # rubocop:disable Style/AccessModifierDeclarations -- the form under test
+
+      private
+
+      def after_bare_private = nil
+    end
+    refute klass.all_commands.key?("helper_x")
+    refute klass.all_commands.key?("guarded")
+    refute klass.all_commands.key?("after_bare_private")
+    assert klass.all_commands.key?("plain_hidden")
+    refute klass.public_method_defined?(:after_bare_private)
+  end
+
+  def test_doctor_does_not_list_a_private_helper
+    loki = <<~LOKI
+      class Tasks
+        desc "real", "real"
+        def real = helper_x
+
+        private def helper_x = "hx"
+      end
+    LOKI
+    out, err, status = run_asgard(loki, "--doctor")
+    assert status.success?, err
+    assert_match "real", out
+    refute_match "helper_x", out
+  end
+
+  # Internal method names are no longer reserved: a project's own
+  # run_script or start_job loads.
+  def test_internal_method_names_are_free_for_tasks
+    %i[run_script start_job run_dep with_options next_job_sequence parallel_instance].each do |name|
+      klass = Class.new(Asgard::Base) do
+        desc name.to_s, "x"
+        define_method(name) { name }
+      end
+      assert klass.all_commands.key?(name.to_s), name
+    end
+  end
+
+  # A missing ps must not stop forward from reaching the children.
+  def test_ps_listing_without_ps_is_empty
+    children = Asgard::Shell::Children
+    assert_equal "", children.ps_listing("/nonexistent/ps-#{Process.pid}")
+    assert_equal [], children.process_table(children.ps_listing("/nonexistent/ps-#{Process.pid}"))
+    refute_empty children.process_table
+  end
+
+  def test_run_missing_exits_127_with_the_message
+    run = Asgard::Shell::Run.new(name: :nope, shell: { path: "nope-xyz", args: [], ext: ".tmp" }, script: "x")
+    _out, err = capture_io do
+      error = assert_raises(SystemExit) { run.missing! }
+      assert_equal 127, error.status
+    end
+    assert_match "asgard: shell :nope not found", err
+  end
+
+  def test_leading_flag_is_loadable_alone
+    out, status = Open3.capture2e(Gem.ruby, "-e", "require #{File.join(LIB, 'asgard/leading_flag').inspect}; " \
+                                                  "print Asgard.leading_flag?(%w[--version], '--version'), defined?(Thor).inspect")
+    assert status.success?, out
+    assert_equal "truenil", out
   end
 end

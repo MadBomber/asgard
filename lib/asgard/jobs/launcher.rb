@@ -81,7 +81,7 @@ module Asgard
           existing = state.read_record(name)
           return already_running(existing, out:) if existing && state.verified?(existing)
 
-          shell_missing!(run) unless Shell.resolve(run.shell[:path])
+          run.missing! unless Shell.resolve(run.shell[:path])
           job = spawn_job(run, name:, task:, state:)
           out.puts "started #{job.name} (pid #{job.pid}), log: #{job.log}" unless silent
           job
@@ -103,12 +103,6 @@ module Asgard
         state.write_record(Jobs.record(name:, task:, pid:, pgid: pid, cwd: Dir.pwd, script:, log:,
                                        command: Jobs.summary(run.script), started: Time.now.iso8601(6)))
         Job.new(name: name.to_sym, task: task&.to_sym, pid:, log:)
-      end
-
-      # $stderr.puts, not warn: warn is silent under -W0 and this must show.
-      def shell_missing!(run)
-        $stderr.puts run.missing_message # rubocop:disable Style/StderrPuts
-        exit 127
       end
     end
   end

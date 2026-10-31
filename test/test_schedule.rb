@@ -751,6 +751,8 @@ class TestScheduleSystemd < Minitest::Test
 end
 
 class TestScheduleRegistry < Minitest::Test
+  SD = Asgard::Schedule
+
   def setup    = Asgard::Schedule.declarations.clear
   def teardown = Asgard::Schedule.declarations.clear
 
@@ -767,6 +769,41 @@ class TestScheduleRegistry < Minitest::Test
   def test_redeclaring_a_name_differently_raises
     Tasks.schedule :tree, every: 60
     assert_raises(ArgumentError) { Tasks.schedule :tree, every: 120 }
+  end
+
+  # Different commands whose plain names slug alike both take hashed
+  # names, whatever order they are declared in.
+  def test_rival_commands_both_take_hashed_names
+    rivals = [[:report, "--period week"], [:report, "period week"], [:report_period, "week"]]
+    expected = rivals.map { |task, options| SD.hashed_slug(task.to_s, Shellwords.split(options)) }
+
+    [rivals, rivals.reverse, rivals.rotate].each do |order|
+      SD.declarations.clear
+      order.each { |task, options| Tasks.schedule task, options:, every: 60 }
+      assert_equal expected.sort, SD.declarations.keys.sort, order.inspect
+      SD.declarations.each { |name, spec| assert_equal name, spec[:name] }
+    end
+    refute_includes SD.declarations.keys, "report-period-week"
+  end
+
+  def test_a_rival_declared_twice_is_still_one_entry
+    2.times do
+      Tasks.schedule :report, options: "--period week", every: 60
+      Tasks.schedule :report, options: "period week", every: 60
+    end
+    assert_equal 2, SD.declarations.size
+  end
+
+  def test_the_same_command_with_another_schedule_still_raises
+    Tasks.schedule :report, options: "--period week", every: 60
+    Tasks.schedule :report, options: "period week", every: 60
+    assert_raises(ArgumentError) { Tasks.schedule :report, options: "period week", every: 120 }
+  end
+
+  def test_an_unrivalled_command_keeps_its_plain_name
+    Tasks.schedule :report, options: "--period week", every: 60
+    Tasks.schedule :report, options: "--period month", every: 60
+    assert_equal %w[report-period-month report-period-week], SD.declarations.keys.sort
   end
 
   def test_backend_class_by_platform
@@ -1179,5 +1216,45 @@ class TestScheduleProjectSlug < Minitest::Test
     refute Asgard::Schedule.project_match?("api-9f3a1c2b", "ap")
     refute Asgard::Schedule.project_match?("api-9f3a1c2b", "api-9f3a1c2c")
     assert Asgard::Schedule.project_match?("elsewhere", "elsewhere"), "an entry from before the hash still matches by its slug"
+  end
+end
+
+# The helpers schedule and watch share, and the backends' job-file reading.
+class TestSharedDeclarationHelpers < Minitest::Test
+  def test_record_stores_an_entry_and_ignores_an_identical_one
+    declarations = {}
+    spec = { name: "lint", task: "lint" }
+    assert_equal spec, Asgard::Declarations.record(declarations, spec, "watch")
+    Asgard::Declarations.record(declarations, spec.dup, "watch")
+    assert_equal({ "lint" => spec }, declarations)
+  end
+
+  def test_record_refuses_a_different_entry_under_the_same_name
+    declarations = { "lint" => { name: "lint", every: 60 } }
+    error = assert_raises(ArgumentError) { Asgard::Declarations.record(declarations, { name: "lint", every: 120 }, "schedule") }
+    assert_equal 'schedule: "lint" is already declared; give one a distinct as: name', error.message
+  end
+
+  def test_job_file_entries_split_project_and_name
+    paths = %w[/a/asgard.api-9f3a1c2b.report.timer /a/asgard.web-1a2b3c4d.sync.timer /a/asgard.loose.timer]
+    assert_equal [%w[api-9f3a1c2b report], %w[web-1a2b3c4d sync]],
+                 Asgard::Schedule::JobFiles.entries(paths, prefix: "asgard", ext: ".timer")
+  end
+
+  def test_job_file_entries_in_globs_the_directory
+    Dir.mktmpdir do |dir|
+      %w[asgard.p.one.timer asgard.p.two.timer asgard.p.one.service other.timer].each { FileUtils.touch(File.join(dir, it)) }
+      assert_equal [%w[p one], %w[p two]], Asgard::Schedule::JobFiles.entries_in(dir, prefix: "asgard", ext: ".timer")
+    end
+  end
+
+  def test_job_file_directory_reads_with_the_parser_or_is_nil
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, "job")
+      parser = ->(text) { text[/^WorkingDirectory=(.*)$/, 1] }
+      assert_nil Asgard::Schedule::JobFiles.directory(path, parser)
+      File.write(path, "WorkingDirectory=/proj\n")
+      assert_equal "/proj", Asgard::Schedule::JobFiles.directory(path, parser)
+    end
   end
 end

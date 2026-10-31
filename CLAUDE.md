@@ -10,8 +10,9 @@ Asgard is a Ruby task runner. Users define tasks in `.loki` files by reopening t
 
 ```bash
 bundle install
-bin/asgard test_check          # run tests (enforces 95% SimpleCov coverage), summary to test_output.txt
-bin/asgard test_verbose        # run tests with full output
+bin/asgard test_check          # run tests in forked workers (enforces 95% SimpleCov coverage), summary to test_output.txt
+bin/asgard parallel_test       # the same run with full output (-w N workers, --times per-test times)
+bin/asgard test_verbose        # run tests serially in one process, with full output
 bin/asgard quality             # every *_check gate in parallel (tests, rubocop, flog, flay, reek, ...)
 bin/asgard build               # quality gate, then build .gem into pkg/
 bin/asgard install             # build, then install locally
@@ -20,7 +21,9 @@ bin/asgard release             # quality gate, tag, push, gem push
 
 There is no Rakefile: the gem's own `.loki` files (`quality.loki`, `gem_tasks.loki`, ...) are its task runner.
 
-Whole suite (one process, so SimpleCov sees everything): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
+Whole suite in parallel: `ruby -Ilib:test test/parallel_runner.rb`. It loads every file once, then forks workers; SimpleCov merges their coverage. Threads (Minitest `parallelize_me!`) do not fit: tests chdir, set ENV and swap `$stdout`, all process-wide.
+
+Whole suite serially (one process): `ruby -Ilib:test -e 'Dir["test/test_*.rb"].each { |f| require File.expand_path(f) }'`
 
 Single file: `ruby -Ilib:test test/test_asgard.rb` (a single file alone will fall below the coverage minimum)
 

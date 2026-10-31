@@ -361,11 +361,14 @@ these names are now refused:
 | Kind | Names |
 |---|---|
 | Helpers a task body calls | `sh`, `shebang`, `env`, `import`, `import_up`, `loki_up`, `changes`, `debug?`, `verbose?`, `dep_result`, `dep_results`, `current_task` |
-| Names asgard uses to run tasks | `invoke_command`, `acquire_run_token`, `cached_result`, `dep_options_for`, `dep_thread`, `describe_failure`, `in_task_frame`, `next_job_sequence`, `parallel_instance`, `raise_dep_failure`, `raise_group_failure`, `raw_options`, `run_dep`, `run_dep_group`, `run_deps_for`, `run_script`, `shell_missing!`, `signal_done`, `start_job`, `background_job_name`, `task_frames`, `with_dep_results`, `with_options` |
+| The method Thor runs every task through | `invoke_command` |
+
+asgard's other internal methods start with `_`, a prefix that is
+already asgard's own, so they never clash with a name in your `.loki`.
 
 **What to do:** rename the method. The error names the file and line.
-A helper of your own that happened to share a name, such as `run_script`
-or `start_job`, only needs a new name and its callers updated.
+A helper of your own that happened to share a name, such as `env` or
+`changes`, only needs a new name and its callers updated.
 
 An `invoke_command` that wrapped every task has no direct replacement.
 Move the work it did into the tasks that need it, or into a task of its

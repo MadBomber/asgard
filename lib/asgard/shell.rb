@@ -232,16 +232,7 @@ module Asgard
         # A pid asgard may signal: an Integer above 1 that is not its own.
         def signalable?(pid) = pid.is_a?(Integer) && pid > 1 && pid != Process.pid
 
-        def alive?(pid)
-          return false unless signalable?(pid)
-
-          Process.kill(0, pid)
-          true
-        rescue Errno::ESRCH
-          false
-        rescue Errno::EPERM
-          true
-        end
+        def alive?(pid) = signalable?(pid) && Pid.alive?(pid)
 
         # 128 plus +signal+'s number, as a shell reports it; nil for nil.
         def exit_status_for(signal) = signal && (128 + Signal.list.fetch(signal))
@@ -269,13 +260,21 @@ module Asgard
 
         # [pid, parent pid] for every process in +ps_output+ (one pair per
         # line); lines that are not two numbers are dropped.
-        def process_table(ps_output = IO.popen([Pid::PS, "-A", "-o", "pid=,ppid="], err: File::NULL, &:read))
+        def process_table(ps_output = ps_listing)
           ps_output.to_s.lines.filter_map do |line|
             pair = line.split.map { Integer(it, exception: false) }
             pair if pair.size == 2 && pair.all?
           end
+        end
+
+        # Every process's pid and parent pid as +ps+ prints them, or "" when
+        # ps cannot run (a slim image without procps). It rescues on its own:
+        # a default argument is evaluated outside the method's rescue, so a
+        # missing ps would otherwise escape forward before any signal went out.
+        def ps_listing(ps = Pid::PS)
+          IO.popen([ps, "-A", "-o", "pid=,ppid="], err: File::NULL, &:read)
         rescue SystemCallError
-          []
+          ""
         end
 
         def signal(signal, pid)
@@ -327,6 +326,13 @@ module Asgard
       def ext = shell[:ext]
       def argv(file) = Shell.argv(shell, file)
       def missing_message = "asgard: shell #{name.inspect} not found: #{argv('...').shelljoin}"
+
+      # Says the shell is missing and exits 127. $stderr.puts, not warn:
+      # warn is silent under -W0 and this must show.
+      def missing!
+        $stderr.puts missing_message # rubocop:disable Style/StderrPuts
+        exit 127
+      end
     end
 
     # Write +script+ to a tempfile and run it with the shell registered as
@@ -341,9 +347,9 @@ module Asgard
     def shebang(name_or_script, script = nil, silent: false, background: nil)
       name, script = script ? [name_or_script, script] : [Shell.default_shell, name_or_script]
       run = Run.new(name:, shell: Shell.shell_for(name), script: script.strip)
-      job = background_job_name(background)
+      job = _background_job_name(background)
       $stdout.puts run.script unless silent
-      job ? start_job(run, job, silent:) : run_script(run)
+      job ? _start_job(run, job, silent:) : _run_script(run)
     end
     alias_method :sh, :shebang # rubocop:disable Style/Alias -- the method form reads as the API statement it is
 
@@ -351,37 +357,31 @@ module Asgard
 
     # The job name a background: value asks for; only `true` consumes a
     # sequence number, and only inside a task body.
-    def background_job_name(background)
+    def _background_job_name(background)
       return nil unless background
 
       task     = current_task
-      sequence = next_job_sequence if background == true && task
+      sequence = _next_job_sequence if background == true && task
       Jobs.job_name(background, task:, sequence:)
     end
 
-    def start_job(run, name, silent:)
+    def _start_job(run, name, silent:)
       root  = Asgard.project_root
       state = Jobs::State.new(project: Schedule.project_slug(root), root:)
       Jobs::Launcher.start(run, name:, task: current_task, state:, silent:)
     end
 
-    def run_script(run)
+    def _run_script(run)
       Tempfile.create(["asgard_", run.ext]) do |f|
         f.write(run.script)
         f.flush
         status = Children.run(run.argv(f.path))
-        shell_missing!(run) unless status
+        run.missing! unless status
         signalled = Children.exit_status
         exit(signalled) if signalled
         exit(Shell.exit_code(status)) unless status.success?
         true
       end
-    end
-
-    # $stderr.puts, not warn: warn is silent under -W0 and this must show.
-    def shell_missing!(run)
-      $stderr.puts run.missing_message # rubocop:disable Style/StderrPuts
-      exit 127
     end
   end
 end

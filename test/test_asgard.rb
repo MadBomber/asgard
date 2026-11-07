@@ -2638,6 +2638,26 @@ class TestRegressionCoreReview < Minitest::Test
     assert_match "asgard: circular dependency — a -> b -> a", err
   end
 
+  # R8 under launchd or cron, where no locale is set and Ruby's default
+  # external encoding is US-ASCII: run_asgard still hands back UTF-8.
+  def test_regression_r8_run_asgard_output_is_utf8_without_a_locale
+    external = Encoding.default_external
+    silence_warnings { Encoding.default_external = Encoding::US_ASCII }
+    _out, err, = run_asgard(%(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n), "a")
+    assert_equal Encoding::UTF_8, err.encoding
+    assert_match "asgard: circular dependency — a -> b -> a", err
+  ensure
+    silence_warnings { Encoding.default_external = external }
+  end
+
+  def silence_warnings
+    verbose = $VERBOSE
+    $VERBOSE = nil
+    yield
+  ensure
+    $VERBOSE = verbose
+  end
+
   # R7: a task or helper named after an asgard helper.
   def test_regression_r7_asgard_helper_names_are_reserved
     %i[sh shebang env import import_up loki_up changes dep_result dep_results current_task

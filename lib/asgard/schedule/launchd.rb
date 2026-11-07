@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require_relative "../state_dir"
 require_relative "job_files"
 
 module Asgard
@@ -147,10 +148,11 @@ module Asgard
         log     = log_path(name)
         content = files(spec, asgard:, direnv:).fetch(plist)
         Schedule.check_lengths!([plist, "#{plist}.new", log])
+        Schedule.writing { StateDir.private_dir File.dirname(log) } # the logs hold the task's output
         return :active if self.class.unchanged?(plist, content) && loaded?(name)
 
         Schedule.writing do
-          FileUtils.mkdir_p [File.dirname(plist), File.dirname(log)]
+          FileUtils.mkdir_p File.dirname(plist)
           write_linted(plist, content)
         end
         unload(name)

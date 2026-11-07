@@ -85,7 +85,7 @@ A job's files stay until the next start of the same name or `asgard jobs clean`,
 
 ## Scheduler Files
 
-`asgard schedule install` writes one job per declared entry into the system scheduler's own directory. The files are written readable by their owner only (mode 0600), since they carry the declaration's `env:` values.
+`asgard schedule install` writes one job per declared entry into the system scheduler's own directory. The files are written readable by their owner only (mode 0600), since they carry the declaration's `env:` values. The log directory is created, or tightened, readable by its owner only (mode 0700), since the logs hold the task's output.
 
 === "macOS (launchd)"
 

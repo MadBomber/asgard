@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Schedule log directories are private**: `asgard schedule install`
+  creates the log directory 0700 (and tightens an existing one), as the
+  watch and jobs state directories already are.
+
 ## [0.6.0] - 2026-10-31
 
 Upgrading from 0.5.x? Read

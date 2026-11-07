@@ -341,6 +341,25 @@ class TestScheduleLaunchd < Minitest::Test
     end
   end
 
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
+  def test_the_log_directory_is_tightened_when_the_plist_is_unchanged
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      b = backend(home) # the job is loaded and the plist unchanged: install leaves it alone
+      File.chmod(0o755, File.dirname(b.log_path("demo")))
+      assert_equal :active, b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
   # S11: a running job and a job a signal ended both show as such.
   def test_regression_s11_status_reads_running_and_signal_exits
     running = FakeRunner.new("launchctl print gui" => ["state = running\n\tlast exit code = 0\n", true])
@@ -671,6 +690,15 @@ class TestScheduleSystemd < Minitest::Test
       b = backend(home)
       b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       [b.service_path("demo"), b.timer_path("demo")].each { |path| assert_equal 0o600, File.stat(path).mode & 0o777, path }
+    end
+  end
+
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home)
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
     end
   end
 

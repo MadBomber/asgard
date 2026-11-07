@@ -16,6 +16,7 @@ class TestGemspec < Minitest::Test
 
   def test_the_docs_site_and_issue_tracker_are_linked
     site_url = File.read(File.expand_path("../mkdocs.yml", __dir__))[/^site_url:\s*(\S+)/, 1]
+    refute_nil site_url, "mkdocs.yml has no site_url"
     assert_equal site_url, SPEC.metadata["documentation_uri"]
     assert_equal "#{SPEC.homepage}/issues", SPEC.metadata["bug_tracker_uri"]
   end

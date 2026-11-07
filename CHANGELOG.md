@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **The gem links its docs site and issue tracker**: the gemspec sets
   `documentation_uri` and `bug_tracker_uri`, so the RubyGems page links to
-  https://madbomber.github.io/asgard and the GitHub issues.
+  [the docs site](https://madbomber.github.io/asgard) and the GitHub issues.
 
 ### Changed
 

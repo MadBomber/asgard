@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The gem links its docs site and issue tracker**: the gemspec sets
+  `documentation_uri` and `bug_tracker_uri`, so the RubyGems page links to
+  [the docs site](https://madbomber.github.io/asgard) and the
+  [GitHub issues](https://github.com/MadBomber/asgard/issues).
+
 ### Changed
 
 - **Schedule log directories are private**: `asgard schedule install`

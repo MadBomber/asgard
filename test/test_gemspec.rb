@@ -14,6 +14,13 @@ class TestGemspec < Minitest::Test
     assert_includes SPEC.metadata["changelog_uri"], "/blob/main/"
   end
 
+  def test_the_docs_site_and_issue_tracker_are_linked
+    site_url = File.read(File.expand_path("../mkdocs.yml", __dir__))[/^site_url:\s*(\S+)/, 1]
+    refute_nil site_url, "mkdocs.yml has no site_url"
+    assert_equal site_url, SPEC.metadata["documentation_uri"]
+    assert_equal "#{SPEC.homepage}/issues", SPEC.metadata["bug_tracker_uri"]
+  end
+
   def test_regression_p4_only_the_library_and_its_docs_are_packaged
     dev    = /\A(?:CLAUDE\.md|COMMITS\.md|\.envrc|mkdocs\.yml|Archspec\.rb|\.rubocop\.yml|\.reek\.yml)\z|\.loki\z/
     leaked = SPEC.files.grep(%r{\A(?:docs/|notes/|examples/|\.github/|site/)}) + SPEC.files.grep(dev)

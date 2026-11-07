@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require "fileutils"
-require_relative "../state_dir"
 require "etc"
+require_relative "../state_dir"
 require_relative "job_files"
 
 module Asgard

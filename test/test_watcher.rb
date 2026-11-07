@@ -590,12 +590,11 @@ class TestWatchReporter < Minitest::Test
     assert_equal 10_485_760, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "lots" })
   end
 
-  def test_private_dir_tightens_only_the_directory_itself
+  def test_private_dir_creates_and_tightens
     parent = File.join(@dir, "state")
     dir    = File.join(parent, "asgard")
     Asgard::StateDir.private_dir(dir)
-    assert_equal 0o700, File.stat(dir).mode & 0o777
-    assert_equal 0o777 & ~File.umask, File.stat(parent).mode & 0o777, "a parent it creates keeps the default mode"
+    [parent, dir].each { |path| assert_equal 0o700, File.stat(path).mode & 0o777, path }
     File.chmod(0o755, dir)
     Asgard::StateDir.private_dir(dir)
     assert_equal 0o700, File.stat(dir).mode & 0o777, "an existing directory is tightened"

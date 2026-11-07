@@ -1878,7 +1878,7 @@
 <p>A job's files stay until the next start of the same name or <code>asgard jobs clean</code>, so the log of a crashed job can still be read. See <a href="../jobs/#files">Background Jobs</a>.</p>
 <hr />
 <h2 id="scheduler-files">Scheduler Files<a class="headerlink" href="#scheduler-files" title="Permanent link">&para;</a></h2>
-<p><code>asgard schedule install</code> writes one job per declared entry into the system scheduler's own directory. The files are written readable by their owner only (mode 0600), since they carry the declaration's <code>env:</code> values.</p>
+<p><code>asgard schedule install</code> writes one job per declared entry into the system scheduler's own directory. The files are written readable by their owner only (mode 0600), since they carry the declaration's <code>env:</code> values. The log directory is created, or tightened, readable by its owner only (mode 0700), since the logs hold the task's output.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">macOS (launchd)</label><label for="__tabbed_1_2">Linux (systemd)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

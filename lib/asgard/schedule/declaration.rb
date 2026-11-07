@@ -4,7 +4,6 @@ require "digest"
 require "open3"
 require "shellwords"
 require "zlib"
-require_relative "../state_dir"
 
 module Asgard
   # Scheduled asgard tasks, run by the platform's own scheduler: launchd on

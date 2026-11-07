@@ -590,6 +590,17 @@ class TestWatchReporter < Minitest::Test
     assert_equal 10_485_760, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "lots" })
   end
 
+  def test_private_dir_tightens_only_the_directory_itself
+    parent = File.join(@dir, "state")
+    dir    = File.join(parent, "asgard")
+    Asgard::StateDir.private_dir(dir)
+    assert_equal 0o700, File.stat(dir).mode & 0o777
+    assert_equal 0o777 & ~File.umask, File.stat(parent).mode & 0o777, "a parent it creates keeps the default mode"
+    File.chmod(0o755, dir)
+    Asgard::StateDir.private_dir(dir)
+    assert_equal 0o700, File.stat(dir).mode & 0o777, "an existing directory is tightened"
+  end
+
   def test_log_lines
     assert_equal "2026-10-18 09:30:00 trigger lint task=lint lib/a.rb new file.rb", Reporter.log_line(trigger)
     assert_equal "2026-10-18 09:30:00 trigger lint task=lint lib/a.rb new file.rb (queued behind pid 41)",

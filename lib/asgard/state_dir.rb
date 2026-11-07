@@ -80,10 +80,11 @@ module Asgard
       File.write(File.join(dir, ROOT_FILE), "#{root}\n")
     end
 
-    # Creates +dir+ readable by its owner only, tightening an existing one
-    # (mkdir_p's mode: applies only when it creates the directory).
+    # Makes +dir+ readable by its owner only, creating it if needed and
+    # tightening an existing one. Parents it creates keep the default mode
+    # (mkdir_p's mode: would apply to every one of them).
     def private_dir(dir)
-      FileUtils.mkdir_p(dir, mode: 0o700)
+      FileUtils.mkdir_p(dir)
       File.chmod(0o700, dir)
     end
   end

@@ -94,7 +94,7 @@ module Asgard
 
         # Waits for a worker to end; one that died has nothing to wait for.
         def join_worker(ractor)
-          ractor.respond_to?(:join) ? ractor.join : ractor.take
+          ractor.join
         rescue Ractor::Error
           nil
         end

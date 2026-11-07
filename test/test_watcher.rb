@@ -1218,7 +1218,8 @@ class TestWatchDaemon
   def test_regression_w3_join_worker_tolerates_a_dead_worker
     dead = Ractor.new { raise "worker died" }
     capture_io { assert_nil Daemon.join_worker(dead) }
-    assert_equal 42, Daemon.join_worker(Ractor.new { 42 }) && 42
+    live = Ractor.new { 42 }
+    assert_same live, Daemon.join_worker(live), "a live worker is joined"
   end
 
   # W5: an idle daemon (two workers, the reporter, the dispatcher) must

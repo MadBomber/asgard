@@ -15,8 +15,9 @@ class TestGemspec < Minitest::Test
   end
 
   def test_the_docs_site_and_issue_tracker_are_linked
-    assert_equal "https://madbomber.github.io/asgard", SPEC.metadata["documentation_uri"]
-    assert_equal "https://github.com/madbomber/asgard/issues", SPEC.metadata["bug_tracker_uri"]
+    site_url = File.read(File.expand_path("../mkdocs.yml", __dir__))[/^site_url:\s*(\S+)/, 1]
+    assert_equal site_url, SPEC.metadata["documentation_uri"]
+    assert_equal "#{SPEC.homepage}/issues", SPEC.metadata["bug_tracker_uri"]
   end
 
   def test_regression_p4_only_the_library_and_its_docs_are_packaged

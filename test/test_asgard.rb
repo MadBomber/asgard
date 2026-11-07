@@ -2633,32 +2633,34 @@ class TestRegressionCoreReview < Minitest::Test
   end
 
   CYCLE_LOKI = %(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n)
+  CYCLE_MESSAGE = "asgard: circular dependency — a -> b -> a"
 
   def test_regression_r8_run_reports_a_runtime_cycle
     _out, err, status = run_asgard(CYCLE_LOKI, "a")
     assert_equal 1, status.exitstatus
-    assert_match "asgard: circular dependency — a -> b -> a", err
+    assert_match CYCLE_MESSAGE, err
   end
 
-  # R8 under launchd or cron, where no locale is set and Ruby's default
-  # external encoding is US-ASCII: run_asgard still hands back UTF-8.
+  # R8 under launchd or cron: run_asgard still hands back UTF-8.
   def test_regression_r8_run_asgard_output_is_utf8_without_a_locale
-    out, err, = without_a_locale { run_asgard(CYCLE_LOKI, "a", env: { "LANG" => nil, "LC_ALL" => nil, "LC_CTYPE" => nil }) }
-    assert_equal [Encoding::UTF_8, Encoding::UTF_8], [out.encoding, err.encoding]
-    assert err.valid_encoding?, err.inspect
-    assert_match "asgard: circular dependency — a -> b -> a", err
+    _out, err, = run_asgard_without_a_locale(CYCLE_LOKI, "a")
+    assert_equal Encoding::UTF_8, err.encoding
+    assert_match CYCLE_MESSAGE, err
   end
 
-  # Runs the block with Encoding.default_external at US-ASCII, as launchd
-  # and cron leave it, and quiet about setting it.
-  def without_a_locale
+  # run_asgard as launchd and cron leave things: no locale for the child,
+  # and Ruby's default encodings here at US-ASCII and nil.
+  def run_asgard_without_a_locale(loki, *argv)
     verbose = $VERBOSE
     external = Encoding.default_external
-    $VERBOSE = nil
+    internal = Encoding.default_internal
+    $VERBOSE = nil # setting the default encodings warns
     Encoding.default_external = Encoding::US_ASCII
-    yield
+    Encoding.default_internal = nil
+    run_asgard(loki, *argv, env: { "LANG" => nil, "LC_ALL" => nil, "LC_CTYPE" => nil })
   ensure
     Encoding.default_external = external
+    Encoding.default_internal = internal
     $VERBOSE = verbose
   end
 

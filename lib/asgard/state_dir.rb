@@ -76,9 +76,15 @@ module Asgard
     # Creates +dir+, readable by its owner only (logs and job scripts can
     # hold secrets), and records the project root in it.
     def record_root(dir, root)
+      private_dir(dir)
+      File.write(File.join(dir, ROOT_FILE), "#{root}\n")
+    end
+
+    # Creates +dir+ readable by its owner only, tightening an existing one
+    # (mkdir_p's mode: applies only when it creates the directory).
+    def private_dir(dir)
       FileUtils.mkdir_p(dir, mode: 0o700)
       File.chmod(0o700, dir)
-      File.write(File.join(dir, ROOT_FILE), "#{root}\n")
     end
   end
 end

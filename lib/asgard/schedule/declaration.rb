@@ -4,6 +4,7 @@ require "digest"
 require "open3"
 require "shellwords"
 require "zlib"
+require_relative "../state_dir"
 
 module Asgard
   # Scheduled asgard tasks, run by the platform's own scheduler: launchd on
@@ -340,13 +341,6 @@ module Asgard
     def write_private(path, content)
       File.write(path, content, perm: 0o600)
       File.chmod(0o600, path) # perm: applies only when the file is created
-    end
-
-    # Creates a log directory only its owner can read: the logs hold the
-    # task's output. An existing one is tightened, as the state directories are.
-    def private_dir(dir)
-      FileUtils.mkdir_p(dir, mode: 0o700)
-      File.chmod(0o700, dir)
     end
 
     # PATH captured at install time, plus the declaration's env:.

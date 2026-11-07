@@ -267,7 +267,7 @@ module Asgard
         changed = self.class.changed_files(job)
         Schedule.writing do
           FileUtils.mkdir_p File.dirname(timer_path(name))
-          Schedule.private_dir File.dirname(log_path(name))
+          StateDir.private_dir File.dirname(log_path(name)) # the logs hold the task's output
           changed.each { |path, content| Schedule.write_private(path, content) }
         end
       end

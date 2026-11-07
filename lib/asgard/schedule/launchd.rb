@@ -147,11 +147,11 @@ module Asgard
         log     = log_path(name)
         content = files(spec, asgard:, direnv:).fetch(plist)
         Schedule.check_lengths!([plist, "#{plist}.new", log])
+        Schedule.writing { StateDir.private_dir File.dirname(log) } # the logs hold the task's output
         return :active if self.class.unchanged?(plist, content) && loaded?(name)
 
         Schedule.writing do
           FileUtils.mkdir_p File.dirname(plist)
-          Schedule.private_dir File.dirname(log)
           write_linted(plist, content)
         end
         unload(name)

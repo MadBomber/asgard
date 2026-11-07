@@ -341,13 +341,21 @@ class TestScheduleLaunchd < Minitest::Test
     end
   end
 
-  # The log holds the task's output, so its directory is its owner's
-  # alone, like the state directories; an existing one is tightened.
   def test_the_log_directory_is_private
     Dir.mktmpdir do |home|
       b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
       FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
       b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
+  def test_the_log_directory_is_tightened_when_the_plist_is_unchanged
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      b = backend(home) # the job is loaded and the plist unchanged: install leaves it alone
+      File.chmod(0o755, File.dirname(b.log_path("demo")))
+      assert_equal :active, b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
     end
   end

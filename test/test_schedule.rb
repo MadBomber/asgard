@@ -341,6 +341,17 @@ class TestScheduleLaunchd < Minitest::Test
     end
   end
 
+  # The log holds the task's output, so its directory is its owner's
+  # alone, like the state directories; an existing one is tightened.
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
   # S11: a running job and a job a signal ended both show as such.
   def test_regression_s11_status_reads_running_and_signal_exits
     running = FakeRunner.new("launchctl print gui" => ["state = running\n\tlast exit code = 0\n", true])
@@ -671,6 +682,15 @@ class TestScheduleSystemd < Minitest::Test
       b = backend(home)
       b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       [b.service_path("demo"), b.timer_path("demo")].each { |path| assert_equal 0o600, File.stat(path).mode & 0o777, path }
+    end
+  end
+
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home)
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
     end
   end
 

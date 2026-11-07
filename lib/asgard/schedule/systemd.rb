@@ -266,7 +266,8 @@ module Asgard
       def write_changed(job, name)
         changed = self.class.changed_files(job)
         Schedule.writing do
-          FileUtils.mkdir_p [File.dirname(timer_path(name)), File.dirname(log_path(name))]
+          FileUtils.mkdir_p File.dirname(timer_path(name))
+          Schedule.private_dir File.dirname(log_path(name))
           changed.each { |path, content| Schedule.write_private(path, content) }
         end
       end

@@ -150,7 +150,8 @@ module Asgard
         return :active if self.class.unchanged?(plist, content) && loaded?(name)
 
         Schedule.writing do
-          FileUtils.mkdir_p [File.dirname(plist), File.dirname(log)]
+          FileUtils.mkdir_p File.dirname(plist)
+          Schedule.private_dir File.dirname(log)
           write_linted(plist, content)
         end
         unload(name)

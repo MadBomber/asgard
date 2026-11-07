@@ -14,6 +14,11 @@ class TestGemspec < Minitest::Test
     assert_includes SPEC.metadata["changelog_uri"], "/blob/main/"
   end
 
+  def test_the_docs_site_and_issue_tracker_are_linked
+    assert_equal "https://madbomber.github.io/asgard", SPEC.metadata["documentation_uri"]
+    assert_equal "https://github.com/madbomber/asgard/issues", SPEC.metadata["bug_tracker_uri"]
+  end
+
   def test_regression_p4_only_the_library_and_its_docs_are_packaged
     dev    = /\A(?:CLAUDE\.md|COMMITS\.md|\.envrc|mkdocs\.yml|Archspec\.rb|\.rubocop\.yml|\.reek\.yml)\z|\.loki\z/
     leaked = SPEC.files.grep(%r{\A(?:docs/|notes/|examples/|\.github/|site/)}) + SPEC.files.grep(dev)

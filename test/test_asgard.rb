@@ -2632,8 +2632,10 @@ class TestRegressionCoreReview < Minitest::Test
     assert_equal "top -> a -> top", error.message
   end
 
+  CYCLE_LOKI = %(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n)
+
   def test_regression_r8_run_reports_a_runtime_cycle
-    _out, err, status = run_asgard(%(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n), "a")
+    _out, err, status = run_asgard(CYCLE_LOKI, "a")
     assert_equal 1, status.exitstatus
     assert_match "asgard: circular dependency — a -> b -> a", err
   end
@@ -2641,20 +2643,22 @@ class TestRegressionCoreReview < Minitest::Test
   # R8 under launchd or cron, where no locale is set and Ruby's default
   # external encoding is US-ASCII: run_asgard still hands back UTF-8.
   def test_regression_r8_run_asgard_output_is_utf8_without_a_locale
-    external = Encoding.default_external
-    silence_warnings { Encoding.default_external = Encoding::US_ASCII }
-    _out, err, = run_asgard(%(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n), "a")
-    assert_equal Encoding::UTF_8, err.encoding
+    out, err, = without_a_locale { run_asgard(CYCLE_LOKI, "a", env: { "LANG" => nil, "LC_ALL" => nil, "LC_CTYPE" => nil }) }
+    assert_equal [Encoding::UTF_8, Encoding::UTF_8], [out.encoding, err.encoding]
+    assert err.valid_encoding?, err.inspect
     assert_match "asgard: circular dependency — a -> b -> a", err
-  ensure
-    silence_warnings { Encoding.default_external = external }
   end
 
-  def silence_warnings
+  # Runs the block with Encoding.default_external at US-ASCII, as launchd
+  # and cron leave it, and quiet about setting it.
+  def without_a_locale
     verbose = $VERBOSE
+    external = Encoding.default_external
     $VERBOSE = nil
+    Encoding.default_external = Encoding::US_ASCII
     yield
   ensure
+    Encoding.default_external = external
     $VERBOSE = verbose
   end
 

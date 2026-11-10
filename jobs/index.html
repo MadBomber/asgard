@@ -1278,6 +1278,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#truncate_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncate_log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#restart" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1820,6 +1831,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#truncate_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncate_log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#restart" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2205,8 +2227,9 @@
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>stop<span class="w"> </span>api<span class="w"> </span>-t<span class="w"> </span><span class="m">30</span><span class="w">    </span><span class="c1"># wait 30s after TERM before KILL (default 10)</span>
 </span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>log<span class="w"> </span>api<span class="w">           </span><span class="c1"># print the log</span>
 </span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>log<span class="w"> </span>api<span class="w"> </span>-f<span class="w">        </span><span class="c1"># follow it (tail -f)</span>
-</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>restart<span class="w"> </span>api<span class="w">       </span><span class="c1"># stop it, then run its owning task again</span>
-</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>clean<span class="w">             </span><span class="c1"># forget every job that is no longer running</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>truncate_log<span class="w"> </span>api<span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span><span class="w">  </span><span class="c1"># keep the last 1000 lines of api's log</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>restart<span class="w"> </span>api<span class="w">       </span><span class="c1"># stop it, then run its owning task again</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>clean<span class="w">             </span><span class="c1"># forget every job that is no longer running</span>
 </span></code></pre></div>
 <h3 id="list">list<a class="headerlink" href="#list" title="Permanent link">&para;</a></h3>
 <p>One row per job with its name, owning task, pid, status, start time and the first line of its script:</p>
@@ -2261,6 +2284,11 @@
 <p>A task that exists but has no jobs on record prints <code>servers has no running jobs</code>. The exit status is 1 when any job had to be killed or any name matched neither a job nor a task (<code>jobs: no such job or task: apii</code>). Records stay, so the log of a stopped job can still be read; <code>clean</code> removes them.</p>
 <h3 id="log">log<a class="headerlink" href="#log" title="Permanent link">&para;</a></h3>
 <p>Prints the job's log, stdout and stderr together, from its latest start (each start empties it). <code>-f</code> follows it as <code>tail -f</code> does. A job that has not written yet still has an empty log.</p>
+<h3 id="truncate_log">truncate_log<a class="headerlink" href="#truncate_log" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>truncate_log<span class="w"> </span>api<span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>truncate_log<span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--dry-run
+</span></code></pre></div>
+<p><code>--lines M</code> is required: a nonnegative integer, with <code>0</code> emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. <code>--dry-run</code> (<code>-n</code>) reports the bytes that would be removed without touching anything. Without a name it does every job log of this project, including logs of jobs no longer on record; records, scripts and statuses are left alone. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's <code>copytruncate</code>, output written at the instant of truncation can be lost.</p>
 <h3 id="restart">restart<a class="headerlink" href="#restart" title="Permanent link">&para;</a></h3>
 <p>Stops the job, then runs its owning task again in the same asgard process, dependencies included. A job started with a chosen name from outside a task body has no owning task and cannot be restarted: <code>jobs: static was not started from a task, so there is nothing to run again</code>.</p>
 <h3 id="clean">clean<a class="headerlink" href="#clean" title="Permanent link">&para;</a></h3>
@@ -2310,27 +2338,27 @@
 <hr />
 <h2 id="patterns">Patterns<a class="headerlink" href="#patterns" title="Permanent link">&para;</a></h2>
 <p><strong>A development stack.</strong> Give each server a name, put the database in a dependency, and one command brings everything up:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the database"</span>
-</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"postgres -D tmp/db"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:db</span>
-</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
-</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Bring up the whole development stack"</span>
-</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:db</span>
-</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">servers</span>
-</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails server -p 3000"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:api</span>
-</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/vite dev"</span><span class="p">,</span><span class="w">             </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:assets</span>
-</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w">             </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:docs</span>
-</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Start the database"</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"postgres -D tmp/db"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:db</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Bring up the whole development stack"</span>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="n">depends_on</span><span class="w"> </span><span class="ss">:db</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">servers</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/rails server -p 3000"</span><span class="p">,</span><span class="w"> </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:api</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"bin/vite dev"</span><span class="p">,</span><span class="w">             </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:assets</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">    </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w">             </span><span class="ss">background</span><span class="p">:</span><span class="w"> </span><span class="ss">:docs</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>asgard<span class="w"> </span>servers<span class="w">            </span><span class="c1"># db, api, assets, docs</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w">               </span><span class="c1"># all four, running</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>stop<span class="w"> </span>servers<span class="w">  </span><span class="c1"># all four, including db, because servers depends on db</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>restart<span class="w"> </span>api<span class="w">   </span><span class="c1"># just the API, by running servers again (db is already up, so it is reused)</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>asgard<span class="w"> </span>servers<span class="w">            </span><span class="c1"># db, api, assets, docs</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w">               </span><span class="c1"># all four, running</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>stop<span class="w"> </span>servers<span class="w">  </span><span class="c1"># all four, including db, because servers depends on db</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>asgard<span class="w"> </span><span class="nb">jobs</span><span class="w"> </span>restart<span class="w"> </span>api<span class="w">   </span><span class="c1"># just the API, by running servers again (db is already up, so it is reused)</span>
 </span></code></pre></div>
 <p><strong>A one-word stop.</strong> <code>asgard jobs stop servers</code> is the normal way down. A task may wrap it when you want a name of your own:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Stop the development stack"</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">down</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"asgard jobs stop servers"</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"Stop the development stack"</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">down</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"asgard jobs stop servers"</span>
 </span></code></pre></div>
 <p><strong>Jobs from watchers and schedules.</strong> A task run by the <a href="../watch/">watcher</a> or by a <a href="../schedule/">schedule</a> may start jobs. They are recorded under the project's slug like any other, so <code>asgard jobs</code> from the project directory shows them as if you had started them by hand.</p>
 <hr />

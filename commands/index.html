@@ -1839,6 +1839,11 @@
 <td>Prints the entry's log; <code>-f</code> keeps printing as output arrives</td>
 </tr>
 <tr>
+<td><code>asgard schedule truncate_log [NAME]</code></td>
+<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td>Keeps the last M lines of the entry's log; no NAME does every schedule log of this project; 0 empties it</td>
+</tr>
+<tr>
 <td><code>asgard schedule remove</code></td>
 <td><code>[NAME]</code></td>
 <td>Removes one installed entry, or every entry of this project</td>
@@ -1891,6 +1896,11 @@
 <td>Prints the watcher's log; <code>-f</code> keeps following it</td>
 </tr>
 <tr>
+<td><code>asgard watcher truncate_log</code></td>
+<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td>Keeps the last M lines of <code>watcher.log</code> and <code>watcher.log.1</code>; 0 empties them</td>
+</tr>
+<tr>
 <td><code>asgard watcher run</code></td>
 <td></td>
 <td>Watches in the foreground until Ctrl-C or TERM; this is what <code>start</code> runs detached. <code>asgard tree</code> lists it as <code>daemon</code>, and <code>asgard watcher daemon</code> is the same command</td>
@@ -1930,6 +1940,11 @@
 <td><code>asgard jobs log NAME</code></td>
 <td><code>--follow</code>, <code>-f</code></td>
 <td>Prints the job's log (stdout and stderr of its latest run); <code>-f</code> follows it</td>
+</tr>
+<tr>
+<td><code>asgard jobs truncate_log [NAME]</code></td>
+<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td>Keeps the last M lines of the job's log; no NAME does every job log of this project; 0 empties it</td>
 </tr>
 <tr>
 <td><code>asgard jobs restart NAME</code></td>

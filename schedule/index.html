@@ -1222,6 +1222,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#truncate_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncate_log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#trigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1881,6 +1892,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#truncate_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        truncate_log
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#trigger" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2303,11 +2325,12 @@
 </span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all<span class="w">     </span><span class="c1"># every project's entries</span>
 </span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>log<span class="w"> </span>NAME<span class="w">       </span><span class="c1"># print the entry's log</span>
 </span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>log<span class="w"> </span>NAME<span class="w"> </span>-f<span class="w">    </span><span class="c1"># keep following it</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>trigger<span class="w"> </span>NAME<span class="w">   </span><span class="c1"># run an installed entry now</span>
-</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>NAME<span class="w">      </span><span class="c1"># stop one entry; it stays stopped until started</span>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>start<span class="w"> </span>NAME<span class="w">     </span><span class="c1"># start a stopped entry, or install just this one</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span><span class="o">[</span>NAME<span class="o">]</span><span class="w">  </span><span class="c1"># remove one entry, or all of this project's</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune<span class="w">          </span><span class="c1"># remove every project's entries whose directory is gone</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>truncate_log<span class="w"> </span><span class="o">[</span>NAME<span class="o">]</span><span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span><span class="w">  </span><span class="c1"># keep the last 1000 lines</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>trigger<span class="w"> </span>NAME<span class="w">   </span><span class="c1"># run an installed entry now</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>NAME<span class="w">      </span><span class="c1"># stop one entry; it stays stopped until started</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>start<span class="w"> </span>NAME<span class="w">     </span><span class="c1"># start a stopped entry, or install just this one</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span><span class="o">[</span>NAME<span class="o">]</span><span class="w">  </span><span class="c1"># remove one entry, or all of this project's</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune<span class="w">          </span><span class="c1"># remove every project's entries whose directory is gone</span>
 </span></code></pre></div>
 <p>The rest of this section walks through each one with the <code>.loki</code> from the <a href="#declaring-schedules">declaration example</a>.</p>
 <h3 id="preview">preview<a class="headerlink" href="#preview" title="Permanent link">&para;</a></h3>
@@ -2460,66 +2483,71 @@
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>log<span class="w"> </span>daily_summary<span class="w"> </span>-f
 </span></code></pre></div>
 <p>An entry that has never run has no log yet: <code>daily_summary has no log yet (/Users/you/Library/Logs/asgard/...log); it is created on the first run.</code></p>
+<h3 id="truncate_log">truncate_log<a class="headerlink" href="#truncate_log" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>truncate_log<span class="w"> </span>daily_summary<span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>truncate_log<span class="w"> </span>--lines<span class="w"> </span><span class="m">1000</span><span class="w"> </span>--dry-run
+</span></code></pre></div>
+<p><code>--lines M</code> is required: a nonnegative integer, with <code>0</code> emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. <code>--dry-run</code> (<code>-n</code>) reports the bytes that would be removed without touching anything. Without a name it does every schedule log of this project, including logs left by removed entries. It does not run on its own; schedule it like any other task if you want it regular. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's <code>copytruncate</code>, output written at the instant of truncation can be lost.</p>
 <h3 id="trigger">trigger<a class="headerlink" href="#trigger" title="Permanent link">&para;</a></h3>
 <p><code>trigger NAME</code> runs an installed entry right now, under the scheduler and with the scheduler's environment, which makes it the honest way to test a schedule: a task that works at your prompt but fails under <code>trigger</code> has a <code>PATH</code> or environment problem, not a code problem.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>trigger<span class="w"> </span>daily_summary
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>trigger<span class="w"> </span>daily_summary
 </span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>triggered daily_summary; output goes to /Users/you/Library/Logs/asgard/com.madbomber.asgard.api-9f3a1c2b.daily_summary.log
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>triggered daily_summary; output goes to /Users/you/Library/Logs/asgard/com.madbomber.asgard.api-9f3a1c2b.daily_summary.log
 </span></code></pre></div>
 <p>A stopped entry is refused: <code>daily_summary is stopped;</code>asgard schedule start daily_summary<code>first.</code></p>
 <h3 id="stop-and-start">stop and start<a class="headerlink" href="#stop-and-start" title="Permanent link">&para;</a></h3>
 <p><code>stop NAME</code> stops one entry. The stop is remembered: the entry stays stopped across reboots and across later <code>install</code> runs, until you <code>start</code> it.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>sync
-</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1"># stopped sync</span>
-</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>start<span class="w"> </span>sync
-</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1"># started sync</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>sync
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="c1"># stopped sync</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>start<span class="w"> </span>sync
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="c1"># started sync</span>
 </span></code></pre></div>
 <p><code>start NAME</code> does two things. For an entry that is declared in this project's <code>.loki</code> it refreshes the job files from the current declaration and installs just that one entry, whether or not it was installed before; so <code>start</code> is also the way to install a single new entry without touching the others. For an entry that is installed but no longer declared, or that belongs to another project, it starts the installed job as it is and says so on stderr: <code>schedule: sync is no longer declared; starting its installed job as-is</code>.</p>
 <h3 id="remove">remove<a class="headerlink" href="#remove" title="Permanent link">&para;</a></h3>
 <p><code>remove NAME</code> unloads and deletes one entry's job files and forgets any stop. <code>remove</code> with no name does that for every entry of this project:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span>sync
-</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="c1"># removed sync</span>
-</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove
-</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="c1"># removed backup</span>
-</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="c1"># removed daily_summary</span>
-</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="c1"># ...</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span>sync
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="c1"># removed sync</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="c1"># removed backup</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="c1"># removed daily_summary</span>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="c1"># ...</span>
 </span></code></pre></div>
 <p>The log files are left in place.</p>
 <p>If the scheduler refuses to unload an entry, <code>remove</code> stops with an error and leaves its job files where they are, so the entry still shows in <code>list</code> and you can try again. <code>prune</code>, and <code>install</code> removing an undeclared entry, behave the same way.</p>
 <h3 id="prune">prune<a class="headerlink" href="#prune" title="Permanent link">&para;</a></h3>
 <p>A project that was moved or deleted leaves its entries behind, and they keep firing in a directory that is not there. <code>prune</code> removes every such entry, from every project on the machine. <code>--dry-run</code> (<code>-n</code>) only lists them:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune<span class="w"> </span>--dry-run
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="c1"># would remove api-9f3a1c2b/daily_summary</span>
-</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune
-</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="c1"># removed api-9f3a1c2b/daily_summary</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune<span class="w"> </span>--dry-run
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># would remove api-9f3a1c2b/daily_summary</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>prune
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="c1"># removed api-9f3a1c2b/daily_summary</span>
 </span></code></pre></div>
 <p>With nothing to do it prints <code>Nothing to prune: every installed entry's project directory exists.</code></p>
 <h3 id="every-project-at-once">Every Project at Once<a class="headerlink" href="#every-project-at-once" title="Permanent link">&para;</a></h3>
 <p><code>list --all</code> (<code>-a</code>) shows every project's entries, grouped under a title that names the project and its directory. Other projects' <code>.loki</code> files are not loaded; their columns are read back from the installed job files.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
 </span></code></pre></div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>Project: api-9f3a1c2b (/Users/you/work/api)
-</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>┌───────────────┬──────────────────────┬────────────────┬────────┬───────────┐
-</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>│ NAME          │ COMMAND              │ SCHEDULE       │ STATE  │ LAST EXIT │
-</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>├───────────────┼──────────────────────┼────────────────┼────────┼───────────┤
-</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a>│ daily_summary │ asgard daily_summary │ 17:30 weekdays │ active │ 0         │
-</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a>└───────────────┴──────────────────────┴────────────────┴────────┴───────────┘
-</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a>
-</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>Project: blog-13ab77e0 (/Users/you/old/blog) [root missing]
-</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a>┌─────────┬────────────────┬─────────────┬────────┬───────────┐
-</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a>│ NAME    │ COMMAND        │ SCHEDULE    │ STATE  │ LAST EXIT │
-</span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>├─────────┼────────────────┼─────────────┼────────┼───────────┤
-</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a>│ publish │ asgard publish │ 06:00 daily │ active │ 127       │
-</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a>└─────────┴────────────────┴─────────────┴────────┴───────────┘
-</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a>
-</span><span id="__span-28-15"><a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a>Logs: /Users/you/Library/Logs/asgard  (asgard schedule log NAME)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>Project: api-9f3a1c2b (/Users/you/work/api)
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>┌───────────────┬──────────────────────┬────────────────┬────────┬───────────┐
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>│ NAME          │ COMMAND              │ SCHEDULE       │ STATE  │ LAST EXIT │
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>├───────────────┼──────────────────────┼────────────────┼────────┼───────────┤
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>│ daily_summary │ asgard daily_summary │ 17:30 weekdays │ active │ 0         │
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>└───────────────┴──────────────────────┴────────────────┴────────┴───────────┘
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>Project: blog-13ab77e0 (/Users/you/old/blog) [root missing]
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>┌─────────┬────────────────┬─────────────┬────────┬───────────┐
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>│ NAME    │ COMMAND        │ SCHEDULE    │ STATE  │ LAST EXIT │
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>├─────────┼────────────────┼─────────────┼────────┼───────────┤
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>│ publish │ asgard publish │ 06:00 daily │ active │ 127       │
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>└─────────┴────────────────┴─────────────┴────────┴───────────┘
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>Logs: /Users/you/Library/Logs/asgard  (asgard schedule log NAME)
 </span></code></pre></div>
 <p><code>[root missing]</code> marks a project whose directory no longer exists; <code>prune</code> removes its entries. Run from a directory with no <code>.loki</code> above it, <code>list</code> shows every project without needing <code>--all</code>.</p>
 <h3 id="reaching-another-projects-entry">Reaching Another Project's Entry<a class="headerlink" href="#reaching-another-projects-entry" title="Permanent link">&para;</a></h3>
 <p><code>stop</code>, <code>start</code>, <code>trigger</code>, <code>log</code> and <code>remove</code> accept an entry of any project, so they work from any directory. Name it as <code>project/name</code>, where <code>project</code> is the slug shown by <code>list --all</code>, or just the directory name when that is enough to pick one project out:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>blog/publish<span class="w">            </span><span class="c1"># the directory name is enough</span>
-</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>blog-13ab77e0/publish<span class="w">   </span><span class="c1"># the full slug always works</span>
-</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>log<span class="w"> </span>api/daily_summary<span class="w"> </span>-f
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>blog/publish<span class="w">            </span><span class="c1"># the directory name is enough</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>blog-13ab77e0/publish<span class="w">   </span><span class="c1"># the full slug always works</span>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>log<span class="w"> </span>api/daily_summary<span class="w"> </span>-f
 </span></code></pre></div>
 <p>A bare name is looked up in this project first, then in every other project. When two other projects share a name, asgard asks you to be specific: <code>publish is in several projects (blog-13ab77e0, blog-9c0f22d1); name one as project/publish.</code></p>
 <hr />
@@ -2538,9 +2566,9 @@
 <p>The slug appears in the job file names, the log file names and the <code>list --all</code> titles.</p>
 <h3 id="shells-under-the-scheduler">Shells Under the Scheduler<a class="headerlink" href="#shells-under-the-scheduler" title="Permanent link">&para;</a></h3>
 <p>The <code>PATH</code> a job sees is rarely the one your terminal has. On a Mac with Homebrew, <code>bash</code> at the terminal is 5.x from <code>/opt/homebrew/bin</code>, while under launchd it may be the 3.2 build in <code>/bin</code>. If a task's script needs a particular interpreter, pin it in the <code>.loki</code> so the same one runs everywhere:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/opt/homebrew/bin/bash"</span>
-</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/opt/homebrew/bin/bash"</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>See <a href="../shell/#pinning-a-path">Shell Commands</a>.</p>
 <hr />

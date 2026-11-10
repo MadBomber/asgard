@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "shellwords"
+require_relative "../log"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see
 # base/task_dsl.rb); these messages are for the user, so they always print.
@@ -228,6 +229,18 @@ module Asgard
         return sh("tail -n +1 -f #{path.shellescape}", silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
+      end
+
+      desc "truncate_log [NAME]", "Keep the last M lines of an entry's log; no NAME truncates every schedule log of this project"
+      method_option :lines, type: :string, required: true, banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
+      def truncate_log(name = nil)
+        pattern = scheduler.log_path("*")
+        paths = name ? [scheduler.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(File.dirname(pattern)), File.basename(pattern)))
+        abort "schedule: no such schedule log: #{name}" if name && (name.include?("/") || !File.file?(paths.first))
+        Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
+      rescue ArgumentError, SystemCallError, IOError => e
+        abort "schedule: #{e.message}"
       end
 
       desc "remove [NAME]", "Remove one installed entry (NAME or project/NAME), or all of this project's"

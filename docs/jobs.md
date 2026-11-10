@@ -171,6 +171,7 @@ asgard jobs stop --all        # stop every project's jobs
 asgard jobs stop api -t 30    # wait 30s after TERM before KILL (default 10)
 asgard jobs log api           # print the log
 asgard jobs log api -f        # follow it (tail -f)
+asgard jobs truncate_log api --lines 1000  # keep the last 1000 lines of api's log
 asgard jobs restart api       # stop it, then run its owning task again
 asgard jobs clean             # forget every job that is no longer running
 ```
@@ -223,6 +224,15 @@ A task that exists but has no jobs on record prints `servers has no running jobs
 ### log
 
 Prints the job's log, stdout and stderr together, from its latest start (each start empties it). `-f` follows it as `tail -f` does. A job that has not written yet still has an empty log.
+
+### truncate_log
+
+```bash
+asgard jobs truncate_log api --lines 1000
+asgard jobs truncate_log --lines 1000 --dry-run
+```
+
+`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every job log of this project, including logs of jobs no longer on record; records, scripts and statuses are left alone. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
 
 ### restart
 

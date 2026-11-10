@@ -177,6 +177,7 @@ asgard schedule list           # this project's entries, their state and last ex
 asgard schedule list --all     # every project's entries
 asgard schedule log NAME       # print the entry's log
 asgard schedule log NAME -f    # keep following it
+asgard schedule truncate_log [NAME] --lines 1000  # keep the last 1000 lines
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule stop NAME      # stop one entry; it stays stopped until started
 asgard schedule start NAME     # start a stopped entry, or install just this one
@@ -346,6 +347,15 @@ asgard schedule log daily_summary -f
 ```
 
 An entry that has never run has no log yet: `daily_summary has no log yet (/Users/you/Library/Logs/asgard/...log); it is created on the first run.`
+
+### truncate_log
+
+```bash
+asgard schedule truncate_log daily_summary --lines 1000
+asgard schedule truncate_log --lines 1000 --dry-run
+```
+
+`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every schedule log of this project, including logs left by removed entries. It does not run on its own; schedule it like any other task if you want it regular. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
 
 ### trigger
 

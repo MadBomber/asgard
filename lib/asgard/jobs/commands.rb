@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "time"
+require_relative "../log"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see
 # base/task_dsl.rb); these messages are for the user, so they always print.
@@ -125,6 +126,17 @@ module Asgard
         return exec(*Commands.tail_argv(path)) if options[:follow]
 
         IO.copy_stream(path, $stdout)
+      end
+
+      desc "truncate_log [NAME]", "Keep the last M lines of a job log; no NAME truncates every job log of this project"
+      method_option :lines, type: :string, required: true, banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
+      def truncate_log(name = nil)
+        paths = name ? [state.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(state.dir), "*.log"))
+        abort "jobs: no such job log: #{name}" if name && (name.include?("/") || !File.file?(paths.first))
+        Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
+      rescue ArgumentError, SystemCallError, IOError => e
+        abort "jobs: #{e.message}"
       end
 
       desc "restart NAME", "Stop the job, then run its owning task again"

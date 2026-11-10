@@ -66,6 +66,7 @@ Manages the entries declared with `schedule :task, ...` in the `.loki`. The sche
 | `asgard schedule start NAME` | | Starts a stopped entry, or installs and starts just this one declared entry |
 | `asgard schedule trigger NAME` | | Runs an installed entry now, under the scheduler; refused while the entry is stopped |
 | `asgard schedule log NAME` | `--follow`, `-f` | Prints the entry's log; `-f` keeps printing as output arrives |
+| `asgard schedule truncate_log [NAME]` | `--lines M` (required), `--dry-run` / `-n` | Keeps the last M lines of the entry's log; no NAME does every schedule log of this project; 0 empties it |
 | `asgard schedule remove` | `[NAME]` | Removes one installed entry, or every entry of this project |
 | `asgard schedule prune` | `--dry-run`, `-n` | Removes every project's entries whose project directory no longer exists; `-n` only lists them |
 
@@ -88,6 +89,7 @@ Runs and manages the file watcher for the entries declared with `watch :task, pa
 | `asgard watcher list` | `--all`, `-a` | A table of this project's watches (NAME, TASK, WATCHES, DAEMON, LAST RUN); `--all` covers every project |
 | `asgard watcher preview` | | Prints the exact command and environment each entry would run |
 | `asgard watcher log` | `--follow`, `-f` | Prints the watcher's log; `-f` keeps following it |
+| `asgard watcher truncate_log` | `--lines M` (required), `--dry-run` / `-n` | Keeps the last M lines of `watcher.log` and `watcher.log.1`; 0 empties them |
 | `asgard watcher run` | | Watches in the foreground until Ctrl-C or TERM; this is what `start` runs detached. `asgard tree` lists it as `daemon`, and `asgard watcher daemon` is the same command |
 
 DAEMON is `running` or `stopped`. LAST RUN is `never`, `running (pid N)`, `did not finish (pid N)`, or the exit status with duration and time, such as `0 (0.4s, 2026-10-18 23:40:02)`.
@@ -106,6 +108,7 @@ Lists, stops and restarts the background jobs started with `sh "...", background
 | `asgard jobs list` | `--all`, `-a` | A table of this project's jobs (JOB, TASK, PID, STATUS, STARTED, COMMAND); `--all` covers every project |
 | `asgard jobs stop` | `[NAME...]`, `--all` / `-a`, `--timeout N` / `-t N` | Stops jobs by job name, or by task name (including jobs its dependencies started); no name stops every job of this project; `--all` stops every project's; TERM first, KILL after `N` seconds (default 10) |
 | `asgard jobs log NAME` | `--follow`, `-f` | Prints the job's log (stdout and stderr of its latest run); `-f` follows it |
+| `asgard jobs truncate_log [NAME]` | `--lines M` (required), `--dry-run` / `-n` | Keeps the last M lines of the job's log; no NAME does every job log of this project; 0 empties it |
 | `asgard jobs restart NAME` | `--timeout N` / `-t N` | Stops the job, then runs its owning task again, dependencies included |
 | `asgard jobs clean` | | Forgets every job that is no longer running: record, script, status and log |
 

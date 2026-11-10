@@ -2008,6 +2008,9 @@
 <li><code>OVERRIDDEN by file:line — never callable</code> and <code>active — redefines file:line</code>: the same task name defined twice. Only the last definition exists; the earlier one is dead. Each overridden task counts as one problem in the summary.</li>
 </ul>
 <p>The summary line is <code>No problems found.</code>, <code>No problems found (N warning(s)).</code> or <code>N problem(s), M warning(s).</code></p>
+<p><code>asgard --doctor</code> exits with status <strong>1</strong> when the report contains problems,
+including overridden task definitions, and <strong>0</strong> otherwise. Warnings alone do
+not cause a failure, so scripts and CI can use the exit status as a check.</p>
 <h3 id="a-deliberate-override">A Deliberate Override<a class="headerlink" href="#a-deliberate-override" title="Permanent link">&para;</a></h3>
 <p>The asgard repository ships an example. <code>xyzzy.loki</code> defines a <code>xyzzy</code> task, and the root <code>.loki</code>, which imports it, defines <code>xyzzy</code> again. Run <code>asgard --doctor</code> from a clone:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>asgard doctor -- /Users/you/asgard

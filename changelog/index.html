@@ -2439,6 +2439,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>asgard --doctor</code> exits 1 when it reports problems</strong>, including overridden
+  task definitions, so scripts and CI can use it as a check. Warnings alone
+  still exit 0.</li>
 <li><strong>A background job started right after it ended starts again</strong>, instead
   of being reported as already running while its old shell exits.</li>
 <li><strong><code>asgard --doctor</code> reports a <code>.loki</code> that calls <code>exit</code> or <code>abort</code></strong> as a

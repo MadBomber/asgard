@@ -55,9 +55,13 @@ module Asgard
         end
       end
 
+      def problem_count
+        @findings.count { |finding| finding.level == :error } + override_count
+      end
+
       def summary_line
         by_level = @findings.group_by(&:level)
-        errors   = (by_level[:error]&.size || 0) + override_count
+        errors   = problem_count
         warns    = by_level[:warn]&.size || 0
         return colorize(32, "No problems found.") if errors.zero? && warns.zero?
         return colorize(33, "No problems found (#{warns} warning(s)).") if errors.zero?

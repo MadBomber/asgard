@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`asgard --doctor` exits 1 when it reports problems**, including overridden
+  task definitions, so scripts and CI can use it as a check. Warnings alone
+  still exit 0.
 - **A background job started right after it ended starts again**, instead
   of being reported as already running while its old shell exits.
 - **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a

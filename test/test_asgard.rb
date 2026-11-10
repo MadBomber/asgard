@@ -31,7 +31,8 @@ class TestAsgardRun < Minitest::Test
   def test_doctor_flag_works_without_loki_file
     Dir.mktmpdir do |dir|
       out, _err = capture_io do
-        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        error = assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        assert_equal 1, error.status
       end
       assert_match "no .loki file found", out
     end
@@ -42,9 +43,26 @@ class TestAsgardRun < Minitest::Test
       dir = File.realpath(dir)
       File.write(File.join(dir, ".loki"), "")
       out, _err = capture_io do
-        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        error = assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        assert_equal 0, error.status
       end
       assert_match "No problems found", out
+    end
+  end
+
+  def test_doctor_flag_exits_successfully_with_only_warnings
+    Dir.mktmpdir do |root|
+      child = File.join(root, "child")
+      Dir.mkdir(child)
+      File.write(File.join(root, ".loki"), "")
+      File.write(File.join(child, ".loki"), "")
+
+      out, = capture_io do
+        error = assert_raises(SystemExit) { Dir.chdir(child) { Asgard.run!(["--doctor"]) } }
+        assert_equal 0, error.status
+      end
+      assert_match "[WARN] shadowed marker", out
+      assert_match "No problems found (", out
     end
   end
 
@@ -1825,6 +1843,45 @@ class TestDoctorDuplicateMethods < Minitest::Test
   def test_empty_when_every_name_defined_once
     log = { a: [["x.loki", 1]], b: [["y.loki", 2]] }
     assert_empty Asgard::Doctor.duplicate_methods(log)
+  end
+end
+
+class TestDoctorExitStatus < Minitest::Test
+  include AsgardProcess
+
+  def test_undefined_dependency_exits_with_failure
+    out, _err, status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        depends_on :missing
+        desc "build", "Build"
+        def build = nil
+      end
+    RUBY
+
+    assert_match "[FAIL] Tasks dependency graph:", out
+    assert_equal 1, status.exitstatus
+  end
+
+  def test_load_failure_exits_with_failure
+    out, _err, status = run_asgard("exit 0", "--doctor")
+
+    assert_match "load failed: SystemExit (status 0)", out
+    assert_equal 1, status.exitstatus
+  end
+
+  def test_duplicate_definition_exits_with_failure
+    out, _err, status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        desc "build", "First"
+        def build = nil
+        desc "build", "Second"
+        def build = nil
+      end
+    RUBY
+
+    assert_match "1 problem(s)", out
+    refute_match "[FAIL]", out
+    assert_equal 1, status.exitstatus
   end
 end
 

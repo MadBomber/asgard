@@ -248,6 +248,10 @@ No problems found (1 warning(s)).
 
 The summary line is `No problems found.`, `No problems found (N warning(s)).` or `N problem(s), M warning(s).`
 
+`asgard --doctor` exits with status **1** when the report contains problems,
+including overridden task definitions, and **0** otherwise. Warnings alone do
+not cause a failure, so scripts and CI can use the exit status as a check.
+
 ### A Deliberate Override
 
 The asgard repository ships an example. `xyzzy.loki` defines a `xyzzy` task, and the root `.loki`, which imports it, defines `xyzzy` again. Run `asgard --doctor` from a clone:

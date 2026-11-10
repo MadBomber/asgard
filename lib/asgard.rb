@@ -83,8 +83,7 @@ module Asgard
     end
     return unless leading_flag?(argv, "--doctor")
 
-    Asgard::Doctor.new.run
-    exit
+    exit(Asgard::Doctor.new.run)
   end
 
   # Finds and loads the task files and checks every class they defined.

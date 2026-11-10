@@ -29,6 +29,7 @@ module Asgard
       build_task_sections
       report_dependencies
       print_report
+      problem_count.zero? ? 0 : 1
     end
 
     # Every ".loki" marker from +dir+ up to the filesystem root, nearest

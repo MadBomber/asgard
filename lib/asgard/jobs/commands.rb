@@ -24,11 +24,14 @@ module Asgard
         # One `list` row per record, with what the job is doing now.
         def rows(state) = state.records.map { |record| row(record, state) }
 
+        # verified? goes first: a job that ends between the reads shows
+        # its exit, never "gone", and a code read means its time is there.
         def row(record, state)
-          name    = record[:name]
-          exited  = state.exit_time(name)
-          status  = Jobs.status(exit_code: state.exit_code(name), verified: state.verified?(record),
-                                leftovers: State.leftovers?(record, exited_at: exited))
+          name     = record[:name]
+          verified = state.verified?(record)
+          code     = state.exit_code(name)
+          exited   = state.exit_time(name)
+          status   = Jobs.status(exit_code: code, verified:, leftovers: State.leftovers?(record, exited_at: exited))
           seconds = (exited - Time.iso8601(record[:started])).round(1) if status.is_a?(Array)
           { name:, task: record[:task], pid: record[:pid], state: Jobs.describe_status(status, seconds:),
             started: Time.iso8601(record[:started]).strftime("%Y-%m-%d %H:%M:%S"), command: record[:command] }

@@ -259,6 +259,34 @@ class TestJobsState < Minitest::Test
     Process.wait(child)
   end
 
+  def test_a_job_whose_status_is_written_no_longer_verifies
+    script = state.prepare.script_path("api", ".sh")
+    File.write(script, "sleep 30; true\n")
+    child  = Process.spawn("/bin/sh", script, pgroup: true)
+    record = fixture("api", pid: child, pgid: child, script:)
+    wait_until { state.verified?(record) }
+    File.write(state.status_path("api"), "0\n")
+    refute state.verified?(record), "the trampoline still runs, but the job has ended"
+  ensure
+    if child
+      Asgard::Jobs::Stopper.signal_group("KILL", child)
+      Process.wait(child)
+    end
+  end
+
+  # The trampoline's own pid never counts as the script surviving it;
+  # the script's shell, or a subshell it left behind, does.
+  def test_survives_looks_past_the_trampoline
+    record     = fixture("api")
+    pid        = record[:pid]
+    script     = record[:script]
+    trampoline = Asgard::Pid::Member.new(pid:, started: Time.now, command: "/bin/sh -c trap asgard-job bash #{script}")
+    survives   = ->(*members) { Asgard::Jobs::State.survives?(record, ps: ->(_) { [trampoline, *members] }) }
+    refute survives.call, "the trampoline alone"
+    refute survives.call(trampoline.with(pid: pid + 1, command: "sleep 30")), "a leftover that is not the script"
+    assert survives.call(trampoline.with(pid: pid + 1, command: "bash #{script}")), "the script's shell or subshell"
+  end
+
   # B3: clean removes a job under its start lock and checks again once
   # it holds it, so a start that raced it keeps its fresh record.
   def test_regression_b3_forget_waits_for_the_lock_and_rechecks
@@ -473,6 +501,33 @@ class TestJobsLauncher < Minitest::Test
   end
 
   def test_a_new_start_of_an_ended_job_replaces_its_record_and_truncates_the_log
+    assert_a_new_start_replaces_the_ended_job
+  end
+
+  # The trampoline writes the status, then its shell exits. A start in
+  # between found that shell still running the script and returned the
+  # ended job; the sleep holds the gap open so this fails every time.
+  def test_regression_a_start_while_the_trampoline_exits_starts_a_new_job
+    trampoline = Launcher::TRAMPOLINE
+    Launcher.send(:remove_const, :TRAMPOLINE)
+    Launcher.const_set(:TRAMPOLINE, "#{trampoline}; sleep 1")
+    assert_a_new_start_replaces_the_ended_job
+  ensure
+    if trampoline
+      Launcher.send(:remove_const, :TRAMPOLINE)
+      Launcher.const_set(:TRAMPOLINE, trampoline)
+    end
+  end
+
+  # A subshell the script backgrounded still carries its command line,
+  # so the job is still running after the script's own status is written.
+  def test_a_subshell_left_running_keeps_the_job_running
+    first = start("( sleep 30; true ) &")
+    assert_equal 0, wait_for_status("api")
+    assert_equal first.pid, start("sleep 30").pid
+  end
+
+  def assert_a_new_start_replaces_the_ended_job
     first = start("echo one; exit 1")
     assert_equal 1, wait_for_status("api")
     wait_until { File.read(first.log).include?("one") }
@@ -895,6 +950,16 @@ class TestJobsCommands < Minitest::Test
     assert_equal({ task: "t", pid: done[:pid], started: "2026-10-24 09:30:00", command: "exit 3" },
                  rows["done"].slice(:task, :pid, :started, :command))
     assert_equal %w[tail -n +1 -f /l], Commands.tail_argv("/l")
+  end
+
+  # A job that writes its status while its row is read shows its exit:
+  # the stand-in's verified? writes the status as the check runs.
+  def test_a_job_that_ends_while_listed_shows_its_exit
+    state.prepare
+    record = fixture("api")
+    ending = state.dup
+    ending.define_singleton_method(:verified?) { |_| File.write(status_path("api"), "0\n") && false }
+    assert_match(/\Aexited 0 /, Commands.row(record, ending)[:state])
   end
 
   def test_list_renders_this_project_or_every_project

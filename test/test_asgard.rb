@@ -1875,6 +1875,33 @@ class TestDoctor < Minitest::Test
     end
   end
 
+  def test_reports_abort_during_load_without_exiting
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), 'abort "need DOCTOR_TEST_FOO"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "load failed: SystemExit (status 1): need DOCTOR_TEST_FOO", out
+    end
+  end
+
+  def test_reports_bare_exit_during_load_without_exiting
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "exit 3")
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "load failed: SystemExit (status 3)", out
+      refute_match "(status 3):", out
+    end
+  end
+
+  def test_load_failure_omits_a_default_system_exit_message
+    assert_equal "load failed: SystemExit (status 3)", Asgard::Doctor.load_failure(SystemExit.new(3))
+    assert_equal "load failed: SystemExit (status 0)", Asgard::Doctor.load_failure(SystemExit.new)
+    assert_equal "load failed: SystemExit (status 2): stop", Asgard::Doctor.load_failure(SystemExit.new(2, "stop"))
+  end
+
   def test_reports_undefined_dependency
     Dir.mktmpdir do |dir|
       dir = File.realpath(dir)
@@ -2341,6 +2368,12 @@ class TestRegressionLoadErrors < Minitest::Test
     _out, err, status = run_asgard(CASES["typo"].first, "help", env: { "ASGARD_TRACE" => "1" })
     refute_equal 0, status.exitstatus
     assert_match(/^\s+from |:in /, err)
+  end
+
+  def test_regression_c4_abort_while_loading_still_ends_the_run
+    _out, err, status = run_asgard('abort "need DOCTOR_TEST_FOO"', "help")
+    assert_equal 1, status.exitstatus
+    assert_equal "need DOCTOR_TEST_FOO\n", err
   end
 
   def test_regression_c4_load_error_message_is_pure

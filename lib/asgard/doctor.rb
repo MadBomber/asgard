@@ -57,6 +57,16 @@ module Asgard
       end
     end
 
+    # The "load failed" line for whatever stopped the .loki chain loading.
+    # An exit or abort raises SystemExit; a bare exit (or raise SystemExit)
+    # carries only a default message, so only the status is worth showing then.
+    def self.load_failure(error)
+      return "load failed: #{error.class}: #{error.message}" unless error.is_a?(SystemExit)
+
+      detail = ": #{error.message}" unless ["exit", error.class.to_s].include?(error.message)
+      "load failed: #{error.class} (status #{error.status})#{detail}"
+    end
+
     private
 
     def report_markers
@@ -83,8 +93,8 @@ module Asgard
       before = Asgard::Base._asgard_subclasses.dup
       Asgard.load_root(@marker)
       @new_subclasses = (Asgard::Base._asgard_subclasses - before + [Tasks]).uniq
-    rescue StandardError, ScriptError => e
-      @findings << Finding.new(level: :error, message: "load failed: #{e.class}: #{e.message}")
+    rescue StandardError, ScriptError, SystemExit => e
+      @findings << Finding.new(level: :error, message: self.class.load_failure(e))
     ensure
       ImportTracer.doctor = nil
     end

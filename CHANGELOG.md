@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `documentation_uri` and `bug_tracker_uri`, so the RubyGems page links to
   [the docs site](https://madbomber.github.io/asgard) and the
   [GitHub issues](https://github.com/MadBomber/asgard/issues).
+- **The docs site serves `llms.txt`**:
+  [/llms.txt](https://madbomber.github.io/asgard/llms.txt) lists every docs
+  page with a one-line description, in the [llms.txt](https://llmstxt.org)
+  format.
 
 ### Changed
 
@@ -24,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **A background job started right after it ended starts again**, instead
   of being reported as already running while its old shell exits.
+- **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a
+  load failure instead of exiting with no report.
 
 ## [0.6.0] - 2026-10-31
 

@@ -1,0 +1,45 @@
+# Asgard
+
+> A task runner for any project. Write tasks in a .loki file, run them with dependencies, on a schedule, when files change, or in the background.
+
+Asgard is a Ruby gem built on Thor. A project is a directory with a `.loki` file; tasks are public methods inside `class Tasks`, each with a `desc` line, and run as `asgard <task>`. `sh` runs scripts in any shell or interpreter, `depends_on` builds pipelines, and the built-in `schedule`, `watcher` and `jobs` commands run tasks on a timer (launchd or systemd), when files change, or as background processes.
+
+## Getting Started
+
+- [Home](https://madbomber.github.io/asgard/): What asgard is, its key features, a quick start, how it works and where to go next.
+- [Getting Started](https://madbomber.github.io/asgard/getting-started/): Install asgard, create a `.loki` file, define and run a task, then add a parameter and an option.
+
+## Writing Tasks
+
+- [Defining Tasks](https://madbomber.github.io/asgard/tasks/): A task is a public method in `class Tasks` with a `desc` line; parameters, typed options, extended help, hidden tasks, a default task, aliases and exit status.
+- [Shell Commands](https://madbomber.github.io/asgard/shell/): `sh` and `shebang` run a script under the default shell or a named interpreter, and stop the task when it fails.
+- [Dependencies](https://madbomber.github.io/asgard/dependencies/): `depends_on` runs prerequisites first, in order or in parallel groups, each one only once.
+- [Options & Flags](https://madbomber.github.io/asgard/options/): Per-task `option`, class-wide `class_option`, and the built-in `--version`, `--doctor`, `--debug` and `--verbose` flags.
+- [Variables](https://madbomber.github.io/asgard/variables/): Share values between tasks as `@@name ||= value.freeze` class variables, and why that is the right kind of variable.
+- [Helper Methods](https://madbomber.github.io/asgard/helpers/): Methods tasks call but users never type: `private` methods, `no_commands` blocks and the `helper` DSL.
+- [Subcommands](https://madbomber.github.io/asgard/subcommands/): Group related tasks under one name, such as `asgard db migrate`, with a class of their own.
+
+## Organizing a Project
+
+- [Task Files](https://madbomber.github.io/asgard/task-files/): The `.loki` marker file, bringing in more files with `import`, `loki_up` and `import_up`, and what happens when two files define the same task.
+- [Environment Variables](https://madbomber.github.io/asgard/environment/): Reading variables with `env`, loading `.env` with `dotenv`, and the variables asgard sets and reads.
+- [Help & Diagnostics](https://madbomber.github.io/asgard/diagnostics/): Help pages, the command tree, help headers and footers, the `--doctor` report, and every startup error with its exit status.
+
+## Built-in Commands
+
+- [Scheduled Tasks](https://madbomber.github.io/asgard/schedule/): Run a task on a timer with a `schedule` line and `asgard schedule install`, using launchd on macOS or systemd user timers on Linux.
+- [Watched Files](https://madbomber.github.io/asgard/watch/): Run tasks when files change with a `watch` line and `asgard watcher start`; a task reads what changed through `changes`.
+- [Background Jobs](https://madbomber.github.io/asgard/jobs/): Start a long-running process with `sh ..., background: true` and manage it with `asgard jobs`.
+
+## Reference
+
+- [DSL Reference](https://madbomber.github.io/asgard/reference/): Every word you can write in a `.loki` file, with its signature, meaning, an example and a link to its guide page.
+- [Command Reference](https://madbomber.github.io/asgard/commands/): Everything you can type after `asgard`: running tasks and the built-in `schedule`, `watcher` and `jobs` commands.
+- [Files & Directories](https://madbomber.github.io/asgard/files/): Every file asgard reads or writes: project files, per-project state, scheduler job files and temporary script files.
+- [Examples](https://madbomber.github.io/asgard/examples/): The runnable `.loki` files in the repository's `examples/` directory and the gem's own multi-file task setup.
+- [Tips](https://madbomber.github.io/asgard/tips/): Short, practical advice from using asgard day to day.
+
+## Optional
+
+- [Breaking Changes](https://madbomber.github.io/asgard/breaking-changes/): Releases that can break an existing project, newest first, with upgrade steps.
+- [Changelog](https://madbomber.github.io/asgard/changelog/): Every change in every release.

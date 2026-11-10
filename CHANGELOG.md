@@ -491,6 +491,7 @@ reinstalled after.
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
+[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.0...HEAD
 [0.6.0]: https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/MadBomber/asgard/compare/v0.4.1...v0.5.1
 [0.4.1]: https://github.com/MadBomber/asgard/compare/v0.4.0...v0.4.1

@@ -99,7 +99,7 @@ class TestAsgardRun < Minitest::Test
       _, err = capture_io do
         assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
       end
-      assert_match "undefined task", err
+      assert_equal "asgard: undefined task(s) in depends_on: ghost (needed by sub_a)\n", err
     end
   ensure
     Object.send(:remove_const, :SubGroup2) if Object.const_defined?(:SubGroup2)
@@ -770,6 +770,25 @@ class TestAsgardDependsOn < Minitest::Test
     klass.new([], {}, {}).invoke(:test)
     assert_equal %i[build test], log
   end
+
+  def test_undefined_deps_name_each_declaring_task_without_duplicates
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) {}
+
+      depends_on :typo, %i[ghost build], :ghost
+      desc "release", "release"
+      define_method(:release) {}
+
+      depends_on :ghost, :absent
+      desc "ci", "ci"
+      define_method(:ci) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_equal "undefined task(s) in depends_on: absent (needed by ci), " \
+                 "ghost (needed by ci, release), typo (needed by release)", error.message
+  end
 end
 
 class TestAsgardDependsOnProc < Minitest::Test
@@ -840,7 +859,7 @@ class TestAsgardDependsOnProc < Minitest::Test
     end
 
     error = assert_raises(Asgard::Error) { klass.validate_deps! }
-    assert_match "undefined task(s) in depends_on: ghost", error.message
+    assert_equal "undefined task(s) in depends_on: ghost (needed by test)", error.message
   end
 end
 

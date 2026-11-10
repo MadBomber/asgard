@@ -403,7 +403,7 @@ After every file has loaded, and before any task runs, asgard checks the depende
 | Problem | Message |
 |---|---|
 | Two tasks depend on each other, directly or through others | `asgard: circular dependency — topological sort failed: [:a, :b]` |
-| A `depends_on` names a task that does not exist | `asgard: undefined task(s) in depends_on: ghost` |
+| A `depends_on` names a task that does not exist | `asgard: undefined task(s) in depends_on: ghost (needed by ci)` |
 | A `depends_on` with no `def` after it (at the end of a class body) | `asgard: depends_on(a) declared without a following task definition` |
 | A dependency takes a required argument | `asgard: task 'b' has 1 required argument(s) and cannot be used as a dependency` |
 | A block-form `depends_on` returned the wrong shape | `asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them` |

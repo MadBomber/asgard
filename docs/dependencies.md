@@ -404,10 +404,11 @@ asgard a
 
 ```bash
 asgard ci
-# asgard: undefined task(s) in depends_on: ghost_check
+# asgard: undefined task(s) in depends_on: ghost_check (needed by ci)
 ```
 
 A private method is not a task, so `depends_on :my_helper` is undefined even though the method exists. Make it a task or call it from the task body.
+Each missing dependency names the task or tasks that declared it.
 
 **A `depends_on` with nothing after it**
 

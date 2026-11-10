@@ -120,10 +120,18 @@ module Asgard
       end
 
       def _check_undefined_deps!(all_task_names)
-        undefined = _deps.values.flatten.uniq - all_task_names
+        undefined = {}
+        _deps.each do |task, stages|
+          (stages.flatten.uniq - all_task_names).each do |dep|
+            (undefined[dep] ||= []) << task
+          end
+        end
         return unless undefined.any?
 
-        raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
+        details = undefined.sort.map do |dep, tasks|
+          "#{dep} (needed by #{tasks.sort.join(', ')})"
+        end
+        raise Asgard::Error, "undefined task(s) in depends_on: #{details.join(', ')}"
       end
 
       def _check_dep_arities!

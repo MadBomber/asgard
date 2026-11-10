@@ -1416,6 +1416,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1467,7 +1478,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1517,7 +1528,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1567,7 +1578,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1617,7 +1628,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1678,7 +1689,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1756,7 +1767,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_5" class="md-nav__link">
+  <a href="#fixed_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -1919,6 +1930,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1970,7 +1992,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed" class="md-nav__link">
+  <a href="#fixed_1" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2020,7 +2042,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_1" class="md-nav__link">
+  <a href="#fixed_2" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2070,7 +2092,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_2" class="md-nav__link">
+  <a href="#fixed_3" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2120,7 +2142,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_3" class="md-nav__link">
+  <a href="#fixed_4" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2181,7 +2203,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_4" class="md-nav__link">
+  <a href="#fixed_5" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2259,7 +2281,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed_5" class="md-nav__link">
+  <a href="#fixed_6" class="md-nav__link">
     <span class="md-ellipsis">
       
         Fixed
@@ -2415,6 +2437,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.</li>
 </ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>A background job started right after it ended starts again</strong>, instead
+  of being reported as already running while its old shell exits.</li>
+<li><strong><code>asgard --doctor</code> reports a <code>.loki</code> that calls <code>exit</code> or <code>abort</code></strong> as a
+  load failure instead of exiting with no report.</li>
+</ul>
 <h2 id="060-2026-10-31"><a href="https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0">0.6.0</a> - 2026-10-31<a class="headerlink" href="#060-2026-10-31" title="Permanent link">&para;</a></h2>
 <p>Upgrading from 0.5.x? Read
 <a href="https://madbomber.github.io/asgard/breaking-changes/">Breaking Changes</a>
@@ -2494,7 +2523,7 @@ reinstalled after.</p>
 <li><strong>BREAKING: <code>exec:</code> removed from <code>sh</code> and <code>shebang</code>.</strong> Passing it raises
   <code>ArgumentError (unknown keyword: :exec)</code>; delete the keyword.</li>
 </ul>
-<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Dependencies</strong>: a failing parallel dependency waits for its siblings
   and every failure is named; a task waiting on a shared dependency that
@@ -2590,7 +2619,7 @@ reinstalled after.</p>
 <li><code>Asgard.machine_wide?</code> is true for <code>watcher list</code> as well as
   <code>schedule list</code>, so both work from a directory with no <code>.loki</code> above it.</li>
 </ul>
-<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Usage errors exit 1</strong> — a missing argument, an unknown command, or a bad
   subcommand (<code>asgard greet</code> with no NAME, <code>asgard nope</code>) printed Thor's
@@ -2629,7 +2658,7 @@ reinstalled after.</p>
 <li>The not-installed messages from <code>stop</code>, <code>start</code>, <code>trigger</code> and <code>log</code> point at
   <code>asgard schedule list --all</code>.</li>
 </ul>
-<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Scheduled entries were invisible outside the directory tree of the project
   that installed them: <code>list</code> and every per-entry command were scoped to the
@@ -2665,7 +2694,7 @@ reinstalled after.</p>
   <code>test/test_*.rb</code> in one process, so coverage is measured across the whole
   suite.</li>
 </ul>
-<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong><code>asgard &lt;task&gt;</code> now exits 1 when the task returns <code>:fail</code></strong> — quality-gate
   tasks (<code>*_check</code>) signal failure by returning <code>:fail</code>; previously that result
@@ -2767,7 +2796,7 @@ reinstalled after.</p>
 <li><strong><code>debug?</code> / <code>verbose?</code> private methods on <code>Tasks</code></strong> — removed as redundant. The identical <code>module_function</code> versions on <code>Kernel</code> are available everywhere, including inside task bodies.</li>
 <li><strong><code>dagwood</code> runtime dependency</strong> — replaced by stdlib <code>TSort</code> for the one thing it was still doing (cycle detection); the parallel-execution plan itself was already derived directly from <code>depends_on</code>'s stage list, not from a rebuilt DAG. <code>_build_dep_graph</code> (dead code — its return value was already unused) is deleted along with the gemspec entry.</li>
 </ul>
-<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Help output showed <code>tasks</code> prefix before every command</strong> — <code>asgard help</code> displayed <code>asgard tasks build</code> instead of <code>asgard build</code>. The cause was a keyword-vs-positional mismatch in the <code>Asgard::Base#help</code> override: declaring <code>subcommand: false</code> as a keyword argument caused Ruby's <code>super</code> to forward it as the hash <code>{subcommand: false}</code>. Thor's <code>banner</code> method received this hash as the positional <code>subcommand</code> argument, treated it as truthy, and prepended the class namespace (<code>tasks</code>) to every command name. Fixed by changing the override signature to match Thor's positional signature: <code>def help(command = nil, subcommand = false)</code>.</li>
 <li><strong>Multiple parallel dep failures now all surfaced</strong> — when two or more parallel deps raised, only the first exception was re-raised; the rest were silently discarded. All errors are now printed to stderr via <code>warn</code> before a general <code>Asgard::Error</code> is raised. When only one dep fails, its exception is re-raised directly as before.</li>
@@ -2810,7 +2839,7 @@ reinstalled after.</p>
 <li>Removed all references to <code>just</code> task runner and <code>recipe</code> terminology; Asgard uses "task" throughout</li>
 <li><code>depends_on</code> parameter renamed from <code>*recipes</code> to <code>*tasks</code> for consistency</li>
 </ul>
-<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
 <ul>
 <li>Replaced <code>warn</code>/<code>exit 1</code> with <code>abort</code> throughout <code>run!</code> — <code>Kernel#warn</code> is silenced when <code>$VERBOSE = nil</code>, which is the default in Ruby 4.0; <code>abort</code> writes to <code>$stderr</code> regardless</li>
 </ul>

@@ -2013,7 +2013,7 @@
 <p>A missing required parameter is a usage error: the message prints and asgard exits 1.</p>
 <div class="admonition warning">
 <p class="admonition-title">Dependencies cannot take required parameters</p>
-<p>A task that another task lists in <code>depends_on</code> is run with no arguments. If it has a required parameter, asgard refuses at startup: <code>asgard: task 'copy' has 2 required argument(s) and cannot be used as a dependency</code>. Give the parameter a default, or read the value from an option or an environment variable instead.</p>
+<p>A task that another task lists in <code>depends_on</code> is run with no arguments. If it has a required parameter, asgard refuses at startup: <code>asgard: task 'copy' has 2 required argument(s) and cannot be used as a dependency</code>. Give the parameter a default, read the value from an option or an environment variable, or depend on a task that calls it with fixed arguments; see <a href="../dependencies/#a-dependency-with-arguments">A Dependency With Arguments</a>.</p>
 </div>
 <p>A splat collects everything that follows:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"lint FILES..."</span><span class="p">,</span><span class="w"> </span><span class="s2">"Lint the given files (default: lib)"</span>

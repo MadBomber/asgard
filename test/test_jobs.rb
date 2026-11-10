@@ -952,6 +952,16 @@ class TestJobsCommands < Minitest::Test
     assert_equal %w[tail -n +1 -f /l], Commands.tail_argv("/l")
   end
 
+  # A job that writes its status while its row is read shows its exit:
+  # the stand-in's verified? writes the status as the check runs.
+  def test_a_job_that_ends_while_listed_shows_its_exit
+    state.prepare
+    record = fixture("api")
+    ending = state.dup
+    ending.define_singleton_method(:verified?) { |_| File.write(status_path("api"), "0\n") && false }
+    assert_match(/\Aexited 0 /, Commands.row(record, ending)[:state])
+  end
+
   def test_list_renders_this_project_or_every_project
     records = start_servers
     out, = capture_io { jobs("list") }

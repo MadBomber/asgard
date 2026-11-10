@@ -29,24 +29,29 @@ module Asgard
         # is alive and runs the trampoline whose command line carries the
         # script path. A reused pid after a reboot fails this, and so does
         # one that is now asgard itself, and so does a record that is not
-        # a job's (Jobs.valid_record?). A ps that cannot tell raises
+        # a job's (Jobs.valid_record?). Once the trampoline has written the
+        # status (not just opened the file) its pid no longer counts, though
+        # its shell may not have exited yet; ps asks first, so a status
+        # written in between is still seen. A ps that cannot tell raises
         # Pid::Unusable rather than calling every job gone.
         def verified?(record)
           return false unless Jobs.valid_record?(record)
 
           Pid.require_ps!
-          Pid.matches?(record[:pid], record[:script], self_ok: false) || survives?(record)
+          trampoline = Pid.matches?(record[:pid], record[:script], self_ok: false) && !File.size?(status_file(record))
+          trampoline || survives?(record)
         end
 
-        # Whether the job outlived its trampoline: some process in its group
-        # still runs the script. A group id is never reused while the group
-        # has members, so a match is still the job we started.
-        def survives?(record, ps: Pid.method(:group_command_lines))
+        # Whether the script still runs apart from the trampoline: some
+        # other process in its group carries the script path (the script's
+        # shell, or a subshell it backgrounded). A group id is never reused
+        # while the group has members, so a match is still the job we started.
+        def survives?(record, ps: Pid.method(:group_processes))
           pgid   = record[:pgid]
           script = record[:script].to_s
           return false unless job_group?(pgid) && !script.empty?
 
-          ps.call(pgid).any? { |command| command.include?(script) }
+          ps.call(pgid).any? { |member| member.pid != record[:pid] && member.command.include?(script) }
         end
 
         # Whether +pgid+ could be a job's group at all: a group id above 1

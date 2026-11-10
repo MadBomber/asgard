@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.
 
+### Fixed
+
+- **A background job started right after it ended starts again**, instead
+  of being reported as already running while its old shell exits.
+
 ## [0.6.0] - 2026-10-31
 
 Upgrading from 0.5.x? Read

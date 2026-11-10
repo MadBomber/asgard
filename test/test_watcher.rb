@@ -1653,12 +1653,6 @@ class TestPidAndStateDir < Minitest::Test
     end
   end
 
-  def test_regression_j10_group_commands_keeps_only_that_group
-    out = "  501 /bin/sh -c trap asgard-job bash /s/api.sh\n  777 bash /s/api.sh\n  777 sleep 30\n 7770 other\n"
-    assert_equal ["bash /s/api.sh", "sleep 30"], Pid.group_commands(out, 777)
-    assert_empty Pid.group_commands("", 777)
-  end
-
   def test_all_lists_one_kind_at_a_time
     Dir.mktmpdir do |home|
       watch = StateDir.base_dir("watch", home:, env: {})

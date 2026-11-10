@@ -862,6 +862,8 @@ end
 
 - **An AI agent is just another shell.** Register a coding agent's CLI with `shell` and a heredoc becomes the prompt: [`examples/robots/.loki`](examples/robots/.loki) wires up `claude -p` in one line, and its `ask` task sends a prompt with a plain `sh :claude, <<~PROMPT`. Any agent that reads a prompt from stdin fits the same way, so a task can review a diff, draft release notes or explain a failing test alongside the tasks that run them.
 
+- **A graph of steps inside one task.** `depends_on` orders whole tasks. When one task needs its own fan-out and fan-in, with output passed from step to step, run a [simple_flow](https://github.com/MadBomber/simple_flow) pipeline in the task body: [`examples/simple_flow/.loki`](examples/simple_flow/.loki) shows one. Run each step's command with `IO.popen` or `system` and halt the pipeline on failure; `sh` inside a step would exit asgard before the pipeline could report.
+
 - **Prefer `background: true` to a trailing `&`.** A managed job gets a name, a log and `asgard jobs stop`; a process detached with `&` leaves no record and must be found with `ps`.
 
 - **Import conditionally.** `.loki` is plain Ruby: `import "quality_rails.loki" if ENV["RAILS_ROOT"]` keeps Rails-only gates out of non-Rails projects, and a block-form `depends_on` picks up whatever `*_check` tasks are loaded.

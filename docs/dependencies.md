@@ -355,6 +355,30 @@ Both read the dependencies of the task that is running, not of tasks further dow
 
 ---
 
+## A Dependency With Arguments
+
+A task that takes required arguments cannot be a dependency, because `depends_on` runs each dependency with none. When the arguments are fixed, write a small task that calls it with them, and depend on that:
+
+```ruby
+desc "compile TARGET [ARCH]", "Compile one target"
+def compile(target, arch = "arm64") = sh "make #{target} ARCH=#{arch}"
+
+def compile_release = compile("release", "x86_64")
+def compile_debug   = compile("debug")
+
+depends_on :setup, [:compile_release, :compile_debug], :package
+desc "Ship it"
+def ship = sh "upload pkg/*"
+```
+
+`compile_release` and `compile_debug` take no arguments, so they are ordinary dependencies: each runs once, they run side by side in their parallel group, and `ship` can read what they returned with `dep_result(:compile_release)`. Inside each one, `compile` is just a method call. `compile` is still a task of its own, and `asgard compile debug arm64` runs it from the command line as before.
+
+Neither wrapper has a `desc`, so they are hidden tasks: they do not appear in `asgard help`, but `asgard compile_release` runs one and `asgard --doctor` lists them. Give one a `desc` when it deserves a place in the help text.
+
+One wrapper per argument set keeps this honest for a handful of combinations. When the arguments are only known while the task runs, call the task as a method from the task body instead, `compile(target)`, and accept that the call is not a dependency: it runs every time, in sequence, and has no entry in `dep_results`.
+
+---
+
 ## Startup Validation
 
 Before any task runs, asgard checks every dependency list in every task class and stops with one line on the first problem. No backtrace, exit 1.
@@ -412,7 +436,7 @@ asgard welcome
 # asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency
 ```
 
-Give the parameter a default (`def greet(name = "World")`) or read the value from an option or environment variable instead.
+Give the parameter a default (`def greet(name = "World")`), read the value from an option or environment variable, or depend on a wrapper task that supplies the arguments; see [A Dependency With Arguments](#a-dependency-with-arguments).
 
 `asgard --doctor` reports the same problems without stopping at the first one; see [Help & Diagnostics](diagnostics.md).
 
@@ -513,6 +537,64 @@ asgard db reset   # migrate → seed → reset
 ```
 
 Each subcommand class has its own dependency graph, validated at startup like the top-level one. See [Subcommands](subcommands.md).
+
+---
+
+## Steps Inside One Task
+
+`depends_on` orders whole tasks. Sometimes the graph belongs inside a single task: three commands where two can run at the same time, the third needs their output, and a failure in any of them should stop the rest with a message that says which step failed. A task can do that with the [simple_flow](https://github.com/MadBomber/simple_flow) gem (`gem install simple_flow`), which runs a dependency graph of steps and passes a result from step to step.
+
+```ruby
+require "simple_flow"
+
+class Tasks
+  desc "Two steps in parallel, a third merges their output"
+  def fan_out
+    a = ->(r) { capture(r, :a, "echo alpha; sleep 1") }
+    b = ->(r) { capture(r, :b, "echo beta") }
+    c = ->(r) { capture(r, :c, "echo merged: #{r.context[:a].strip} + #{r.context[:b].strip}") }
+
+    pipeline = SimpleFlow::Pipeline.new(concurrency: :threads) do
+      step :a, a, depends_on: :none
+      step :b, b, depends_on: :none
+      step :c, c, depends_on: [:a, :b]
+    end
+
+    result = pipeline.call_parallel(SimpleFlow::Result.new(nil))
+    raise Asgard::Error, "pipeline halted: #{result.errors}" unless result.continue?
+
+    puts result.context[:c]
+  end
+
+  private
+
+  # Runs +command+, keeps its output in the result under +name+, and
+  # halts the pipeline with an error when the command fails.
+  def capture(result, name, command)
+    out = IO.popen(command, err: %i[child out], &:read)
+    return result.with_context(name, out) if $?.success?
+
+    result.with_error(name, "exit #{$?.exitstatus}: #{out.strip}").halt
+  end
+end
+```
+
+```bash
+asgard fan_out
+```
+
+```
+merged: alpha + beta
+```
+
+`a` and `b` run side by side; `c` runs once both have finished and reads their output from the result. When a step halts, the steps after it do not run, and the task raises `Asgard::Error` with the step's name and message, so asgard prints one line and exits 1.
+
+Two rules make this work inside a task:
+
+- **Never call `sh` inside a step.** `sh` reports failure by exiting asgard, and from inside a step that happens before the pipeline can see the failure: the other steps are cut off and nothing after the pipeline runs. Run the command with `IO.popen` as `capture` does, or with backticks or `system`, and turn a bad exit status into `with_error` and `halt`. A step usually needs the output anyway, to pass it on.
+- **Write the steps as lambdas in the task body, then hand them to `step`.** Inside the `Pipeline.new` block, `self` is the pipeline, so a lambda written there cannot reach the task's helpers or `options`. A lambda made in the task body keeps the task as `self`.
+
+`examples/simple_flow/.loki` in the repository is this task plus a `halting` task whose middle step fails; see [Examples](examples.md#simple_flow).
 
 ---
 

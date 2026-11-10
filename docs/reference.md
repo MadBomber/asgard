@@ -41,7 +41,7 @@ Option `type:` values: `:string`, `:boolean`, `:numeric`, `:array`, `:hash`.
 | `depends_on` | `depends_on :a, [:b, :c], :d` | Stages in order; an Array is one parallel stage | `depends_on :setup, [:lint, :build], :test` | [Dependencies](dependencies.md#mixed-sequential-and-parallel) |
 | `depends_on` | `depends_on { [...] }` or `depends_on -> { [...] }` | Compute the stage list after every file has loaded | `depends_on { [all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)] }` | [Dependencies](dependencies.md#dynamic-dependencies) |
 
-`depends_on` goes before the `def`, in either order with `desc`. It attaches to the very next method. A task that takes required arguments cannot be a dependency.
+`depends_on` goes before the `def`, in either order with `desc`. It attaches to the very next method. A task that takes required arguments cannot be a dependency; depend on a task that calls it with fixed arguments instead ([A Dependency With Arguments](dependencies.md#a-dependency-with-arguments)).
 
 ### Helpers and Help Text
 

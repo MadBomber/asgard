@@ -22,7 +22,7 @@ import "*.loki"                      # every sibling task file, alphabetically
 import "subdir/import_demo.loki"     # one file from a subdirectory
 ```
 
-Three examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad` and `watcher_examples`. `subdir/` has a `.loki` of its own as well, so it works both as part of `examples/` and on its own.
+Four examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad`, `simple_flow` and `watcher_examples`. `subdir/` has a `.loki` of its own as well, so it works both as part of `examples/` and on its own.
 
 !!! note
     `concurrent.loki` exists to be run, not read: its point is output that changes from run to run.
@@ -341,6 +341,34 @@ asgard: depends_on proc/block for 'quality' returned invalid dependency [:a_chec
 ```
 
 See [Dynamic Dependencies](dependencies.md#dynamic-dependencies).
+
+---
+
+## `simple_flow/`
+
+A one-file project that runs a [simple_flow](https://github.com/MadBomber/simple_flow) pipeline inside a single task: a graph of steps, two of which run at the same time, with data passed from step to step. It needs the gem (`gem install simple_flow`) and runs from its own directory.
+
+```bash
+cd examples/simple_flow
+asgard fan_out
+```
+
+```
+merged: alpha + beta
+```
+
+`halting` is the same graph with a failing middle step. The last step never runs, and the task turns the pipeline's error into an `Asgard::Error`:
+
+```bash
+asgard halting; echo "exit $?"
+```
+
+```
+asgard: pipeline halted: {b: ["exit 1: beta"]}
+exit 1
+```
+
+The file's `capture` helper is the part to copy: it runs a command with `IO.popen`, keeps the output in the result, and halts the pipeline on a bad exit status instead of calling `sh`, which would exit asgard from inside the step. See [Steps Inside One Task](dependencies.md#steps-inside-one-task).
 
 ---
 

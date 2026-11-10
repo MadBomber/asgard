@@ -88,7 +88,7 @@ Usage: "asgard copy FROM TO"
 A missing required parameter is a usage error: the message prints and asgard exits 1.
 
 !!! warning "Dependencies cannot take required parameters"
-    A task that another task lists in `depends_on` is run with no arguments. If it has a required parameter, asgard refuses at startup: `asgard: task 'copy' has 2 required argument(s) and cannot be used as a dependency`. Give the parameter a default, or read the value from an option or an environment variable instead.
+    A task that another task lists in `depends_on` is run with no arguments. If it has a required parameter, asgard refuses at startup: `asgard: task 'copy' has 2 required argument(s) and cannot be used as a dependency`. Give the parameter a default, read the value from an option or an environment variable, or depend on a task that calls it with fixed arguments; see [A Dependency With Arguments](dependencies.md#a-dependency-with-arguments).
 
 A splat collects everything that follows:
 

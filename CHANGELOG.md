@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.
 
+### Fixed
+
+- **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a
+  load failure instead of exiting with no report.
+
 ## [0.6.0] - 2026-10-31
 
 Upgrading from 0.5.x? Read

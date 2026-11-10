@@ -2341,9 +2341,10 @@
 </span></code></pre></div>
 <p><strong>A dependency that is not a task</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>asgard<span class="w"> </span>ci
-</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="c1"># asgard: undefined task(s) in depends_on: ghost_check (needed by ci)</span>
 </span></code></pre></div>
-<p>A private method is not a task, so <code>depends_on :my_helper</code> is undefined even though the method exists. Make it a task or call it from the task body.</p>
+<p>A private method is not a task, so <code>depends_on :my_helper</code> is undefined even though the method exists. Make it a task or call it from the task body.
+Each missing dependency names the task or tasks that declared it.</p>
 <p><strong>A <code>depends_on</code> with nothing after it</strong></p>
 <p>A <code>depends_on</code> at the end of a class body, or followed only by <code>private</code> methods, has no task to attach to:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>asgard

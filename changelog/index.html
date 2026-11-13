@@ -2439,12 +2439,17 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>CI runs on Node 24 actions</strong>: the workflows use <code>actions/checkout@v7</code>
+  and <code>actions/setup-python@v7</code>, replacing the deprecated Node 20 majors
+  (<a href="https://github.com/MadBomber/asgard/issues/29">#29</a>).</li>
 <li><strong>Schedule log directories are private</strong>: <code>asgard schedule install</code>
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>bin/console</code> and the <code>console</code> task load on Ruby 4</strong>: the Gemfile lists
+  <code>irb</code>, which is no longer a default gem (<a href="https://github.com/MadBomber/asgard/issues/28">#28</a>).</li>
 <li><strong><code>truncate_log NAME</code> on an entry with no log yet is not an error</strong>: a declared schedule or recorded job that has not written its log says <code>NAME has no log yet (PATH); nothing to truncate</code> and exits 0 (<a href="https://github.com/MadBomber/asgard/issues/18">#18</a>).</li>
 <li><strong><code>asgard --doctor</code> exits 1 when it reports problems</strong>, including overridden
   task definitions, so scripts and CI can use it as a check. Warnings alone

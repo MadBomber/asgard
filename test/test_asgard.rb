@@ -2457,6 +2457,40 @@ class TestRegressionLoadErrors < Minitest::Test
     error.set_backtrace(["/lib/asgard/x.rb:1:in 'y'", "/proj/.loki:2:in '<class:Tasks>'", "/proj/.loki:1:in '<top>'"])
     assert_equal "/proj/.loki:2: undefined local variable or method 'dependz_on' (NameError)", Asgard.load_error_message(error)
   end
+
+  def test_regression_c4_dsl_outside_class_tasks_gets_a_hint
+    %w[desc depends_on].each do |name|
+      error = top_level_error("#{name} 'x'")
+      assert Asgard.dsl_outside_tasks?(error), name
+      assert_match(/ \(NoMethodError\); .*goes inside class Tasks \.\.\. end\z/, Asgard.load_error_message(error))
+    end
+  end
+
+  def test_regression_c4_other_name_errors_get_no_hint
+    refute Asgard.dsl_outside_tasks?(top_level_error("frobnicate 'x'"))
+    refute Asgard.dsl_outside_tasks?(top_level_error("new"))
+    refute Asgard.dsl_outside_tasks?(NameError.new("no receiver"))
+    refute Asgard.dsl_outside_tasks?(NameError.new("no name", receiver: TOPLEVEL_BINDING.receiver))
+    refute Asgard.dsl_outside_tasks?(RuntimeError.new("desc"))
+    not_main = assert_raises(NoMethodError) { Object.new.desc }
+    refute Asgard.dsl_outside_tasks?(not_main)
+    refute_includes Asgard.load_error_message(not_main), "class Tasks"
+  end
+
+  def test_regression_c4_dsl_outside_class_tasks_hints_end_to_end
+    _out, err, status = run_asgard(%(desc "Build it"\ndef build = nil\n), "build")
+    assert_equal 1, status.exitstatus
+    assert_match(/\.loki:1: undefined method 'desc' .*\(NoMethodError\); .*class Tasks \.\.\. end$/, err)
+  end
+
+  private
+
+  def top_level_error(code)
+    TOPLEVEL_BINDING.eval(code)
+    flunk "#{code} did not raise"
+  rescue NameError => e
+    e
+  end
 end
 
 # J8, J9: background jobs from the command line.

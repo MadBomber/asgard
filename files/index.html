@@ -1944,6 +1944,7 @@
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">ASGARD_LOG_MAX</span><span class="o">=</span><span class="m">1048576</span><span class="w"> </span>asgard<span class="w"> </span>watcher<span class="w"> </span>start<span class="w">    </span><span class="c1"># rotate at 1 MB</span>
 </span></code></pre></div>
 <p>Job logs are not rotated; each new start of a job name empties its log. Scheduler logs are appended by launchd or systemd and are not rotated by asgard.</p>
+<p>To shorten any of these logs by hand, <code>asgard schedule truncate_log</code>, <code>asgard watcher truncate_log</code> and <code>asgard jobs truncate_log</code> keep the last <code>--lines M</code> lines in place, so a running writer keeps appending to the same file.</p>
 <hr />
 <h2 id="what-is-safe-to-delete">What Is Safe to Delete<a class="headerlink" href="#what-is-safe-to-delete" title="Permanent link">&para;</a></h2>
 <table>
@@ -1997,7 +1998,7 @@
 </tr>
 </tbody>
 </table>
-<p>The supported ways to tidy up are <code>asgard jobs clean</code>, <code>asgard schedule remove</code>, <code>asgard schedule prune</code> and <code>asgard watcher stop</code>. See the <a href="../commands/">Command Reference</a>.</p>
+<p>The supported ways to tidy up are <code>asgard jobs clean</code>, <code>asgard schedule remove</code>, <code>asgard schedule prune</code>, <code>asgard watcher stop</code> and each group's <code>truncate_log</code>. See the <a href="../commands/">Command Reference</a>.</p>
 <hr />
 <h2 id="environment-variables-that-change-paths">Environment Variables That Change Paths<a class="headerlink" href="#environment-variables-that-change-paths" title="Permanent link">&para;</a></h2>
 <table>

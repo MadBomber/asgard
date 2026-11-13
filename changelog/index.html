@@ -2430,6 +2430,11 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <a href="https://madbomber.github.io/asgard/llms.txt">/llms.txt</a> lists every docs
   page with a one-line description, in the <a href="https://llmstxt.org">llms.txt</a>
   format.</li>
+<li><strong><code>truncate_log</code> shortens logs in place</strong>: <code>asgard schedule truncate_log
+  [NAME]</code>, <code>asgard watcher truncate_log</code> and <code>asgard jobs truncate_log [NAME]</code>
+  keep the last <code>--lines M</code> lines (required; <code>0</code> empties the log), rewriting
+  the file in place so a running writer keeps appending to it. <code>--dry-run</code>
+  (<code>-n</code>) reports what would be removed without changing anything.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>

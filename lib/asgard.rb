@@ -11,7 +11,7 @@ require_relative "asgard/doctor"
 
 module Asgard
   # Search the current directory and its ancestors for a .loki task file.
-  # Returns the path string, or nil if not found.
+  # Returns its Pathname, or nil if not found.
   def self.find_task_file
     loki_up
   end

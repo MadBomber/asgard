@@ -21,6 +21,12 @@ class TestGemspec < Minitest::Test
     assert_equal "#{SPEC.homepage}/issues", SPEC.metadata["bug_tracker_uri"]
   end
 
+  # Issue #28: irb left the default gems in Ruby 4.0, so bin/console needs it listed.
+  def test_the_gemfile_lists_irb_for_bin_console
+    gemfile = File.read(File.expand_path("../Gemfile", __dir__))
+    assert_match(/^gem "irb"/, gemfile)
+  end
+
   def test_regression_p4_only_the_library_and_its_docs_are_packaged
     dev    = /\A(?:CLAUDE\.md|COMMITS\.md|\.envrc|mkdocs\.yml|Archspec\.rb|\.rubocop\.yml|\.reek\.yml)\z|\.loki\z/
     leaked = SPEC.files.grep(%r{\A(?:docs/|notes/|examples/|\.github/|site/)}) + SPEC.files.grep(dev)

@@ -2845,6 +2845,18 @@ class TestRegressionCoreReview < Minitest::Test
     assert_match "'env' at", error.message
   end
 
+  # Issue #25: a reserved helper name is reported at the line that called
+  # helper, and no singleton method is left behind.
+  def test_a_reserved_helper_name_is_reported_at_the_calling_line
+    klass = Class.new(Asgard::Base)
+    %i[run env].each do |name|
+      line  = __LINE__ + 1
+      error = assert_raises(Asgard::Error) { klass.helper(name) { nil } }
+      assert_match "'#{name}' at #{__FILE__}:#{line} is", error.message
+      refute_includes klass.singleton_methods(false), name
+    end
+  end
+
   # R9: methods every object already has are not tasks.
   def test_regression_r9_object_methods_are_not_hidden_tasks
     klass = Class.new(Asgard::Base) do

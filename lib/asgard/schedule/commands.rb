@@ -119,6 +119,17 @@ module Asgard
           find_installed(name) || abort("#{name} is neither declared nor installed (see `asgard schedule list --all`).")
         end
 
+        # Whether +path+ is NAME's log to truncate. A declared entry that has
+        # not run yet says so and is skipped; any other name aborts.
+        def log_to_truncate?(name, path)
+          found = File.file?(path)
+          abort "schedule: no such schedule log: #{name}" if name.include?("/") || !(found || schedules.key?(name))
+          return true if found
+
+          $stderr.puts "#{name} has no log yet (#{path}); nothing to truncate"
+          false
+        end
+
         # True when list should cover every project: asked for with --all, or
         # there is no .loki here, so no single project to scope to.
         def list_all? = options[:all] || Asgard.find_task_file.nil?
@@ -235,9 +246,11 @@ module Asgard
       method_option :lines, type: :string, required: true, banner: "M", desc: "Lines to keep per log; 0 empties it"
       method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
       def truncate_log(name = nil)
+        Log.line_count(options[:lines]) # reject a bad --lines even when there is no log to truncate
         pattern = scheduler.log_path("*")
         paths = name ? [scheduler.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(File.dirname(pattern)), File.basename(pattern)))
-        abort "schedule: no such schedule log: #{name}" if name && (name.include?("/") || !File.file?(paths.first))
+        return if name && !log_to_truncate?(name, paths.first)
+
         Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
       rescue ArgumentError, SystemCallError, IOError => e
         abort "schedule: #{e.message}"

@@ -355,7 +355,7 @@ asgard schedule truncate_log daily_summary --lines 1000
 asgard schedule truncate_log --lines 1000 --dry-run
 ```
 
-`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every schedule log of this project, including logs left by removed entries. It does not run on its own; schedule it like any other task if you want it regular. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
+`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every schedule log of this project, including logs left by removed entries. A declared entry that has never run has no log yet, so there is nothing to truncate: `daily_summary has no log yet (/Users/you/Library/Logs/asgard/...log); nothing to truncate`, with exit status 0. A name that is neither declared nor has a log fails with `schedule: no such schedule log: NAME`. It does not run on its own; schedule it like any other task if you want it regular. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
 
 ### trigger
 

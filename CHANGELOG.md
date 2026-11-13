@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of being reported as already running while its old shell exits.
 - **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a
   load failure instead of exiting with no report.
+- **Dependency errors name the task(s) that declared them**: an undefined
+  dependency (#14) and a dependency that takes required arguments both end
+  with `(needed by ci, release)`.
 
 ## [0.6.0] - 2026-10-31
 

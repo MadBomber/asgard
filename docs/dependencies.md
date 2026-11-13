@@ -434,7 +434,7 @@ def welcome = puts "welcome"
 
 ```bash
 asgard welcome
-# asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency
+# asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency (needed by welcome)
 ```
 
 Give the parameter a default (`def greet(name = "World")`), read the value from an option or environment variable, or depend on a wrapper task that supplies the arguments; see [A Dependency With Arguments](#a-dependency-with-arguments).

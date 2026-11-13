@@ -405,7 +405,7 @@ After every file has loaded, and before any task runs, asgard checks the depende
 | Two tasks depend on each other, directly or through others | `asgard: circular dependency — topological sort failed: [:a, :b]` |
 | A `depends_on` names a task that does not exist | `asgard: undefined task(s) in depends_on: ghost (needed by ci)` |
 | A `depends_on` with no `def` after it (at the end of a class body) | `asgard: depends_on(a) declared without a following task definition` |
-| A dependency takes a required argument | `asgard: task 'b' has 1 required argument(s) and cannot be used as a dependency` |
+| A dependency takes a required argument | `asgard: task 'b' has 1 required argument(s) and cannot be used as a dependency (needed by c)` |
 | A block-form `depends_on` returned the wrong shape | `asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them` |
 | A block-form `depends_on` raised | `asgard: depends_on proc for 'quality' raised RuntimeError: boom` |
 | A task or helper uses a name asgard's command machinery needs (`shell`, `options`, `invoke`, `run`, `args`, ...) | `asgard: 'args' at /Users/you/myproject/.loki:3 is a name Thor reserves and cannot be a task or helper; rename it` |

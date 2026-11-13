@@ -789,6 +789,25 @@ class TestAsgardDependsOn < Minitest::Test
     assert_equal "undefined task(s) in depends_on: absent (needed by ci), " \
                  "ghost (needed by ci, release), typo (needed by release)", error.message
   end
+
+  def test_dep_with_required_args_names_each_declaring_task_without_duplicates
+    klass = Class.new(Asgard::Base) do
+      desc "copy SRC DST", "copy"
+      define_method(:copy) { |_src, _dst| }
+
+      depends_on :copy, %i[copy]
+      desc "release", "release"
+      define_method(:release) {}
+
+      depends_on :copy
+      desc "ci", "ci"
+      define_method(:ci) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_equal "task 'copy' has 2 required argument(s) and cannot be used as a dependency " \
+                 "(needed by ci, release)", error.message
+  end
 end
 
 class TestAsgardDependsOnProc < Minitest::Test

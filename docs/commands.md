@@ -22,7 +22,7 @@ Asgard looks for a `.loki` file in the current directory, then in each parent di
 | `asgard help TASK` | Usage, options and `long_desc` for one task |
 | `asgard tree` | The tasks as a tree, subcommands expanded |
 | `asgard --version` | Prints the version and exits; works without a `.loki` |
-| `asgard --doctor` | Prints the diagnostic report and exits; works even when the `.loki` is broken |
+| `asgard --doctor` | Prints the diagnostic report and exits, with status 1 when it finds problems; works even when the `.loki` is broken |
 | `asgard TASK --debug` | Runs the task with `debug?` true |
 | `asgard TASK --verbose` | Runs the task with `verbose?` true; an `import` inside the task prints what it loads |
 
@@ -47,7 +47,7 @@ A `map "t" => "test"` in the `.loki` adds a name that stays stable whatever task
 | `--debug` | `debug?` is true inside tasks; with `--verbose`, an `import` inside the task also reports files it skips |
 | `--verbose` | `verbose?` is true inside tasks; an `import` inside the task prints each file it loads |
 | `--version` | Print the version and exit |
-| `--doctor` | Print the diagnostic report and exit |
+| `--doctor` | Print the diagnostic report and exit (status 1 when it finds problems) |
 
 See [Options & Flags](options.md#built-in-flags) and [Help & Diagnostics](diagnostics.md).
 

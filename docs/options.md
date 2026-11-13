@@ -109,7 +109,7 @@ Four flags are available on every task. They appear under `Options:` in `asgard 
 | Flag | What it does | When it acts |
 |---|---|---|
 | `--version` | Prints asgard's version and exits | Before any task file loads; works with no project |
-| `--doctor` | Prints a diagnosis of the project's task files and exits | Before the normal startup, so it works even when a `.loki` is broken |
+| `--doctor` | Prints a diagnosis of the project's task files and exits, with status 1 when it finds problems | Before the normal startup, so it works even when a `.loki` is broken |
 | `--debug` | Sets `$DEBUG` to true, so `debug?` is true | Before the task body runs |
 | `--verbose` | Sets `$VERBOSE` to true, so `verbose?` is true | Before the task body runs |
 

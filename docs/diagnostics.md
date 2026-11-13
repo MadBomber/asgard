@@ -324,7 +324,7 @@ Tasks by file (Tasks):
 1 problem(s), 0 warning(s).
 ```
 
-`doc_tasks.loki` defines the `DocCommands` group behind `asgard doc`, so the report has one section for that class and one for `Tasks`. The `xyzzy` override shows up in the `Tasks` section, and a `.loki` further up your tree would add a shadowed-marker warning to the count.
+`doc_tasks.loki` defines the `DocCommands` group behind `asgard doc`, so the report has one section for that class and one for `Tasks`. The `xyzzy` override shows up in the `Tasks` section, and a `.loki` further up your tree would add a shadowed-marker warning to the count. Because the report has a problem, this run exits with status 1.
 
 ### When the Files Do Not Load
 
@@ -457,7 +457,7 @@ The last one is asgard refusing a name that starts with `_`, which is reserved f
 | Status | When |
 |---|---|
 | `0` | The task finished, and did not return `:fail` |
-| `1` | The task returned the symbol `:fail`; a usage error; a load or validation error; `Asgard::Error` was raised; a parallel dependency group had failures |
+| `1` | The task returned the symbol `:fail`; a usage error; a load or validation error; `Asgard::Error` was raised; a parallel dependency group had failures; `asgard --doctor` found problems |
 | The command's own status | A `sh` or `shebang` script exited non-zero: asgard exits with the same number |
 | `127` | The interpreter a `shebang` names is not on `PATH` (`asgard: shell :lua not found: lua ...`) |
 | `128 + N` | The script was ended by signal N (`143` after a TERM, `137` after a KILL), as a shell would report it |

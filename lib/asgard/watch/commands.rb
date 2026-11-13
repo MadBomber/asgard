@@ -58,7 +58,7 @@ module Asgard
       no_commands do
         def watches = Watch.declarations
 
-        def watch_root = @watch_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
+        def watch_root = @watch_root ||= Asgard.project_root
 
         def watch_project = @watch_project ||= Schedule.project_slug(watch_root)
 

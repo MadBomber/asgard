@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Schedule and watcher take the project root from `Asgard.project_root`**,
+  as jobs already did, so all three act on the same project
+  ([#26](https://github.com/MadBomber/asgard/issues/26)).
 - **CI runs on Node 24 actions**: the workflows use `actions/checkout@v7`
   and `actions/setup-python@v7`, replacing the deprecated Node 20 majors
   ([#29](https://github.com/MadBomber/asgard/issues/29)).

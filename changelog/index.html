@@ -2422,6 +2422,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 <h2 id="unreleased"><a href="https://github.com/MadBomber/asgard/compare/v0.6.0...HEAD">Unreleased</a><a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
 <h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>A DSL word outside <code>class Tasks</code> gets a hint</strong>: <code>desc</code> or <code>depends_on</code> at the top level of a <code>.loki</code> now ends the load-error line with a reminder that they go inside <code>class Tasks ... end</code>.</li>
 <li><strong>The gem links its docs site and issue tracker</strong>: the gemspec sets
   <code>documentation_uri</code> and <code>bug_tracker_uri</code>, so the RubyGems page links to
   <a href="https://madbomber.github.io/asgard">the docs site</a> and the
@@ -2444,6 +2445,7 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>truncate_log NAME</code> on an entry with no log yet is not an error</strong>: a declared schedule or recorded job that has not written its log says <code>NAME has no log yet (PATH); nothing to truncate</code> and exits 0 (<a href="https://github.com/MadBomber/asgard/issues/18">#18</a>).</li>
 <li><strong><code>asgard --doctor</code> exits 1 when it reports problems</strong>, including overridden
   task definitions, so scripts and CI can use it as a check. Warnings alone
   still exit 0.</li>

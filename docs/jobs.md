@@ -232,7 +232,7 @@ asgard jobs truncate_log api --lines 1000
 asgard jobs truncate_log --lines 1000 --dry-run
 ```
 
-`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every job log of this project, including logs of jobs no longer on record; records, scripts and statuses are left alone. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
+`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. Without a name it does every job log of this project, including logs of jobs no longer on record; records, scripts and statuses are left alone. A job on record that has no log file yet prints `api has no log yet (PATH); nothing to truncate` and exits 0; a name with neither a record nor a log fails with `jobs: no such job log: NAME`. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
 
 ### restart
 

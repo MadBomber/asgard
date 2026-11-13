@@ -70,6 +70,17 @@ module Asgard
 
         def record_for!(name) = state.read_record(name) || abort("jobs: no such job: #{name} (see `asgard jobs list`)")
 
+        # Whether +path+ is NAME's log to truncate. A job on record that has
+        # not written a log yet says so and is skipped; any other name aborts.
+        def log_to_truncate?(name, path)
+          found = File.file?(path)
+          abort "jobs: no such job log: #{name}" if name.include?("/") || !(found || state.read_record(name))
+          return true if found
+
+          $stderr.puts "#{name} has no log yet (#{path}); nothing to truncate"
+          false
+        end
+
         def stopper = Stopper.new(timeout: options[:timeout] || Stopper::TIMEOUT)
 
         # The records `stop` ends, newest start first, and the names that
@@ -132,8 +143,10 @@ module Asgard
       method_option :lines, type: :string, required: true, banner: "M", desc: "Lines to keep per log; 0 empties it"
       method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
       def truncate_log(name = nil)
+        Log.line_count(options[:lines]) # reject a bad --lines even when there is no log to truncate
         paths = name ? [state.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(state.dir), "*.log"))
-        abort "jobs: no such job log: #{name}" if name && (name.include?("/") || !File.file?(paths.first))
+        return if name && !log_to_truncate?(name, paths.first)
+
         Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
       rescue ArgumentError, SystemCallError, IOError => e
         abort "jobs: #{e.message}"

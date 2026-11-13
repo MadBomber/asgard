@@ -114,6 +114,17 @@ class TestTruncateLogCommands < Minitest::Test
     klass.new([], { lines:, dry_run: }, {})
   end
 
+  # The block's stderr and exit status (0 when it returns instead of exiting).
+  def stderr_and_status
+    status = 0
+    _, err = capture_io do
+      yield
+    rescue SystemExit => e
+      status = e.status
+    end
+    [err, status]
+  end
+
   def test_job_selection_includes_orphan_logs_but_not_other_projects_or_records
     state = Asgard::Jobs::State.new(project: "own", root: @root, base: @dir).prepare
     other = Asgard::Jobs::State.new(project: "other", root: @root, base: @dir).prepare
@@ -130,6 +141,30 @@ class TestTruncateLogCommands < Minitest::Test
     assert_equal "old\nkeep\n", File.read(paths[2])
     assert_equal "{}", File.read(state.record_path("one"))
     capture_io { assert_raises(SystemExit) { cli.truncate_log("../other/one") } }
+  end
+
+  def test_job_on_record_without_a_log_yet_is_not_an_error
+    state = Asgard::Jobs::State.new(project: "own", root: @root, base: @dir).prepare
+    state.write_record({ name: "api", task: "t", pid: 2, pgid: 2, started: Time.now.iso8601, script: "api.sh" })
+    cli = command(Asgard::Jobs::Commands)
+    cli.instance_variable_set(:@state, state)
+    assert_equal(["api has no log yet (#{state.log_path('api')}); nothing to truncate\n", 0], stderr_and_status { cli.truncate_log("api") })
+    refute File.exist?(state.log_path("api"))
+    bad_lines = command(Asgard::Jobs::Commands, lines: "x")
+    bad_lines.instance_variable_set(:@state, state)
+    assert_equal(["jobs: --lines must be a nonnegative integer\n", 1], stderr_and_status { bad_lines.truncate_log("api") })
+    assert_equal(["jobs: no such job log: ghost\n", 1], stderr_and_status { cli.truncate_log("ghost") })
+    assert_equal(["jobs: no such job log: ../own/api\n", 1], stderr_and_status { cli.truncate_log("../own/api") })
+  end
+
+  def test_schedule_declared_without_a_log_yet_is_not_an_error
+    backend = Asgard::Schedule::Launchd.new(project: "own", root: @root, home: @dir)
+    cli = command(Asgard::Schedule::Commands)
+    cli.instance_variable_set(:@scheduler, backend)
+    cli.define_singleton_method(:schedules) { { "hello" => {} } }
+    assert_equal(["hello has no log yet (#{backend.log_path('hello')}); nothing to truncate\n", 0],
+                 stderr_and_status { cli.truncate_log("hello") })
+    assert_equal(["schedule: no such schedule log: ghost\n", 1], stderr_and_status { cli.truncate_log("ghost") })
   end
 
   def test_watcher_processes_current_and_rotated_log_independently

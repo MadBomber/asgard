@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **CI runs on Node 24 actions**: the workflows use `actions/checkout@v7`
+  and `actions/setup-python@v7`, replacing the deprecated Node 20 majors
+  ([#29](https://github.com/MadBomber/asgard/issues/29)).
 - **Schedule log directories are private**: `asgard schedule install`
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.

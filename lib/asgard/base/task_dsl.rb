@@ -38,7 +38,13 @@ module Asgard
         Dotenv.load(path) if File.exist?(path)
       end
 
+      # A reserved name is refused before anything is defined, at the .loki
+      # line that called helper rather than at the define_method below.
       def helper(name, &)
+        if _reserved_name?(name.to_sym)
+          here = caller_locations(1, 1).first
+          _raise_reserved_name!(name, here.path, here.lineno)
+        end
         define_singleton_method(name, &)
         no_commands { private define_method(name) { |*args, **kwargs, &blk| self.class.send(name, *args, **kwargs, &blk) } }
       end

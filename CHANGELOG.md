@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A `helper` with a reserved name is reported at its `.loki` line**, not at
+  asgard's own `task_dsl.rb`, and is refused before anything is defined
+  ([#25](https://github.com/MadBomber/asgard/issues/25)).
 - **`truncate_log NAME` on an entry with no log yet is not an error**: a declared schedule or recorded job that has not written its log says `NAME has no log yet (PATH); nothing to truncate` and exits 0 ([#18](https://github.com/MadBomber/asgard/issues/18)).
 - **`asgard --doctor` exits 1 when it reports problems**, including overridden
   task definitions, so scripts and CI can use it as a check. Warnings alone

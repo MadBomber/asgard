@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [/llms.txt](https://madbomber.github.io/asgard/llms.txt) lists every docs
   page with a one-line description, in the [llms.txt](https://llmstxt.org)
   format.
+- **`truncate_log` shortens logs in place**: `asgard schedule truncate_log
+  [NAME]`, `asgard watcher truncate_log` and `asgard jobs truncate_log [NAME]`
+  keep the last `--lines M` lines (required; `0` empties the log), rewriting
+  the file in place so a running writer keeps appending to it. `--dry-run`
+  (`-n`) reports what would be removed without changing anything.
 
 ### Changed
 

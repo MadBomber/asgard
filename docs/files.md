@@ -131,6 +131,8 @@ ASGARD_LOG_MAX=1048576 asgard watcher start    # rotate at 1 MB
 
 Job logs are not rotated; each new start of a job name empties its log. Scheduler logs are appended by launchd or systemd and are not rotated by asgard.
 
+To shorten any of these logs by hand, `asgard schedule truncate_log`, `asgard watcher truncate_log` and `asgard jobs truncate_log` keep the last `--lines M` lines in place, so a running writer keeps appending to the same file.
+
 ---
 
 ## What Is Safe to Delete
@@ -146,7 +148,7 @@ Job logs are not rotated; each new start of a job name empties its log. Schedule
 | A plist or systemd unit | **no** | `asgard schedule remove NAME`, which also unloads the job from the scheduler |
 | The whole `~/.local/state/asgard/` | only with every watcher stopped and every job stopped | |
 
-The supported ways to tidy up are `asgard jobs clean`, `asgard schedule remove`, `asgard schedule prune` and `asgard watcher stop`. See the [Command Reference](commands.md).
+The supported ways to tidy up are `asgard jobs clean`, `asgard schedule remove`, `asgard schedule prune`, `asgard watcher stop` and each group's `truncate_log`. See the [Command Reference](commands.md).
 
 ---
 

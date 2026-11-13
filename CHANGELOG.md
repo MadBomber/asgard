@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **One parent-directory walk**: `loki_up`, `import_up` and `--doctor`'s
+  marker search use `Pathname#ascend` instead of three hand-rolled loops; what
+  they find is unchanged ([#19](https://github.com/MadBomber/asgard/issues/19)).
 - **Schedule and watcher take the project root from `Asgard.project_root`**,
   as jobs already did, so all three act on the same project
   ([#26](https://github.com/MadBomber/asgard/issues/26)).

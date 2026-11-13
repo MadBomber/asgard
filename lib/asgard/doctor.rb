@@ -33,20 +33,10 @@ module Asgard
     end
 
     # Every ".loki" marker from +dir+ up to the filesystem root, nearest
-    # first — mirrors loki_up's walk, but collects every match instead of
+    # first — the same walk as loki_up, but collects every match instead of
     # stopping at the first (so shadowed ancestor markers can be reported).
     def self.ancestor_markers(dir)
-      markers = []
-      current = Pathname.new(dir)
-      loop do
-        candidate = current + ".loki"
-        markers << candidate.to_s if candidate.file?
-        parent = current.parent
-        break if parent == current
-
-        current = parent
-      end
-      markers
+      Pathname.new(dir).ascend.map { it + ".loki" }.select(&:file?).map(&:to_s)
     end
 
     # method_name => [[file, line], ...] entries defined more than once —

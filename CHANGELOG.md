@@ -26,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Schedule and watcher take the project root from `Asgard.project_root`**,
+  as jobs already did, so all three act on the same project
+  ([#26](https://github.com/MadBomber/asgard/issues/26)).
+- **CI runs on Node 24 actions**: the workflows use `actions/checkout@v7`
+  and `actions/setup-python@v7`, replacing the deprecated Node 20 majors
+  ([#29](https://github.com/MadBomber/asgard/issues/29)).
 - **Schedule log directories are private**: `asgard schedule install`
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.
@@ -35,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **A `helper` with a reserved name is reported at its `.loki` line**, not at
   asgard's own `task_dsl.rb`, and is refused before anything is defined
   ([#25](https://github.com/MadBomber/asgard/issues/25)).
+- **`bin/console` and the `console` task load on Ruby 4**: the Gemfile lists
+  `irb`, which is no longer a default gem ([#28](https://github.com/MadBomber/asgard/issues/28)).
 - **`truncate_log NAME` on an entry with no log yet is not an error**: a declared schedule or recorded job that has not written its log says `NAME has no log yet (PATH); nothing to truncate` and exits 0 ([#18](https://github.com/MadBomber/asgard/issues/18)).
 - **`asgard --doctor` exits 1 when it reports problems**, including overridden
   task definitions, so scripts and CI can use it as a check. Warnings alone

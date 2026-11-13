@@ -23,7 +23,7 @@ module Asgard
       no_commands do
         def schedules = Schedule.declarations
 
-        def schedule_root = @schedule_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
+        def schedule_root = @schedule_root ||= Asgard.project_root
 
         def schedule_project = @schedule_project ||= Schedule.project_slug(schedule_root)
 

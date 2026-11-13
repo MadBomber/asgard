@@ -58,7 +58,19 @@ module Asgard
     return "#{first} (#{error.class})" if error.is_a?(SyntaxError) && first.match?(LOKI_FRAME)
 
     where = Array(error.backtrace).lazy.filter_map { |frame| frame[LOKI_FRAME, 1] }.first
-    [where, "#{first} (#{error.class})"].compact.join(": ")
+    hint = "; asgard's DSL (desc, depends_on, schedule, ...) goes inside class Tasks ... end" if dsl_outside_tasks?(error)
+    [where, "#{first} (#{error.class})#{hint}"].compact.join(": ")
+  end
+
+  # Whether +error+ is a Tasks class method (desc, depends_on, ...) called
+  # at the top level of a task file, outside `class Tasks ... end`.
+  def self.dsl_outside_tasks?(error)
+    return false unless error.is_a?(NameError) && error.receiver.equal?(TOPLEVEL_BINDING.receiver)
+
+    name = error.name or return false
+    Tasks.respond_to?(name, true) && !Object.respond_to?(name, true)
+  rescue ArgumentError # a NameError built without a receiver
+    false
   end
 
   # Loads the task files; anything they raise ends asgard with one line

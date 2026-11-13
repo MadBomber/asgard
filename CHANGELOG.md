@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **A DSL word outside `class Tasks` gets a hint**: `desc` or `depends_on` at the top level of a `.loki` now ends the load-error line with a reminder that they go inside `class Tasks ... end`.
 - **The gem links its docs site and issue tracker**: the gemspec sets
   `documentation_uri` and `bug_tracker_uri`, so the RubyGems page links to
   [the docs site](https://madbomber.github.io/asgard) and the

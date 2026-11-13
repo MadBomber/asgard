@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Schedule and watcher take the project root from `Asgard.project_root`**,
+  as jobs already did, so all three act on the same project
+  ([#26](https://github.com/MadBomber/asgard/issues/26)).
 - **Schedule log directories are private**: `asgard schedule install`
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.

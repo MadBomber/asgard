@@ -899,6 +899,20 @@ class TestScheduleCommands < Minitest::Test
     assert_match "asgard schedule list --all", out
   end
 
+  # Issue #26: schedule, watcher and jobs all take the project root from
+  # Asgard.project_root, so a pinned root reaches every subcommand group.
+  def test_every_subcommand_group_uses_the_pinned_project_root
+    pinned = File.realpath(@tmp)
+    Asgard.pin_project_root(pinned)
+    roots = Dir.chdir(@project) do
+      { schedule_root: Asgard::Schedule::Commands, watch_root: Asgard::Watch::Commands, jobs_root: Asgard::Jobs::Commands }
+        .map { |name, klass| klass.new([], {}, {}).send(name) }
+    end
+    assert_equal [pinned] * 3, roots
+  ensure
+    Asgard.pin_project_root(nil)
+  end
+
   def test_subcommand_usage_reads_schedule_not__schedule
     out, = capture_io { Asgard::Schedule::Commands.start(%w[help]) }
     assert_match " schedule install", out

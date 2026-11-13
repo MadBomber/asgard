@@ -659,6 +659,7 @@ asgard schedule stop NAME      # stop one entry (persists across reboots and ins
 asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule log NAME [-f]  # print (or follow) the entry's log
+asgard schedule truncate_log [NAME] --lines M  # keep the last M lines of the log (no NAME: all; -n: dry run)
 asgard schedule remove [NAME]  # remove one entry, or all of this project's
 asgard schedule prune [-n]     # remove every project's entries whose directory is gone (-n: list only)
 ```
@@ -699,6 +700,7 @@ asgard watcher stop --force # stop it and end any running task
 asgard watcher list         # watches, daemon state, each entry's last run (--all: every project's)
 asgard watcher preview      # the command and environment each watch would run
 asgard watcher log [-f]     # print (or follow) the watcher's log
+asgard watcher truncate_log --lines M  # keep the last M lines of watcher.log and watcher.log.1
 ```
 
 Each trigger runs `asgard <task>` from the project root with a fixed
@@ -736,6 +738,7 @@ end
 asgard jobs list            # running, exited with a status, or gone (--all: every project's)
 asgard jobs stop servers    # by job name, or by task and the tasks it depends on
 asgard jobs log api -f      # print (or follow) one job's log
+asgard jobs truncate_log [NAME] --lines M  # keep the last M lines of the log (no NAME: all; -n: dry run)
 asgard jobs restart api     # stop it, then run its owning task again
 asgard jobs clean           # forget every job that is no longer running
 ```

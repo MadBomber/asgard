@@ -2079,7 +2079,7 @@ not cause a failure, so scripts and CI can use the exit status as a check.</p>
 </span><span id="__span-13-64"><a id="__codelineno-13-64" name="__codelineno-13-64" href="#__codelineno-13-64"></a>============================================================
 </span><span id="__span-13-65"><a id="__codelineno-13-65" name="__codelineno-13-65" href="#__codelineno-13-65"></a>1 problem(s), 0 warning(s).
 </span></code></pre></div>
-<p><code>doc_tasks.loki</code> defines the <code>DocCommands</code> group behind <code>asgard doc</code>, so the report has one section for that class and one for <code>Tasks</code>. The <code>xyzzy</code> override shows up in the <code>Tasks</code> section, and a <code>.loki</code> further up your tree would add a shadowed-marker warning to the count.</p>
+<p><code>doc_tasks.loki</code> defines the <code>DocCommands</code> group behind <code>asgard doc</code>, so the report has one section for that class and one for <code>Tasks</code>. The <code>xyzzy</code> override shows up in the <code>Tasks</code> section, and a <code>.loki</code> further up your tree would add a shadowed-marker warning to the count. Because the report has a problem, this run exits with status 1.</p>
 <h3 id="when-the-files-do-not-load">When the Files Do Not Load<a class="headerlink" href="#when-the-files-do-not-load" title="Permanent link">&para;</a></h3>
 <p>A broken file still gets a report. The load failure is the finding, and there is no task listing because nothing finished loading:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>asgard doctor -- /Users/you/myproject
@@ -2209,7 +2209,7 @@ not cause a failure, so scripts and CI can use the exit status as a check.</p>
 </tr>
 <tr>
 <td><code>1</code></td>
-<td>The task returned the symbol <code>:fail</code>; a usage error; a load or validation error; <code>Asgard::Error</code> was raised; a parallel dependency group had failures</td>
+<td>The task returned the symbol <code>:fail</code>; a usage error; a load or validation error; <code>Asgard::Error</code> was raised; a parallel dependency group had failures; <code>asgard --doctor</code> found problems</td>
 </tr>
 <tr>
 <td>The command's own status</td>

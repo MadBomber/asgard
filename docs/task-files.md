@@ -140,10 +140,10 @@ class Tasks
   dotenv loki_up(".env") || ".env"
 
   # The project root, for paths that must not depend on where asgard ran
-  helper(:root) { loki_up.dirname }
+  helper(:project_root) { loki_up.dirname }
 
   desc "Build the docs"
-  def docs = sh "mkdocs build -f #{root.join('mkdocs.yml')}"
+  def docs = sh "mkdocs build -f #{project_root.join('mkdocs.yml')}"
 end
 ```
 

@@ -22,7 +22,7 @@ import "*.loki"                      # every sibling task file, alphabetically
 import "subdir/import_demo.loki"     # one file from a subdirectory
 ```
 
-Four examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad`, `simple_flow` and `watcher_examples`. `subdir/` has a `.loki` of its own as well, so it works both as part of `examples/` and on its own.
+Five examples are separate projects with their own `.loki` and must be run from their own directory: `depends_on_block/good`, `depends_on_block/bad`, `robots`, `simple_flow` and `watcher_examples`. `subdir/` has a `.loki` of its own as well, so it works both as part of `examples/` and on its own.
 
 !!! note
     `concurrent.loki` exists to be run, not read: its point is output that changes from run to run.
@@ -406,6 +406,20 @@ Every task also runs by hand, when `changes` is empty. Its `README.md` walks thr
 
 ---
 
+## `robots/`
+
+A one-task project that uses the [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI as a shell. `shell :claude` registers a short `bash` wrapper that feeds the task's heredoc to `claude -p` on stdin, so the heredoc is the prompt and `sh :claude` prints the reply. The wrapper unsets `ANTHROPIC_API_KEY` so `claude` uses your logged-in account. It needs the `claude` CLI on `PATH` and runs from its own directory:
+
+```bash
+cd examples/robots
+asgard ask
+asgard ask "Explain Thor's map in two sentences."
+```
+
+The reply comes from the model, so it differs from run to run. See [Shell Commands](shell.md#shell-add-or-replace-an-entry).
+
+---
+
 ## The asgard Repository Itself
 
 The repository root is a multi-file project that builds, tests and releases the gem. It is the best example of a `.loki` layout in real use.
@@ -667,6 +681,8 @@ Rails-only gates (`brakeman_check`, `rails_best_practices_check`, `active_record
 | `env_usage.loki` | `dotenv`, `loki_up(".env")` and `env` with defaults |
 | `subdir/` | `import` from a subdirectory, `import_up` to an ancestor |
 | `depends_on_block/good`, `bad` | The block form of `depends_on`, and its shape error |
+| `simple_flow/` | A simple_flow pipeline inside one task, with a parallel step and a halting failure |
+| `robots/` | A custom `shell` that sends a heredoc prompt to the `claude` CLI |
 | `bad.loki` | Why parallel tasks must not share instance variables |
 | `watcher_examples/` | Four `watch` declarations and the `changes` accessor |
 | repository root | A real multi-file project: `*_check` gates, `dep_result`, conditional imports and tasks, a background job, an override caught by `--doctor` |

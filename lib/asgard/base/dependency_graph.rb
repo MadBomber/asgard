@@ -120,7 +120,7 @@ module Asgard
       end
 
       def _check_undefined_deps!(all_task_names)
-        undefined = _dep_declarers.reject { |dep, _| all_task_names.include?(dep) }
+        undefined = _dep_declarers.except(*all_task_names)
         return unless undefined.any?
 
         details = undefined.sort.map do |dep, tasks|

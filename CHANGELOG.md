@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **One parent-directory walk**: `loki_up`, `import_up` and `--doctor`'s
+  marker search use `Pathname#ascend` instead of three hand-rolled loops; what
+  they find is unchanged ([#19](https://github.com/MadBomber/asgard/issues/19)).
 - **Schedule log directories are private**: `asgard schedule install`
   creates the log directory 0700 (and tightens an existing one), as the
   watch and jobs state directories already are.

@@ -22,16 +22,10 @@ module Kernel
   def changes = Asgard::Changes.current
   module_function :changes
 
+  # The nearest +name+ in the current directory or an ancestor, as a
+  # Pathname, or nil. A directory by that name is not it.
   def loki_up(name = ".loki")
-    dir = Pathname.new(Dir.pwd)
-    loop do
-      candidate = dir + name
-      return candidate if candidate.file? # a directory by that name is not it
-      parent = dir.parent
-      break if parent == dir
-      dir = parent
-    end
-    nil
+    Pathname.new(Dir.pwd).ascend.map { it + name }.find(&:file?)
   end
   module_function :loki_up
 
@@ -68,16 +62,12 @@ module Kernel
   # in is part of a path, not a pattern.
   def import_up(name = ".loki")
     if Asgard.glob?(name)
-      dir = Dir.pwd
-      loop do
+      Pathname.new(Dir.pwd).ascend do |dir|
         matches = Dir.glob(name, base: dir)
-        unless matches.empty?
-          warn "import_up: #{name} → #{dir}" if verbose? || debug?
-          return matches.map { |p| import(Asgard.glob_escape(File.join(dir, p))) }.any?
-        end
-        parent = File.dirname(dir)
-        break if parent == dir
-        dir = parent
+        next if matches.empty?
+
+        warn "import_up: #{name} → #{dir}" if verbose? || debug?
+        return matches.map { |p| import(Asgard.glob_escape(File.join(dir, p))) }.any?
       end
       warn "import_up: #{name} not found" if debug?
       return false

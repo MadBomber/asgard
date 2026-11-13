@@ -2360,7 +2360,7 @@ Each missing dependency names the task or tasks that declared it.</p>
 </span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">welcome</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"welcome"</span>
 </span></code></pre></div>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>asgard<span class="w"> </span>welcome
-</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="c1"># asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="c1"># asgard: task 'greet' has 1 required argument(s) and cannot be used as a dependency (needed by welcome)</span>
 </span></code></pre></div>
 <p>Give the parameter a default (<code>def greet(name = "World")</code>), read the value from an option or environment variable, or depend on a wrapper task that supplies the arguments; see <a href="#a-dependency-with-arguments">A Dependency With Arguments</a>.</p>
 <p><code>asgard --doctor</code> reports the same problems without stopping at the first one; see <a href="../diagnostics/">Help &amp; Diagnostics</a>.</p>

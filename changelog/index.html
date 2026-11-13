@@ -2451,6 +2451,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   of being reported as already running while its old shell exits.</li>
 <li><strong><code>asgard --doctor</code> reports a <code>.loki</code> that calls <code>exit</code> or <code>abort</code></strong> as a
   load failure instead of exiting with no report.</li>
+<li><strong>Dependency errors name the task(s) that declared them</strong>: an undefined
+  dependency (<a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/asgard/issues/14" title="GitHub Issue: madbomber/asgard #14">#14</a>) and a dependency that takes required arguments both end
+  with <code>(needed by ci, release)</code>.</li>
 </ul>
 <h2 id="060-2026-10-31"><a href="https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0">0.6.0</a> - 2026-10-31<a class="headerlink" href="#060-2026-10-31" title="Permanent link">&para;</a></h2>
 <p>Upgrading from 0.5.x? Read

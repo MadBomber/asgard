@@ -1837,7 +1837,7 @@
 <p>Per-task help does not show the header or footer. For a subcommand group, <code>asgard help db</code>, <code>asgard db help</code> and <code>asgard db help migrate</code> all work; see <a href="../subcommands/#help-for-a-group">Subcommands</a>.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Put asgard's options after the task name: <code>asgard build --verbose</code>. Written before it, <code>asgard --verbose build</code> is read as <code>asgard help build</code>. The two flags that answer and exit, <code>--version</code> and <code>--doctor</code>, are the exception and go first.</p>
+<p>Put asgard's options after the task name: <code>asgard build --verbose</code>. <code>--debug</code> and <code>--verbose</code> are also understood in front of a task name, so <code>asgard --verbose build</code> runs <code>build</code>; in front of any other word they run the <code>default_task</code> with that word as its argument (<code>asgard --verbose prod</code> is <code>asgard deploy prod --verbose</code> when <code>deploy</code> is the default). The two flags that answer and exit, <code>--version</code> and <code>--doctor</code>, always go first.</p>
 </div>
 <hr />
 <h2 id="asgard-tree"><code>asgard tree</code><a class="headerlink" href="#asgard-tree" title="Permanent link">&para;</a></h2>

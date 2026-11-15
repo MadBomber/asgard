@@ -2433,12 +2433,18 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   format.</li>
 <li><strong><code>truncate_log</code> shortens logs in place</strong>: <code>asgard schedule truncate_log
   [NAME]</code>, <code>asgard watcher truncate_log</code> and <code>asgard jobs truncate_log [NAME]</code>
-  keep the last <code>--lines M</code> lines (required; <code>0</code> empties the log), rewriting
+  keep the last <code>--lines M</code> lines (default 1000; <code>0</code> empties the log), rewriting
   the file in place so a running writer keeps appending to it. <code>--dry-run</code>
   (<code>-n</code>) reports what would be removed without changing anything.</li>
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>One parent-directory walk</strong>: <code>loki_up</code>, <code>import_up</code> and <code>--doctor</code>'s
+  marker search use <code>Pathname#ascend</code> instead of three hand-rolled loops; what
+  they find is unchanged (<a href="https://github.com/MadBomber/asgard/issues/19">#19</a>).</li>
+<li><strong>Schedule and watcher take the project root from <code>Asgard.project_root</code></strong>,
+  as jobs already did, so all three act on the same project
+  (<a href="https://github.com/MadBomber/asgard/issues/26">#26</a>).</li>
 <li><strong>CI runs on Node 24 actions</strong>: the workflows use <code>actions/checkout@v7</code>
   and <code>actions/setup-python@v7</code>, replacing the deprecated Node 20 majors
   (<a href="https://github.com/MadBomber/asgard/issues/29">#29</a>).</li>
@@ -2448,6 +2454,18 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong><code>--debug</code> and <code>--verbose</code> before a task name run that task</strong>:
+  <code>asgard --verbose build</code> is now <code>asgard build --verbose</code>. It used to print
+  the help for <code>build</code>, or, in a project with a <code>default_task</code>, run the
+  default task with <code>build</code> as its argument. In front of a word that is not a
+  task the flags still run the default task with that word
+  (<a href="https://github.com/MadBomber/asgard/issues/27">#27</a>).</li>
+<li><strong>A task called with arguments it cannot take runs nothing</strong>: the usage
+  error is reported before the task's dependencies run, not after them
+  (<a href="https://github.com/MadBomber/asgard/issues/27">#27</a>).</li>
+<li><strong>A <code>helper</code> with a reserved name is reported at its <code>.loki</code> line</strong>, not at
+  asgard's own <code>task_dsl.rb</code>, and is refused before anything is defined
+  (<a href="https://github.com/MadBomber/asgard/issues/25">#25</a>).</li>
 <li><strong><code>bin/console</code> and the <code>console</code> task load on Ruby 4</strong>: the Gemfile lists
   <code>irb</code>, which is no longer a default gem (<a href="https://github.com/MadBomber/asgard/issues/28">#28</a>).</li>
 <li><strong><code>truncate_log NAME</code> on an entry with no log yet is not an error</strong>: a declared schedule or recorded job that has not written its log says <code>NAME has no log yet (PATH); nothing to truncate</code> and exits 0 (<a href="https://github.com/MadBomber/asgard/issues/18">#18</a>).</li>

@@ -1618,7 +1618,7 @@
 <p><strong>Make bare <code>asgard</code> do the common thing.</strong> <code>default_task :test</code> (or <code>:quality</code>, as this repository does) saves typing on the task you run most.</p>
 </li>
 <li>
-<p><strong>Flags go after the task name.</strong> <code>asgard build --verbose</code> runs the task; <code>asgard --verbose build</code> prints the help for <code>build</code>. Only <code>--version</code> and <code>--doctor</code> go first. See <a href="../options/">Options &amp; Flags</a>.</p>
+<p><strong>Flags go after the task name.</strong> <code>asgard build --verbose</code> is the form to use. <code>--debug</code> and <code>--verbose</code> are also understood in front of a task name, so <code>asgard --verbose build</code> runs <code>build</code>; in front of any other word they run the <code>default_task</code> with that word as its argument. <code>--version</code> and <code>--doctor</code> go first. See <a href="../options/">Options &amp; Flags</a>.</p>
 </li>
 </ul>
 <hr />

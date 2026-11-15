@@ -1756,6 +1756,7 @@
 </tbody>
 </table>
 <p><code>--version</code> and <code>--doctor</code> are asgard's own only before the task name. After it they belong to the task: <code>asgard mytask --version</code> hands <code>--version</code> to <code>mytask</code>.</p>
+<p><code>--debug</code> and <code>--verbose</code> work on either side of a task name: <code>asgard --verbose TASK</code> is <code>asgard TASK --verbose</code>.</p>
 <h3 id="prefix-matching-and-aliases">Prefix Matching and Aliases<a class="headerlink" href="#prefix-matching-and-aliases" title="Permanent link">&para;</a></h3>
 <p>Any unambiguous prefix of a task name runs it. An exact name always wins over a longer name it is a prefix of. An ambiguous prefix stops with a list of candidates.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>ru<span class="w">          </span><span class="c1"># runs rubocop_check if it is the only task starting with "ru"</span>
@@ -1840,7 +1841,7 @@
 </tr>
 <tr>
 <td><code>asgard schedule truncate_log [NAME]</code></td>
-<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td><code>--lines M</code> (default 1000), <code>--dry-run</code> / <code>-n</code></td>
 <td>Keeps the last M lines of the entry's log; no NAME does every schedule log of this project; 0 empties it</td>
 </tr>
 <tr>
@@ -1897,7 +1898,7 @@
 </tr>
 <tr>
 <td><code>asgard watcher truncate_log</code></td>
-<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td><code>--lines M</code> (default 1000), <code>--dry-run</code> / <code>-n</code></td>
 <td>Keeps the last M lines of <code>watcher.log</code> and <code>watcher.log.1</code>; 0 empties them</td>
 </tr>
 <tr>
@@ -1943,7 +1944,7 @@
 </tr>
 <tr>
 <td><code>asgard jobs truncate_log [NAME]</code></td>
-<td><code>--lines M</code> (required), <code>--dry-run</code> / <code>-n</code></td>
+<td><code>--lines M</code> (default 1000), <code>--dry-run</code> / <code>-n</code></td>
 <td>Keeps the last M lines of the job's log; no NAME does every job log of this project; 0 empties it</td>
 </tr>
 <tr>

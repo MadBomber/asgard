@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **The test suite passes with `RUBYOPT=-w` or `ASGARD_TRACE` set**: the
+  tests that run `bin/asgard` as a child process no longer pass on the
+  developer's trace setting or warning level.
+  ([#48](https://github.com/MadBomber/asgard/issues/48))
 
 ## [0.6.1] - 2026-11-14
 

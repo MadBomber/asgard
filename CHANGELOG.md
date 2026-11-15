@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **`--doctor` prints no colour codes when piped or with `NO_COLOR` set**:
+  it colours its lines only on a terminal, as the `list` tables do.
+  ([#50](https://github.com/MadBomber/asgard/issues/50))
 
 ## [0.6.1] - 2026-11-14
 

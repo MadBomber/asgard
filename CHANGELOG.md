@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **The README's opening callout renders as a note on GitHub**: it used
+  `[!INFO]`, which GitHub does not recognise, and now uses `[!NOTE]`.
+  ([#45](https://github.com/MadBomber/asgard/issues/45))
 
 ## [0.6.1] - 2026-11-14
 

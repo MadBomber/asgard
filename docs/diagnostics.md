@@ -69,7 +69,7 @@ Deploy to ENV
 Per-task help does not show the header or footer. For a subcommand group, `asgard help db`, `asgard db help` and `asgard db help migrate` all work; see [Subcommands](subcommands.md#help-for-a-group).
 
 !!! tip
-    Put asgard's options after the task name: `asgard build --verbose`. Written before it, `asgard --verbose build` is read as `asgard help build`. The two flags that answer and exit, `--version` and `--doctor`, are the exception and go first.
+    Put asgard's options after the task name: `asgard build --verbose`. `--debug` and `--verbose` are also understood in front of a task name, so `asgard --verbose build` runs `build`; in front of any other word they run the `default_task` with that word as its argument (`asgard --verbose prod` is `asgard deploy prod --verbose` when `deploy` is the default). The two flags that answer and exit, `--version` and `--doctor`, always go first.
 
 ---
 
@@ -248,79 +248,62 @@ No problems found (1 warning(s)).
 
 The summary line is `No problems found.`, `No problems found (N warning(s)).` or `N problem(s), M warning(s).`
 
+`asgard --doctor` exits with status **1** when the report contains problems,
+including overridden task definitions, and **0** otherwise. Warnings alone do
+not cause a failure, so scripts and CI can use the exit status as a check.
+
 ### A Deliberate Override
 
-The asgard repository ships an example. `xyzzy.loki` defines a `xyzzy` task, and the root `.loki`, which imports it, defines `xyzzy` again. Run `asgard --doctor` from a clone:
+The asgard repository ships an example. Its root `.loki` loads the shared task files of the sibling [`dev`](https://github.com/MadBomber/dev) repository with `import_up "dev/.loki"`, then imports its own `test_check.loki`, which defines two of the shared tasks again: asgard runs its tests with its own runner. Run `asgard --doctor` from a clone that has `dev` checked out beside it:
 
 ```
 asgard doctor -- /Users/you/asgard
 ============================================================
   [INFO] using .loki marker: /Users/you/asgard/.loki
-  [INFO] import "quality.loki" -> /Users/you/asgard/quality.loki
-  [INFO] import "gem_tasks.loki" -> /Users/you/asgard/gem_tasks.loki
-  [INFO] import "git.loki" -> /Users/you/asgard/git.loki
-  [INFO] import "doc_tasks.loki" -> /Users/you/asgard/doc_tasks.loki
-  [INFO] import "xyzzy.loki" -> /Users/you/asgard/xyzzy.loki
+  [INFO] import "*.loki" -> /Users/you/dev/doc_tasks.loki, /Users/you/dev/gem_tasks.loki, /Users/you/dev/git.loki, /Users/you/dev/quality.loki, ...
+  [INFO] import_up "dev/.loki" -> /Users/you/dev/.loki, /Users/you/dev/doc_tasks.loki, ...
+  [INFO] import "test_check.loki" -> /Users/you/asgard/test_check.loki
 
-Tasks by file (DocCommands):
-
-  .loki
-    (no tasks defined — imports only)
-
-  quality.loki
-    (no tasks defined — imports only)
-
-  gem_tasks.loki
-    (no tasks defined — imports only)
-
-  git.loki
-    (no tasks defined — imports only)
-
-  doc_tasks.loki
-    install  doc_tasks.loki:43
-    build    doc_tasks.loki:52
-    serve    doc_tasks.loki:63
-    open     doc_tasks.loki:71
-    help     doc_tasks.loki:138
-
-  xyzzy.loki
-    (no tasks defined — imports only)
+...
 
 Tasks by file (Tasks):
 
   .loki
-    xyzzy  .loki:26   active — redefines xyzzy.loki:6
+    (no tasks defined — imports only)
 
-  quality.loki
-    test_check           quality.loki:17
-    test_verbose         quality.loki:20
-    parallel_test        quality.loki:27
-    quality              quality.loki:43
-    quality_board        quality.loki:53   hidden (no desc; not shown by help)
+  ../dev/doc_tasks.loki
+    doc  ../dev/doc_tasks.loki:138
+
+  ../dev/gem_tasks.loki
+    console      ../dev/gem_tasks.loki:46
+    build        ../dev/gem_tasks.loki:73
+    install      ../dev/gem_tasks.loki:85
+    main_branch  ../dev/gem_tasks.loki:91   hidden (no desc; not shown by help)
+    release      ../dev/gem_tasks.loki:99
+
+  ../dev/git.loki
+    push   ../dev/git.loki:8
+    pull   ../dev/git.loki:11
+    fetch  ../dev/git.loki:14
+
+  ../dev/quality.loki
+    test_check           ../dev/quality.loki:79   OVERRIDDEN by test_check.loki:20 — never callable
+    test_verbose         ../dev/quality.loki:90   OVERRIDDEN by test_check.loki:23 — never callable
+    quality              ../dev/quality.loki:103
+    quality_board        ../dev/quality.loki:115   hidden (no desc; not shown by help)
+    rubocop_check        ../dev/quality.loki:145
     ...
 
-  gem_tasks.loki
-    console      gem_tasks.loki:6
-    build        gem_tasks.loki:16
-    install      gem_tasks.loki:24
-    main_branch  gem_tasks.loki:30   hidden (no desc; not shown by help)
-    release      gem_tasks.loki:39
-
-  git.loki
-    push   git.loki:6
-    pull   git.loki:9
-    fetch  git.loki:12
-
-  doc_tasks.loki
-    doc  doc_tasks.loki:138
-
-  xyzzy.loki
-    xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:26 — never callable
+  test_check.loki
+    test_check     test_check.loki:20   active — redefines ../dev/quality.loki:79
+    test_verbose   test_check.loki:23   active — redefines ../dev/quality.loki:90
+    parallel_test  test_check.loki:30
+    exhale_check   test_check.loki:42
 ============================================================
-1 problem(s), 0 warning(s).
+2 problem(s), 0 warning(s).
 ```
 
-`doc_tasks.loki` defines the `DocCommands` group behind `asgard doc`, so the report has one section for that class and one for `Tasks`. The `xyzzy` override shows up in the `Tasks` section, and a `.loki` further up your tree would add a shadowed-marker warning to the count.
+The report has one section per class: `dev/doc_tasks.loki` defines the `DocCommands` group behind `asgard doc`, and the other shared files add groups of their own, each listed before `Tasks`. The overrides show up in the `Tasks` section, once at the definition that is dead and once at the one that replaced it. A `.loki` further up your tree would add a shadowed-marker warning to the count. Each replaced definition is one problem, so this run reports two and exits with status 1. The doctor cannot tell a deliberate override from an accident; it is for you to check that every line it flags is one you meant.
 
 ### When the Files Do Not Load
 
@@ -399,9 +382,9 @@ After every file has loaded, and before any task runs, asgard checks the depende
 | Problem | Message |
 |---|---|
 | Two tasks depend on each other, directly or through others | `asgard: circular dependency — topological sort failed: [:a, :b]` |
-| A `depends_on` names a task that does not exist | `asgard: undefined task(s) in depends_on: ghost` |
+| A `depends_on` names a task that does not exist | `asgard: undefined task(s) in depends_on: ghost (needed by ci)` |
 | A `depends_on` with no `def` after it (at the end of a class body) | `asgard: depends_on(a) declared without a following task definition` |
-| A dependency takes a required argument | `asgard: task 'b' has 1 required argument(s) and cannot be used as a dependency` |
+| A dependency takes a required argument | `asgard: task 'b' has 1 required argument(s) and cannot be used as a dependency (needed by c)` |
 | A block-form `depends_on` returned the wrong shape | `asgard: depends_on proc/block for 'quality' returned invalid stage 123 (Integer); expected a Symbol, String, or Array of them` |
 | A block-form `depends_on` raised | `asgard: depends_on proc for 'quality' raised RuntimeError: boom` |
 | A task or helper uses a name asgard's command machinery needs (`shell`, `options`, `invoke`, `run`, `args`, ...) | `asgard: 'args' at /Users/you/myproject/.loki:3 is a name Thor reserves and cannot be a task or helper; rename it` |
@@ -453,7 +436,7 @@ The last one is asgard refusing a name that starts with `_`, which is reserved f
 | Status | When |
 |---|---|
 | `0` | The task finished, and did not return `:fail` |
-| `1` | The task returned the symbol `:fail`; a usage error; a load or validation error; `Asgard::Error` was raised; a parallel dependency group had failures |
+| `1` | The task returned the symbol `:fail`; a usage error; a load or validation error; `Asgard::Error` was raised; a parallel dependency group had failures; `asgard --doctor` found problems |
 | The command's own status | A `sh` or `shebang` script exited non-zero: asgard exits with the same number |
 | `127` | The interpreter a `shebang` names is not on `PATH` (`asgard: shell :lua not found: lua ...`) |
 | `128 + N` | The script was ended by signal N (`143` after a TERM, `137` after a KILL), as a shell would report it |

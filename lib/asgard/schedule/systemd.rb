@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "etc"
+require_relative "../state_dir"
 require_relative "job_files"
 
 module Asgard
@@ -159,7 +160,7 @@ module Asgard
         description = "#{Schedule.command_line(task, args)} (#{@project})"
         service = klass.service_unit(
           description:,
-          arguments:         Schedule.program_arguments(task, args, root: @root, asgard:, direnv:),
+          arguments:         Schedule.program_arguments([task, *args], root: @root, asgard:, direnv:),
           working_directory: @root,
           environment:       Schedule.environment(spec),
           log_path:          log_path(name)
@@ -266,7 +267,8 @@ module Asgard
       def write_changed(job, name)
         changed = self.class.changed_files(job)
         Schedule.writing do
-          FileUtils.mkdir_p [File.dirname(timer_path(name)), File.dirname(log_path(name))]
+          FileUtils.mkdir_p File.dirname(timer_path(name))
+          StateDir.private_dir File.dirname(log_path(name)) # the logs hold the task's output
           changed.each { |path, content| Schedule.write_private(path, content) }
         end
       end

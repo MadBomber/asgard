@@ -120,22 +120,30 @@ module Asgard
       end
 
       def _check_undefined_deps!(all_task_names)
-        undefined = _deps.values.flatten.uniq - all_task_names
+        undefined = _dep_declarers.except(*all_task_names)
         return unless undefined.any?
 
-        raise Asgard::Error, "undefined task(s) in depends_on: #{undefined.sort.join(', ')}"
+        details = undefined.sort.map do |dep, tasks|
+          "#{dep} (needed by #{tasks.sort.join(', ')})"
+        end
+        raise Asgard::Error, "undefined task(s) in depends_on: #{details.join(', ')}"
       end
 
       def _check_dep_arities!
-        _deps.each_value do |stages|
-          stages.flatten.each do |dep|
-            meth = instance_method(dep.to_s)
-            required = meth.parameters.count { |type, _| type == :req }
-            next unless required.positive?
+        _dep_declarers.sort.each do |dep, tasks|
+          required = instance_method(dep.to_s).parameters.count { |type, _| type == :req }
+          next unless required.positive?
 
-            raise Asgard::Error,
-                  "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency"
-          end
+          raise Asgard::Error,
+                "task '#{dep}' has #{required} required argument(s) and cannot be used as a dependency " \
+                "(needed by #{tasks.sort.join(', ')})"
+        end
+      end
+
+      # Each dependency mapped to the tasks whose depends_on names it.
+      def _dep_declarers
+        _deps.each_with_object({}) do |(task, stages), declarers|
+          stages.flatten.uniq.each { |dep| (declarers[dep] ||= []) << task }
         end
       end
 

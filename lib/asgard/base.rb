@@ -118,13 +118,20 @@ module Asgard
       end
 
       def _check_reserved_name!(method_name)
-        thor = RESERVED_NAMES.include?(method_name)
-        return unless thor || ASGARD_HELPERS.include?(method_name)
+        return unless _reserved_name?(method_name)
 
         file, line = instance_method(method_name).source_location
         remove_method(method_name) # leave the original in place, so the class still dispatches
-        what = thor ? "a name Thor reserves" : "an asgard helper"
-        raise Asgard::Error, "'#{method_name}' at #{file}:#{line} is #{what} and cannot be a task or helper; rename it"
+        _raise_reserved_name!(method_name, file, line)
+      end
+
+      # Whether +name+ is one a task or helper cannot take.
+      def _reserved_name?(name) = RESERVED_NAMES.include?(name) || ASGARD_HELPERS.include?(name)
+
+      # Raises the reserved-name error for +name+, defined at +file+:+line+.
+      def _raise_reserved_name!(name, file, line)
+        what = RESERVED_NAMES.include?(name) ? "a name Thor reserves" : "an asgard helper"
+        raise Asgard::Error, "'#{name}' at #{file}:#{line} is #{what} and cannot be a task or helper; rename it"
       end
 
       # `private def helper = ...` makes the method private only after

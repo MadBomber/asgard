@@ -19,7 +19,7 @@ bin/asgard install             # build, then install locally
 bin/asgard release             # quality gate, tag, push, gem push
 ```
 
-There is no Rakefile: the gem's own `.loki` files (`quality.loki`, `gem_tasks.loki`, ...) are its task runner.
+There is no Rakefile: `.loki` files are the task runner. The root `.loki` loads the shared task files from the sibling `../dev` checkout (`import_up "dev/.loki"`: `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`, ...), then the local `test_check.loki`, which deliberately replaces the shared `test_check` and `test_verbose`. `asgard --doctor` reports those two overrides and exits 1. Without `../dev` there is no `quality` task.
 
 Whole suite in parallel: `ruby -Ilib:test test/parallel_runner.rb`. It loads every file once, then forks workers; SimpleCov merges their coverage. Threads (Minitest `parallelize_me!`) do not fit: tests chdir, set ENV and swap `$stdout`, all process-wide.
 

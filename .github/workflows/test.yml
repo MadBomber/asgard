@@ -19,7 +19,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         ruby: ["4.0.9", "4.1.0-preview1"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The shell tests select zsh as a default_shell; macOS ships it,
       # the Ubuntu image does not.

@@ -1,0 +1,290 @@
+# frozen_string_literal: true
+
+require_relative "test_helper"
+
+class TestLog < Minitest::Test
+  Log = Asgard::Log
+
+  def setup
+    @dir = Dir.mktmpdir
+    @path = File.join(@dir, "task.log")
+  end
+
+  def teardown
+    FileUtils.remove_entry(@dir)
+  end
+
+  def test_retains_exact_bytes_including_partial_lines_and_binary_output
+    ["one\ntwo\nthree\n", "one\ntwo\nthree", "one\r\ntwo\r\nthree\r\n", "one\n\xFFtwo\nthree\n".b].each do |body|
+      File.binwrite(@path, body)
+      inode = File.stat(@path).ino
+      kept = body.lines.last(2).join
+      assert_equal body.bytesize - kept.bytesize, Log.truncate(@path, lines: 2)
+      assert_equal kept, File.binread(@path)
+      assert_equal inode, File.stat(@path).ino
+    end
+  end
+
+  def test_zero_empties_and_short_logs_are_unchanged
+    ["", "one", "one\n", "\n\n"].each do |body|
+      File.binwrite(@path, body)
+      assert_equal 0, Log.truncate(@path, lines: 3)
+      assert_equal body, File.binread(@path)
+      assert_equal body.bytesize, Log.truncate(@path, lines: 0)
+      assert_empty File.binread(@path)
+    end
+  end
+
+  def test_tail_crosses_chunk_boundaries_and_retains_long_lines
+    body = "old\n#{"x" * (Log::CHUNK + 5)}\nlast\n"
+    File.binwrite(@path, body)
+    assert_equal 4, Log.truncate(@path, lines: 2)
+    assert_equal body.delete_prefix("old\n"), File.binread(@path)
+    assert_equal Log::CHUNK + 6, Log.truncate(@path, lines: 1)
+    assert_equal "last\n", File.binread(@path)
+  end
+
+  def test_dry_run_changes_neither_the_log_nor_the_directory
+    File.write(@path, "one\ntwo\n")
+    before = File.stat(@path)
+    files = Dir.children(@dir)
+    assert_equal 4, Log.truncate(@path, lines: 1, dry_run: true)
+    assert_equal "one\ntwo\n", File.read(@path)
+    assert_equal files, Dir.children(@dir)
+    assert_equal before.mtime, File.mtime(@path)
+  end
+
+  def test_invalid_line_counts
+    [nil, "", "-1", "1.5", "NaN", "1e2", " 1", "0x10"].each do |value|
+      assert_raises(ArgumentError) { Log.line_count(value) }
+    end
+    assert_equal 0, Log.line_count("0")
+    assert_equal 15, Log.line_count("15")
+  end
+
+  def test_an_append_mode_writer_keeps_logging_to_the_same_file
+    ready = File.join(@dir, "ready")
+    go = File.join(@dir, "go")
+    script = <<~RUBY
+      $stdout.sync = true
+      puts "old"
+      puts "keep"
+      File.write(ARGV[0], "")
+      sleep 0.01 until File.exist?(ARGV[1])
+      puts "after"
+    RUBY
+    pid = Process.spawn(Gem.ruby, "-e", script, ready, go, in: File::NULL, out: [@path, "a"])
+    wait_until { File.exist?(ready) }
+    assert_equal 4, Log.truncate(@path, lines: 1)
+    File.write(go, "")
+    Process.wait(pid)
+    pid = nil
+    assert_equal "keep\nafter\n", File.read(@path)
+  ensure
+    if pid
+      Process.kill("KILL", pid)
+      Process.wait(pid)
+    end
+  end
+
+  # A real file whose writes call +on_write+ with the write's number first.
+  def log_file_with(on_write)
+    klass = Class.new(File) do
+      define_method(:write) do |data|
+        @writes = (@writes || 0) + 1
+        on_write.call(@writes)
+        super(data)
+      end
+    end
+    klass.open(@path, "r+b")
+  end
+
+  def multi_chunk_body
+    (1..3).map { |n| "#{n.to_s * (Log::CHUNK - 1)}\n" }.join
+  end
+
+  def test_an_interrupt_during_the_rewrite_waits_until_the_log_is_cut
+    body = multi_chunk_body
+    File.binwrite(@path, body)
+    writing = Queue.new
+    resume = Queue.new
+    worker = Thread.new do
+      Thread.current.report_on_exception = false
+      file = log_file_with(->(n) { (writing << n) && resume.pop if n == 1 })
+      Log.rewrite(file, Log::CHUNK)
+    ensure
+      file&.close
+    end
+    assert writing.pop(timeout: 5), "rewrite never wrote through File#write"
+    worker.raise(Interrupt)
+    resume << :go
+    assert_raises(Interrupt) { worker.join }
+    assert_equal body.byteslice(Log::CHUNK..), File.binread(@path)
+  end
+
+  def test_a_failed_write_cuts_the_log_after_the_bytes_already_moved
+    body = multi_chunk_body
+    File.binwrite(@path, body)
+    file = log_file_with(->(n) { raise IOError, "disk full" if n == 2 })
+    assert_raises(IOError) { Log.rewrite(file, Log::CHUNK) }
+    file.close
+    assert_equal body.byteslice(Log::CHUNK, Log::CHUNK), File.binread(@path)
+  end
+
+  def test_a_failure_before_any_write_leaves_the_log_whole
+    File.binwrite(@path, "one\ntwo\n")
+    file = log_file_with(->(_) { raise IOError, "disk full" })
+    assert_raises(IOError) { Log.rewrite(file, 4) }
+    file.close
+    assert_equal "one\ntwo\n", File.binread(@path)
+  end
+
+  def wait_until
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 10
+    until yield
+      raise "timed out waiting for log writer" if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+      sleep 0.01
+    end
+  end
+end
+
+class TestTruncateLogCommands < Minitest::Test
+  include AsgardProcess
+
+  def setup
+    @dir = Dir.mktmpdir
+    @root = File.join(@dir, "project")
+    FileUtils.mkdir_p(@root)
+  end
+
+  def teardown
+    FileUtils.remove_entry(@dir)
+  end
+
+  def command(klass, lines: "1", dry_run: false)
+    klass.new([], { lines:, dry_run: }, {})
+  end
+
+  # The block's stderr and exit status (0 when it returns instead of exiting).
+  def stderr_and_status
+    status = 0
+    _, err = capture_io do
+      yield
+    rescue SystemExit => e
+      status = e.status
+    end
+    [err, status]
+  end
+
+  def test_job_selection_includes_orphan_logs_but_not_other_projects_or_records
+    state = Asgard::Jobs::State.new(project: "own", root: @root, base: @dir).prepare
+    other = Asgard::Jobs::State.new(project: "other", root: @root, base: @dir).prepare
+    paths = [state.log_path("one"), state.log_path("two"), other.log_path("one")]
+    paths.each { |path| File.write(path, "old\nkeep\n") }
+    File.write(state.record_path("one"), "{}")
+    cli = command(Asgard::Jobs::Commands)
+    cli.instance_variable_set(:@state, state)
+    capture_io { cli.truncate_log("one") }
+    assert_equal "keep\n", File.read(paths[0])
+    assert_equal "old\nkeep\n", File.read(paths[1])
+    capture_io { cli.truncate_log }
+    assert_equal "keep\n", File.read(paths[1])
+    assert_equal "old\nkeep\n", File.read(paths[2])
+    assert_equal "{}", File.read(state.record_path("one"))
+    capture_io { assert_raises(SystemExit) { cli.truncate_log("../other/one") } }
+  end
+
+  def test_job_on_record_without_a_log_yet_is_not_an_error
+    state = Asgard::Jobs::State.new(project: "own", root: @root, base: @dir).prepare
+    state.write_record({ name: "api", task: "t", pid: 2, pgid: 2, started: Time.now.iso8601, script: "api.sh" })
+    cli = command(Asgard::Jobs::Commands)
+    cli.instance_variable_set(:@state, state)
+    assert_equal(["api has no log yet (#{state.log_path('api')}); nothing to truncate\n", 0], stderr_and_status { cli.truncate_log("api") })
+    refute File.exist?(state.log_path("api"))
+    bad_lines = command(Asgard::Jobs::Commands, lines: "x")
+    bad_lines.instance_variable_set(:@state, state)
+    assert_equal(["jobs: --lines must be a nonnegative integer\n", 1], stderr_and_status { bad_lines.truncate_log("api") })
+    assert_equal(["jobs: no such job log: ghost\n", 1], stderr_and_status { cli.truncate_log("ghost") })
+    assert_equal(["jobs: no such job log: ../own/api\n", 1], stderr_and_status { cli.truncate_log("../own/api") })
+  end
+
+  def test_schedule_declared_without_a_log_yet_is_not_an_error
+    backend = Asgard::Schedule::Launchd.new(project: "own", root: @root, home: @dir)
+    cli = command(Asgard::Schedule::Commands)
+    cli.instance_variable_set(:@scheduler, backend)
+    cli.define_singleton_method(:schedules) { { "hello" => {} } }
+    assert_equal(["hello has no log yet (#{backend.log_path('hello')}); nothing to truncate\n", 0],
+                 stderr_and_status { cli.truncate_log("hello") })
+    assert_equal(["schedule: no such schedule log: ghost\n", 1], stderr_and_status { cli.truncate_log("ghost") })
+  end
+
+  def test_watcher_processes_current_and_rotated_log_independently
+    state = Asgard::Watch::State.new(project: "own", root: @root, base: @dir).prepare
+    paths = [state.log_path, "#{state.log_path}.1"]
+    paths.each { |path| File.write(path, "old\nkeep\n") }
+    cli = command(Asgard::Watch::Commands)
+    cli.instance_variable_set(:@state, state)
+    capture_io { cli.truncate_log }
+    paths.each { |path| assert_equal "keep\n", File.read(path) }
+  end
+
+  def test_schedule_selection_on_both_backends_includes_uninstalled_logs
+    [Asgard::Schedule::Launchd, Asgard::Schedule::Systemd].each do |klass|
+      backend = klass.new(project: "own", root: @root, home: @dir)
+      other = klass.new(project: "other", root: @root, home: @dir)
+      paths = [backend.log_path("one"), backend.log_path("two"), other.log_path("one")]
+      FileUtils.mkdir_p(File.dirname(paths.first))
+      paths.each { |path| File.write(path, "old\nkeep\n") }
+      cli = command(Asgard::Schedule::Commands)
+      cli.instance_variable_set(:@scheduler, backend)
+      capture_io { cli.truncate_log("one") }
+      assert_equal "keep\n", File.read(paths[0])
+      assert_equal "old\nkeep\n", File.read(paths[1])
+      capture_io { cli.truncate_log }
+      assert_equal "keep\n", File.read(paths[1])
+      assert_equal "old\nkeep\n", File.read(paths[2])
+      capture_io { assert_raises(SystemExit) { cli.truncate_log("../other/one") } }
+    end
+  end
+
+  def test_cli_validates_lines_and_exposes_the_command_in_all_help_groups
+    %w[schedule watcher jobs].each do |group|
+      %w[-1 1.5 nonsense].each do |lines|
+        _, err, status = run_asgard("class Tasks; end", group, "truncate_log", "--lines=#{lines}")
+        refute status.success?, "#{group}: #{lines}"
+        assert_includes err, "--lines must be a nonnegative integer"
+      end
+      out, _, status = run_asgard("class Tasks; end", group, "help", "truncate_log")
+      assert status.success?
+      assert_includes out, "#{group} truncate_log"
+      assert_includes out, "--lines"
+      assert_includes out, "--dry-run"
+      assert_includes out, "Default: 1000"
+      out, _, status = run_asgard("class Tasks; end", group, "truncate_log")
+      assert status.success?, "#{group} must default --lines"
+      assert_includes out, "No logs found"
+    end
+  end
+
+  def test_job_dry_run_reports_bytes_without_changing_files
+    state = Asgard::Jobs::State.new(project: "own", root: @root, base: @dir).prepare
+    File.write(state.log_path("one"), "old\nkeep\n")
+    cli = command(Asgard::Jobs::Commands, dry_run: true)
+    cli.instance_variable_set(:@state, state)
+    before = Dir.children(state.dir)
+    out, = capture_io { cli.truncate_log }
+    assert_includes out, "4 bytes would be removed"
+    assert_equal "old\nkeep\n", File.read(state.log_path("one"))
+    assert_equal before, Dir.children(state.dir)
+  end
+
+  def test_no_logs_does_not_create_state
+    cli = command(Asgard::Jobs::Commands)
+    state = Asgard::Jobs::State.new(project: "absent", root: @root, base: @dir)
+    cli.instance_variable_set(:@state, state)
+    out, = capture_io { cli.truncate_log }
+    assert_includes out, "No logs found"
+    refute File.exist?(state.dir)
+  end
+end

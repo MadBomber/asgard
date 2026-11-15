@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "time"
+require_relative "../log"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see
 # base/task_dsl.rb); these messages are for the user, so they always print.
@@ -24,11 +25,14 @@ module Asgard
         # One `list` row per record, with what the job is doing now.
         def rows(state) = state.records.map { |record| row(record, state) }
 
+        # verified? goes first: a job that ends between the reads shows
+        # its exit, never "gone", and a code read means its time is there.
         def row(record, state)
-          name    = record[:name]
-          exited  = state.exit_time(name)
-          status  = Jobs.status(exit_code: state.exit_code(name), verified: state.verified?(record),
-                                leftovers: State.leftovers?(record, exited_at: exited))
+          name     = record[:name]
+          verified = state.verified?(record)
+          code     = state.exit_code(name)
+          exited   = state.exit_time(name)
+          status   = Jobs.status(exit_code: code, verified:, leftovers: State.leftovers?(record, exited_at: exited))
           seconds = (exited - Time.iso8601(record[:started])).round(1) if status.is_a?(Array)
           { name:, task: record[:task], pid: record[:pid], state: Jobs.describe_status(status, seconds:),
             started: Time.iso8601(record[:started]).strftime("%Y-%m-%d %H:%M:%S"), command: record[:command] }
@@ -66,6 +70,17 @@ module Asgard
 
         def record_for!(name) = state.read_record(name) || abort("jobs: no such job: #{name} (see `asgard jobs list`)")
 
+        # Whether +path+ is NAME's log to truncate. A job on record that has
+        # not written a log yet says so and is skipped; any other name aborts.
+        def log_to_truncate?(name, path)
+          found = File.file?(path)
+          abort "jobs: no such job log: #{name}" if name.include?("/") || !(found || state.read_record(name))
+          return true if found
+
+          $stderr.puts "#{name} has no log yet (#{path}); nothing to truncate"
+          false
+        end
+
         def stopper = Stopper.new(timeout: options[:timeout] || Stopper::TIMEOUT)
 
         # The records `stop` ends, newest start first, and the names that
@@ -73,12 +88,15 @@ module Asgard
         # depends on, which needs this project's .loki loaded.
         def stop_targets(names)
           records, unknown =
-            if every_project? then [all_states.values.flat_map(&:records), []]
-            elsif names.empty? then [state.records, []]
+            if names.empty? || options[:all] then [listed_states.values.flat_map(&:records), []]
             else Jobs.resolve(names, state.records, closure: ->(task) { Jobs.closure(task, Tasks._deps) })
             end
           [records.sort_by { |record| [record[:started].to_s, record[:name].to_s] }.reverse, unknown]
         end
+
+        # The states `list` and a bare `stop` cover, by title: every
+        # project's, or this one's under no title.
+        def listed_states = every_project? ? all_states : { nil => state }
 
         def no_jobs_message
           return "No jobs have been started on this machine." if every_project?
@@ -91,7 +109,7 @@ module Asgard
       desc "list", "Show this project's jobs: running, exited with a status, or gone (--all: every project's)"
       method_option :all, aliases: "-a", type: :boolean, desc: "List every project's jobs, not just this one's"
       def list
-        states = every_project? ? all_states : { nil => state }
+        states = listed_states
         Commands.skipped_lines(states.values).each { |line| $stderr.puts line }
         groups = states.transform_values { |each_state| Commands.rows(each_state) }.reject { |_, rows| rows.empty? }
         return puts(no_jobs_message) if groups.empty?
@@ -122,6 +140,19 @@ module Asgard
         return exec(*Commands.tail_argv(path)) if options[:follow]
 
         IO.copy_stream(path, $stdout)
+      end
+
+      desc "truncate_log [NAME]", "Keep the last M lines of a job log; no NAME truncates every job log of this project"
+      method_option :lines, type: :string, default: "1000", banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
+      def truncate_log(name = nil)
+        Log.line_count(options[:lines]) # reject a bad --lines even when there is no log to truncate
+        paths = name ? [state.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(state.dir), "*.log"))
+        return if name && !log_to_truncate?(name, paths.first)
+
+        Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
+      rescue ArgumentError, SystemCallError, IOError => e
+        abort "jobs: #{e.message}"
       end
 
       desc "restart NAME", "Stop the job, then run its owning task again"

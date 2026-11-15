@@ -2,18 +2,14 @@
 # Asgard gem's own task file.
 # Task is pre-defined by the gem — just reopen it to add tasks.
 
-import "quality.loki"
-# asgard runs as a separate process outside the app it's checking, so
-# `defined?(Rails)` never sees the app's Rails constant. RAILS_ROOT — set in
-# a Rails repo's own .envrc (`export RAILS_ROOT=$RR`, after RR is defined)
-# — is the signal instead.
-import "quality_rails.loki" if ENV["RAILS_ROOT"]
+# The shared task files (quality gates, git, docs, gem lifecycle) live in the
+# sibling `dev` repository (https://github.com/MadBomber/dev), cloned beside
+# this one; import_up finds its .loki in a parent directory.
+abort "asgard: dev/.loki not found; clone https://github.com/MadBomber/dev beside asgard" unless import_up "dev/.loki"
 
-import "gem_tasks.loki"
-import "git.loki"
-import "doc_tasks.loki"
-
-import "xyzzy.loki"  # An example for the --doctor flag
+# Imported after dev/.loki, so what it defines replaces the shared task of
+# the same name: asgard runs its suite with its own test runner.
+import "test_check.loki"
 
 class Tasks
   @@project      ||= "asgard".freeze
@@ -21,9 +17,6 @@ class Tasks
 
   # Dogfood: `asgard watcher start` reruns the tests whenever a Ruby file changes.
   watch :test_check, paths: %w[lib test], only: /\.rb\z/
-
-  desc "xyzzy"
-  def xyzzy = puts "everything in Ruby metaprogramming is magic"
 
   helper(:project_version) do
     @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze

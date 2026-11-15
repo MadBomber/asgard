@@ -38,7 +38,10 @@ module AsgardProcess
         FileUtils.mkdir_p(File.dirname(File.join(dir, name)))
         File.write(File.join(dir, name), body)
       end
-      Open3.capture3(env, Gem.ruby, "-I", LIB, BIN, *argv, chdir: dir, stdin_data: "")
+      out, err, status = Open3.capture3(env, Gem.ruby, "-I", LIB, BIN, *argv, chdir: dir, stdin_data: "")
+      # asgard's messages are UTF-8. With no locale set (launchd, cron) the
+      # captured bytes would be tagged US-ASCII and fail to match a UTF-8 string.
+      [out.force_encoding(Encoding::UTF_8), err.force_encoding(Encoding::UTF_8), status]
     end
   end
 end

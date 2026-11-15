@@ -659,6 +659,7 @@ asgard schedule stop NAME      # stop one entry (persists across reboots and ins
 asgard schedule start NAME     # start a stopped entry, or install just this one
 asgard schedule trigger NAME   # run an installed entry now
 asgard schedule log NAME [-f]  # print (or follow) the entry's log
+asgard schedule truncate_log [NAME] --lines M  # keep the last M lines of the log (default 1000; no NAME: all; -n: dry run)
 asgard schedule remove [NAME]  # remove one entry, or all of this project's
 asgard schedule prune [-n]     # remove every project's entries whose directory is gone (-n: list only)
 ```
@@ -699,6 +700,7 @@ asgard watcher stop --force # stop it and end any running task
 asgard watcher list         # watches, daemon state, each entry's last run (--all: every project's)
 asgard watcher preview      # the command and environment each watch would run
 asgard watcher log [-f]     # print (or follow) the watcher's log
+asgard watcher truncate_log --lines M  # keep the last M lines (default 1000) of watcher.log and watcher.log.1
 ```
 
 Each trigger runs `asgard <task>` from the project root with a fixed
@@ -736,6 +738,7 @@ end
 asgard jobs list            # running, exited with a status, or gone (--all: every project's)
 asgard jobs stop servers    # by job name, or by task and the tasks it depends on
 asgard jobs log api -f      # print (or follow) one job's log
+asgard jobs truncate_log [NAME] --lines M  # keep the last M lines of the log (default 1000; no NAME: all; -n: dry run)
 asgard jobs restart api     # stop it, then run its owning task again
 asgard jobs clean           # forget every job that is no longer running
 ```
@@ -836,7 +839,7 @@ end
 
 ## Tips
 
-- **Start from working files.** The task files at this repository's root (`.loki`, `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`) are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and a deliberate override for `--doctor`. Copy what fits.
+- **Start from working files.** The task files at this repository's root (`.loki`, `test_check.loki`), with the shared ones they load from the [`dev`](https://github.com/MadBomber/dev) repository (`quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`), are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and deliberate overrides that `--doctor` reports. Copy what fits.
 
 - **More examples.** [MadBomber/dev](https://github.com/MadBomber/dev) holds shared `.loki` libraries used across many repos: gem, git, Rails quality, schedule, status report and iTerm tasks. The [examples directory](examples/) here has one small file per feature.
 
@@ -846,7 +849,7 @@ end
 
 - **Make bare `asgard` do the common thing.** `default_task :test` (or `:quality`, as this repo does) saves typing on the task you run most.
 
-- **Flags go after the task name.** `asgard build --verbose` runs the task; `asgard --verbose build` prints the help for `build`. Only `--version` and `--doctor` go first.
+- **Flags go after the task name.** `asgard build --verbose` is the form to use. `--debug` and `--verbose` are also understood in front of a task name, so `asgard --verbose build` runs `build`; in front of any other word they run the `default_task` with that word as its argument. `--version` and `--doctor` go first.
 
 - **See the tasks by file with `asgard --doctor`.** It lists every `.loki` file that loaded and, under each, the tasks that file defines with their line numbers, plus which `.loki` won the walk up the tree, what every `import` loaded, tasks hidden because they lack a `desc`, and definitions silently replaced by a later one. It works even when the `.loki` will not load.
 
@@ -862,6 +865,8 @@ end
 
 - **An AI agent is just another shell.** Register a coding agent's CLI with `shell` and a heredoc becomes the prompt: [`examples/robots/.loki`](examples/robots/.loki) wires up `claude -p` in one line, and its `ask` task sends a prompt with a plain `sh :claude, <<~PROMPT`. Any agent that reads a prompt from stdin fits the same way, so a task can review a diff, draft release notes or explain a failing test alongside the tasks that run them.
 
+- **A graph of steps inside one task.** `depends_on` orders whole tasks. When one task needs its own fan-out and fan-in, with output passed from step to step, run a [simple_flow](https://github.com/MadBomber/simple_flow) pipeline in the task body: [`examples/simple_flow/.loki`](examples/simple_flow/.loki) shows one. Run each step's command with `IO.popen` or `system` and halt the pipeline on failure; `sh` inside a step would exit asgard before the pipeline could report.
+
 - **Prefer `background: true` to a trailing `&`.** A managed job gets a name, a log and `asgard jobs stop`; a process detached with `&` leaves no record and must be found with `ps`.
 
 - **Import conditionally.** `.loki` is plain Ruby: `import "quality_rails.loki" if ENV["RAILS_ROOT"]` keeps Rails-only gates out of non-Rails projects, and a block-form `depends_on` picks up whatever `*_check` tasks are loaded.
@@ -876,6 +881,7 @@ More tips live in the manual at [Tips](https://madbomber.github.io/asgard/tips/)
 
 ```bash
 git clone git@github.com:MadBomber/asgard.git
+git clone git@github.com:MadBomber/dev.git   # shared task files, beside asgard
 cd asgard
 bundle install
 bundle exec bin/asgard test_check  # run tests (95% coverage minimum enforced)

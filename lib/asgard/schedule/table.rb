@@ -14,6 +14,25 @@ module Asgard
       PADDING      = 1          # spaces either side of a cell
       EXTRA        = PADDING * 2 # what a column adds to its content
 
+      # The color of a styled cell, by its column.
+      COLORS = {
+        state:     ->(state) { { "active" => :green, "running" => :green, "stopped" => :yellow }.fetch(state.split.first, :red) },
+        last_exit: ->(last_exit) { last_exit.match?(/\A(?:[1-9]\d*\b|signal )/) ? :red : :dim }
+      }.freeze
+
+      # +widths+ (padding included) made to fit +limit+ columns of screen:
+      # the widest of the +flexible+ columns gives up a character at a time
+      # until the table fits or that column is down to MIN_WIDTH.
+      def self.fit(widths, flexible:, limit:)
+        widths = widths.dup
+        loop do
+          widest = flexible.max_by { |index| widths[index] }
+          return widths unless widths.sum + widths.size + 1 > limit && widths[widest] > MIN_WIDTH
+
+          widths[widest] -= 1
+        end
+      end
+
       # Columns available for output: the terminal's when io is one, else
       # $COLUMNS, else a roomy default (piped output shouldn't wrap at 80).
       def self.terminal_width(io = $stdout, env: ENV, default: 120)
@@ -36,14 +55,11 @@ module Asgard
       def initialize(rows, color:, width:, headers: HEADERS, keys: KEYS, flexible: FLEXIBLE)
         require "pastel"
 
-        @headers  = headers
-        @flexible = flexible
-        @styled   = { state: keys.index(:state), last_exit: keys.index(:last_exit) }.compact
-        @cells  = rows.map { |row| row.values_at(*keys).map(&:to_s) }
-        @pastel = Pastel.new(enabled: color)
-        @width  = width
-        @column_widths = natural_widths
-        shrink_widest while overflowing? && shrinkable?
+        @headers = headers
+        @styled  = COLORS.keys.to_h { |column| [column, keys.index(column)] }.compact
+        @cells   = rows.map { |row| row.values_at(*keys).map(&:to_s) }
+        @pastel  = Pastel.new(enabled: color)
+        @column_widths = Table.fit(natural_widths, flexible:, limit: width)
       end
 
       def render
@@ -74,24 +90,12 @@ module Asgard
 
       def natural_widths = [@headers, *@cells].transpose.map { |column| column.max_by(&:length).length + EXTRA }
 
-      def overflowing? = total_width > @width
-
-      def widest_flexible = @flexible.max_by { |index| @column_widths[index] }
-
-      def shrinkable? = @column_widths[widest_flexible] > MIN_WIDTH
-
-      def shrink_widest = @column_widths[widest_flexible] -= 1
-
       # The state and last-exit cells colored, wherever keys: put them.
       def styled(cells)
         cells = cells.dup
-        @styled.each { |column, index| cells[index] = @pastel.decorate(cells[index], send(:"#{column}_color", cells[index])) }
+        @styled.each { |column, index| cells[index] = @pastel.decorate(cells[index], COLORS.fetch(column).call(cells[index])) }
         cells
       end
-
-      def state_color(state) = { "active" => :green, "running" => :green, "stopped" => :yellow }.fetch(state.split.first, :red)
-
-      def last_exit_color(last_exit) = last_exit.match?(/\A(?:[1-9]\d*\b|signal )/) ? :red : :dim
     end
   end
 end

@@ -5,6 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.6.1] - 2026-11-14
+
+Two changes can break a script that runs asgard: `--doctor` exits 1 when
+it reports problems, and `--debug` or `--verbose` before a task name now
+runs that task. See
+[Breaking Changes](https://madbomber.github.io/asgard/breaking-changes/#061).
+
+### Added
+
+- **A DSL word outside `class Tasks` gets a hint**: `desc` or `depends_on` at the top level of a `.loki` now ends the load-error line with a reminder that they go inside `class Tasks ... end`.
+- **The gem links its docs site and issue tracker**: the gemspec sets
+  `documentation_uri` and `bug_tracker_uri`, so the RubyGems page links to
+  [the docs site](https://madbomber.github.io/asgard) and the
+  [GitHub issues](https://github.com/MadBomber/asgard/issues).
+- **The docs site serves `llms.txt`**:
+  [/llms.txt](https://madbomber.github.io/asgard/llms.txt) lists every docs
+  page with a one-line description, in the [llms.txt](https://llmstxt.org)
+  format.
+- **`truncate_log` shortens logs in place**: `asgard schedule truncate_log
+  [NAME]`, `asgard watcher truncate_log` and `asgard jobs truncate_log [NAME]`
+  keep the last `--lines M` lines (default 1000; `0` empties the log), rewriting
+  the file in place so a running writer keeps appending to it. `--dry-run`
+  (`-n`) reports what would be removed without changing anything.
+
+### Changed
+
+- **BREAKING: `asgard --doctor` exits 1 when it reports problems**,
+  including overridden task definitions, so scripts and CI can use it as a
+  check. Warnings alone still exit 0. A script that ran `--doctor` and
+  ignored what it reported now fails on those problems.
+- **BREAKING: `--debug` and `--verbose` before a task name run that task**:
+  `asgard --verbose build` is now `asgard build --verbose`. It used to print
+  the help for `build`, or, in a project with a `default_task`, run the
+  default task with `build` as its argument. In front of a word that is not a
+  task the flags still run the default task with that word
+  ([#27](https://github.com/MadBomber/asgard/issues/27)).
+- **The repository's own task files load from a shared checkout**: the root
+  `.loki` runs `import_up "dev/.loki"` to load the quality, gem, git and docs
+  tasks of [MadBomber/dev](https://github.com/MadBomber/dev), and the local
+  `test_check.loki` replaces two of them with asgard's own test runner.
+  `xyzzy.loki` is gone; those replacements are now the worked example of an
+  override in the docs. `quality_rails.loki` is gone too; conditional imports
+  stay in the docs as an example. The gem itself is unchanged.
+- **One parent-directory walk**: `loki_up`, `import_up` and `--doctor`'s
+  marker search use `Pathname#ascend` instead of three hand-rolled loops; what
+  they find is unchanged ([#19](https://github.com/MadBomber/asgard/issues/19)).
+- **Schedule and watcher take the project root from `Asgard.project_root`**,
+  as jobs already did, so all three act on the same project
+  ([#26](https://github.com/MadBomber/asgard/issues/26)).
+- **CI runs on Node 24 actions**: the workflows use `actions/checkout@v7`
+  and `actions/setup-python@v7`, replacing the deprecated Node 20 majors
+  ([#29](https://github.com/MadBomber/asgard/issues/29)).
+- **Schedule log directories are private**: `asgard schedule install`
+  creates the log directory 0700 (and tightens an existing one), as the
+  watch and jobs state directories already are.
+
+### Fixed
+
+- **A task called with arguments it cannot take runs nothing**: the usage
+  error is reported before the task's dependencies run, not after them
+  ([#27](https://github.com/MadBomber/asgard/issues/27)).
+- **A `helper` with a reserved name is reported at its `.loki` line**, not at
+  asgard's own `task_dsl.rb`, and is refused before anything is defined
+  ([#25](https://github.com/MadBomber/asgard/issues/25)).
+- **`bin/console` and the `console` task load on Ruby 4**: the Gemfile lists
+  `irb`, which is no longer a default gem ([#28](https://github.com/MadBomber/asgard/issues/28)).
+- **`truncate_log NAME` on an entry with no log yet is not an error**: a declared schedule or recorded job that has not written its log says `NAME has no log yet (PATH); nothing to truncate` and exits 0 ([#18](https://github.com/MadBomber/asgard/issues/18)).
+- **A background job started right after it ended starts again**, instead
+  of being reported as already running while its old shell exits.
+- **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a
+  load failure instead of exiting with no report.
+- **Dependency errors name the task(s) that declared them**: an undefined
+  dependency (#14) and a dependency that takes required arguments both end
+  with `(needed by ci, release)`.
+
 ## [0.6.0] - 2026-10-31
 
 Upgrading from 0.5.x? Read
@@ -462,6 +539,8 @@ reinstalled after.
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
+[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/MadBomber/asgard/compare/v0.4.1...v0.5.1
 [0.4.1]: https://github.com/MadBomber/asgard/compare/v0.4.0...v0.4.1

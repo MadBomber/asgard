@@ -329,8 +329,8 @@ class TestWatchSpawn < Minitest::Test
   end
 
   def test_argv_with_and_without_direnv
-    assert_equal %w[/bin/asgard lint],                       S.argv(spec, context)
-    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], S.argv(spec, context(direnv: "/bin/direnv"))
+    assert_equal %w[/bin/asgard lint],                       S.argv(spec[:task], context)
+    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], S.argv(spec[:task], context(direnv: "/bin/direnv"))
   end
 
   def test_executable_prefers_the_running_asgard_over_path
@@ -588,6 +588,16 @@ class TestWatchReporter < Minitest::Test
     assert_equal 10_485_760, Asgard::StateDir.log_limit({})
     assert_equal 2048, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "2048" })
     assert_equal 10_485_760, Asgard::StateDir.log_limit({ "ASGARD_LOG_MAX" => "lots" })
+  end
+
+  def test_private_dir_creates_and_tightens
+    parent = File.join(@dir, "state")
+    dir    = File.join(parent, "asgard")
+    Asgard::StateDir.private_dir(dir)
+    [parent, dir].each { |path| assert_equal 0o700, File.stat(path).mode & 0o777, path }
+    File.chmod(0o755, dir)
+    Asgard::StateDir.private_dir(dir)
+    assert_equal 0o700, File.stat(dir).mode & 0o777, "an existing directory is tightened"
   end
 
   def test_log_lines
@@ -1208,7 +1218,8 @@ class TestWatchDaemon
   def test_regression_w3_join_worker_tolerates_a_dead_worker
     dead = Ractor.new { raise "worker died" }
     capture_io { assert_nil Daemon.join_worker(dead) }
-    assert_equal 42, Daemon.join_worker(Ractor.new { 42 }) && 42
+    live = Ractor.new { 42 }
+    assert_same live, Daemon.join_worker(live), "a live worker is joined"
   end
 
   # W5: an idle daemon (two workers, the reporter, the dispatcher) must
@@ -1640,12 +1651,6 @@ class TestPidAndStateDir < Minitest::Test
       Process.kill("TERM", child)
       Process.wait(child)
     end
-  end
-
-  def test_regression_j10_group_commands_keeps_only_that_group
-    out = "  501 /bin/sh -c trap asgard-job bash /s/api.sh\n  777 bash /s/api.sh\n  777 sleep 30\n 7770 other\n"
-    assert_equal ["bash /s/api.sh", "sleep 30"], Pid.group_commands(out, 777)
-    assert_empty Pid.group_commands("", 777)
   end
 
   def test_all_lists_one_kind_at_a_time

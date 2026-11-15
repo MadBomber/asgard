@@ -1,0 +1,68 @@
+# examples/simple_flow/.loki — a simple_flow pipeline inside one asgard task.
+#
+# depends_on orders whole tasks. simple_flow (gem install simple_flow)
+# runs a graph of steps *inside one task*: steps that do not depend on
+# each other run at the same time, a step reads what earlier steps
+# produced, and one failing step halts the rest and reports its error.
+#
+#   asgard fan_out    # a and b run together, c merges their output; exit 0
+#   asgard halting    # b fails, c never runs, asgard exits 1
+#
+# Two rules:
+#   - Never call `sh` inside a step. `sh` reports failure by exiting, and
+#     inside a step that ends the whole asgard process before the
+#     pipeline can see the failure. Run the command with IO.popen, keep
+#     its output, and turn a bad exit status into with_error + halt
+#     (see `capture` below).
+#   - Build each step as a lambda in the task body, then hand it to
+#     `step`. Inside the Pipeline.new block, self is the pipeline, so a
+#     lambda written there could not reach the task's helpers.
+
+require "simple_flow"
+
+class Tasks
+  desc "Two steps in parallel, a third merges their output"
+  def fan_out
+    a = ->(r) { capture(r, :a, "echo alpha; sleep 1") }
+    b = ->(r) { capture(r, :b, "echo beta") }
+    c = ->(r) { capture(r, :c, "echo merged: #{r.context[:a].strip} + #{r.context[:b].strip}") }
+
+    result = run_pipeline(a, b, c)
+    puts result.context[:c]
+  end
+
+  desc "Same graph, but step b fails and halts the pipeline"
+  def halting
+    a = ->(r) { capture(r, :a, "echo alpha; sleep 1") }
+    b = ->(r) { capture(r, :b, "echo beta; false") }
+    c = ->(r) { capture(r, :c, "echo never runs") }
+
+    run_pipeline(a, b, c)
+  end
+
+  private
+
+  # a and b run side by side; c runs after both. Returns the final
+  # Result, or raises Asgard::Error (asgard exits 1) when a step halted.
+  def run_pipeline(a, b, c)
+    pipeline = SimpleFlow::Pipeline.new(concurrency: :threads) do
+      step :a, a, depends_on: :none
+      step :b, b, depends_on: :none
+      step :c, c, depends_on: [:a, :b]
+    end
+
+    result = pipeline.call_parallel(SimpleFlow::Result.new(nil))
+    raise Asgard::Error, "pipeline halted: #{result.errors}" unless result.continue?
+
+    result
+  end
+
+  # Runs +command+, keeps its output in the result context under +name+,
+  # and halts the pipeline with an error when the command fails.
+  def capture(result, name, command)
+    out = IO.popen(command, err: %i[child out], &:read)
+    return result.with_context(name, out) if $?.success?
+
+    result.with_error(name, "exit #{$?.exitstatus}: #{out.strip}").halt
+  end
+end

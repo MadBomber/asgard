@@ -74,6 +74,13 @@ module Asgard
         Thor::Options.new(bare, {}, false, true).parse(raw).to_h
       end
 
+      # Whether a method with these +parameters+ (Method#parameters) can be
+      # called with +count+ positional arguments.
+      def self.accepts?(parameters, count)
+        kinds = parameters.map(&:first)
+        count >= kinds.count(:req) && (kinds.include?(:rest) || count <= kinds.count { %i[req opt].include?(it) })
+      end
+
       # A copy of +option+ that parses the same words but has no default.
       def self.without_default(option)
         Thor::Option.new(option.name, type: option.type, aliases: option.aliases, enum: option.enum,
@@ -125,7 +132,7 @@ module Asgard
 
       # Dispatch hook: resolves and runs all deps (in parallel where declared)
       # before executing the target command.
-      def invoke_command(command, *)
+      def invoke_command(command, args = [])
         $DEBUG   = true if options[:debug]
         $VERBOSE = true if options[:verbose]
         target = command.name.to_sym
@@ -139,8 +146,8 @@ module Asgard
         error  = nil
         begin
           result = _in_task_frame(target) do
-            resolved_deps = _run_deps_for(target)
-            _with_dep_results(resolved_deps) { command.run(self, *) }
+            resolved_deps = _callable_with?(target, args) ? _run_deps_for(target) : {}
+            _with_dep_results(resolved_deps) { command.run(self, args) }
           end
         rescue Exception => e # rubocop:disable Lint/RescueException -- an exit or interrupt ends the task too
           # Captured here, not read from $! in an ensure: $! still holds a
@@ -229,6 +236,13 @@ module Asgard
           running.add(target)
           :run
         end
+      end
+
+      # False when +args+ cannot be the task's arguments. Its dependencies
+      # are then skipped, so the usage error Thor prints for the call is
+      # all that happens.
+      def _callable_with?(target, args)
+        !respond_to?(target, true) || Dispatch.accepts?(method(target).parameters, args.size)
       end
 
       def _run_deps_for(target)

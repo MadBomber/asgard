@@ -2,6 +2,50 @@
 
 Each release that can break an existing project is listed here, newest first, with the steps to upgrade. The [Changelog](changelog.md) lists every change.
 
+## 0.6.1
+
+Nothing in a `.loki` file needs to change for 0.6.1. Two changes can break
+a script, alias or CI step that runs asgard.
+
+### `--doctor` exits 1 when it reports problems
+
+Before 0.6.1, `asgard --doctor` always exited 0. It now exits 1 when it
+reports a problem: a `.loki` that fails to load, an undefined dependency,
+or a task defined in more than one file. Warnings alone still exit 0.
+
+A deliberate override counts. A project that replaces a task from a shared
+file on purpose gets exit status 1 from `--doctor` every time.
+
+**To upgrade:** if a script or CI step runs `asgard --doctor` only to show
+the report, let it ignore the status:
+
+```bash
+asgard --doctor || true
+```
+
+If it runs `--doctor` as a check, it now catches the problems it was
+reporting, so fix them or rename the duplicate tasks.
+
+### `--debug` and `--verbose` before a task name run that task
+
+Before 0.6.1, a flag in front of the task name did not reach the task:
+
+| Command | Before 0.6.1 | From 0.6.1 |
+|---|---|---|
+| `asgard --verbose build` | Help for `build` | Runs `build` with `--verbose` |
+| `asgard --verbose build` with a `default_task` | Runs the default task with `build` as its argument | Runs `build` with `--verbose` |
+| `asgard --verbose prod` where `prod` is not a task | Runs the default task with `prod` | Unchanged |
+
+A word that is the start of exactly one task's name counts as that task,
+as it does without a flag: `asgard --verbose bu` runs `build`.
+
+**To upgrade:** a command that relied on the old behavior to pass a word to
+the default task should name the default task. With `default_task :deploy`:
+
+```bash
+asgard deploy build --verbose    # instead of asgard --verbose build
+```
+
 ## 0.6.0
 
 Version 0.6.0 changes how asgard names a project on disk. Every scheduled

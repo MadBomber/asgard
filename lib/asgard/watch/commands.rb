@@ -2,6 +2,7 @@
 
 require "shellwords"
 require "time"
+require_relative "../log"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see
 # base/task_dsl.rb); these messages are for the user, so they always print.
@@ -57,7 +58,7 @@ module Asgard
       no_commands do
         def watches = Watch.declarations
 
-        def watch_root = @watch_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
+        def watch_root = @watch_root ||= Asgard.project_root
 
         def watch_project = @watch_project ||= Schedule.project_slug(watch_root)
 
@@ -244,6 +245,15 @@ module Asgard
         return sh(Commands.follow_command(path), silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
+      end
+
+      desc "truncate_log", "Keep the last M lines of this project's watcher logs; --lines 0 empties them"
+      method_option :lines, type: :string, default: "1000", banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
+      def truncate_log
+        Log.truncate_logs([state.log_path, "#{state.log_path}.1"], lines: options[:lines], dry_run: options[:dry_run])
+      rescue ArgumentError, SystemCallError, IOError => e
+        abort "watcher: #{e.message}"
       end
     end
   end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "shellwords"
+require_relative "../log"
 
 # warn is silent when $VERBOSE is nil and bypasses $stderr in Ruby 4.0 (see
 # base/task_dsl.rb); these messages are for the user, so they always print.
@@ -22,7 +23,7 @@ module Asgard
       no_commands do
         def schedules = Schedule.declarations
 
-        def schedule_root = @schedule_root ||= File.realpath((Asgard.find_task_file&.dirname || Pathname.pwd).to_s)
+        def schedule_root = @schedule_root ||= Asgard.project_root
 
         def schedule_project = @schedule_project ||= Schedule.project_slug(schedule_root)
 
@@ -118,6 +119,17 @@ module Asgard
           find_installed(name) || abort("#{name} is neither declared nor installed (see `asgard schedule list --all`).")
         end
 
+        # Whether +path+ is NAME's log to truncate. A declared entry that has
+        # not run yet says so and is skipped; any other name aborts.
+        def log_to_truncate?(name, path)
+          found = File.file?(path)
+          abort "schedule: no such schedule log: #{name}" if name.include?("/") || !(found || schedules.key?(name))
+          return true if found
+
+          $stderr.puts "#{name} has no log yet (#{path}); nothing to truncate"
+          false
+        end
+
         # True when list should cover every project: asked for with --all, or
         # there is no .loki here, so no single project to scope to.
         def list_all? = options[:all] || Asgard.find_task_file.nil?
@@ -159,16 +171,12 @@ module Asgard
 
         def entry_rows(entries) = entries.map { |slug, name| entry_row(slug, name) }
 
-        # This project's entries keep their declaration columns; see other_project_row.
+        # This project's entries keep their declaration columns. Another
+        # project's .loki isn't loaded, so its command and schedule are read
+        # back from the installed job files.
         def entry_row(slug, name)
           return schedule_row(name) if slug == current_slug
 
-          other_project_row(slug, name)
-        end
-
-        # A row for an entry of another project: its .loki isn't loaded, so the
-        # command and schedule are read back from the installed job files.
-        def other_project_row(slug, name)
           backend = backend_for(slug)
           shown   = backend.installed_columns(name) || Schedule.declared_columns(nil, "(unreadable)")
           { name:, **shown, **Schedule.live_columns(backend, name) }
@@ -228,6 +236,20 @@ module Asgard
         return sh("tail -n +1 -f #{path.shellescape}", silent: true) if options[:follow]
 
         IO.copy_stream(path, $stdout)
+      end
+
+      desc "truncate_log [NAME]", "Keep the last M lines of an entry's log; no NAME truncates every schedule log of this project"
+      method_option :lines, type: :string, default: "1000", banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
+      def truncate_log(name = nil)
+        Log.line_count(options[:lines]) # reject a bad --lines even when there is no log to truncate
+        pattern = scheduler.log_path("*")
+        paths = name ? [scheduler.log_path(name)] : Dir.glob(File.join(Asgard.glob_escape(File.dirname(pattern)), File.basename(pattern)))
+        return if name && !log_to_truncate?(name, paths.first)
+
+        Log.truncate_logs(paths, lines: options[:lines], dry_run: options[:dry_run])
+      rescue ArgumentError, SystemCallError, IOError => e
+        abort "schedule: #{e.message}"
       end
 
       desc "remove [NAME]", "Remove one installed entry (NAME or project/NAME), or all of this project's"

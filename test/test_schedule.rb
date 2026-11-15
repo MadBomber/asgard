@@ -177,11 +177,11 @@ class TestScheduleDeclaration < Minitest::Test
   end
 
   def test_program_arguments
-    assert_equal %w[/bin/asgard sync], SD.program_arguments(:sync, root: "/r", asgard: "/bin/asgard")
+    assert_equal %w[/bin/asgard sync], SD.program_arguments([:sync], root: "/r", asgard: "/bin/asgard")
     assert_equal ["/bin/asgard", "report", "--title", "Week 39"],
-                 SD.program_arguments("report", ["--title", "Week 39"], root: "/r", asgard: "/bin/asgard")
+                 SD.program_arguments(["report", "--title", "Week 39"], root: "/r", asgard: "/bin/asgard")
     assert_equal %w[/bin/direnv exec /r asgard report -v],
-                 SD.program_arguments("report", ["-v"], root: "/r", asgard: "/bin/asgard", direnv: "/bin/direnv")
+                 SD.program_arguments(%w[report -v], root: "/r", asgard: "/bin/asgard", direnv: "/bin/direnv")
   end
 
   def test_runner_reports_missing_commands_as_failure
@@ -338,6 +338,25 @@ class TestScheduleLaunchd < Minitest::Test
       b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
       b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
       assert_equal 0o600, File.stat(b.plist_path("demo")).mode & 0o777
+    end
+  end
+
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home, FakeRunner.new("launchctl print gui" => ["", false]))
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
+  def test_the_log_directory_is_tightened_when_the_plist_is_unchanged
+    Dir.mktmpdir do |home|
+      backend(home, FakeRunner.new("launchctl print gui" => ["", false])).install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      b = backend(home) # the job is loaded and the plist unchanged: install leaves it alone
+      File.chmod(0o755, File.dirname(b.log_path("demo")))
+      assert_equal :active, b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
     end
   end
 
@@ -674,6 +693,15 @@ class TestScheduleSystemd < Minitest::Test
     end
   end
 
+  def test_the_log_directory_is_private
+    Dir.mktmpdir do |home|
+      b = backend(home)
+      FileUtils.mkdir_p(File.dirname(b.log_path("demo")), mode: 0o755)
+      b.install(spec(every: 60), asgard: "/bin/asgard", direnv: nil)
+      assert_equal 0o700, File.stat(File.dirname(b.log_path("demo"))).mode & 0o777
+    end
+  end
+
   # S9: a first install that fails part way must not look, next time,
   # like a timer the user stopped on purpose.
   def test_regression_s9_a_failed_first_install_is_not_taken_for_a_stop
@@ -775,7 +803,7 @@ class TestScheduleRegistry < Minitest::Test
   # names, whatever order they are declared in.
   def test_rival_commands_both_take_hashed_names
     rivals = [[:report, "--period week"], [:report, "period week"], [:report_period, "week"]]
-    expected = rivals.map { |task, options| SD.hashed_slug(task.to_s, Shellwords.split(options)) }
+    expected = rivals.map { |task, options| SD.hashed_slug([task.to_s, *Shellwords.split(options)]) }
 
     [rivals, rivals.reverse, rivals.rotate].each do |order|
       SD.declarations.clear
@@ -813,9 +841,9 @@ class TestScheduleRegistry < Minitest::Test
   end
 
   def test_runner_defaults_to_runner_constant
-    Asgard::Schedule.runner = FakeRunner.new
+    Asgard::Schedule.use_runner(FakeRunner.new)
     refute_equal Asgard::Schedule::RUNNER, Asgard::Schedule.runner
-    Asgard::Schedule.runner = nil
+    Asgard::Schedule.use_runner(nil)
     assert_equal Asgard::Schedule::RUNNER, Asgard::Schedule.runner
   end
 
@@ -844,13 +872,13 @@ class TestScheduleCommands < Minitest::Test
     ENV.delete("XDG_STATE_HOME")
     # "not loaded" keeps launchd from waiting on bootout
     @runner = FakeRunner.new("launchctl print gui" => ["", false])
-    Asgard::Schedule.runner = @runner
+    Asgard::Schedule.use_runner(@runner)
     Asgard::Schedule.declarations.clear
   end
 
   def teardown
     @saved.each { |k, v| ENV[k] = v }
-    Asgard::Schedule.runner = nil
+    Asgard::Schedule.use_runner(nil)
     Asgard::Schedule.declarations.clear
     FileUtils.rm_rf(@tmp)
   end
@@ -869,6 +897,20 @@ class TestScheduleCommands < Minitest::Test
     out, = capture_io { Dir.chdir(@project) { Tasks.start(%w[schedule list]) } }
     assert_match "No scheduled tasks installed for #{@slug}", out
     assert_match "asgard schedule list --all", out
+  end
+
+  # Issue #26: schedule, watcher and jobs all take the project root from
+  # Asgard.project_root, so a pinned root reaches every subcommand group.
+  def test_every_subcommand_group_uses_the_pinned_project_root
+    pinned = File.realpath(@tmp)
+    Asgard.pin_project_root(pinned)
+    roots = Dir.chdir(@project) do
+      { schedule_root: Asgard::Schedule::Commands, watch_root: Asgard::Watch::Commands, jobs_root: Asgard::Jobs::Commands }
+        .map { |name, klass| klass.new([], {}, {}).send(name) }
+    end
+    assert_equal [pinned] * 3, roots
+  ensure
+    Asgard.pin_project_root(nil)
   end
 
   def test_subcommand_usage_reads_schedule_not__schedule

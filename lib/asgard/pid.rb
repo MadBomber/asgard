@@ -48,27 +48,10 @@ module Asgard
       nil
     end
 
-    # The command lines of every process in group +pgid+. ps by group id
-    # is not portable, so this lists every process with its group and
-    # keeps the matching ones (see group_commands).
-    def group_command_lines(pgid)
-      out, status = Open3.capture2(PS, "-ww", "-A", "-o", "pgid=,command=")
-      status.success? ? group_commands(out, pgid) : []
-    rescue SystemCallError
-      []
-    end
-
-    # The commands in `ps -o pgid=,command=` output that belong to +pgid+.
-    def group_commands(ps_output, pgid)
-      ps_output.each_line.filter_map do |line|
-        group, command = line.strip.split(/\s+/, 2)
-        command.to_s if group.to_i == pgid
-      end
-    end
-
-    # Every process in group +pgid+ as Members. Like group_command_lines,
-    # but with each one's age, so a caller can tell a group that has kept
-    # its members from a later group that reused the id.
+    # Every process in group +pgid+ as Members, each with its age, so a
+    # caller can tell a group that has kept its members from a later
+    # group that reused the id. ps by group id is not portable, so this
+    # lists every process with its group and keeps the matching ones.
     def group_processes(pgid, now: Time.now)
       out, status = Open3.capture2(PS, "-ww", "-A", "-o", "pid=,pgid=,etime=,command=")
       status.success? ? parse_group(out, pgid, now:) : []

@@ -11,7 +11,7 @@ require_relative "asgard/doctor"
 
 module Asgard
   # Search the current directory and its ancestors for a .loki task file.
-  # Returns the path string, or nil if not found.
+  # Returns its Pathname, or nil if not found.
   def self.find_task_file
     loki_up
   end
@@ -58,7 +58,19 @@ module Asgard
     return "#{first} (#{error.class})" if error.is_a?(SyntaxError) && first.match?(LOKI_FRAME)
 
     where = Array(error.backtrace).lazy.filter_map { |frame| frame[LOKI_FRAME, 1] }.first
-    [where, "#{first} (#{error.class})"].compact.join(": ")
+    hint = "; asgard's DSL (desc, depends_on, schedule, ...) goes inside class Tasks ... end" if dsl_outside_tasks?(error)
+    [where, "#{first} (#{error.class})#{hint}"].compact.join(": ")
+  end
+
+  # Whether +error+ is a Tasks class method (desc, depends_on, ...) called
+  # at the top level of a task file, outside `class Tasks ... end`.
+  def self.dsl_outside_tasks?(error)
+    return false unless error.is_a?(NameError) && error.receiver.equal?(TOPLEVEL_BINDING.receiver)
+
+    name = error.name or return false
+    Tasks.respond_to?(name, true) && !Object.respond_to?(name, true)
+  rescue ArgumentError # a NameError built without a receiver
+    false
   end
 
   # Loads the task files; anything they raise ends asgard with one line
@@ -83,8 +95,7 @@ module Asgard
     end
     return unless leading_flag?(argv, "--doctor")
 
-    Asgard::Doctor.new.run
-    exit
+    exit(Asgard::Doctor.new.run)
   end
 
   # Finds and loads the task files and checks every class they defined.
@@ -96,13 +107,20 @@ module Asgard
     ((Asgard::Base._asgard_subclasses - before) + [Tasks]).uniq.each(&:validate_deps!)
   end
 
+  # Whether +word+ is what Thor would take as a task name: a task, a mapped
+  # name, or an abbreviation of either. Options and the gem's reserved
+  # `_` names are not.
+  def self.task_word?(word, tasks = Tasks)
+    !word.start_with?("-", "_") && tasks.send(:find_command_possibilities, word).any?
+  end
+
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     answer_flags(argv)
     boot(argv)
     Tasks._reset_ran!
     pin_project_root(project_root)
-    result = Tasks.start(argv)
+    result = Tasks.start(task_first(argv) { |word| task_word?(word) })
     # Quality-gate convention: a task signals failure by returning :fail
     # (see dev/quality.loki's *_check tasks). Surface that as a nonzero
     # exit so callers (CI, cross-repo runners) can rely on $?.

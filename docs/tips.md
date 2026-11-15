@@ -6,7 +6,7 @@ Short, practical advice gathered from using asgard day to day. Each tip stands o
 
 ## Getting Started
 
-- **Start from working files.** The task files at the repository root (`.loki`, `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`) are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and a deliberate override for `--doctor`. Copy what fits. See [The asgard Repository Itself](examples.md#the-asgard-repository-itself).
+- **Start from working files.** The task files at the repository root (`.loki`, `test_check.loki`), with the shared ones they load from the [`dev`](https://github.com/MadBomber/dev) repository (`quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`), are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and deliberate overrides that `--doctor` reports. Copy what fits. See [The asgard Repository Itself](examples.md#the-asgard-repository-itself).
 
 - **More examples.** [MadBomber/dev](https://github.com/MadBomber/dev) holds shared `.loki` libraries used across many repos: gem, git, Rails quality, schedule, status report and iTerm tasks. The [Examples](examples.md) page walks through the repository's `examples/` directory, one small file per feature.
 
@@ -20,7 +20,7 @@ Short, practical advice gathered from using asgard day to day. Each tip stands o
 
 - **Make bare `asgard` do the common thing.** `default_task :test` (or `:quality`, as this repository does) saves typing on the task you run most.
 
-- **Flags go after the task name.** `asgard build --verbose` runs the task; `asgard --verbose build` prints the help for `build`. Only `--version` and `--doctor` go first. See [Options & Flags](options.md).
+- **Flags go after the task name.** `asgard build --verbose` is the form to use. `--debug` and `--verbose` are also understood in front of a task name, so `asgard --verbose build` runs `build`; in front of any other word they run the `default_task` with that word as its argument. `--version` and `--doctor` go first. See [Options & Flags](options.md).
 
 ---
 

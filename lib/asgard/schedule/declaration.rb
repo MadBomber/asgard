@@ -63,11 +63,12 @@ module Asgard
     end
 
     class << self
-      # The runner new backends get. Tests assign one that records commands
-      # instead of running them; nil restores RUNNER.
-      attr_writer :runner
-
+      # The runner new backends get: RUNNER, unless use_runner swapped it.
       def runner = @runner || RUNNER
+
+      # Tests swap in a runner that records commands instead of running
+      # them; nil restores RUNNER.
+      def use_runner(runner) = @runner = runner
 
       # The backend class for +platform+ (a RUBY_PLATFORM string).
       def backend_class(platform = RUBY_PLATFORM)
@@ -159,7 +160,7 @@ module Asgard
     # The task alone, or a slug of the whole command when it has arguments,
     # so one task can be scheduled more than once with different flags.
     def entry_name(task, args, as = nil)
-      name = (as || (args.empty? ? task : command_slug(task, args))).to_s
+      name = (as || (args.empty? ? task : command_slug([task, *args]))).to_s
       raise ArgumentError, "schedule as: #{name.inspect} may only contain letters, digits, _ . -" unless name.match?(/\A[\w.-]+\z/)
 
       name
@@ -172,18 +173,19 @@ module Asgard
     # `period week` and `report_period` with `week`. Schedule.declare
     # gives each of two such rivals its hashed_slug, so different commands
     # never share a name.
-    def command_slug(task, args)
-      words = [task, *args].map(&:to_s)
+    def command_slug(words)
+      words = words.map(&:to_s)
       name  = slug(words.join(" "))
       return name if name.length <= NAME_MAX && words.drop(1).all? { |arg| arg.match?(PLAIN_ARG) }
 
-      hashed_slug(task, args)
+      hashed_slug(words)
     end
 
-    # The slug with a short hash of the exact words appended, capped at
-    # NAME_MAX: "report-period-week-1a2b3c4d".
-    def hashed_slug(task, args)
-      words  = [task, *args].map(&:to_s)
+    # The slug of a command's +words+ (the task, then its arguments) with a
+    # short hash of the exact words appended, capped at NAME_MAX:
+    # "report-period-week-1a2b3c4d".
+    def hashed_slug(words)
+      words  = words.map(&:to_s)
       digest = Digest::SHA256.hexdigest(words.join("\0"))[0, 8]
       "#{slug(words.join(' '))[0, NAME_MAX - 9].delete_suffix('-')}-#{digest}"
     end
@@ -207,22 +209,24 @@ module Asgard
     # For display: the command line the job runs.
     def command_line(task, args = []) = Shellwords.join(["asgard", task.to_s, *args])
 
-    def describe(at: nil, on: :daily, every: nil, **)
-      return "every #{every}s" if every
+    # A declaration's schedule in words: "every 60s", or its times and days
+    # ("17:30 weekdays"; daily when +spec+ has no :on).
+    def describe(spec)
+      return "every #{spec[:every]}s" if spec[:every]
 
-      "#{Array(at).join(', ')} #{Array(on).join(', ')}"
+      "#{Array(spec[:at]).join(', ')} #{Array(spec[:on] || :daily).join(', ')}"
     end
 
     # For the `list` table: like describe, but a run of hourly times
     # collapses ("10:00, 11:00 ... 17:00" => "10:00-17:00 hourly").
-    def describe_compact(at: nil, on: :daily, every: nil, **)
-      return "every #{every}s" if every
+    def describe_compact(spec)
+      return "every #{spec[:every]}s" if spec[:every]
 
-      "#{compact_times(Array(at))} #{Array(on).join(', ')}"
+      "#{compact_times(Array(spec[:at]))} #{Array(spec[:on] || :daily).join(', ')}"
     end
 
     # The command and schedule columns of a `list` row for a declared entry.
-    def list_columns(spec) = { command: command_line(spec[:task], spec[:args]), schedule: describe_compact(**spec) }
+    def list_columns(spec) = { command: command_line(spec[:task], spec[:args]), schedule: describe_compact(spec) }
 
     # The command and schedule columns of a `list` row: the declaration's, or
     # `missing` in the schedule column when there is none.
@@ -355,9 +359,10 @@ module Asgard
     # The job's argv. Schedulers need an absolute program. With direnv, the
     # repo's .envrc (API keys, ...) is loaded at run time instead of being
     # copied into the job definition, and direnv finds asgard on the job's
-    # PATH. Each argument is its own element, so no shell re-splits them.
-    def program_arguments(task, args = [], root:, asgard:, direnv: nil)
-      argv = [task.to_s, *args.map(&:to_s)]
+    # PATH. +words+ is the task, then its arguments; each is its own
+    # element, so no shell re-splits them.
+    def program_arguments(words, root:, asgard:, direnv: nil)
+      argv = words.map(&:to_s)
       direnv ? [direnv, "exec", root, "asgard", *argv] : [asgard, *argv]
     end
   end

@@ -29,23 +29,14 @@ module Asgard
       build_task_sections
       report_dependencies
       print_report
+      problem_count.zero? ? 0 : 1
     end
 
     # Every ".loki" marker from +dir+ up to the filesystem root, nearest
-    # first — mirrors loki_up's walk, but collects every match instead of
+    # first — the same walk as loki_up, but collects every match instead of
     # stopping at the first (so shadowed ancestor markers can be reported).
     def self.ancestor_markers(dir)
-      markers = []
-      current = Pathname.new(dir)
-      loop do
-        candidate = current + ".loki"
-        markers << candidate.to_s if candidate.file?
-        parent = current.parent
-        break if parent == current
-
-        current = parent
-      end
-      markers
+      Pathname.new(dir).ascend.map { it + ".loki" }.select(&:file?).map(&:to_s)
     end
 
     # method_name => [[file, line], ...] entries defined more than once —
@@ -55,6 +46,23 @@ module Asgard
       method_log.each_with_object({}) do |(name, locations), acc|
         acc[name] = locations if locations.size > 1
       end
+    end
+
+    # The "load failed" line for whatever stopped the .loki chain loading.
+    # An exit or abort raises SystemExit; a bare exit (or raise SystemExit)
+    # carries only a default message, so only the status is worth showing then.
+    def self.load_failure(error)
+      return "load failed: #{error.class}: #{error.message}" unless error.is_a?(SystemExit)
+
+      detail = ": #{error.message}" unless ["exit", error.class.to_s].include?(error.message)
+      "load failed: #{error.class} (status #{error.status})#{detail}"
+    end
+
+    # What ImportTracer saw one import or import_up do: the line the report
+    # prints for it, and the .loki files it loaded.
+    def record_import(message, added = [])
+      @imports << message
+      @loaded_files.concat(added)
     end
 
     private
@@ -77,16 +85,16 @@ module Asgard
       return unless @marker
 
       Kernel.prepend(ImportTracer)
-      ImportTracer.doctor = self
+      ImportTracer.observe(self)
       @loaded_files << @marker
 
       before = Asgard::Base._asgard_subclasses.dup
       Asgard.load_root(@marker)
       @new_subclasses = (Asgard::Base._asgard_subclasses - before + [Tasks]).uniq
-    rescue StandardError, ScriptError => e
-      @findings << Finding.new(level: :error, message: "load failed: #{e.class}: #{e.message}")
+    rescue StandardError, ScriptError, SystemExit => e
+      @findings << Finding.new(level: :error, message: self.class.load_failure(e))
     ensure
-      ImportTracer.doctor = nil
+      ImportTracer.observe(nil)
     end
 
     def report_imports
@@ -103,18 +111,16 @@ module Asgard
       end
     end
 
-    def record_import(message, added = [])
-      @imports << message
-      @loaded_files.concat(added)
-    end
-
     # Prepended onto Kernel for the process lifetime of `asgard --doctor`
     # (Asgard.run! exits right after Doctor#run, so it's never unprepended)
     # to observe every import/import_up call, whether typed at the top
     # level of a .loki file or reached indirectly through another import.
     module ImportTracer
       class << self
-        attr_accessor :doctor
+        # The Doctor that records each import, or nil when none is running.
+        attr_reader :doctor
+
+        def observe(doctor) = @doctor = doctor
       end
 
       def import(path)
@@ -122,7 +128,7 @@ module Asgard
         before = $LOADED_FEATURES.dup
         result = super(path, from: loc)
         added  = ImportTracer.loki_files($LOADED_FEATURES - before)
-        ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import", path, added), added) unless
+        ImportTracer.doctor&.record_import(ImportTracer.trace_message("import", path, added), added) unless
           loc&.absolute_path&.end_with?("kernel_methods.rb")
         result
       end
@@ -131,7 +137,7 @@ module Asgard
         before = $LOADED_FEATURES.dup
         result = super
         added  = ImportTracer.loki_files($LOADED_FEATURES - before)
-        ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import_up", name, added), added)
+        ImportTracer.doctor&.record_import(ImportTracer.trace_message("import_up", name, added), added)
         result
       end
 

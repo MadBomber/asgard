@@ -89,7 +89,7 @@ asgard release; echo "exit $?"
 # exit 1
 ```
 
-A command that ends on a signal exits with 128 plus the signal number, the way a shell reports it. This is deliberate: a task runner that continued past a failed step would hide the failure. When a command is allowed to fail, say so in the script or in Ruby:
+A command that ends on a signal exits with 128 plus the signal number, the way a shell reports it. The same holds inside a thread or a library's callback: a failing `sh` there ends asgard, not just the thread. This is deliberate: a task runner that continued past a failed step would hide the failure. When a command is allowed to fail, say so in the script or in Ruby:
 
 ```ruby
 desc "Remove build output, if any"

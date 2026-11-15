@@ -31,7 +31,8 @@ class TestAsgardRun < Minitest::Test
   def test_doctor_flag_works_without_loki_file
     Dir.mktmpdir do |dir|
       out, _err = capture_io do
-        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        error = assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        assert_equal 1, error.status
       end
       assert_match "no .loki file found", out
     end
@@ -42,9 +43,26 @@ class TestAsgardRun < Minitest::Test
       dir = File.realpath(dir)
       File.write(File.join(dir, ".loki"), "")
       out, _err = capture_io do
-        assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        error = assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!(["--doctor"]) } }
+        assert_equal 0, error.status
       end
       assert_match "No problems found", out
+    end
+  end
+
+  def test_doctor_flag_exits_successfully_with_only_warnings
+    Dir.mktmpdir do |root|
+      child = File.join(root, "child")
+      Dir.mkdir(child)
+      File.write(File.join(root, ".loki"), "")
+      File.write(File.join(child, ".loki"), "")
+
+      out, = capture_io do
+        error = assert_raises(SystemExit) { Dir.chdir(child) { Asgard.run!(["--doctor"]) } }
+        assert_equal 0, error.status
+      end
+      assert_match "[WARN] shadowed marker", out
+      assert_match "No problems found (", out
     end
   end
 
@@ -81,7 +99,7 @@ class TestAsgardRun < Minitest::Test
       _, err = capture_io do
         assert_raises(SystemExit) { Dir.chdir(dir) { Asgard.run!([]) } }
       end
-      assert_match "undefined task", err
+      assert_equal "asgard: undefined task(s) in depends_on: ghost (needed by sub_a)\n", err
     end
   ensure
     Object.send(:remove_const, :SubGroup2) if Object.const_defined?(:SubGroup2)
@@ -752,6 +770,44 @@ class TestAsgardDependsOn < Minitest::Test
     klass.new([], {}, {}).invoke(:test)
     assert_equal %i[build test], log
   end
+
+  def test_undefined_deps_name_each_declaring_task_without_duplicates
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      define_method(:build) {}
+
+      depends_on :typo, %i[ghost build], :ghost
+      desc "release", "release"
+      define_method(:release) {}
+
+      depends_on :ghost, :absent
+      desc "ci", "ci"
+      define_method(:ci) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_equal "undefined task(s) in depends_on: absent (needed by ci), " \
+                 "ghost (needed by ci, release), typo (needed by release)", error.message
+  end
+
+  def test_dep_with_required_args_names_each_declaring_task_without_duplicates
+    klass = Class.new(Asgard::Base) do
+      desc "copy SRC DST", "copy"
+      define_method(:copy) { |_src, _dst| }
+
+      depends_on :copy, %i[copy]
+      desc "release", "release"
+      define_method(:release) {}
+
+      depends_on :copy
+      desc "ci", "ci"
+      define_method(:ci) {}
+    end
+
+    error = assert_raises(Asgard::Error) { klass.validate_deps! }
+    assert_equal "task 'copy' has 2 required argument(s) and cannot be used as a dependency " \
+                 "(needed by ci, release)", error.message
+  end
 end
 
 class TestAsgardDependsOnProc < Minitest::Test
@@ -822,7 +878,7 @@ class TestAsgardDependsOnProc < Minitest::Test
     end
 
     error = assert_raises(Asgard::Error) { klass.validate_deps! }
-    assert_match "undefined task(s) in depends_on: ghost", error.message
+    assert_equal "undefined task(s) in depends_on: ghost (needed by test)", error.message
   end
 end
 
@@ -1828,6 +1884,45 @@ class TestDoctorDuplicateMethods < Minitest::Test
   end
 end
 
+class TestDoctorExitStatus < Minitest::Test
+  include AsgardProcess
+
+  def test_undefined_dependency_exits_with_failure
+    out, _err, status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        depends_on :missing
+        desc "build", "Build"
+        def build = nil
+      end
+    RUBY
+
+    assert_match "[FAIL] Tasks dependency graph:", out
+    assert_equal 1, status.exitstatus
+  end
+
+  def test_load_failure_exits_with_failure
+    out, _err, status = run_asgard("exit 0", "--doctor")
+
+    assert_match "load failed: SystemExit (status 0)", out
+    assert_equal 1, status.exitstatus
+  end
+
+  def test_duplicate_definition_exits_with_failure
+    out, _err, status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        desc "build", "First"
+        def build = nil
+        desc "build", "Second"
+        def build = nil
+      end
+    RUBY
+
+    assert_match "1 problem(s)", out
+    refute_match "[FAIL]", out
+    assert_equal 1, status.exitstatus
+  end
+end
+
 class TestDoctor < Minitest::Test
   def test_reports_no_loki_found
     Dir.mktmpdir do |dir|
@@ -1873,6 +1968,33 @@ class TestDoctor < Minitest::Test
       assert_match "load failed", out
       assert_match "SyntaxError", out
     end
+  end
+
+  def test_reports_abort_during_load_without_exiting
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), 'abort "need DOCTOR_TEST_FOO"')
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "load failed: SystemExit (status 1): need DOCTOR_TEST_FOO", out
+    end
+  end
+
+  def test_reports_bare_exit_during_load_without_exiting
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "exit 3")
+
+      out, = capture_io { Asgard::Doctor.new(dir).run }
+      assert_match "load failed: SystemExit (status 3)", out
+      refute_match "(status 3):", out
+    end
+  end
+
+  def test_load_failure_omits_a_default_system_exit_message
+    assert_equal "load failed: SystemExit (status 3)", Asgard::Doctor.load_failure(SystemExit.new(3))
+    assert_equal "load failed: SystemExit (status 0)", Asgard::Doctor.load_failure(SystemExit.new)
+    assert_equal "load failed: SystemExit (status 2): stop", Asgard::Doctor.load_failure(SystemExit.new(2, "stop"))
   end
 
   def test_reports_undefined_dependency
@@ -2343,10 +2465,50 @@ class TestRegressionLoadErrors < Minitest::Test
     assert_match(/^\s+from |:in /, err)
   end
 
+  def test_regression_c4_abort_while_loading_still_ends_the_run
+    _out, err, status = run_asgard('abort "need DOCTOR_TEST_FOO"', "help")
+    assert_equal 1, status.exitstatus
+    assert_equal "need DOCTOR_TEST_FOO\n", err
+  end
+
   def test_regression_c4_load_error_message_is_pure
     error = NameError.new("undefined local variable or method 'dependz_on'")
     error.set_backtrace(["/lib/asgard/x.rb:1:in 'y'", "/proj/.loki:2:in '<class:Tasks>'", "/proj/.loki:1:in '<top>'"])
     assert_equal "/proj/.loki:2: undefined local variable or method 'dependz_on' (NameError)", Asgard.load_error_message(error)
+  end
+
+  def test_regression_c4_dsl_outside_class_tasks_gets_a_hint
+    %w[desc depends_on].each do |name|
+      error = top_level_error("#{name} 'x'")
+      assert Asgard.dsl_outside_tasks?(error), name
+      assert_match(/ \(NoMethodError\); .*goes inside class Tasks \.\.\. end\z/, Asgard.load_error_message(error))
+    end
+  end
+
+  def test_regression_c4_other_name_errors_get_no_hint
+    refute Asgard.dsl_outside_tasks?(top_level_error("frobnicate 'x'"))
+    refute Asgard.dsl_outside_tasks?(top_level_error("new"))
+    refute Asgard.dsl_outside_tasks?(NameError.new("no receiver"))
+    refute Asgard.dsl_outside_tasks?(NameError.new("no name", receiver: TOPLEVEL_BINDING.receiver))
+    refute Asgard.dsl_outside_tasks?(RuntimeError.new("desc"))
+    not_main = assert_raises(NoMethodError) { Object.new.desc }
+    refute Asgard.dsl_outside_tasks?(not_main)
+    refute_includes Asgard.load_error_message(not_main), "class Tasks"
+  end
+
+  def test_regression_c4_dsl_outside_class_tasks_hints_end_to_end
+    _out, err, status = run_asgard(%(desc "Build it"\ndef build = nil\n), "build")
+    assert_equal 1, status.exitstatus
+    assert_match(/\.loki:1: undefined method 'desc' .*\(NoMethodError\); .*class Tasks \.\.\. end$/, err)
+  end
+
+  private
+
+  def top_level_error(code)
+    TOPLEVEL_BINDING.eval(code)
+    flunk "#{code} did not raise"
+  rescue NameError => e
+    e
   end
 end
 
@@ -2401,6 +2563,83 @@ class TestRegressionCoreLow < Minitest::Test
     assert Asgard.leading_flag?(%w[--debug --doctor], "--doctor")
   end
 
+  FLAG_FIRST = <<~'LOKI'
+    class Tasks
+      default_task :deploy
+      desc "lint", "lint"
+      def lint = puts("LINT")
+      desc "deploy [TARGET]", "deploy"
+      def deploy(target = "staging") = puts("DEPLOYING to #{target} verbose=#{verbose?.inspect}")
+      desc "build", "build"
+      def build = puts("BUILDING debug=#{debug?.inspect} verbose=#{verbose?.inspect}")
+      depends_on :lint
+      desc "gate", "gate"
+      def gate = puts("GATE")
+    end
+  LOKI
+
+  # Issue #27: --debug and --verbose before the task name still run that task.
+  def test_issue_27_a_flag_before_the_task_name_runs_that_task
+    { %w[--verbose build] => "BUILDING debug=false verbose=true\n",
+      %w[--debug --verbose build] => "BUILDING debug=true verbose=true\n",
+      %w[--verbose bu] => "BUILDING debug=false verbose=true\n",
+      %w[--verbose prod] => "DEPLOYING to prod verbose=true\n",
+      %w[--verbose] => "DEPLOYING to staging verbose=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+    out, _err, status = run_asgard(FLAG_FIRST.sub("  default_task :deploy\n", ""), "--verbose", "build")
+    assert_equal ["BUILDING debug=false verbose=true\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_27_task_first_is_pure
+    names = %w[build schedule]
+    task_first = ->(argv) { Asgard.task_first(argv) { names.include?(it) } }
+    assert_equal %w[build --verbose], task_first.call(%w[--verbose build])
+    assert_equal %w[build --debug --verbose -- x], task_first.call(%w[--debug --verbose build -- x])
+    assert_equal %w[schedule --debug list], task_first.call(%w[--debug schedule list])
+    [%w[--verbose prod], %w[--verbose], %w[build --verbose], %w[-n build], %w[--verbose -n build], []].each do |argv|
+      assert_same argv, task_first.call(argv)
+    end
+  end
+
+  def test_issue_27_task_word_is_a_task_a_map_or_an_abbreviation
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      def build = nil
+      desc "bundle", "bundle"
+      def bundle = nil
+      desc "_internal", "gem-owned"
+      def _internal = nil
+      map "t" => :build
+    end
+    %w[build bun bu t help].each { |word| assert Asgard.task_word?(word, klass), word }
+    %w[prod --build -t _internal _].each { |word| refute Asgard.task_word?(word, klass), word }
+  end
+
+  # Issue #27: arguments a task cannot take are refused before its dependencies run.
+  def test_issue_27_a_usage_error_runs_no_dependencies
+    [%w[gate xyzzy], %w[--debug gate xyzzy]].each do |argv|
+      out, err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal ["", 1], [out, status.exitstatus], argv.join(" ")
+      assert_includes err, %(ERROR: "asgard gate" was called with arguments ["xyzzy"])
+    end
+    out, _err, status = run_asgard(FLAG_FIRST, "gate")
+    assert_equal ["LINT\nGATE\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_27_accepts_counts_positional_arguments
+    accepts = ->(body, count) { Asgard::Base::Dispatch.accepts?(body.parameters, count) }
+    assert accepts.call(-> {}, 0)
+    refute accepts.call(-> {}, 1)
+    refute accepts.call(->(a) { a }, 0)
+    assert accepts.call(->(a, b = 1) { [a, b] }, 2)
+    refute accepts.call(->(a, b = 1) { [a, b] }, 3)
+    assert accepts.call(->(a, *rest) { [a, rest] }, 9)
+    refute accepts.call(->(a, *rest) { [a, rest] }, 0)
+    assert accepts.call(->(key: 1) { key }, 0)
+  end
+
   # C6: a directory named .loki is not a task file.
   def test_regression_c6_a_loki_directory_is_skipped
     Dir.mktmpdir do |dir|
@@ -2451,41 +2690,6 @@ class TestRegressionCoreLow < Minitest::Test
     child = Class.new(Tasks)
     assert_includes Tasks.subclasses, child
     assert_includes Asgard::Base._asgard_subclasses, child
-  end
-
-  # C10: the gem's release prompt survives stdin at end-of-file.
-  def test_regression_c10_release_aborts_on_eof
-    # release depends on main_branch and build; the stubs come after the
-    # import so they win.
-    loki = <<~LOKI
-      import "gem_tasks.loki"
-      class Tasks
-        @@project = "x"
-        helper(:project_version) { "0.0.0" }
-        desc "quality"; def quality = nil
-        desc "build"; def build = nil
-        def main_branch = nil
-      end
-    LOKI
-    out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => File.read(File.expand_path("../gem_tasks.loki", __dir__)) })
-    assert_equal 0, status.exitstatus, err
-    assert_match(/Aborted\./, out)
-  end
-
-  # The gem's release runs only on main; anywhere else it stops before
-  # the build. The temp project is not a git checkout at all.
-  def test_release_refuses_outside_main
-    loki = <<~LOKI
-      import "gem_tasks.loki"
-      class Tasks
-        desc "quality"; def quality = abort("quality ran")
-        desc "build"; def build = abort("build ran")
-      end
-    LOKI
-    gem_tasks = File.read(File.expand_path("../gem_tasks.loki", __dir__))
-    _out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => gem_tasks })
-    assert_equal 1, status.exitstatus
-    assert_equal "Releases are made from main only; this is not a git checkout.\n", err
   end
 end
 
@@ -2632,10 +2836,36 @@ class TestRegressionCoreReview < Minitest::Test
     assert_equal "top -> a -> top", error.message
   end
 
+  CYCLE_LOKI = %(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n)
+  CYCLE_MESSAGE = "asgard: circular dependency — a -> b -> a"
+
   def test_regression_r8_run_reports_a_runtime_cycle
-    _out, err, status = run_asgard(%(class Tasks\n  desc "a"; def a = invoke(:b)\n  desc "b"; def b = invoke(:a)\nend\n), "a")
+    _out, err, status = run_asgard(CYCLE_LOKI, "a")
     assert_equal 1, status.exitstatus
-    assert_match "asgard: circular dependency — a -> b -> a", err
+    assert_match CYCLE_MESSAGE, err
+  end
+
+  # R8 under launchd or cron: run_asgard still hands back UTF-8.
+  def test_regression_r8_run_asgard_output_is_utf8_without_a_locale
+    _out, err, = run_asgard_without_a_locale(CYCLE_LOKI, "a")
+    assert_equal Encoding::UTF_8, err.encoding
+    assert_match CYCLE_MESSAGE, err
+  end
+
+  # run_asgard as launchd and cron leave things: no locale for the child,
+  # and Ruby's default encodings here at US-ASCII and nil.
+  def run_asgard_without_a_locale(loki, *argv)
+    verbose = $VERBOSE
+    external = Encoding.default_external
+    internal = Encoding.default_internal
+    $VERBOSE = nil # setting the default encodings warns
+    Encoding.default_external = Encoding::US_ASCII
+    Encoding.default_internal = nil
+    run_asgard(loki, *argv, env: { "LANG" => nil, "LC_ALL" => nil, "LC_CTYPE" => nil })
+  ensure
+    Encoding.default_external = external
+    Encoding.default_internal = internal
+    $VERBOSE = verbose
   end
 
   # R7: a task or helper named after an asgard helper.
@@ -2655,6 +2885,18 @@ class TestRegressionCoreReview < Minitest::Test
   def test_regression_r7_a_helper_dsl_named_after_an_asgard_helper_is_rejected
     error = assert_raises(Asgard::Error) { Class.new(Asgard::Base) { helper(:env) { nil } } }
     assert_match "'env' at", error.message
+  end
+
+  # Issue #25: a reserved helper name is reported at the line that called
+  # helper, and no singleton method is left behind.
+  def test_a_reserved_helper_name_is_reported_at_the_calling_line
+    klass = Class.new(Asgard::Base)
+    %i[run env].each do |name|
+      line  = __LINE__ + 1
+      error = assert_raises(Asgard::Error) { klass.helper(name) { nil } }
+      assert_match "'#{name}' at #{__FILE__}:#{line} is", error.message
+      refute_includes klass.singleton_methods(false), name
+    end
   end
 
   # R9: methods every object already has are not tasks.

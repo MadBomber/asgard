@@ -19,3 +19,9 @@ gem "reek"           # Code smell detector for Ruby
 gem "rubocop"        # Automatic Ruby code style checking tool.
 gem "simplecov"      # Code coverage for Ruby
 gem "tty-spinner"    # A terminal spinner for tasks that have non-deterministic time frame.
+
+############################################
+# Used by bin/console and the console task #
+############################################
+
+gem "irb"            # Not a default gem since Ruby 4.0, so it must be listed

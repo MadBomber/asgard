@@ -839,7 +839,7 @@ end
 
 ## Tips
 
-- **Start from working files.** The task files at this repository's root (`.loki`, `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`) are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and a deliberate override for `--doctor`. Copy what fits.
+- **Start from working files.** The task files at this repository's root (`.loki`, `test_check.loki`), with the shared ones they load from the [`dev`](https://github.com/MadBomber/dev) repository (`quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`), are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and deliberate overrides that `--doctor` reports. Copy what fits.
 
 - **More examples.** [MadBomber/dev](https://github.com/MadBomber/dev) holds shared `.loki` libraries used across many repos: gem, git, Rails quality, schedule, status report and iTerm tasks. The [examples directory](examples/) here has one small file per feature.
 

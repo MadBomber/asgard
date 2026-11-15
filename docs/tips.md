@@ -6,7 +6,7 @@ Short, practical advice gathered from using asgard day to day. Each tip stands o
 
 ## Getting Started
 
-- **Start from working files.** The task files at the repository root (`.loki`, `quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`) are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and a deliberate override for `--doctor`. Copy what fits. See [The asgard Repository Itself](examples.md#the-asgard-repository-itself).
+- **Start from working files.** The task files at the repository root (`.loki`, `test_check.loki`), with the shared ones they load from the [`dev`](https://github.com/MadBomber/dev) repository (`quality.loki`, `gem_tasks.loki`, `git.loki`, `doc_tasks.loki`), are a real multi-file project: quality gates that return `:pass` or `:fail`, a background job, a subcommand group, a `helper` feeding the `header`, and deliberate overrides that `--doctor` reports. Copy what fits. See [The asgard Repository Itself](examples.md#the-asgard-repository-itself).
 
 - **More examples.** [MadBomber/dev](https://github.com/MadBomber/dev) holds shared `.loki` libraries used across many repos: gem, git, Rails quality, schedule, status report and iTerm tasks. The [Examples](examples.md) page walks through the repository's `examples/` directory, one small file per feature.
 

@@ -2691,41 +2691,6 @@ class TestRegressionCoreLow < Minitest::Test
     assert_includes Tasks.subclasses, child
     assert_includes Asgard::Base._asgard_subclasses, child
   end
-
-  # C10: the gem's release prompt survives stdin at end-of-file.
-  def test_regression_c10_release_aborts_on_eof
-    # release depends on main_branch and build; the stubs come after the
-    # import so they win.
-    loki = <<~LOKI
-      import "gem_tasks.loki"
-      class Tasks
-        @@project = "x"
-        helper(:project_version) { "0.0.0" }
-        desc "quality"; def quality = nil
-        desc "build"; def build = nil
-        def main_branch = nil
-      end
-    LOKI
-    out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => File.read(File.expand_path("../gem_tasks.loki", __dir__)) })
-    assert_equal 0, status.exitstatus, err
-    assert_match(/Aborted\./, out)
-  end
-
-  # The gem's release runs only on main; anywhere else it stops before
-  # the build. The temp project is not a git checkout at all.
-  def test_release_refuses_outside_main
-    loki = <<~LOKI
-      import "gem_tasks.loki"
-      class Tasks
-        desc "quality"; def quality = abort("quality ran")
-        desc "build"; def build = abort("build ran")
-      end
-    LOKI
-    gem_tasks = File.read(File.expand_path("../gem_tasks.loki", __dir__))
-    _out, err, status = run_asgard(loki, "release", files: { "gem_tasks.loki" => gem_tasks })
-    assert_equal 1, status.exitstatus
-    assert_equal "Releases are made from main only; this is not a git checkout.\n", err
-  end
 end
 
 # Core review: dependency options, import paths, invoke cycles, reserved

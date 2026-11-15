@@ -422,28 +422,24 @@ The reply comes from the model, so it differs from run to run. See [Shell Comman
 
 ## The asgard Repository Itself
 
-The repository root is a multi-file project that builds, tests and releases the gem. It is the best example of a `.loki` layout in real use.
+The repository root is a multi-file project that builds, tests and releases the gem. It is the best example of a `.loki` layout in real use: shared task files that several repositories use, loaded with `import_up`, and one local file that replaces what this project does differently.
+
+The shared files live in the [`dev`](https://github.com/MadBomber/dev) repository, which must be checked out beside asgard for these tasks to load.
 
 ### `.loki`
 
 The entry point: imports, shared values, a `header` built from a `helper`, a `watch`, and a `default_task`.
 
 ```ruby
-import "quality.loki"
-import "quality_rails.loki" if ENV["RAILS_ROOT"]   # a conditional import
-import "gem_tasks.loki"
-import "git.loki"
-import "doc_tasks.loki"
-import "xyzzy.loki"                                 # a deliberate override, for --doctor
+import_up "dev/.loki"        # the shared task files, in a sibling repository
+
+import "test_check.loki"     # after dev/.loki: it replaces two shared tasks
 
 class Tasks
   @@project      ||= "asgard".freeze
   @@project_desc ||= "CLI-task runner"
 
   watch :test_check, paths: %w[lib test], only: /\.rb\z/   # rerun the tests on save
-
-  desc "xyzzy"                                             # redefines xyzzy.loki's task, for --doctor
-  def xyzzy = puts "everything in Ruby metaprogramming is magic"
 
   helper(:project_version) do
     @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
@@ -459,9 +455,11 @@ class Tasks
 end
 ```
 
-### `quality.loki`
+`import_up "dev/.loki"` walks up from the project until it finds a `dev/.loki`, and that file's one line, `import '*.loki'`, loads every task file beside it.
 
-The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, reports one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads every result at once with `dep_results`, and prints a summary table; it aborts only when a gate returned `:fail`. The first stage of its dependency list is `quality_board`, a hidden task that draws one spinner row per gate when standard output is a terminal, so each gate fills in its own row as it finishes; without a terminal, each gate prints its summary line instead.
+### `dev/quality.loki`
+
+The quality gates, and the convention that ties them together. Every gate is a task named `*_check` that writes its full output to `<gate>_output.txt`, reports one summary line, and **returns** a status: `:pass`, `:fail`, `:warn` (ran, non-blocking advice) or `:skip` (the tool is not installed). `quality` discovers every `*_check` task with a block `depends_on`, runs them all in parallel, reads every result at once with `dep_results`, and prints a summary:
 
 ```ruby
 # Every *_check task, in the order the summary lists them.
@@ -470,7 +468,9 @@ def self.quality_checks = all_commands.keys.grep(/_check\z/).sort.map(&:to_sym)
 desc "Run every *_check quality gate task in parallel"
 depends_on -> { [:quality_board, quality_checks] }
 def quality
-  results = dep_results.except(:quality_board).sort.to_h { |name, status| [quality_gate_label(name.to_s), status] }
+  results = dep_results.except(:quality_board).sort.to_h do |name, status|
+    [quality_gate_label(name.to_s), quality_check_status(name.to_s, status)]
+  end
 
   print_quality_summary(results, rows: QUALITY_BOARD.empty?)
 end
@@ -479,8 +479,8 @@ end
 Most gates are one call to a `run_gate` helper (defined in a `no_commands` block) that runs a command, saves its output, picks the summary line with a Regexp and turns the exit status into `:pass` or the gate's failure status:
 
 ```ruby
-desc "Report code smells with Reek (advisory: warns, never fails)"
-def reek_check = run_gate(:reek, "Reek", "bundle exec reek lib", summary: /total warnings?/, on_fail: :warn)
+desc "Run the test suite in parallel worker processes"
+def test_check = run_gate(:test, "Tests", PARALLEL_RUNNER, summary: /\d+ runs,/)
 ```
 
 Because a `*_check` task returns `:fail` rather than exiting, every gate runs to the end and the summary shows all failures at once. Run alone (`asgard rubocop_check`), a gate that returns `:fail` still makes asgard exit 1. Piped, or anywhere standard output is not a terminal, the run looks like this:
@@ -507,15 +507,33 @@ Quality Gate Summary
 All quality gates passed.
 ```
 
-### `gem_tasks.loki`
+### `test_check.loki`
 
-`console`, `build` (depends on `quality`), `install` (depends on `build`) and `release` (runs only on `main`, then depends on `build`, asks for confirmation unless `--yes`, refuses a dirty working tree or an existing tag). A plain `sh` sequence does the work; `project_version` comes from the `helper` in `.loki`.
+Asgard's own test tasks. The shared `test_check` and `test_verbose` run `rake test`, and asgard has no Rakefile: its suite runs through `test/parallel_runner.rb`. So this file, imported after `dev/.loki`, defines both again, and adds `parallel_test` and `exhale_check`. Nothing else changes: `quality` finds the replacement `test_check` and the new `exhale_check` like any other gate.
 
-### `git.loki`
+The earlier definitions are dead, and `asgard --doctor` says so:
+
+```
+  ../dev/quality.loki
+    test_check           ../dev/quality.loki:79   OVERRIDDEN by test_check.loki:20 — never callable
+    test_verbose         ../dev/quality.loki:90   OVERRIDDEN by test_check.loki:23 — never callable
+
+  test_check.loki
+    test_check     test_check.loki:20   active — redefines ../dev/quality.loki:79
+    test_verbose   test_check.loki:23   active — redefines ../dev/quality.loki:90
+```
+
+See [Help & Diagnostics](diagnostics.md#a-deliberate-override).
+
+### `dev/gem_tasks.loki`
+
+`console`, `build` (depends on `quality`), `install` (depends on `build`) and `release` (runs only on `main`, then depends on `build`, asks for confirmation unless `--yes`, refuses a dirty working tree or an existing tag). A plain `sh` sequence does the work; the gem's name and version come from its gemspec.
+
+### `dev/git.loki`
 
 Three one-liners: `push`, `pull` (fast-forward only), `fetch`. The smallest useful task file.
 
-### `doc_tasks.loki`
+### `dev/doc_tasks.loki`
 
 A subcommand group, `asgard doc ...`, that works with an MkDocs site or a Bridgetown site. Each task first calls the private `doc_engine` helper, which looks in the repo root for `mkdocs.yml` or `bridgetown.config.yml`, sets the engine and the commands to run for it, and stops with an error when neither file is there. `open` depends on `serve`, which depends on `build`, which depends on `install`. The server starts as a background job and asgard returns at once; when the job is already running it is not started again, and `build` skips a site that is newer than every file in its source folder and its config file. `open` waits for the server to answer, then opens the site, `http://localhost:8000/` for MkDocs or `http://localhost:4000/` for Bridgetown, in the default browser, or in Google Chrome with `--chrome`. The commands run from the repo root, so the tasks work from any subdirectory.
 
@@ -646,25 +664,7 @@ asgard jobs log serve-1            # what the server has printed so far
 asgard jobs stop serve
 ```
 
-The group's `install` and `build` don't clash with the top-level ones in `gem_tasks.loki`: inside `DocCommands` they replace the inherited tasks, and `asgard install` is unchanged. To support another engine, add its config file and commands to `DOC_ENGINES`, plus an `install` branch. See [Subcommands](subcommands.md) and [Background Jobs](jobs.md).
-
-### `xyzzy.loki`
-
-Defines a `xyzzy` task; `.loki` imports the file and then, further down, defines `xyzzy` again. The first definition is silently dead, and `asgard --doctor` says so:
-
-```
-  .loki
-    xyzzy  .loki:26   active — redefines xyzzy.loki:6
-
-  xyzzy.loki
-    xyzzy  xyzzy.loki:6   OVERRIDDEN by .loki:26 — never callable
-```
-
-See [Help & Diagnostics](diagnostics.md).
-
-### `quality_rails.loki`
-
-Rails-only gates (`brakeman_check`, `rails_best_practices_check`, `active_record_doctor_check`), imported by `.loki` only when `RAILS_ROOT` is set. Nothing else needs to change for `quality` to pick them up: its block `depends_on` finds every `*_check` task that is loaded.
+The group's `install` and `build` don't clash with the top-level ones in `dev/gem_tasks.loki`: inside `DocCommands` they replace the inherited tasks, and `asgard install` is unchanged. To support another engine, add its config file and commands to `DOC_ENGINES`, plus an `install` branch. See [Subcommands](subcommands.md) and [Background Jobs](jobs.md).
 
 ---
 
@@ -685,4 +685,4 @@ Rails-only gates (`brakeman_check`, `rails_best_practices_check`, `active_record
 | `robots/` | A custom `shell` that sends a heredoc prompt to the `claude` CLI |
 | `bad.loki` | Why parallel tasks must not share instance variables |
 | `watcher_examples/` | Four `watch` declarations and the `changes` accessor |
-| repository root | A real multi-file project: `*_check` gates, `dep_result`, conditional imports and tasks, a background job, an override caught by `--doctor` |
+| repository root | A real multi-file project: `*_check` gates, `dep_result`, shared files loaded with `import_up`, a background job, overrides caught by `--doctor` |

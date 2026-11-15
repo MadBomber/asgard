@@ -433,22 +433,19 @@ The `alias_method` trick (keep the old body under a new name, then redefine) als
 
 ## A Real Example: Asgard's Own Task Files
 
-The asgard repository is run by asgard. Its root `.loki` is a multi-file project in exactly the shape this page describes:
+The asgard repository is run by asgard. Its root `.loki` is a multi-file project in the shape this page describes: shared files found with `import_up`, then a local file that replaces two of the shared tasks.
 
 ```ruby
 # .loki
-import "quality.loki"
-import "quality_rails.loki" if ENV["RAILS_ROOT"]
-import "gem_tasks.loki"
-import "git.loki"
-import "doc_tasks.loki"
-import "xyzzy.loki"   # an example for the --doctor flag
+import_up "dev/.loki"        # the shared task files, in a sibling repository
+
+import "test_check.loki"     # after dev/.loki: it replaces two shared tasks
 
 class Tasks
   @@project      ||= "asgard".freeze
   @@project_desc ||= "CLI-task runner"
 
-  watch :test_check, paths: %w[lib test], only: /\.rb\z/
+  watch :test_check, paths: %w[lib test], only: /\.rb\z/   # rerun the tests on save
 
   helper(:project_version) do
     @@project_version ||= loki_up.dirname.join("lib/#{@@project}/version.rb").read.match(/VERSION\s*=\s*"([^"]+)"/)[1].freeze
@@ -464,16 +461,19 @@ class Tasks
 end
 ```
 
+The shared files live in the [`dev`](https://github.com/MadBomber/dev) repository, checked out beside asgard; `dev/.loki` is one line, `import '*.loki'`, which loads every task file next to it.
+
 | File | What it holds |
 |---|---|
-| `quality.loki` | One `*_check` task per quality tool (tests, RuboCop, Flog, Flay, Reek, typos, ...) and a `quality` task whose block-form `depends_on` runs every `*_check` in parallel and prints a summary from their results |
-| `quality_rails.loki` | Rails-only checks (Brakeman and friends), loaded only when `RAILS_ROOT` is set; `quality` picks them up with nothing else to change |
-| `gem_tasks.loki` | `console`, plus `build` (depends on `quality`), `install` (depends on `build`) and `release` (depends on `build`, after checking the branch is `main`) |
-| `git.loki` | `push`, `pull` and `fetch` |
-| `doc_tasks.loki` | The `doc` subcommand group for an MkDocs or Bridgetown site: `doc install`, `doc build`, `doc serve` (a background job) and `doc open`, each depending on the one before |
-| `xyzzy.loki` | A `xyzzy` task that `.loki` deliberately redefines, so `asgard --doctor` has an override to report |
+| `dev/quality.loki` | One `*_check` task per quality tool (tests, RuboCop, Flog, Flay, Reek, typos, ...) and a `quality` task whose block-form `depends_on` runs every `*_check` in parallel and prints a summary from their results |
+| `dev/gem_tasks.loki` | For any gem: `console`, plus `build` (depends on `quality`), `install` (depends on `build`) and `release` (depends on `build`, after checking the branch is `main`) |
+| `dev/git.loki` | `push`, `pull` and `fetch` |
+| `dev/doc_tasks.loki` | The `doc` subcommand group for an MkDocs or Bridgetown site: `doc install`, `doc build`, `doc serve` (a background job) and `doc open`, each depending on the one before |
+| `test_check.loki` | Asgard's own `test_check` and `test_verbose`, which replace the shared ones (they run `rake test`, and asgard has no Rakefile), plus `parallel_test` and `exhale_check` |
 
-Clone the repository and run `asgard help`, `asgard tree` and `asgard --doctor` from its root to see each of these in action. The [Examples](examples.md) page walks through the rest of `examples/`.
+Because `test_check.loki` is imported after `dev/.loki`, its definitions win. `asgard --doctor` lists each replaced task as an override; see [A Deliberate Override](diagnostics.md#a-deliberate-override).
+
+Clone both repositories side by side and run `asgard help`, `asgard tree` and `asgard --doctor` from asgard's root to see each of these in action. The [Examples](examples.md) page walks through the rest of `examples/`.
 
 ---
 

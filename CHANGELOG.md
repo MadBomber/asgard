@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The repository's own task files load from a shared checkout**: the root
+  `.loki` runs `import_up "dev/.loki"` to load the quality, gem, git and docs
+  tasks of [MadBomber/dev](https://github.com/MadBomber/dev), and the local
+  `test_check.loki` replaces two of them with asgard's own test runner.
+  `xyzzy.loki` is gone; those replacements are now the worked example of an
+  override in the docs. `quality_rails.loki` is gone too; conditional imports
+  stay in the docs as an example. The gem itself is unchanged.
 - **One parent-directory walk**: `loki_up`, `import_up` and `--doctor`'s
   marker search use `Pathname#ascend` instead of three hand-rolled loops; what
   they find is unchanged ([#19](https://github.com/MadBomber/asgard/issues/19)).

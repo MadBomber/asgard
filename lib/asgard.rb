@@ -110,13 +110,14 @@ module Asgard
   end
 
   # Whether +word+ is what Thor would take as a task name: a task, a mapped
-  # name, or an abbreviation of either. A hidden task counts only by its
-  # full name, since Thor does not expand an abbreviation to one. Options
+  # name, or an abbreviation of either. A task's full name counts with
+  # dashes for underscores (deploy-app) and when the task is hidden, as
+  # Thor runs both; Thor expands no abbreviation to a hidden task. Options
   # and the gem's reserved `_` names are not.
   def self.task_word?(word, tasks = Tasks)
     return false if word.start_with?("-", "_")
 
-    tasks.all_commands.key?(word) || tasks.send(:find_command_possibilities, word).any?
+    tasks.all_commands.key?(word.tr("-", "_")) || tasks.send(:find_command_possibilities, word).any?
   end
 
   # Main entry point invoked by the asgard executable.

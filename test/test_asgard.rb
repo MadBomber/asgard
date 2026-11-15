@@ -2738,6 +2738,7 @@ class TestRegressionCoreLow < Minitest::Test
       def build = puts("BUILDING debug=#{debug?.inspect}")
       desc "secret", "secret", hide: true
       def secret = puts("SECRET verbose=#{verbose?.inspect}")
+      def deploy_app = puts("DEPLOYING debug=#{debug?.inspect}")
     end
   LOKI
 
@@ -2746,7 +2747,8 @@ class TestRegressionCoreLow < Minitest::Test
   def test_issue_38_a_leading_flag_runs_a_hidden_task
     { %w[--debug build] => "BUILDING debug=true\n",
       %w[--debug=true build] => "BUILDING debug=true\n",
-      %w[--verbose secret] => "SECRET verbose=true\n" }.each do |argv, expected|
+      %w[--verbose secret] => "SECRET verbose=true\n",
+      %w[--debug deploy-app] => "DEPLOYING debug=true\n" }.each do |argv, expected|
       out, _err, status = run_asgard(HIDDEN_TASKS, *argv)
       assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
     end
@@ -2764,14 +2766,17 @@ class TestRegressionCoreLow < Minitest::Test
     assert_equal %w[--debugger build], task_first.call(%w[--debugger build])
   end
 
-  def test_issue_38_task_word_takes_a_hidden_task_by_its_full_name_only
+  def test_issue_38_task_word_takes_a_hidden_or_dashed_task_name_in_full
     klass = Class.new(Asgard::Base) do
       def build = nil
       desc "secret", "secret", hide: true
       def secret = nil
+      def deploy_app = nil
+      desc "make_all", "make_all"
+      def make_all = nil
     end
-    %w[build secret].each { |word| assert Asgard.task_word?(word, klass), word }
-    %w[bu sec].each { |word| refute Asgard.task_word?(word, klass), word }
+    %w[build secret deploy_app deploy-app make-all].each { |word| assert Asgard.task_word?(word, klass), word }
+    %w[bu sec deploy deploy-a make-a].each { |word| refute Asgard.task_word?(word, klass), word }
   end
 
   # C6: a directory named .loki is not a task file.

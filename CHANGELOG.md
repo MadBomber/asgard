@@ -25,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now move behind the task name like a bare `--debug`, instead of running
   the default task with `build` as its argument or printing its usage.
   A leading flag also reaches a task defined without a `desc` or with
-  `hide: true`. ([#38](https://github.com/MadBomber/asgard/issues/38))
+  `hide: true`, and a task named with dashes (`deploy-app` for
+  `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
 
 ## [0.6.1] - 2026-11-14
 

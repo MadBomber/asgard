@@ -66,10 +66,10 @@ module Asgard
       # a trigger runs the very asgard that started the watcher whatever PATH
       # says, wrapped in direnv exec when available so .envrc loads in the
       # task's process.
-      def argv(spec, context)
+      def argv(task, context)
         direnv  = context.direnv
         wrapper = direnv ? [direnv, "exec", context.root] : []
-        [*wrapper, context.asgard, spec[:task]]
+        [*wrapper, context.asgard, task]
       end
 
       # The asgard executable to run: the one running now when it is an
@@ -90,7 +90,7 @@ module Asgard
       # it as :changes_file only when they did.
       def description(spec, changes, context, changes_file: nil)
         env  = environment(spec, changes, context, changes_file:)
-        desc = { entry: spec[:name], task: spec[:task], argv: argv(spec, context), env:,
+        desc = { entry: spec[:name], task: spec[:task], argv: argv(spec[:task], context), env:,
                  root: context.root, log: context.log, changes: changes.to_h }
         desc[:changes_file] = changes_file if env.key?(Changes::FILE_VARIABLE)
         Ractor.make_shareable(desc)

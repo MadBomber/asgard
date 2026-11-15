@@ -177,11 +177,11 @@ class TestScheduleDeclaration < Minitest::Test
   end
 
   def test_program_arguments
-    assert_equal %w[/bin/asgard sync], SD.program_arguments(:sync, root: "/r", asgard: "/bin/asgard")
+    assert_equal %w[/bin/asgard sync], SD.program_arguments([:sync], root: "/r", asgard: "/bin/asgard")
     assert_equal ["/bin/asgard", "report", "--title", "Week 39"],
-                 SD.program_arguments("report", ["--title", "Week 39"], root: "/r", asgard: "/bin/asgard")
+                 SD.program_arguments(["report", "--title", "Week 39"], root: "/r", asgard: "/bin/asgard")
     assert_equal %w[/bin/direnv exec /r asgard report -v],
-                 SD.program_arguments("report", ["-v"], root: "/r", asgard: "/bin/asgard", direnv: "/bin/direnv")
+                 SD.program_arguments(%w[report -v], root: "/r", asgard: "/bin/asgard", direnv: "/bin/direnv")
   end
 
   def test_runner_reports_missing_commands_as_failure
@@ -803,7 +803,7 @@ class TestScheduleRegistry < Minitest::Test
   # names, whatever order they are declared in.
   def test_rival_commands_both_take_hashed_names
     rivals = [[:report, "--period week"], [:report, "period week"], [:report_period, "week"]]
-    expected = rivals.map { |task, options| SD.hashed_slug(task.to_s, Shellwords.split(options)) }
+    expected = rivals.map { |task, options| SD.hashed_slug([task.to_s, *Shellwords.split(options)]) }
 
     [rivals, rivals.reverse, rivals.rotate].each do |order|
       SD.declarations.clear
@@ -841,9 +841,9 @@ class TestScheduleRegistry < Minitest::Test
   end
 
   def test_runner_defaults_to_runner_constant
-    Asgard::Schedule.runner = FakeRunner.new
+    Asgard::Schedule.use_runner(FakeRunner.new)
     refute_equal Asgard::Schedule::RUNNER, Asgard::Schedule.runner
-    Asgard::Schedule.runner = nil
+    Asgard::Schedule.use_runner(nil)
     assert_equal Asgard::Schedule::RUNNER, Asgard::Schedule.runner
   end
 
@@ -872,13 +872,13 @@ class TestScheduleCommands < Minitest::Test
     ENV.delete("XDG_STATE_HOME")
     # "not loaded" keeps launchd from waiting on bootout
     @runner = FakeRunner.new("launchctl print gui" => ["", false])
-    Asgard::Schedule.runner = @runner
+    Asgard::Schedule.use_runner(@runner)
     Asgard::Schedule.declarations.clear
   end
 
   def teardown
     @saved.each { |k, v| ENV[k] = v }
-    Asgard::Schedule.runner = nil
+    Asgard::Schedule.use_runner(nil)
     Asgard::Schedule.declarations.clear
     FileUtils.rm_rf(@tmp)
   end

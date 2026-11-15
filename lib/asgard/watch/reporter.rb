@@ -65,16 +65,23 @@ module Asgard
         def asgard_process?(pid, *words, command: nil) = Pid.matches?(pid, "asgard", *words, command:)
       end
 
+      # The watcher's log file: appends a line, rotating first (StateDir.rotate)
+      # when the file has passed limit bytes, and telling on_rotate when it did.
+      Log = Struct.new(:path, :limit, :on_rotate) do
+        def append(line)
+          on_rotate&.call if StateDir.rotate(path, max_bytes: limit)
+          File.open(path, "a") { |file| file.puts(line) }
+        end
+      end
+
       # state: responds to write_entry(name, record). max_log: is the size
       # past which the log is rotated (StateDir.rotate); on_rotate: is
       # called after each rotation, so the daemon can move its own output
       # to the new log.
       def initialize(reports, log:, state:, max_log: StateDir.log_limit, on_rotate: nil)
-        @reports   = reports
-        @log       = log
-        @max_log   = max_log
-        @on_rotate = on_rotate
-        @state     = state
+        @reports = reports
+        @log     = Log.new(log, max_log, on_rotate)
+        @state   = state
         @records = {}
         @running = {} # pid => task
         @mutex   = Mutex.new
@@ -97,8 +104,7 @@ module Asgard
         trigger = kind == :trigger
         line    = Reporter.log_line(report, behind: trigger ? running_for(report[:task]) : nil)
         track(report) if %i[spawn exit].include?(kind)
-        @on_rotate&.call if StateDir.rotate(@log, max_bytes: @max_log)
-        File.open(@log, "a") { |file| file.puts(line) }
+        @log.append(line)
       rescue SystemCallError, IOError => e
         $stderr.puts "watcher: could not write #{kind} report for #{report[:entry]}: #{e.message}" # rubocop:disable Style/StderrPuts
       end

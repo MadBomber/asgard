@@ -21,6 +21,18 @@ module Asgard
         def initialize(pending: nil, **) = super
       end
 
+      # What a daemon is given to work with, so a test can stand in for any
+      # of it (see Daemon#initialize).
+      Tools = Data.define(:listen, :exec, :out, :dispatcher, :validate, :grace)
+
+      # What has been asked of a running daemon: to stop, to end its tasks
+      # by force (and when that began), or to reload the task files.
+      Requests = Struct.new(:stopping, :force, :forced_at, :reload)
+
+      # What a run holds while it is up: the project lock, the report queue,
+      # and the reporter and dispatcher with their threads.
+      Pipeline = Struct.new(:lock, :reports, :reporter, :dispatcher, :reporter_thread, :dispatcher_thread)
+
       LOKI_DEBOUNCE = 0.5
 
       # Seconds between the TERM a second stop sends running tasks and the
@@ -36,21 +48,12 @@ module Asgard
       # root); grace: is FORCE_GRACE.
       def initialize(config, listen: Daemon.listen_module, exec: Kernel.method(:exec), out: $stdout, dispatcher: Dispatcher,
                      validate: Daemon.method(:loki_valid?), grace: FORCE_GRACE)
-        @config     = config
-        @listen     = listen
-        @exec       = exec
-        @out        = out
-        @inbox      = Queue.new
-        @listeners  = []
-        @stopping   = false
-        @force      = false
-        @forced_at  = nil
-        @reload     = false
-        @reporter   = nil
-        @dispatcher = nil
-        @dispatcher_class = dispatcher
-        @validate         = validate
-        @grace            = grace
+        @config    = config
+        @tools     = Tools.new(listen:, exec:, out:, dispatcher:, validate:, grace:)
+        @inbox     = Queue.new
+        @listeners = []
+        @requests  = Requests.new(false, false, nil, false)
+        @pipeline  = Pipeline.new
       end
 
       class << self
@@ -199,7 +202,7 @@ module Asgard
         check_tasks!
         Dir.chdir(@config.root)
         state = @config.state.prepare
-        @lock = state.lock or raise Error, "another watcher is already running for this project (#{state.lock_path} is held)"
+        @pipeline.lock = state.lock or raise Error, "another watcher is already running for this project (#{state.lock_path} is held)"
         state.write_declarations(@config.declarations.values)
         trap_signals
         begin
@@ -215,17 +218,17 @@ module Asgard
       # Asks run to stop; the trap handler calls this. A second call, while
       # running tasks are still awaited, asks for them to be ended too.
       def stop
-        @force    = true if @stopping
-        @stopping = true
+        @requests.force    = true if @requests.stopping
+        @requests.stopping = true
       end
 
       # Asks run to replace the process with a fresh `watcher run` so new
       # declarations take effect, once running tasks have exited. The
       # .loki listener calls this from its own thread, so it only sets a
       # flag.
-      def reload = @reload = true
+      def reload = @requests.reload = true
 
-      def next_action = Daemon.next_action(stopping: @stopping, reload: @reload)
+      def next_action = Daemon.next_action(stopping: @requests.stopping, reload: @requests.reload)
 
       # Waits for a stop, or for a reload into a project that would run. A
       # .loki saved with an error, or one that renames a watched task or
@@ -234,10 +237,10 @@ module Asgard
       def wait_for_stop_or_good_reload
         loop do
           sleep 0.2 while next_action == :wait
-          return if next_action == :stop || @validate.call(@config.context.asgard, @config.root)
+          return if next_action == :stop || @tools.validate.call(@config.context.asgard, @config.root)
 
           say "watcher: the task files do not load or declare no runnable watch; keeping the running declarations"
-          @reload = false
+          @requests.reload = false
         end
       end
 
@@ -253,7 +256,7 @@ module Asgard
         stop_listening
         unless next_action == :reload
           say "watcher: stopped"
-          return @lock.close
+          return @pipeline.lock.close
         end
 
         say "watcher: reloading"
@@ -287,18 +290,18 @@ module Asgard
       def abandon(state)
         @listeners.each { |listener| Daemon.quietly { listener.stop } }
         @inbox.push(nil)
-        @dispatcher&.workers&.each_value { |worker| Daemon.close_queue(worker[:mailbox]) }
-        @reports&.push(nil)
+        @pipeline.dispatcher&.workers&.each_value { |worker| Daemon.close_queue(worker[:mailbox]) }
+        @pipeline.reports&.push(nil)
         state.clear
-        @lock.close
+        @pipeline.lock.close
       end
 
       # The new process inherits the held lock, so no other start can slip
       # in between this daemon and its replacement, and is told where the
       # pending changes are (nil unsets the variable).
       def exec_with_lock(pending)
-        fd = @lock.fileno
-        @exec.call({ State::LOCK_ENV => fd.to_s, State::PENDING_ENV => pending }, @config.context.asgard, "watcher", "run", fd => fd)
+        fd = @pipeline.lock.fileno
+        @tools.exec.call({ State::LOCK_ENV => fd.to_s, State::PENDING_ENV => pending }, @config.context.asgard, "watcher", "run", fd => fd)
       end
 
       # Writes the pending list for the next daemon; its path, or nil when
@@ -320,16 +323,17 @@ module Asgard
       # follows the log through rotation (and is unbuffered), so the
       # daemon's own messages never land in a rotated-away file.
       def start_pipeline(state)
-        log          = state.log_path
-        @log_outputs = [@out, $stderr].uniq.select { |io| Daemon.writes_to?(io, log) }
-        Daemon.reopen_log(@log_outputs, log)
+        log     = state.log_path
+        outputs = [@tools.out, $stderr].uniq.select { |io| Daemon.writes_to?(io, log) }
+        Daemon.reopen_log(outputs, log)
         # Workers push from their Ractors; the reporter thread pops here, in
         # the main Ractor, which the Mailbox wakes on every push.
-        @reports           = Ractor.make_shareable(Mailbox.new(RactorQueue.new(capacity: 1024), Ractor.current))
-        @reporter          = Reporter.new(@reports, log:, state:, on_rotate: -> { Daemon.reopen_log(@log_outputs, log) })
-        @dispatcher        = @dispatcher_class.new(@config.declarations, @config.context, reports: @reports)
-        @reporter_thread   = @reporter.start
-        @dispatcher_thread = @dispatcher.start(@inbox)
+        reports = Ractor.make_shareable(Mailbox.new(RactorQueue.new(capacity: 1024), Ractor.current))
+        @pipeline.reports           = reports
+        @pipeline.reporter          = Reporter.new(reports, log:, state:, on_rotate: -> { Daemon.reopen_log(outputs, log) })
+        @pipeline.dispatcher        = @tools.dispatcher.new(@config.declarations, @config.context, reports:)
+        @pipeline.reporter_thread   = @pipeline.reporter.start
+        @pipeline.dispatcher_thread = @pipeline.dispatcher.start(@inbox)
       end
 
       def build_listeners = @config.declarations.values.flat_map { |spec| spec[:dirs].map { |dir| listener_for(spec, dir) } }
@@ -338,14 +342,14 @@ module Asgard
       # callback pushes [entry name, batch] onto the inbox.
       def listener_for(spec, dir)
         name = spec[:name]
-        @listen.to(dir, **Daemon.listen_options(spec, dir)) do |modified, added, removed|
+        @tools.listen.to(dir, **Daemon.listen_options(spec, dir)) do |modified, added, removed|
           @inbox.push([name, { modified:, added:, removed: }])
         end
       end
 
       def loki_listener
         only = Daemon.loki_pattern(@config.root, $LOADED_FEATURES)
-        @listen.to(@config.root, only:, ignore: Watch.ignores_for(".", []), wait_for_delay: LOKI_DEBOUNCE, relative: true) { reload }
+        @tools.listen.to(@config.root, only:, ignore: Watch.ignores_for(".", []), wait_for_delay: LOKI_DEBOUNCE, relative: true) { reload }
       end
 
       def trap_signals
@@ -355,8 +359,8 @@ module Asgard
       # One line of the daemon's own output, written out at once: an exec
       # would otherwise drop what is still buffered.
       def say(line)
-        @out.puts line
-        @out.flush
+        @tools.out.puts line
+        @tools.out.flush
       end
 
       # Upstream first, so nothing is in flight when it returns: the
@@ -366,12 +370,12 @@ module Asgard
       # every report is written. The dropped triggers as [entry, lists].
       def shutdown(state)
         @inbox.push(nil)
-        @dispatcher_thread.join
-        workers = @dispatcher.workers.values
+        @pipeline.dispatcher_thread.join
+        workers = @pipeline.dispatcher.workers.values
         dropped = workers.flat_map { |worker| Daemon.close_queue(worker[:mailbox]) }
         wait_for_workers(workers.map { |worker| worker[:ractor] })
-        @reports.push(nil)
-        @reporter_thread.join
+        @pipeline.reports.push(nil)
+        @pipeline.reporter_thread.join
         state.clear
         dropped.filter_map { |item| [item[:entry], item[:changes]] if item.is_a?(Hash) }
       end
@@ -387,9 +391,9 @@ module Asgard
       # worker has ended, ending the tasks after a second stop (escalate).
       def wait_for_workers(ractors, interval: 1.0)
         waiters = ractors.map { |ractor| Thread.new { Daemon.join_worker(ractor) } }
-        say "watcher: INT or TERM again ends the running tasks" if @stopping && !@reporter.running.empty?
+        say "watcher: INT or TERM again ends the running tasks" if @requests.stopping && !@pipeline.reporter.running.empty?
         loop do
-          pids = @reporter.running
+          pids = @pipeline.reporter.running
           say "watcher: waiting for pid #{pids.join(', ')}" unless pids.empty?
           break if waiters.all? { |waiter| waiter.join(interval) }
 
@@ -401,13 +405,13 @@ module Asgard
       # then KILL to any still running once the grace period has passed.
       # Each group is signalled only through Daemon.signal_task.
       def escalate
-        return unless @force
+        return unless @requests.force
 
         now    = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        signal = Daemon.escalation(@forced_at, now, @grace) or return
-        @forced_at ||= now
+        signal = Daemon.escalation(@requests.forced_at, now, @tools.grace) or return
+        @requests.forced_at ||= now
         say "watcher: killing running tasks (#{signal})"
-        @reporter.running_tasks.each { |pid, task| Daemon.signal_task(signal, pid, task) }
+        @pipeline.reporter.running_tasks.each { |pid, task| Daemon.signal_task(signal, pid, task) }
       end
     end
   end

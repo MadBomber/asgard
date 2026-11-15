@@ -161,9 +161,12 @@ module Asgard
       # The executable must exist: an executable file at that path, or a
       # bare name found on PATH. Otherwise ArgumentError, as the .loki loads.
       def shell(name_or_path, path = nil, args: nil, ext: nil)
-        name, path = split_shell_args(name_or_path, path)
-        entry      = Shell.entry(path, args:, ext:)
-        name     ||= Shell.name_for(entry)
+        # A Symbol first is the name, and its path defaults to the name
+        # itself; a String or Pathname first is the path, and the name
+        # comes from the entry.
+        name    = name_or_path if name_or_path.is_a?(Symbol)
+        entry   = Shell.entry(name ? path || name.to_s : name_or_path, args:, ext:)
+        name  ||= Shell.name_for(entry)
         Shell.shells[name] = Shell.validate!(name, entry)
         name
       end
@@ -177,15 +180,6 @@ module Asgard
 
         Shell.validate!(name, Shell.shell_for(name))
         name
-      end
-
-      # The [name, path] of a `shell` call: a Symbol first is the name, and
-      # its path defaults to the name itself; a String or Pathname first is
-      # the path, and the name comes from the entry.
-      def split_shell_args(name_or_path, path)
-        return [nil, name_or_path] unless name_or_path.is_a?(Symbol)
-
-        [name_or_path, path || name_or_path.to_s]
       end
     end
 

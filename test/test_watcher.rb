@@ -329,8 +329,8 @@ class TestWatchSpawn < Minitest::Test
   end
 
   def test_argv_with_and_without_direnv
-    assert_equal %w[/bin/asgard lint],                       S.argv(spec, context)
-    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], S.argv(spec, context(direnv: "/bin/direnv"))
+    assert_equal %w[/bin/asgard lint],                       S.argv(spec[:task], context)
+    assert_equal %w[/bin/direnv exec /proj /bin/asgard lint], S.argv(spec[:task], context(direnv: "/bin/direnv"))
   end
 
   def test_executable_prefers_the_running_asgard_over_path

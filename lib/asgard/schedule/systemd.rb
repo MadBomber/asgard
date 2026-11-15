@@ -160,7 +160,7 @@ module Asgard
         description = "#{Schedule.command_line(task, args)} (#{@project})"
         service = klass.service_unit(
           description:,
-          arguments:         Schedule.program_arguments(task, args, root: @root, asgard:, direnv:),
+          arguments:         Schedule.program_arguments([task, *args], root: @root, asgard:, direnv:),
           working_directory: @root,
           environment:       Schedule.environment(spec),
           log_path:          log_path(name)

@@ -129,7 +129,7 @@ module Asgard
         klass = self.class
         plist = klass.plist(
           label:             label(name),
-          arguments:         Schedule.program_arguments(spec[:task], spec[:args], root: @root, asgard:, direnv:),
+          arguments:         Schedule.program_arguments(spec.values_at(:task, :args).flatten, root: @root, asgard:, direnv:),
           working_directory: @root,
           environment:       Schedule.environment(spec),
           log_path:          log_path(name),
@@ -248,20 +248,17 @@ module Asgard
         return unless loaded?(name)
 
         out, ok = run("launchctl", "bootout", target(name))
-        return if ok && unloaded?(name)
-        return unless loaded?(name)
+        return if (ok && unloaded?(name)) || !loaded?(name)
 
         raise Error, "launchctl bootout #{target(name)} left #{label(name)} still loaded: #{out.strip}"
       end
 
       # Polls for up to two seconds; true once the job is gone.
       def unloaded?(name)
-        20.times do
-          return true unless loaded?(name)
-
-          sleep 0.1
+        20.times.any? do |attempt|
+          sleep 0.1 if attempt.positive?
+          !loaded?(name)
         end
-        false
       end
 
       def run(*argv) = @runner.call(*argv)

@@ -171,16 +171,12 @@ module Asgard
 
         def entry_rows(entries) = entries.map { |slug, name| entry_row(slug, name) }
 
-        # This project's entries keep their declaration columns; see other_project_row.
+        # This project's entries keep their declaration columns. Another
+        # project's .loki isn't loaded, so its command and schedule are read
+        # back from the installed job files.
         def entry_row(slug, name)
           return schedule_row(name) if slug == current_slug
 
-          other_project_row(slug, name)
-        end
-
-        # A row for an entry of another project: its .loki isn't loaded, so the
-        # command and schedule are read back from the installed job files.
-        def other_project_row(slug, name)
           backend = backend_for(slug)
           shown   = backend.installed_columns(name) || Schedule.declared_columns(nil, "(unreadable)")
           { name:, **shown, **Schedule.live_columns(backend, name) }

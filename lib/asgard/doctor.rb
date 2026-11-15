@@ -58,6 +58,13 @@ module Asgard
       "load failed: #{error.class} (status #{error.status})#{detail}"
     end
 
+    # What ImportTracer saw one import or import_up do: the line the report
+    # prints for it, and the .loki files it loaded.
+    def record_import(message, added = [])
+      @imports << message
+      @loaded_files.concat(added)
+    end
+
     private
 
     def report_markers
@@ -78,7 +85,7 @@ module Asgard
       return unless @marker
 
       Kernel.prepend(ImportTracer)
-      ImportTracer.doctor = self
+      ImportTracer.observe(self)
       @loaded_files << @marker
 
       before = Asgard::Base._asgard_subclasses.dup
@@ -87,7 +94,7 @@ module Asgard
     rescue StandardError, ScriptError, SystemExit => e
       @findings << Finding.new(level: :error, message: self.class.load_failure(e))
     ensure
-      ImportTracer.doctor = nil
+      ImportTracer.observe(nil)
     end
 
     def report_imports
@@ -104,18 +111,16 @@ module Asgard
       end
     end
 
-    def record_import(message, added = [])
-      @imports << message
-      @loaded_files.concat(added)
-    end
-
     # Prepended onto Kernel for the process lifetime of `asgard --doctor`
     # (Asgard.run! exits right after Doctor#run, so it's never unprepended)
     # to observe every import/import_up call, whether typed at the top
     # level of a .loki file or reached indirectly through another import.
     module ImportTracer
       class << self
-        attr_accessor :doctor
+        # The Doctor that records each import, or nil when none is running.
+        attr_reader :doctor
+
+        def observe(doctor) = @doctor = doctor
       end
 
       def import(path)
@@ -123,7 +128,7 @@ module Asgard
         before = $LOADED_FEATURES.dup
         result = super(path, from: loc)
         added  = ImportTracer.loki_files($LOADED_FEATURES - before)
-        ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import", path, added), added) unless
+        ImportTracer.doctor&.record_import(ImportTracer.trace_message("import", path, added), added) unless
           loc&.absolute_path&.end_with?("kernel_methods.rb")
         result
       end
@@ -132,7 +137,7 @@ module Asgard
         before = $LOADED_FEATURES.dup
         result = super
         added  = ImportTracer.loki_files($LOADED_FEATURES - before)
-        ImportTracer.doctor&.send(:record_import, ImportTracer.trace_message("import_up", name, added), added)
+        ImportTracer.doctor&.record_import(ImportTracer.trace_message("import_up", name, added), added)
         result
       end
 

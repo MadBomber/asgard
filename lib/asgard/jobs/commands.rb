@@ -88,12 +88,15 @@ module Asgard
         # depends on, which needs this project's .loki loaded.
         def stop_targets(names)
           records, unknown =
-            if every_project? then [all_states.values.flat_map(&:records), []]
-            elsif names.empty? then [state.records, []]
+            if names.empty? || options[:all] then [listed_states.values.flat_map(&:records), []]
             else Jobs.resolve(names, state.records, closure: ->(task) { Jobs.closure(task, Tasks._deps) })
             end
           [records.sort_by { |record| [record[:started].to_s, record[:name].to_s] }.reverse, unknown]
         end
+
+        # The states `list` and a bare `stop` cover, by title: every
+        # project's, or this one's under no title.
+        def listed_states = every_project? ? all_states : { nil => state }
 
         def no_jobs_message
           return "No jobs have been started on this machine." if every_project?
@@ -106,7 +109,7 @@ module Asgard
       desc "list", "Show this project's jobs: running, exited with a status, or gone (--all: every project's)"
       method_option :all, aliases: "-a", type: :boolean, desc: "List every project's jobs, not just this one's"
       def list
-        states = every_project? ? all_states : { nil => state }
+        states = listed_states
         Commands.skipped_lines(states.values).each { |line| $stderr.puts line }
         groups = states.transform_values { |each_state| Commands.rows(each_state) }.reject { |_, rows| rows.empty? }
         return puts(no_jobs_message) if groups.empty?

@@ -67,7 +67,7 @@ module Asgard
 
       # The watcher's log file: appends a line, rotating first (StateDir.rotate)
       # when the file has passed limit bytes, and telling on_rotate when it did.
-      Log = Struct.new(:path, :limit, :on_rotate) do
+      LogFile = Struct.new(:path, :limit, :on_rotate) do
         def append(line)
           on_rotate&.call if StateDir.rotate(path, max_bytes: limit)
           File.open(path, "a") { |file| file.puts(line) }
@@ -80,7 +80,7 @@ module Asgard
       # to the new log.
       def initialize(reports, log:, state:, max_log: StateDir.log_limit, on_rotate: nil)
         @reports = reports
-        @log     = Log.new(log, max_log, on_rotate)
+        @log     = LogFile.new(log, max_log, on_rotate)
         @state   = state
         @records = {}
         @running = {} # pid => task

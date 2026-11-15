@@ -265,7 +265,7 @@ module Asgard
     end
 
     def describe_days(days, group)
-      describe_compact(at: group.map { |entry| format("%<hour>02d:%<minute>02d", entry) }, on: day_names(days))
+      describe_compact({ at: group.map { |entry| format("%<hour>02d:%<minute>02d", entry) }, on: day_names(days) })
     end
 
     # The command and schedule columns for a job read back from its files.

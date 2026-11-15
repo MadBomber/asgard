@@ -166,8 +166,8 @@ class TestScheduleDeclaration < Minitest::Test
   end
 
   def test_describe
-    assert_equal "every 60s", SD.describe(every: 60)
-    assert_equal "17:30 weekdays", SD.describe(at: "17:30", on: :weekdays)
+    assert_equal "every 60s", SD.describe({ every: 60 })
+    assert_equal "17:30 weekdays", SD.describe({ at: "17:30", on: :weekdays })
   end
 
   def test_environment_merges_path_and_env
@@ -1178,9 +1178,9 @@ class TestScheduleTable < Minitest::Test
 
   def test_describe_compact_collapses_hourly_runs
     hours = (10..17).map { |h| format("%02d:00", h) }
-    assert_equal "10:00-17:00 hourly weekdays", SD.describe_compact(at: hours, on: :weekdays)
-    assert_equal "09:00, 13:30 friday", SD.describe_compact(at: %w[09:00 13:30], on: :friday)
-    assert_equal "every 60s", SD.describe_compact(every: 60)
+    assert_equal "10:00-17:00 hourly weekdays", SD.describe_compact({ at: hours, on: :weekdays })
+    assert_equal "09:00, 13:30 friday", SD.describe_compact({ at: %w[09:00 13:30], on: :friday })
+    assert_equal "every 60s", SD.describe_compact({ every: 60 })
   end
 
   def test_table_draws_header_and_one_line_per_row

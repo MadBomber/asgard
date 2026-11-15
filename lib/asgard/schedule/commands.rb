@@ -52,7 +52,7 @@ module Asgard
 
         def schedule_asgard = Schedule.which("asgard", ENV.fetch("PATH", nil)) || abort("schedule: asgard is not on PATH")
 
-        def schedule_summary(spec) = "#{Schedule.command_line(spec[:task], spec[:args])} (#{Schedule.describe(**spec)})"
+        def schedule_summary(spec) = "#{Schedule.command_line(spec[:task], spec[:args])} (#{Schedule.describe(spec)})"
 
         # One `list` row for this project: its declaration (if still declared) plus live state.
         def schedule_row(name)

@@ -31,7 +31,7 @@ module Asgard
       def declare(task, **) = Declarations.record(declarations, place(normalize(task, **)), "schedule")
 
       # The name a command derives (a normalize result's task and args).
-      def plain_name(spec) = command_slug(spec.values_at(:task, :args).flatten)
+      def plain_name(spec) = command_slug([spec[:task], *spec[:args]])
 
       # Whether +spec+ has the plain name its command derives, rather than
       # an as: name or a hashed one.
@@ -43,7 +43,7 @@ module Asgard
         derived_name?(one) && derived_name?(other) && one.values_at(:task, :args) != other.values_at(:task, :args)
       end
 
-      def with_hashed_name(spec) = spec.merge(name: hashed_slug(spec.values_at(:task, :args).flatten))
+      def with_hashed_name(spec) = spec.merge(name: hashed_slug([spec[:task], *spec[:args]]))
 
       # Whether +spec+'s plain name was already given up by a rival in
       # +declarations+, one now under its hashed name, so +spec+ takes its

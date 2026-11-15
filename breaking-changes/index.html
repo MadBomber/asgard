@@ -1358,6 +1358,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#061" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.6.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.6.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-doctor-exits-1-when-it-reports-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --doctor exits 1 when it reports problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-debug-and-verbose-before-a-task-name-run-that-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --debug and --verbose before a task name run that task
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#060" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1598,6 +1637,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#061" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0.6.1
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0.6.1">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-doctor-exits-1-when-it-reports-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --doctor exits 1 when it reports problems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-debug-and-verbose-before-a-task-name-run-that-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --debug and --verbose before a task name run that task
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#060" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1817,6 +1895,55 @@
 
 <h1 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h1>
 <p>Each release that can break an existing project is listed here, newest first, with the steps to upgrade. The <a href="../changelog/">Changelog</a> lists every change.</p>
+<h2 id="061">0.6.1<a class="headerlink" href="#061" title="Permanent link">&para;</a></h2>
+<p>Nothing in a <code>.loki</code> file needs to change for 0.6.1. Two changes can break
+a script, alias or CI step that runs asgard.</p>
+<h3 id="-doctor-exits-1-when-it-reports-problems"><code>--doctor</code> exits 1 when it reports problems<a class="headerlink" href="#-doctor-exits-1-when-it-reports-problems" title="Permanent link">&para;</a></h3>
+<p>Before 0.6.1, <code>asgard --doctor</code> always exited 0. It now exits 1 when it
+reports a problem: a <code>.loki</code> that fails to load, an undefined dependency,
+or a task defined in more than one file. Warnings alone still exit 0.</p>
+<p>A deliberate override counts. A project that replaces a task from a shared
+file on purpose gets exit status 1 from <code>--doctor</code> every time.</p>
+<p><strong>To upgrade:</strong> if a script or CI step runs <code>asgard --doctor</code> only to show
+the report, let it ignore the status:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>asgard<span class="w"> </span>--doctor<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">true</span>
+</span></code></pre></div>
+<p>If it runs <code>--doctor</code> as a check, it now catches the problems it was
+reporting, so fix them or rename the duplicate tasks.</p>
+<h3 id="-debug-and-verbose-before-a-task-name-run-that-task"><code>--debug</code> and <code>--verbose</code> before a task name run that task<a class="headerlink" href="#-debug-and-verbose-before-a-task-name-run-that-task" title="Permanent link">&para;</a></h3>
+<p>Before 0.6.1, a flag in front of the task name did not reach the task:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Before 0.6.1</th>
+<th>From 0.6.1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>asgard --verbose build</code></td>
+<td>Help for <code>build</code></td>
+<td>Runs <code>build</code> with <code>--verbose</code></td>
+</tr>
+<tr>
+<td><code>asgard --verbose build</code> with a <code>default_task</code></td>
+<td>Runs the default task with <code>build</code> as its argument</td>
+<td>Runs <code>build</code> with <code>--verbose</code></td>
+</tr>
+<tr>
+<td><code>asgard --verbose prod</code> where <code>prod</code> is not a task</td>
+<td>Runs the default task with <code>prod</code></td>
+<td>Unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>A word that is the start of exactly one task's name counts as that task,
+as it does without a flag: <code>asgard --verbose bu</code> runs <code>build</code>.</p>
+<p><strong>To upgrade:</strong> a command that relied on the old behavior to pass a word to
+the default task should name the default task. With <code>default_task :deploy</code>:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>deploy<span class="w"> </span>build<span class="w"> </span>--verbose<span class="w">    </span><span class="c1"># instead of asgard --verbose build</span>
+</span></code></pre></div>
 <h2 id="060">0.6.0<a class="headerlink" href="#060" title="Permanent link">&para;</a></h2>
 <p>Version 0.6.0 changes how asgard names a project on disk. Every scheduled
 task and every watcher installed by an earlier version is filed under the
@@ -1901,23 +2028,23 @@ full path next to each slug.</p>
 entries under their old names.</p>
 <p><strong>1. Find every project with schedules or watches.</strong> Both commands work
 from any directory:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all
 </span></code></pre></div>
 <p>Each group is titled <code>Project: &lt;slug&gt; (&lt;path&gt;)</code>. The path is where to go
 next.</p>
 <p><strong>2. In each of those projects, remove the schedules and stop the
 watcher:</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>/path/to/project
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w">      </span><span class="c1"># unloads and deletes every job of this project</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>stop<span class="w">         </span><span class="c1"># a task already running finishes first</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>/path/to/project
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w">      </span><span class="c1"># unloads and deletes every job of this project</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>stop<span class="w">         </span><span class="c1"># a task already running finishes first</span>
 </span></code></pre></div>
 <p><code>schedule remove</code> prints one <code>removed &lt;name&gt;</code> line per entry. <code>watcher
 stop</code> waits for any running task, then prints <code>stopped watcher for
 &lt;slug&gt;</code>.</p>
 <p><strong>3. Check that nothing is left:</strong></p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all<span class="w">   </span><span class="c1"># No scheduled tasks installed (launchd).</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all<span class="w">    </span><span class="c1"># every project shows DAEMON stopped</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all<span class="w">   </span><span class="c1"># No scheduled tasks installed (launchd).</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all<span class="w">    </span><span class="c1"># every project shows DAEMON stopped</span>
 </span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1928,21 +2055,21 @@ watcher is stopped if you want a clean slate.</p>
 </div>
 <hr />
 <h3 id="upgrade">Upgrade<a class="headerlink" href="#upgrade" title="Permanent link">&para;</a></h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>gem<span class="w"> </span>update<span class="w"> </span>asgard
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>asgard<span class="w"> </span>--version<span class="w">     </span><span class="c1"># 0.6.0</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>gem<span class="w"> </span>update<span class="w"> </span>asgard
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>asgard<span class="w"> </span>--version<span class="w">     </span><span class="c1"># 0.6.0</span>
 </span></code></pre></div>
 <hr />
 <h3 id="after-you-upgrade">After You Upgrade<a class="headerlink" href="#after-you-upgrade" title="Permanent link">&para;</a></h3>
 <p>In each project, install the schedules and start the watcher again. The
 declarations in <code>.loki</code> are unchanged; only the name they are filed under
 is new.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>/path/to/project
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>install
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>start
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">cd</span><span class="w"> </span>/path/to/project
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>install
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>start
 </span></code></pre></div>
 <p>Confirm the new slugs:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>list<span class="w"> </span>--all
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>asgard<span class="w"> </span>watcher<span class="w"> </span>list<span class="w"> </span>--all
 </span></code></pre></div>
 <p>Every project title now ends in a hash, for example
 <code>Project: api-9f3a1c2b (/Users/you/work/api)</code>.</p>
@@ -1956,8 +2083,8 @@ reinstalled, appear under the new one.</p>
 <p><strong>Scheduled tasks.</strong> Deal with the leftovers before you run <code>asgard schedule
 install</code> under the new version. Until then a leftover entry can be stopped,
 or removed along with its job files, by its old slug:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>api/nightly<span class="w">      </span><span class="c1"># the old slug was the bare basename</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span>api/nightly<span class="w">    </span><span class="c1"># unload it and delete its files</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>stop<span class="w"> </span>api/nightly<span class="w">      </span><span class="c1"># the old slug was the bare basename</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>asgard<span class="w"> </span>schedule<span class="w"> </span>remove<span class="w"> </span>api/nightly<span class="w">    </span><span class="c1"># unload it and delete its files</span>
 </span></code></pre></div>
 <p>Once the project's new entries are installed, <code>api/nightly</code> matches both
 the old slug <code>api</code> and the new <code>api-9f3a1c2b</code>, and the command stops with
@@ -1968,22 +2095,22 @@ the old job by hand:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">macOS (launchd)</label><label for="__tabbed_1_2">Linux (systemd)</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>launchctl<span class="w"> </span>bootout<span class="w"> </span>gui/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/com.madbomber.asgard.api.nightly
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>rm<span class="w"> </span>~/Library/LaunchAgents/com.madbomber.asgard.api.nightly.plist
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>launchctl<span class="w"> </span>bootout<span class="w"> </span>gui/<span class="k">$(</span>id<span class="w"> </span>-u<span class="k">)</span>/com.madbomber.asgard.api.nightly
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>rm<span class="w"> </span>~/Library/LaunchAgents/com.madbomber.asgard.api.nightly.plist
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>systemctl<span class="w"> </span>--user<span class="w"> </span>disable<span class="w"> </span>--now<span class="w"> </span>asgard.api.nightly.timer
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>rm<span class="w"> </span>~/.config/systemd/user/asgard.api.nightly.<span class="o">{</span>service,timer<span class="o">}</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>systemctl<span class="w"> </span>--user<span class="w"> </span>daemon-reload
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>systemctl<span class="w"> </span>--user<span class="w"> </span>disable<span class="w"> </span>--now<span class="w"> </span>asgard.api.nightly.timer
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>rm<span class="w"> </span>~/.config/systemd/user/asgard.api.nightly.<span class="o">{</span>service,timer<span class="o">}</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>systemctl<span class="w"> </span>--user<span class="w"> </span>daemon-reload
 </span></code></pre></div>
 </div>
 </div>
 </div>
 <p><strong>Watchers.</strong> A leftover daemon keeps running under the old slug. Its
 pidfile names it:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">kill</span><span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>~/.local/state/asgard/watch/api/watcher.pid<span class="k">)</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>rm<span class="w"> </span>-r<span class="w"> </span>~/.local/state/asgard/watch/api
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nb">kill</span><span class="w"> </span><span class="k">$(</span>cat<span class="w"> </span>~/.local/state/asgard/watch/api/watcher.pid<span class="k">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>rm<span class="w"> </span>-r<span class="w"> </span>~/.local/state/asgard/watch/api
 </span></code></pre></div>
 <p>The daemon handles TERM the same way <code>watcher stop</code> does: it stops
 listening, lets a running task finish, and exits.</p>
@@ -2008,14 +2135,14 @@ listening, lets a running task finish, and exits.</p>
 <p><code>sh</code> and <code>shebang</code> no longer take an <code>exec:</code> keyword. <code>sh</code> is <code>shebang</code>
 with the default shell, so this is one change, not two. A <code>.loki</code> that
 still passes it fails on the first call:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ArgumentError: unknown keyword: :exec
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ArgumentError: unknown keyword: :exec
 </span></code></pre></div>
 <p><strong>What to do:</strong> delete the keyword. The task keeps working the same way.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># before</span>
-</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="nb">exec</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># from 0.6.0</span>
-</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># before</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span><span class="p">,</span><span class="w"> </span><span class="nb">exec</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># from 0.6.0</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">doc_server</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"mkdocs serve"</span>
 </span></code></pre></div>
 <p><strong>Why it was removed.</strong> <code>exec: true</code> promised to replace the asgard
 process with the command, so that nothing idle sat in memory beside a dev
@@ -2045,19 +2172,19 @@ follow.</p>
 <p>The seeded <code>:bash</code> entry is the bare word <code>bash</code>, found on <code>PATH</code> at run
 time. With no <code>default_shell</code> set, a machine or container with only
 <code>/bin/sh</code> fails on the first <code>sh</code>:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>asgard: shell :bash not found: bash ...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>asgard: shell :bash not found: bash ...
 </span></code></pre></div>
 <p>and asgard exits 127. Every desktop system, and any image that installs
 bash, is unaffected.</p>
 <p><strong>What to do</strong>, if you cannot install bash:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:sh</span><span class="w">           </span><span class="c1"># sh and a nameless shebang run /bin/sh's `sh`</span>
-</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">  </span><span class="n">default_shell</span><span class="w"> </span><span class="ss">:sh</span><span class="w">           </span><span class="c1"># sh and a nameless shebang run /bin/sh's `sh`</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>or keep <code>:bash</code> as the name and point it somewhere else:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
-</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/bin/sh"</span><span class="w">      </span><span class="c1"># every sh and shebang :bash runs this instead</span>
-</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Tasks</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">  </span><span class="n">shell</span><span class="w"> </span><span class="ss">:bash</span><span class="p">,</span><span class="w"> </span><span class="s2">"/bin/sh"</span><span class="w">      </span><span class="c1"># every sh and shebang :bash runs this instead</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>The first form is right when your scripts are POSIX sh already. The
 second is a quick way to get a container running; scripts that use bash
@@ -2115,7 +2242,7 @@ reads it.</p>
 asgard uses itself, and the <code>.loki</code> version silently replaced asgard's.
 From 0.6.0 a task or helper with such a name is refused while the <code>.loki</code>
 loads, and asgard exits 1 before running anything:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>asgard: 'invoke_command' at /proj/.loki:6 is an asgard helper and cannot be a task or helper; rename it
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>asgard: 'invoke_command' at /proj/.loki:6 is an asgard helper and cannot be a task or helper; rename it
 </span></code></pre></div>
 <p>This applies whether the method is a task or a helper inside <code>no_commands</code>.
 The most common case in older <code>.loki</code> files is <code>invoke_command</code>, defined
@@ -2150,21 +2277,21 @@ A helper of your own that happened to share a name, such as <code>env</code> or
 <p>An <code>invoke_command</code> that wrapped every task has no direct replacement.
 Move the work it did into the tasks that need it, or into a task of its
 own that the others name with <code>depends_on</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># before: ran before every task</span>
-</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">no_commands</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">invoke_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="n">command</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">    </span><span class="k">super</span>
-</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="k">end</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="c1"># from 0.6.0</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"banner"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Print the run banner"</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">banner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>
-</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:banner</span>
-</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"build"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Build the project"</span>
-</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"make"</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># before: ran before every task</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">no_commands</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">invoke_command</span><span class="p">(</span><span class="n">command</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="n">command</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="k">super</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="k">end</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="c1"># from 0.6.0</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"banner"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Print the run banner"</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">banner</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"== </span><span class="si">#{</span><span class="no">ARGV</span><span class="o">.</span><span class="n">first</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="n">depends_on</span><span class="w"> </span><span class="ss">:banner</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="n">desc</span><span class="w"> </span><span class="s2">"build"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Build the project"</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sh</span><span class="w"> </span><span class="s2">"make"</span>
 </span></code></pre></div>
 <p>A dependency runs once per <code>asgard</code> invocation, so <code>banner</code> prints once
 however many tasks depend on it.</p>

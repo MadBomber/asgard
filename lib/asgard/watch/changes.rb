@@ -15,8 +15,8 @@ module Asgard
     FILE_VARIABLE = "ASGARD_CHANGES_FILE"
 
     class << self
-      # The changes behind this process, read once from ENV. Tests and a
-      # watcher-run task that re-execs call forget to read them again.
+      # The changes behind this process, read once from ENV. Call forget
+      # to read them again; the tests do so after changing ENV.
       def current = @current ||= from_env
 
       def forget = @current = nil

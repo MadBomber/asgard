@@ -2439,6 +2439,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
 </ul>
 <h3 id="changed">Changed<a class="headerlink" href="#changed" title="Permanent link">&para;</a></h3>
 <ul>
+<li><strong>The repository's own task files load from a shared checkout</strong>: the root
+  <code>.loki</code> runs <code>import_up "dev/.loki"</code> to load the quality, gem, git and docs
+  tasks of <a href="https://github.com/MadBomber/dev">MadBomber/dev</a>, and the local
+  <code>test_check.loki</code> replaces two of them with asgard's own test runner.
+  <code>xyzzy.loki</code> is gone; those replacements are now the worked example of an
+  override in the docs. <code>quality_rails.loki</code> is gone too; conditional imports
+  stay in the docs as an example. The gem itself is unchanged.</li>
 <li><strong>One parent-directory walk</strong>: <code>loki_up</code>, <code>import_up</code> and <code>--doctor</code>'s
   marker search use <code>Pathname#ascend</code> instead of three hand-rolled loops; what
   they find is unchanged (<a href="https://github.com/MadBomber/asgard/issues/19">#19</a>).</li>

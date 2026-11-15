@@ -937,6 +937,12 @@ class TestJobsCommands < Minitest::Test
     refute Asgard.machine_wide?(%w[jobs stop])
   end
 
+  def test_leading_global_flags_keep_a_list_machine_wide
+    assert Asgard.machine_wide?(%w[--debug jobs list])
+    assert Asgard.machine_wide?(%w[--verbose --debug watcher list])
+    refute Asgard.machine_wide?(%w[--debug jobs stop])
+  end
+
   def test_rows_describe_each_record
     state.prepare
     started = Time.new(2026, 10, 24, 9, 30, 0).iso8601

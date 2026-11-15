@@ -33,8 +33,10 @@ module Asgard
 
   # `asgard schedule list`, `asgard watcher list` and `asgard jobs list`
   # report every project's entries, so they work from a directory with no
-  # .loki above it.
-  def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.first(2))
+  # .loki above it, with or without leading GLOBAL_FLAGS.
+  def self.machine_wide?(argv)
+    [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.drop_while { GLOBAL_FLAGS.include?(it) }.first(2))
+  end
 
   # The root .loki is loaded directly rather than through `import`, so
   # record it the way import would. Otherwise an `import_up` in a child

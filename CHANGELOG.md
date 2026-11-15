@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now says `asgard: unknown option '--nope'; see asgard help` instead of
   `Could not find command "__nope".` Only the message changes; it still
   exits 1, so this is not a breaking change.
+- **`asgard TASK --help` shows the task's help**: `TASK --help` and
+  `TASK -h` now work like `asgard help TASK`, instead of running the task
+  with `--help` as its argument or failing with "was called with
+  arguments". ([#43](https://github.com/MadBomber/asgard/issues/43))
 
 ### Fixed
 

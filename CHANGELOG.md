@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.1] - 2026-11-14
 
+Two changes can break a script that runs asgard: `--doctor` exits 1 when
+it reports problems, and `--debug` or `--verbose` before a task name now
+runs that task. See
+[Breaking Changes](https://madbomber.github.io/asgard/breaking-changes/#061).
+
 ### Added
 
 - **A DSL word outside `class Tasks` gets a hint**: `desc` or `depends_on` at the top level of a `.loki` now ends the load-error line with a reminder that they go inside `class Tasks ... end`.
@@ -28,6 +33,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING: `asgard --doctor` exits 1 when it reports problems**,
+  including overridden task definitions, so scripts and CI can use it as a
+  check. Warnings alone still exit 0. A script that ran `--doctor` and
+  ignored what it reported now fails on those problems.
+- **BREAKING: `--debug` and `--verbose` before a task name run that task**:
+  `asgard --verbose build` is now `asgard build --verbose`. It used to print
+  the help for `build`, or, in a project with a `default_task`, run the
+  default task with `build` as its argument. In front of a word that is not a
+  task the flags still run the default task with that word
+  ([#27](https://github.com/MadBomber/asgard/issues/27)).
 - **The repository's own task files load from a shared checkout**: the root
   `.loki` runs `import_up "dev/.loki"` to load the quality, gem, git and docs
   tasks of [MadBomber/dev](https://github.com/MadBomber/dev), and the local
@@ -50,12 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`--debug` and `--verbose` before a task name run that task**:
-  `asgard --verbose build` is now `asgard build --verbose`. It used to print
-  the help for `build`, or, in a project with a `default_task`, run the
-  default task with `build` as its argument. In front of a word that is not a
-  task the flags still run the default task with that word
-  ([#27](https://github.com/MadBomber/asgard/issues/27)).
 - **A task called with arguments it cannot take runs nothing**: the usage
   error is reported before the task's dependencies run, not after them
   ([#27](https://github.com/MadBomber/asgard/issues/27)).
@@ -65,9 +74,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`bin/console` and the `console` task load on Ruby 4**: the Gemfile lists
   `irb`, which is no longer a default gem ([#28](https://github.com/MadBomber/asgard/issues/28)).
 - **`truncate_log NAME` on an entry with no log yet is not an error**: a declared schedule or recorded job that has not written its log says `NAME has no log yet (PATH); nothing to truncate` and exits 0 ([#18](https://github.com/MadBomber/asgard/issues/18)).
-- **`asgard --doctor` exits 1 when it reports problems**, including overridden
-  task definitions, so scripts and CI can use it as a check. Warnings alone
-  still exit 0.
 - **A background job started right after it ended starts again**, instead
   of being reported as already running while its old shell exits.
 - **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a

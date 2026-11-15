@@ -109,15 +109,15 @@ module Asgard
           (Thor.private_method_defined?(method_name) && !Kernel.respond_to?(method_name))
       end
 
-      # The task `asgard help NAME` describes: a built-in group's mapped
-      # name ("jobs") is its registered subcommand ("_jobs"); anything else
-      # is NAME unchanged.
       # Whether +word+, given to help as a command name, is an option Thor
       # did not recognise. Thor's own help flags (-h, --help) are not.
       def unknown_option?(word)
         word.to_s.start_with?("-") && !Thor::HELP_MAPPINGS.include?(word)
       end
 
+      # The task `asgard help NAME` describes: a built-in group's mapped
+      # name ("jobs") is its registered subcommand ("_jobs"); anything else
+      # is NAME unchanged.
       def help_target(command)
         mapped = map[command.to_s]&.to_s
         subcommands.include?(mapped) ? mapped : command

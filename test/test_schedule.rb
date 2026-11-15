@@ -129,6 +129,14 @@ class TestScheduleDeclaration < Minitest::Test
     assert_raises(ArgumentError) { SD.normalize("", every: 60) }
   end
 
+  def test_issue_46_every_error_says_what_is_accepted_and_what_was_given
+    accepted = "must be a whole number of seconds (900) or answer in_seconds (ActiveSupport's 15.minutes)"
+    { 0 => "0", -5 => "-5", 90.0 => "90.0", "3m" => '"3m"', Rational(3) => "(3/1)" }.each do |every, shown|
+      error = assert_raises(ArgumentError) { SD.normalize(:sync, every:) }
+      assert_equal "schedule :sync every: #{accepted}; got #{shown}", error.message
+    end
+  end
+
   def test_seconds_accepts_integers_and_durations
     duration = Struct.new(:in_seconds).new(180.0)
     assert_equal 90, SD.seconds(90)

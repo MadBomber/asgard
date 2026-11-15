@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **A `default_task` that names no task is reported as such**: plain
+  `asgard` (or `asgard --debug`) now says `asgard: default_task :nope (set
+  at .loki:2) is not a task` instead of `Could not find command "".`
+  ([#51](https://github.com/MadBomber/asgard/issues/51))
 
 ## [0.6.1] - 2026-11-14
 

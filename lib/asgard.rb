@@ -126,7 +126,9 @@ module Asgard
     boot(argv)
     Tasks._reset_ran!
     pin_project_root(project_root)
-    result = Tasks.start(task_first(argv) { |word| task_word?(word) })
+    argv = task_first(argv) { |word| task_word?(word) }
+    Tasks.check_default_task!(argv)
+    result = Tasks.start(argv)
     # Quality-gate convention: a task signals failure by returning :fail
     # (see dev/quality.loki's *_check tasks). Surface that as a nonzero
     # exit so callers (CI, cross-repo runners) can rely on $?.

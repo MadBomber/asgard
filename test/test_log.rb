@@ -87,6 +87,58 @@ class TestLog < Minitest::Test
     end
   end
 
+  # A real file whose writes call +on_write+ with the write's number first.
+  def log_file_with(on_write)
+    klass = Class.new(File) do
+      define_method(:write) do |data|
+        @writes = (@writes || 0) + 1
+        on_write.call(@writes)
+        super(data)
+      end
+    end
+    klass.open(@path, "r+b")
+  end
+
+  def multi_chunk_body
+    (1..3).map { |n| "#{n.to_s * (Log::CHUNK - 1)}\n" }.join
+  end
+
+  def test_an_interrupt_during_the_rewrite_waits_until_the_log_is_cut
+    body = multi_chunk_body
+    File.binwrite(@path, body)
+    writing = Queue.new
+    resume = Queue.new
+    worker = Thread.new do
+      Thread.current.report_on_exception = false
+      file = log_file_with(->(n) { (writing << n) && resume.pop if n == 1 })
+      Log.rewrite(file, Log::CHUNK)
+    ensure
+      file&.close
+    end
+    assert writing.pop(timeout: 5), "rewrite never wrote through File#write"
+    worker.raise(Interrupt)
+    resume << :go
+    assert_raises(Interrupt) { worker.join }
+    assert_equal body.byteslice(Log::CHUNK..), File.binread(@path)
+  end
+
+  def test_a_failed_write_cuts_the_log_after_the_bytes_already_moved
+    body = multi_chunk_body
+    File.binwrite(@path, body)
+    file = log_file_with(->(n) { raise IOError, "disk full" if n == 2 })
+    assert_raises(IOError) { Log.rewrite(file, Log::CHUNK) }
+    file.close
+    assert_equal body.byteslice(Log::CHUNK, Log::CHUNK), File.binread(@path)
+  end
+
+  def test_a_failure_before_any_write_leaves_the_log_whole
+    File.binwrite(@path, "one\ntwo\n")
+    file = log_file_with(->(_) { raise IOError, "disk full" })
+    assert_raises(IOError) { Log.rewrite(file, 4) }
+    file.close
+    assert_equal "one\ntwo\n", File.binread(@path)
+  end
+
   def wait_until
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 10
     until yield

@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-require "tempfile"
-
 module Asgard
   # Keeps the last M lines of a log, rewriting it in place. Every writer
   # (launchd, systemd's append:, jobs, the watcher) opens its log with
   # O_APPEND, so it keeps writing to the same file at the new end. As with
-  # logrotate's copytruncate, a write landing between the copy and the
+  # logrotate's copytruncate, a write landing between the last read and the
   # truncate can be lost.
   module Log
     CHUNK = 64 * 1024
@@ -51,15 +49,31 @@ module Asgard
       end
     end
 
+    # Slides the bytes from +offset+ on to the start of +file+, a chunk at a
+    # time, then cuts the file after them. Each write lands behind the next
+    # read, so no copy is needed, and lines appended meanwhile move too.
+    # Signals and Thread#raise wait until the file is cut. A failed read or
+    # write still cuts the file after the bytes already moved, so it never
+    # holds the tail written over its own head.
     def rewrite(file, offset)
-      Tempfile.create("asgard-log", binmode: true) do |tail|
-        file.seek(offset)
-        IO.copy_stream(file, tail)
-        tail.rewind
-        file.rewind
-        IO.copy_stream(tail, file)
-        file.truncate(tail.size)
+      moved = 0
+      Thread.handle_interrupt(Object => :never) do
+        while (chunk = read_at(file, offset + moved))
+          file.seek(moved)
+          file.write(chunk)
+          moved += chunk.bytesize
+        end
+        file.truncate(moved)
+      rescue StandardError
+        file.truncate(moved) if moved.positive?
+        raise
       end
+    end
+
+    # Up to CHUNK bytes of +file+ from +position+, or nil at the end.
+    def read_at(file, position)
+      file.seek(position)
+      file.read(CHUNK)
     end
 
     def truncate_logs(paths, lines:, dry_run: false, out: $stdout)

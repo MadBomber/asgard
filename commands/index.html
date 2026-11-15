@@ -1756,7 +1756,7 @@
 </tbody>
 </table>
 <p><code>--version</code> and <code>--doctor</code> are asgard's own only before the task name. After it they belong to the task: <code>asgard mytask --version</code> hands <code>--version</code> to <code>mytask</code>.</p>
-<p><code>--debug</code> and <code>--verbose</code> work on either side of a task name: <code>asgard --verbose TASK</code> is <code>asgard TASK --verbose</code>.</p>
+<p><code>--debug</code> and <code>--verbose</code> work on either side of a task name, in any form (<code>--debug=true</code>, <code>--no-verbose</code>): <code>asgard --verbose TASK</code> is <code>asgard TASK --verbose</code>.</p>
 <h3 id="prefix-matching-and-aliases">Prefix Matching and Aliases<a class="headerlink" href="#prefix-matching-and-aliases" title="Permanent link">&para;</a></h3>
 <p>Any unambiguous prefix of a task name runs it. An exact name always wins over a longer name it is a prefix of. An ambiguous prefix stops with a list of candidates.</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>asgard<span class="w"> </span>ru<span class="w">          </span><span class="c1"># runs rubocop_check if it is the only task starting with "ru"</span>

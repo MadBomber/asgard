@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **A mistyped `jobs` subcommand is named**: `asgard jobs stpo api` now
+  says `Could not find command "stpo".` with a "Did you mean?" hint, as
+  `schedule` and `watcher` do, instead of reporting arguments to `jobs list`.
+  ([#52](https://github.com/MadBomber/asgard/issues/52))
 
 ## [0.6.1] - 2026-11-14
 

@@ -170,6 +170,41 @@ class TestAsgardExitOnFailure < Minitest::Test
     end
     assert_match "Could not find command", err
   end
+
+  def test_unknown_leading_option_is_named_as_an_option
+    %w[--nope -x].each do |flag|
+      _, err = capture_io do
+        error = assert_raises(SystemExit) { run_in_loki_dir([flag, "build"]) }
+        refute error.success?
+      end
+      assert_match "asgard: unknown option '#{flag}'", err
+      refute_match "_#{flag.delete("-")}", err
+    end
+  end
+
+  def test_help_with_unknown_option_is_named_as_an_option
+    _, err = capture_io do
+      error = assert_raises(SystemExit) { run_in_loki_dir(%w[help --nope]) }
+      refute error.success?
+    end
+    assert_match "asgard: unknown option '--nope'", err
+  end
+
+  def test_dash_h_still_prints_help
+    out, = capture_io { run_in_loki_dir(["-h"]) }
+    assert_match "Commands:", out
+  end
+
+  private
+
+  def run_in_loki_dir(argv)
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, ".loki"), "")
+      Dir.chdir(dir) { Asgard.run!(argv) }
+    end
+  ensure
+    Tasks._reset_ran!
+  end
 end
 
 class TestAsgardTasks < Minitest::Test

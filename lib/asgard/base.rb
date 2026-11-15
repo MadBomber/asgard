@@ -200,7 +200,11 @@ module Asgard
       end
     end
 
+    # Thor hands an unknown leading option (`asgard --nope`) to the default
+    # command, help, as a command name; name it as the option it is.
     def help(command = nil, subcommand = false) # rubocop:disable Style/OptionalBooleanParameter
+      raise Asgard::Error, "unknown option '#{command}'; see asgard help" if command&.start_with?("-")
+
       klass       = self.class
       top_level   = command.nil?
       header_text = klass.header

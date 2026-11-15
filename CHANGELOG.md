@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **An unknown leading option is named as an option**: `asgard --nope`
+  now says `asgard: unknown option '--nope'; see asgard help` instead of
+  `Could not find command "__nope".` Only the message changes; it still
+  exits 1, so this is not a breaking change.
+
 ### Fixed
 
 - **A leading `--debug` or `--verbose` keeps the list commands machine-wide**:

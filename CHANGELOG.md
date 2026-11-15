@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A leading `--debug` or `--verbose` keeps the list commands machine-wide**:
+  `asgard --debug jobs list`, `schedule list` and `watcher list` work again
+  from a directory with no `.loki` above it, instead of stopping with "no
+  .loki file found".
+
 ## [0.6.1] - 2026-11-14
 
 Two changes can break a script that runs asgard: `--doctor` exits 1 when

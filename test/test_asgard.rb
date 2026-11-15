@@ -2718,6 +2718,67 @@ class TestRegressionCoreLow < Minitest::Test
     assert accepts.call(->(key: 1) { key }, 0)
   end
 
+  # Issue #38: a leading --debug=VALUE, --no-debug or --skip-verbose is moved
+  # behind the task name like a bare --debug, and is not taken for the
+  # default task's argument.
+  def test_issue_38_a_flag_with_a_value_or_a_negation_runs_the_task
+    { %w[--debug=true build] => "BUILDING debug=true verbose=false\n",
+      %w[--debug=false build] => "BUILDING debug=false verbose=false\n",
+      %w[--verbose=true --debug bu] => "BUILDING debug=true verbose=true\n",
+      %w[--no-debug build] => "BUILDING debug=false verbose=false\n",
+      %w[--skip-verbose build] => "BUILDING debug=false verbose=false\n",
+      %w[--verbose=true prod] => "DEPLOYING to prod verbose=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+  end
+
+  HIDDEN_TASKS = <<~'LOKI'
+    class Tasks
+      def build = puts("BUILDING debug=#{debug?.inspect}")
+      desc "secret", "secret", hide: true
+      def secret = puts("SECRET verbose=#{verbose?.inspect}")
+      def deploy_app = puts("DEPLOYING debug=#{debug?.inspect}")
+    end
+  LOKI
+
+  # Issue #38: a leading flag reaches a task defined without a desc, or
+  # with hide: true, as it does when it follows the task name.
+  def test_issue_38_a_leading_flag_runs_a_hidden_task
+    { %w[--debug build] => "BUILDING debug=true\n",
+      %w[--debug=true build] => "BUILDING debug=true\n",
+      %w[--verbose secret] => "SECRET verbose=true\n",
+      %w[--debug deploy-app] => "DEPLOYING debug=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(HIDDEN_TASKS, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+  end
+
+  def test_issue_38_global_flag_matches_every_form_thor_accepts
+    %w[--debug --verbose --debug=true --verbose=false --no-debug --skip-verbose].each do |word|
+      assert Asgard.global_flag?(word), word
+    end
+    %w[--debugger --debug-x --no-verbosity -d --doctor --version build debug].each do |word|
+      refute Asgard.global_flag?(word), word
+    end
+    task_first = ->(argv) { Asgard.task_first(argv) { it == "build" } }
+    assert_equal %w[build --debug=true --no-verbose], task_first.call(%w[--debug=true --no-verbose build])
+    assert_equal %w[--debugger build], task_first.call(%w[--debugger build])
+  end
+
+  def test_issue_38_task_word_takes_a_hidden_or_dashed_task_name_in_full
+    klass = Class.new(Asgard::Base) do
+      def build = nil
+      desc "secret", "secret", hide: true
+      def secret = nil
+      def deploy_app = nil
+      desc "make_all", "make_all"
+      def make_all = nil
+    end
+    %w[build secret deploy_app deploy-app make-all].each { |word| assert Asgard.task_word?(word, klass), word }
+    %w[bu sec deploy deploy-a make-a].each { |word| refute Asgard.task_word?(word, klass), word }
+  end
+
   # C6: a directory named .loki is not a task file.
   def test_regression_c6_a_loki_directory_is_skipped
     Dir.mktmpdir do |dir|

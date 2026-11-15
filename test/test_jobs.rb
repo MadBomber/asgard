@@ -940,6 +940,8 @@ class TestJobsCommands < Minitest::Test
   def test_leading_global_flags_keep_a_list_machine_wide
     assert Asgard.machine_wide?(%w[--debug jobs list])
     assert Asgard.machine_wide?(%w[--verbose --debug watcher list])
+    assert Asgard.machine_wide?(%w[--debug=true jobs list])
+    assert Asgard.machine_wide?(%w[--no-verbose --verbose=false schedule list])
     refute Asgard.machine_wide?(%w[--debug jobs stop])
   end
 

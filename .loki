@@ -5,7 +5,7 @@
 # The shared task files (quality gates, git, docs, gem lifecycle) live in the
 # sibling `dev` repository (https://github.com/MadBomber/dev), cloned beside
 # this one; import_up finds its .loki in a parent directory.
-import_up "dev/.loki"
+abort "asgard: dev/.loki not found; clone https://github.com/MadBomber/dev beside asgard" unless import_up "dev/.loki"
 
 # Imported after dev/.loki, so what it defines replaces the shared task of
 # the same name: asgard runs its suite with its own test runner.

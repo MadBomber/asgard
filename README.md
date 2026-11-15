@@ -881,6 +881,7 @@ More tips live in the manual at [Tips](https://madbomber.github.io/asgard/tips/)
 
 ```bash
 git clone git@github.com:MadBomber/asgard.git
+git clone git@github.com:MadBomber/dev.git   # shared task files, beside asgard
 cd asgard
 bundle install
 bundle exec bin/asgard test_check  # run tests (95% coverage minimum enforced)

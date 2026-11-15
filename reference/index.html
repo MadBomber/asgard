@@ -2306,6 +2306,13 @@
 <td><a href="../dependencies/#passing-results-between-tasks">Dependencies</a></td>
 </tr>
 <tr>
+<td><code>current_task</code></td>
+<td><code>current_task</code></td>
+<td>The running task's name as a Symbol, also inside a parallel dependency or a helper it calls; <code>nil</code> outside a task</td>
+<td><code>puts "[#{current_task}] done"</code></td>
+<td></td>
+</tr>
+<tr>
 <td><code>changes</code></td>
 <td><code>changes</code></td>
 <td>What the watcher saw change; every list is empty when run by hand</td>

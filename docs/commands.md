@@ -28,7 +28,7 @@ Asgard looks for a `.loki` file in the current directory, then in each parent di
 
 `--version` and `--doctor` are asgard's own only before the task name. After it they belong to the task: `asgard mytask --version` hands `--version` to `mytask`.
 
-`--debug` and `--verbose` work on either side of a task name: `asgard --verbose TASK` is `asgard TASK --verbose`.
+`--debug` and `--verbose` work on either side of a task name, in any form (`--debug=true`, `--no-verbose`): `asgard --verbose TASK` is `asgard TASK --verbose`.
 
 ### Prefix Matching and Aliases
 

@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `asgard --debug jobs list`, `schedule list` and `watcher list` now run
   from a directory with no `.loki` above it, instead of stopping with "no
   .loki file found".
+- **Every form of a leading `--debug` or `--verbose` runs the task named
+  after it**: `asgard --debug=true build`, `--no-debug` and `--skip-verbose`
+  now move behind the task name like a bare `--debug`, instead of running
+  the default task with `build` as its argument or printing its usage.
+  A leading flag also reaches a task defined without a `desc` or with
+  `hide: true`. ([#38](https://github.com/MadBomber/asgard/issues/38))
 
 ## [0.6.1] - 2026-11-14
 

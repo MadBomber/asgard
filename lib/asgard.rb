@@ -33,9 +33,9 @@ module Asgard
 
   # `asgard schedule list`, `asgard watcher list` and `asgard jobs list`
   # report every project's entries, so they work from a directory with no
-  # .loki above it, with or without leading GLOBAL_FLAGS.
+  # .loki above it, with or without leading global flags.
   def self.machine_wide?(argv)
-    [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.drop_while { GLOBAL_FLAGS.include?(it) }.first(2))
+    [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.drop_while { global_flag?(it) }.first(2))
   end
 
   # The root .loki is loaded directly rather than through `import`, so
@@ -110,10 +110,13 @@ module Asgard
   end
 
   # Whether +word+ is what Thor would take as a task name: a task, a mapped
-  # name, or an abbreviation of either. Options and the gem's reserved
-  # `_` names are not.
+  # name, or an abbreviation of either. A hidden task counts only by its
+  # full name, since Thor does not expand an abbreviation to one. Options
+  # and the gem's reserved `_` names are not.
   def self.task_word?(word, tasks = Tasks)
-    !word.start_with?("-", "_") && tasks.send(:find_command_possibilities, word).any?
+    return false if word.start_with?("-", "_")
+
+    tasks.all_commands.key?(word) || tasks.send(:find_command_possibilities, word).any?
   end
 
   # Main entry point invoked by the asgard executable.

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-14
+
 ### Added
 
 - **A DSL word outside `class Tasks` gets a hint**: `desc` or `depends_on` at the top level of a `.loki` now ends the load-error line with a reminder that they go inside `class Tasks ... end`.
@@ -531,7 +533,8 @@ reinstalled after.
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
-[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/MadBomber/asgard/compare/v0.4.1...v0.5.1
 [0.4.1]: https://github.com/MadBomber/asgard/compare/v0.4.0...v0.4.1

@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **`--doctor` says why a task is hidden**: a task described with
+  `hide: true` is listed as `hidden (hide: true; not shown by help)`
+  instead of `hidden (no desc; ...)`, which now marks only desc-less tasks.
+  ([#47](https://github.com/MadBomber/asgard/issues/47))
 
 ## [0.6.1] - 2026-11-14
 

@@ -208,8 +208,10 @@ class TestTruncateLogCommands < Minitest::Test
       assert_includes out, "#{group} truncate_log"
       assert_includes out, "--lines"
       assert_includes out, "--dry-run"
-      _, _, status = run_asgard("class Tasks; end", group, "truncate_log")
-      refute status.success?, "#{group} must require --lines"
+      assert_includes out, "Default: 1000"
+      out, _, status = run_asgard("class Tasks; end", group, "truncate_log")
+      assert status.success?, "#{group} must default --lines"
+      assert_includes out, "No logs found"
     end
   end
 

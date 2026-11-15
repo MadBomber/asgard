@@ -2563,6 +2563,83 @@ class TestRegressionCoreLow < Minitest::Test
     assert Asgard.leading_flag?(%w[--debug --doctor], "--doctor")
   end
 
+  FLAG_FIRST = <<~'LOKI'
+    class Tasks
+      default_task :deploy
+      desc "lint", "lint"
+      def lint = puts("LINT")
+      desc "deploy [TARGET]", "deploy"
+      def deploy(target = "staging") = puts("DEPLOYING to #{target} verbose=#{verbose?.inspect}")
+      desc "build", "build"
+      def build = puts("BUILDING debug=#{debug?.inspect} verbose=#{verbose?.inspect}")
+      depends_on :lint
+      desc "gate", "gate"
+      def gate = puts("GATE")
+    end
+  LOKI
+
+  # Issue #27: --debug and --verbose before the task name still run that task.
+  def test_issue_27_a_flag_before_the_task_name_runs_that_task
+    { %w[--verbose build] => "BUILDING debug=false verbose=true\n",
+      %w[--debug --verbose build] => "BUILDING debug=true verbose=true\n",
+      %w[--verbose bu] => "BUILDING debug=false verbose=true\n",
+      %w[--verbose prod] => "DEPLOYING to prod verbose=true\n",
+      %w[--verbose] => "DEPLOYING to staging verbose=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+    out, _err, status = run_asgard(FLAG_FIRST.sub("  default_task :deploy\n", ""), "--verbose", "build")
+    assert_equal ["BUILDING debug=false verbose=true\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_27_task_first_is_pure
+    names = %w[build schedule]
+    task_first = ->(argv) { Asgard.task_first(argv) { names.include?(it) } }
+    assert_equal %w[build --verbose], task_first.call(%w[--verbose build])
+    assert_equal %w[build --debug --verbose -- x], task_first.call(%w[--debug --verbose build -- x])
+    assert_equal %w[schedule --debug list], task_first.call(%w[--debug schedule list])
+    [%w[--verbose prod], %w[--verbose], %w[build --verbose], %w[-n build], %w[--verbose -n build], []].each do |argv|
+      assert_same argv, task_first.call(argv)
+    end
+  end
+
+  def test_issue_27_task_word_is_a_task_a_map_or_an_abbreviation
+    klass = Class.new(Asgard::Base) do
+      desc "build", "build"
+      def build = nil
+      desc "bundle", "bundle"
+      def bundle = nil
+      desc "_internal", "gem-owned"
+      def _internal = nil
+      map "t" => :build
+    end
+    %w[build bun bu t help].each { |word| assert Asgard.task_word?(word, klass), word }
+    %w[prod --build -t _internal _].each { |word| refute Asgard.task_word?(word, klass), word }
+  end
+
+  # Issue #27: arguments a task cannot take are refused before its dependencies run.
+  def test_issue_27_a_usage_error_runs_no_dependencies
+    [%w[gate xyzzy], %w[--debug gate xyzzy]].each do |argv|
+      out, err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal ["", 1], [out, status.exitstatus], argv.join(" ")
+      assert_includes err, %(ERROR: "asgard gate" was called with arguments ["xyzzy"])
+    end
+    out, _err, status = run_asgard(FLAG_FIRST, "gate")
+    assert_equal ["LINT\nGATE\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_27_accepts_counts_positional_arguments
+    accepts = ->(body, count) { Asgard::Base::Dispatch.accepts?(body.parameters, count) }
+    assert accepts.call(-> {}, 0)
+    refute accepts.call(-> {}, 1)
+    refute accepts.call(->(a) { a }, 0)
+    assert accepts.call(->(a, b = 1) { [a, b] }, 2)
+    refute accepts.call(->(a, b = 1) { [a, b] }, 3)
+    assert accepts.call(->(a, *rest) { [a, rest] }, 9)
+    refute accepts.call(->(a, *rest) { [a, rest] }, 0)
+    assert accepts.call(->(key: 1) { key }, 0)
+  end
+
   # C6: a directory named .loki is not a task file.
   def test_regression_c6_a_loki_directory_is_skipped
     Dir.mktmpdir do |dir|

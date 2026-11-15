@@ -69,7 +69,7 @@ Deploy to ENV
 Per-task help does not show the header or footer. For a subcommand group, `asgard help db`, `asgard db help` and `asgard db help migrate` all work; see [Subcommands](subcommands.md#help-for-a-group).
 
 !!! tip
-    Put asgard's options after the task name: `asgard build --verbose`. Written before it, `asgard --verbose build` is read as `asgard help build`. The two flags that answer and exit, `--version` and `--doctor`, are the exception and go first.
+    Put asgard's options after the task name: `asgard build --verbose`. `--debug` and `--verbose` are also understood in front of a task name, so `asgard --verbose build` runs `build`; in front of any other word they run the `default_task` with that word as its argument (`asgard --verbose prod` is `asgard deploy prod --verbose` when `deploy` is the default). The two flags that answer and exit, `--version` and `--doctor`, always go first.
 
 ---
 

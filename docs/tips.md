@@ -20,7 +20,7 @@ Short, practical advice gathered from using asgard day to day. Each tip stands o
 
 - **Make bare `asgard` do the common thing.** `default_task :test` (or `:quality`, as this repository does) saves typing on the task you run most.
 
-- **Flags go after the task name.** `asgard build --verbose` runs the task; `asgard --verbose build` prints the help for `build`. Only `--version` and `--doctor` go first. See [Options & Flags](options.md).
+- **Flags go after the task name.** `asgard build --verbose` is the form to use. `--debug` and `--verbose` are also understood in front of a task name, so `asgard --verbose build` runs `build`; in front of any other word they run the `default_task` with that word as its argument. `--version` and `--doctor` go first. See [Options & Flags](options.md).
 
 ---
 

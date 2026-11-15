@@ -345,7 +345,7 @@ asgard watcher truncate_log --lines 1000
 asgard watcher truncate_log --lines 1000 --dry-run
 ```
 
-`--lines M` is required: a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. It does this project's `watcher.log` and, when present, the rotated `watcher.log.1`; the watcher writes every task's output there, so there is no NAME. Size-based rotation still applies. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
+`--lines M` defaults to 1000; it takes a nonnegative integer, with `0` emptying the log. Each file keeps its own last M lines byte-for-byte; an unfinished final line counts as one. `--dry-run` (`-n`) reports the bytes that would be removed without touching anything. It does this project's `watcher.log` and, when present, the rotated `watcher.log.1`; the watcher writes every task's output there, so there is no NAME. Size-based rotation still applies. Logs are rewritten in place, so a running task, job or watcher keeps writing to the same file. As with logrotate's `copytruncate`, output written at the instant of truncation can be lost.
 
 ### run
 

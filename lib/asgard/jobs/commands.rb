@@ -140,7 +140,7 @@ module Asgard
       end
 
       desc "truncate_log [NAME]", "Keep the last M lines of a job log; no NAME truncates every job log of this project"
-      method_option :lines, type: :string, required: true, banner: "M", desc: "Lines to keep per log; 0 empties it"
+      method_option :lines, type: :string, default: "1000", banner: "M", desc: "Lines to keep per log; 0 empties it"
       method_option :dry_run, aliases: "-n", type: :boolean, desc: "Report what would be removed without changing logs"
       def truncate_log(name = nil)
         Log.line_count(options[:lines]) # reject a bad --lines even when there is no log to truncate

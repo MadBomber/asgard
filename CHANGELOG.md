@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   format.
 - **`truncate_log` shortens logs in place**: `asgard schedule truncate_log
   [NAME]`, `asgard watcher truncate_log` and `asgard jobs truncate_log [NAME]`
-  keep the last `--lines M` lines (required; `0` empties the log), rewriting
+  keep the last `--lines M` lines (default 1000; `0` empties the log), rewriting
   the file in place so a running writer keeps appending to it. `--dry-run`
   (`-n`) reports what would be removed without changing anything.
 
@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`--debug` and `--verbose` before a task name run that task**:
+  `asgard --verbose build` is now `asgard build --verbose`. It used to print
+  the help for `build`, or, in a project with a `default_task`, run the
+  default task with `build` as its argument. In front of a word that is not a
+  task the flags still run the default task with that word
+  ([#27](https://github.com/MadBomber/asgard/issues/27)).
+- **A task called with arguments it cannot take runs nothing**: the usage
+  error is reported before the task's dependencies run, not after them
+  ([#27](https://github.com/MadBomber/asgard/issues/27)).
 - **A `helper` with a reserved name is reported at its `.loki` line**, not at
   asgard's own `task_dsl.rb`, and is refused before anything is defined
   ([#25](https://github.com/MadBomber/asgard/issues/25)).

@@ -107,13 +107,20 @@ module Asgard
     ((Asgard::Base._asgard_subclasses - before) + [Tasks]).uniq.each(&:validate_deps!)
   end
 
+  # Whether +word+ is what Thor would take as a task name: a task, a mapped
+  # name, or an abbreviation of either. Options and the gem's reserved
+  # `_` names are not.
+  def self.task_word?(word, tasks = Tasks)
+    !word.start_with?("-", "_") && tasks.send(:find_command_possibilities, word).any?
+  end
+
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     answer_flags(argv)
     boot(argv)
     Tasks._reset_ran!
     pin_project_root(project_root)
-    result = Tasks.start(argv)
+    result = Tasks.start(task_first(argv) { |word| task_word?(word) })
     # Quality-gate convention: a task signals failure by returning :fail
     # (see dev/quality.loki's *_check tasks). Surface that as a nonzero
     # exit so callers (CI, cross-repo runners) can rely on $?.

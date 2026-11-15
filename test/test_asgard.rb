@@ -190,9 +190,11 @@ class TestAsgardExitOnFailure < Minitest::Test
     assert_match "asgard: unknown option '--nope'", err
   end
 
-  def test_dash_h_still_prints_help
-    out, = capture_io { run_in_loki_dir(["-h"]) }
-    assert_match "Commands:", out
+  def test_help_flags_still_print_help
+    [["-h"], %w[--verbose -h], %w[help --help]].each do |argv|
+      out, = capture_io { run_in_loki_dir(argv) }
+      assert_match "asgard", out
+    end
   end
 
   private

@@ -2308,6 +2308,47 @@ class TestAsgardCurrentTask < Minitest::Test
   end
 end
 
+class TestAsgardDepResults < Minitest::Test
+  def setup
+    @seen  = {}
+    seen   = @seen
+    @klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { :a_val }
+
+      desc "b", "b"
+      define_method(:b) { 2 }
+
+      desc "c", "c"
+      define_method(:c) { "c" }
+
+      depends_on :a, %i[b c]
+      desc "top", "top"
+      define_method(:top) { seen[:top] = [dep_results, dep_result(:b), dep_result("c"), dep_result(:nope)] }
+
+      depends_on :a
+      desc "again", "again"
+      define_method(:again) { seen[:again] = dep_results }
+    end
+  end
+
+  def test_a_task_reads_its_sequential_and_parallel_dependencies_results
+    @klass.new([], {}, {}).invoke(:top)
+    assert_equal [{ a: :a_val, b: 2, c: "c" }, 2, "c", nil], @seen[:top]
+  end
+
+  def test_a_dependency_that_already_ran_still_hands_over_its_result
+    runner = @klass.new([], {}, {})
+    runner.invoke(:top)
+    runner.invoke(:again)
+    assert_equal({ a: :a_val }, @seen[:again])
+  end
+
+  def test_outside_a_task_there_are_no_results
+    assert_empty @klass.new([], {}, {}).dep_results
+  end
+end
+
 # C1: a task waiting on a shared dependency that failed must not run.
 class TestRegressionSharedDependencyFailure < Minitest::Test
   include AsgardProcess

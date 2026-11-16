@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the message no longer suggests `3.minutes`, which fails without
   ActiveSupport, and now ends with the value given, e.g. `got 90.0`.
   ([#46](https://github.com/MadBomber/asgard/issues/46))
+- **`asgard TASK --help` shows the task's help**: `TASK --help` and
+  `TASK -h` now work like `asgard help TASK`, instead of running the task
+  with `--help` as its argument or failing with "was called with
+  arguments". ([#43](https://github.com/MadBomber/asgard/issues/43))
 
 ### Fixed
 

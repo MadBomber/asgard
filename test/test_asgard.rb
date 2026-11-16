@@ -2831,6 +2831,41 @@ class TestRegressionCoreLow < Minitest::Test
     %w[bu sec deploy deploy-a make-a].each { |word| refute Asgard.task_word?(word, klass), word }
   end
 
+  TASK_HELP = <<~'LOKI'
+    class Tasks
+      desc "deploy ENV", "Deploy"
+      def deploy(env = "staging") = puts("WOULD DEPLOY #{env}")
+      desc "build", "Build"
+      def build = puts("BUILT")
+    end
+  LOKI
+
+  # Issue #43: TASK --help and TASK -h show the task's help, as `help TASK`
+  # does, instead of running the task with --help as its argument.
+  def test_issue_43_task_help_flag_shows_help_instead_of_running
+    [%w[deploy --help], %w[deploy -h], %w[dep --help], %w[build --help], %w[--debug build -h]].each do |argv|
+      out, err, status = run_asgard(TASK_HELP, *argv)
+      task = argv.include?("build") ? "build" : "deploy ENV"
+      assert_equal [0, ""], [status.exitstatus, err], argv.join(" ")
+      assert_match(/Usage:\n  asgard #{task}\n/, out, argv.join(" "))
+      refute_match(/WOULD|BUILT/, out, argv.join(" "))
+    end
+    out, _err, _status = run_asgard(TASK_HELP, "deploy", "prod")
+    assert_equal "WOULD DEPLOY prod\n", out
+  end
+
+  def test_issue_43_help_first_rewrites_only_a_task_followed_by_help
+    klass = Class.new(Asgard::Base) { def build = nil }
+    help_first = ->(argv) { Asgard.help_first(argv, klass) }
+    assert_equal %w[help build], help_first.call(%w[build --help])
+    assert_equal %w[help build --debug], help_first.call(%w[build --debug -h])
+    assert_equal %w[build prod --help], help_first.call(%w[build prod --help])
+    assert_equal %w[build], help_first.call(%w[build])
+    assert_equal %w[nope --help], help_first.call(%w[nope --help])
+    assert_equal %w[--help], help_first.call(%w[--help])
+    assert_equal [], help_first.call([])
+  end
+
   # C6: a directory named .loki is not a task file.
   def test_regression_c6_a_loki_directory_is_skipped
     Dir.mktmpdir do |dir|

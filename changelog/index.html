@@ -2537,6 +2537,9 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <code>hide: true</code> is listed as <code>hidden (hide: true; not shown by help)</code>
   instead of <code>hidden (no desc; ...)</code>, which now marks only desc-less tasks.
   (<a href="https://github.com/MadBomber/asgard/issues/47">#47</a>)</li>
+<li><strong><code>--doctor</code> prints no colour codes when piped or with <code>NO_COLOR</code> set</strong>:
+  it colours its lines only on a terminal, as the <code>list</code> tables do.
+  (<a href="https://github.com/MadBomber/asgard/issues/50">#50</a>)</li>
 </ul>
 <h2 id="061-2026-11-14"><a href="https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1">0.6.1</a> - 2026-11-14<a class="headerlink" href="#061-2026-11-14" title="Permanent link">&para;</a></h2>
 <p>Two changes can break a script that runs asgard: <code>--doctor</code> exits 1 when

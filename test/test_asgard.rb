@@ -2557,6 +2557,18 @@ class TestRegressionLoadErrors < Minitest::Test
     assert_match(/^\s+from |:in /, err)
   end
 
+  def test_issue_48_run_asgard_ignores_the_parent_trace_and_warning_level
+    loki = "class Tasks\n  desc \"show\", \"s\"\n  def show = print(ENV.key?(\"ASGARD_TRACE\"), \" \", $VERBOSE.inspect)\nend"
+    saved = ENV.to_h.slice("ASGARD_TRACE", "RUBYOPT")
+    ENV["ASGARD_TRACE"] = "1"
+    ENV["RUBYOPT"] = "-w"
+    out, _err, status = run_asgard(loki, "show")
+    assert_equal 0, status.exitstatus
+    assert_equal "false false", out
+  ensure
+    %w[ASGARD_TRACE RUBYOPT].each { |key| ENV[key] = saved[key] }
+  end
+
   def test_regression_c4_abort_while_loading_still_ends_the_run
     _out, err, status = run_asgard('abort "need DOCTOR_TEST_FOO"', "help")
     assert_equal 1, status.exitstatus

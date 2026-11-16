@@ -1836,6 +1836,34 @@ class TestAsgardShell < Minitest::Test
 end
 
 class TestAsgardDefaultTask < Minitest::Test
+  include AsgardProcess
+
+  def test_issue_51_a_default_task_naming_no_task_is_named
+    loki = "class Tasks\n  default_task :nope\n  desc \"a\", \"a\"\n  def a = puts(\"A ran\")\nend\n"
+    [[], %w[--debug]].each do |argv|
+      out, err, status = run_asgard(loki, *argv)
+      assert_equal ["", 1], [out, status.exitstatus], argv.inspect
+      assert_match(/\Aasgard: default_task :nope \(set at .*\.loki:2\) is not a task\n\z/, err, argv.inspect)
+    end
+    out, _err, status = run_asgard(loki, "a")
+    assert_equal ["A ran\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_51_check_default_task_passes_a_real_default_or_a_named_task
+    Class.new(Asgard::Base) do
+      def hidden_one = nil
+      default_task :hidden_one
+    end.check_default_task!([])
+
+    broken = Class.new(Asgard::Base) do
+      def hidden_one = nil
+      default_task :nope
+    end
+    broken.check_default_task!(%w[hidden_one])
+    broken.check_default_task!(%w[--help])
+    assert_raises(Asgard::Error) { broken.check_default_task!(%w[--debug]) }
+  end
+
   def test_no_warning_on_first_default_task
     _, err = capture_io do
       Class.new(Asgard::Base) do

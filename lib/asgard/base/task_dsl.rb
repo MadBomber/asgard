@@ -65,6 +65,20 @@ module Asgard
         end
         super
       end
+
+      # Thor runs the default task when the command line is empty or starts
+      # with an option it does not map. A default_task that names no task
+      # would then fail as `Could not find command "".`, so name it.
+      def check_default_task!(argv)
+        first = argv.first
+        return if first && (map.key?(first) || !first.start_with?("-"))
+
+        name = default_command.to_s
+        return if all_commands.key?(name.tr("-", "_"))
+
+        where = " (set at #{@_default_task_location.path}:#{@_default_task_location.lineno})" if @_default_task_location
+        raise Asgard::Error, "default_task :#{name}#{where} is not a task"
+      end
     end
   end
 end

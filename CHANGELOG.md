@@ -57,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `asgard` (or `asgard --debug`) now says `asgard: default_task :nope (set
   at .loki:2) is not a task` instead of `Could not find command "".`
   ([#51](https://github.com/MadBomber/asgard/issues/51))
+- **A mistyped `jobs` subcommand is named**: `asgard jobs stpo api` now
+  says `Could not find command "stpo".` with a "Did you mean?" hint, as
+  `schedule` and `watcher` do, instead of reporting arguments to `jobs list`.
+  ([#52](https://github.com/MadBomber/asgard/issues/52))
 
 ## [0.6.1] - 2026-11-14
 

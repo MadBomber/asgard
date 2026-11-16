@@ -46,6 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `hide: true` is listed as `hidden (hide: true; not shown by help)`
   instead of `hidden (no desc; ...)`, which now marks only desc-less tasks.
   ([#47](https://github.com/MadBomber/asgard/issues/47))
+- **`--doctor` prints no colour codes when piped or with `NO_COLOR` set**:
+  it colours its lines only on a terminal, as the `list` tables do.
+  ([#50](https://github.com/MadBomber/asgard/issues/50))
 
 ## [0.6.1] - 2026-11-14
 

@@ -201,7 +201,7 @@ Nothing else. In particular, variables you exported in `.zshrc` or `.bashrc` are
 | `XDG_STATE_HOME` | Where per-project state lives (watcher and job records, logs). Default `~/.local/state`; asgard uses `<XDG_STATE_HOME>/asgard/` |
 | `XDG_CONFIG_HOME` | On Linux, where systemd user units are written. Default `~/.config` |
 | `COLUMNS` | The width the `list` tables wrap to when output is not a terminal (piped to a file or `less`). Default 120 |
-| `NO_COLOR` | When set, the `list` tables print without colour |
+| `NO_COLOR` | When set, the `list` tables and `--doctor` print without colour. Both already print without colour when output is not a terminal |
 
 See [Files & Directories](files.md) for the paths these produce.
 

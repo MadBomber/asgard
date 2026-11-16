@@ -1975,6 +1975,32 @@ class TestDoctorExitStatus < Minitest::Test
 end
 
 class TestDoctor < Minitest::Test
+  def test_issue_50_colours_only_a_terminal_without_no_color
+    saved = ENV.delete("NO_COLOR")
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+
+      refute_includes capture_io { Asgard::Doctor.new(dir).run }.first, "\e["
+      assert_includes doctor_on_a_terminal(dir), "\e[36m  [INFO]"
+      ENV["NO_COLOR"] = "1"
+      refute_includes doctor_on_a_terminal(dir), "\e["
+    end
+  ensure
+    saved ? ENV["NO_COLOR"] = saved : ENV.delete("NO_COLOR")
+  end
+
+  def doctor_on_a_terminal(dir)
+    terminal = StringIO.new
+    def terminal.tty? = true
+    original = $stdout
+    $stdout  = terminal
+    Asgard::Doctor.new(dir).run
+    terminal.string
+  ensure
+    $stdout = original
+  end
+
   def test_reports_no_loki_found
     Dir.mktmpdir do |dir|
       out, = capture_io { Asgard::Doctor.new(File.realpath(dir)).run }
@@ -2148,7 +2174,7 @@ class TestDoctor < Minitest::Test
       File.write(File.join(dir, ".loki"), 'import "*.loki"')
 
       out, = capture_io { Asgard::Doctor.new(dir).run }
-      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}\e/, out)
+      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}$/, out)
       refute_match "helper_lib.rb", out
       refute_match "thor", out
       assert_match "doctor_test_sub  sub.loki:8", out

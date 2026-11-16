@@ -1937,6 +1937,20 @@ class TestDoctorExitStatus < Minitest::Test
     assert_equal 1, status.exitstatus
   end
 
+  def test_issue_47_hidden_note_tells_no_desc_from_hide_true
+    out, _err, _status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        def secret_helper; end
+
+        desc "shy", "s", hide: true
+        def shy; end
+      end
+    RUBY
+
+    assert_match(/secret_helper .*hidden \(no desc; not shown by help\)/, out)
+    assert_match(/shy .*hidden \(hide: true; not shown by help\)/, out)
+  end
+
   def test_load_failure_exits_with_failure
     out, _err, status = run_asgard("exit 0", "--doctor")
 
@@ -1961,6 +1975,32 @@ class TestDoctorExitStatus < Minitest::Test
 end
 
 class TestDoctor < Minitest::Test
+  def test_issue_50_colours_only_a_terminal_without_no_color
+    saved = ENV.delete("NO_COLOR")
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+
+      refute_includes capture_io { Asgard::Doctor.new(dir).run }.first, "\e["
+      assert_includes doctor_on_a_terminal(dir), "\e[36m  [INFO]"
+      ENV["NO_COLOR"] = "1"
+      refute_includes doctor_on_a_terminal(dir), "\e["
+    end
+  ensure
+    saved ? ENV["NO_COLOR"] = saved : ENV.delete("NO_COLOR")
+  end
+
+  def doctor_on_a_terminal(dir)
+    terminal = StringIO.new
+    def terminal.tty? = true
+    original = $stdout
+    $stdout  = terminal
+    Asgard::Doctor.new(dir).run
+    terminal.string
+  ensure
+    $stdout = original
+  end
+
   def test_reports_no_loki_found
     Dir.mktmpdir do |dir|
       out, = capture_io { Asgard::Doctor.new(File.realpath(dir)).run }
@@ -2134,7 +2174,7 @@ class TestDoctor < Minitest::Test
       File.write(File.join(dir, ".loki"), 'import "*.loki"')
 
       out, = capture_io { Asgard::Doctor.new(dir).run }
-      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}\e/, out)
+      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}$/, out)
       refute_match "helper_lib.rb", out
       refute_match "thor", out
       assert_match "doctor_test_sub  sub.loki:8", out
@@ -2541,6 +2581,18 @@ class TestRegressionLoadErrors < Minitest::Test
     _out, err, status = run_asgard(CASES["typo"].first, "help", env: { "ASGARD_TRACE" => "1" })
     refute_equal 0, status.exitstatus
     assert_match(/^\s+from |:in /, err)
+  end
+
+  def test_issue_48_run_asgard_ignores_the_parent_trace_and_warning_level
+    loki = "class Tasks\n  desc \"show\", \"s\"\n  def show = print(ENV.key?(\"ASGARD_TRACE\"), \" \", $VERBOSE.inspect)\nend"
+    saved = ENV.to_h.slice("ASGARD_TRACE", "RUBYOPT")
+    ENV["ASGARD_TRACE"] = "1"
+    ENV["RUBYOPT"] = "-w"
+    out, _err, status = run_asgard(loki, "show")
+    assert_equal 0, status.exitstatus
+    assert_equal "false false", out
+  ensure
+    %w[ASGARD_TRACE RUBYOPT].each { |key| ENV[key] = saved[key] }
   end
 
   def test_regression_c4_abort_while_loading_still_ends_the_run

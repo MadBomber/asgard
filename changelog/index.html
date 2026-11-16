@@ -2504,6 +2504,10 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   now says <code>asgard: unknown option '--nope'; see asgard help</code> instead of
   <code>Could not find command "__nope".</code> Only the message changes; it still
   exits 1, so this is not a breaking change.</li>
+<li><strong>A bad <code>schedule ... every:</code> says what it accepts and what it got</strong>:
+  the message no longer suggests <code>3.minutes</code>, which fails without
+  ActiveSupport, and now ends with the value given, e.g. <code>got 90.0</code>.
+  (<a href="https://github.com/MadBomber/asgard/issues/46">#46</a>)</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2518,6 +2522,17 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   A leading flag also reaches a task defined without a <code>desc</code> or with
   <code>hide: true</code>, and a task named with dashes (<code>deploy-app</code> for
   <code>deploy_app</code>). (<a href="https://github.com/MadBomber/asgard/issues/38">#38</a>)</li>
+<li><strong>The README's opening callout renders as a note on GitHub</strong>: it used
+  <code>[!INFO]</code>, which GitHub does not recognise, and now uses <code>[!NOTE]</code>.
+  (<a href="https://github.com/MadBomber/asgard/issues/45">#45</a>)</li>
+<li><strong>The test suite passes with <code>RUBYOPT=-w</code> or <code>ASGARD_TRACE</code> set</strong>: the
+  tests that run <code>bin/asgard</code> as a child process no longer pass on the
+  developer's trace setting or warning level.
+  (<a href="https://github.com/MadBomber/asgard/issues/48">#48</a>)</li>
+<li><strong><code>watcher.log</code> no longer opens with Ruby's experimental-Ractor warning</strong>:
+  the watcher silences that one warning while it starts its workers, so
+  <code>watcher start</code> logs and <code>watcher run</code> output begin with real entries.
+  (<a href="https://github.com/MadBomber/asgard/issues/44">#44</a>)</li>
 </ul>
 <h2 id="061-2026-11-14"><a href="https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1">0.6.1</a> - 2026-11-14<a class="headerlink" href="#061-2026-11-14" title="Permanent link">&para;</a></h2>
 <p>Two changes can break a script that runs asgard: <code>--doctor</code> exits 1 when

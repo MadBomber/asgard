@@ -1937,6 +1937,20 @@ class TestDoctorExitStatus < Minitest::Test
     assert_equal 1, status.exitstatus
   end
 
+  def test_issue_47_hidden_note_tells_no_desc_from_hide_true
+    out, _err, _status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        def secret_helper; end
+
+        desc "shy", "s", hide: true
+        def shy; end
+      end
+    RUBY
+
+    assert_match(/secret_helper .*hidden \(no desc; not shown by help\)/, out)
+    assert_match(/shy .*hidden \(hide: true; not shown by help\)/, out)
+  end
+
   def test_load_failure_exits_with_failure
     out, _err, status = run_asgard("exit 0", "--doctor")
 

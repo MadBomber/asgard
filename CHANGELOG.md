@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now says `asgard: unknown option '--nope'; see asgard help` instead of
   `Could not find command "__nope".` Only the message changes; it still
   exits 1, so this is not a breaking change.
+- **A bad `schedule ... every:` says what it accepts and what it got**:
+  the message no longer suggests `3.minutes`, which fails without
+  ActiveSupport, and now ends with the value given, e.g. `got 90.0`.
+  ([#46](https://github.com/MadBomber/asgard/issues/46))
 
 ### Fixed
 

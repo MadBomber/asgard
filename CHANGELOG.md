@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tests that run `bin/asgard` as a child process no longer pass on the
   developer's trace setting or warning level.
   ([#48](https://github.com/MadBomber/asgard/issues/48))
+- **`watcher.log` no longer opens with Ruby's experimental-Ractor warning**:
+  the watcher silences that one warning while it starts its workers, so
+  `watcher start` logs and `watcher run` output begin with real entries.
+  ([#44](https://github.com/MadBomber/asgard/issues/44))
 
 ## [0.6.1] - 2026-11-14
 

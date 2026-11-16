@@ -41,10 +41,16 @@ module Asgard
       # the reports and the spawner (all shareable) and nothing else, and
       # pops through a Mailbox so it sleeps while idle: whoever pushes onto
       # +queue+ must wake it, through Mailbox.new(queue, the_ractor).
+      # Ruby's "Ractor API is experimental" warning is silenced here, or it
+      # would open every watcher.log; the daemon runs no user code.
       def self.start(queue, reports, spawner: Spawner)
+        experimental = Warning[:experimental]
+        Warning[:experimental] = false
         Ractor.new(queue, reports, spawner) do |inbox, outbox, runner|
           Asgard::Watch::Worker.new(Asgard::Watch::Mailbox.new(inbox, Ractor.current), outbox, spawner: runner).run
         end
+      ensure
+        Warning[:experimental] = experimental
       end
 
       def initialize(queue, reports, spawner: Spawner, clock: Process)

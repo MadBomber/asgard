@@ -95,10 +95,12 @@ module Asgard
       if every
         raise ArgumentError, "schedule :#{task} on: only applies to at: times; every: runs on every day" if on
 
+        given = every
         every = seconds(every)
         unless every&.positive?
           raise ArgumentError,
-                "schedule :#{task} every: must be a positive number of seconds or a Duration (3.minutes)"
+                "schedule :#{task} every: must be a whole number of seconds (900) or answer in_seconds " \
+                "(ActiveSupport's 15.minutes); got #{given.inspect}"
         end
       else
         on ||= :daily

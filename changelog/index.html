@@ -2533,6 +2533,10 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   the watcher silences that one warning while it starts its workers, so
   <code>watcher start</code> logs and <code>watcher run</code> output begin with real entries.
   (<a href="https://github.com/MadBomber/asgard/issues/44">#44</a>)</li>
+<li><strong><code>--doctor</code> says why a task is hidden</strong>: a task described with
+  <code>hide: true</code> is listed as <code>hidden (hide: true; not shown by help)</code>
+  instead of <code>hidden (no desc; ...)</code>, which now marks only desc-less tasks.
+  (<a href="https://github.com/MadBomber/asgard/issues/47">#47</a>)</li>
 </ul>
 <h2 id="061-2026-11-14"><a href="https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1">0.6.1</a> - 2026-11-14<a class="headerlink" href="#061-2026-11-14" title="Permanent link">&para;</a></h2>
 <p>Two changes can break a script that runs asgard: <code>--doctor</code> exits 1 when

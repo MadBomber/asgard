@@ -2004,7 +2004,8 @@
 </table>
 <p><strong>Tasks by file</strong> lists every loaded file and, under each, the tasks it defines in line order, as <code>name file:line</code>, a form most editors can jump to. A file that defines no tasks says <code>(no tasks defined — imports only)</code>. When the project has <a href="../subcommands/">subcommand</a> classes, the listing repeats once per class under headings such as <code>Tasks by file (DocCommands):</code> and <code>Tasks by file (Tasks):</code>. Each section still lists every loaded file, so a file whose tasks all belong to another class shows the imports-only note in this one. Two notes can follow a task:</p>
 <ul>
-<li><code>hidden (no desc; not shown by help)</code>: a public method without a <code>desc</code>, or one described with <code>desc "...", hide: true</code>. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it <code>private</code>, put it in <code>no_commands</code>, or use <code>helper</code>. See <a href="../tasks/#hidden-tasks">Defining Tasks</a>.</li>
+<li><code>hidden (no desc; not shown by help)</code>: a public method without a <code>desc</code>. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it <code>private</code>, put it in <code>no_commands</code>, or use <code>helper</code>. See <a href="../tasks/#hidden-tasks">Defining Tasks</a>.</li>
+<li><code>hidden (hide: true; not shown by help)</code>: a task described with <code>desc "...", hide: true</code>. It runs from the command line and as a dependency, but help leaves it out on purpose.</li>
 <li><code>OVERRIDDEN by file:line — never callable</code> and <code>active — redefines file:line</code>: the same task name defined twice. Only the last definition exists; the earlier one is dead. Each overridden task counts as one problem in the summary.</li>
 </ul>
 <p>The summary line is <code>No problems found.</code>, <code>No problems found (N warning(s)).</code> or <code>N problem(s), M warning(s).</code></p>
@@ -2046,7 +2047,7 @@ not cause a failure, so scripts and CI can use the exit status as a check.</p>
 </span><span id="__span-13-31"><a id="__codelineno-13-31" name="__codelineno-13-31" href="#__codelineno-13-31"></a>    test_check           ../dev/quality.loki:79   OVERRIDDEN by test_check.loki:20 — never callable
 </span><span id="__span-13-32"><a id="__codelineno-13-32" name="__codelineno-13-32" href="#__codelineno-13-32"></a>    test_verbose         ../dev/quality.loki:90   OVERRIDDEN by test_check.loki:23 — never callable
 </span><span id="__span-13-33"><a id="__codelineno-13-33" name="__codelineno-13-33" href="#__codelineno-13-33"></a>    quality              ../dev/quality.loki:103
-</span><span id="__span-13-34"><a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>    quality_board        ../dev/quality.loki:115   hidden (no desc; not shown by help)
+</span><span id="__span-13-34"><a id="__codelineno-13-34" name="__codelineno-13-34" href="#__codelineno-13-34"></a>    quality_board        ../dev/quality.loki:115   hidden (hide: true; not shown by help)
 </span><span id="__span-13-35"><a id="__codelineno-13-35" name="__codelineno-13-35" href="#__codelineno-13-35"></a>    rubocop_check        ../dev/quality.loki:145
 </span><span id="__span-13-36"><a id="__codelineno-13-36" name="__codelineno-13-36" href="#__codelineno-13-36"></a>    ...
 </span><span id="__span-13-37"><a id="__codelineno-13-37" name="__codelineno-13-37" href="#__codelineno-13-37"></a>

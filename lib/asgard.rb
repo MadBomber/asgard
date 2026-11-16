@@ -120,13 +120,26 @@ module Asgard
     tasks.all_commands.key?(word.tr("-", "_")) || tasks.send(:find_command_possibilities, word).any?
   end
 
+  HELP_FLAGS = %w[--help -h].freeze
+
+  # `asgard TASK --help` (or -h) as `asgard help TASK`, so the task shows
+  # its help instead of running with --help as its argument. Only when
+  # nothing but global flags comes with the help flag.
+  def self.help_first(argv, tasks = Tasks)
+    word, *rest = argv
+    return argv unless word && rest.intersect?(HELP_FLAGS) && rest.all? { HELP_FLAGS.include?(it) || global_flag?(it) }
+    return argv unless task_word?(word, tasks)
+
+    ["help", word, *(rest - HELP_FLAGS)]
+  end
+
   # Main entry point invoked by the asgard executable.
   def self.run!(argv)
     answer_flags(argv)
     boot(argv)
     Tasks._reset_ran!
     pin_project_root(project_root)
-    argv = task_first(argv) { |word| task_word?(word) }
+    argv = help_first(task_first(argv) { |word| task_word?(word) })
     Tasks.check_default_task!(argv)
     result = Tasks.start(argv)
     # Quality-gate convention: a task signals failure by returning :fail

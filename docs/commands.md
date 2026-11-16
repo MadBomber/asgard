@@ -19,7 +19,7 @@ Asgard looks for a `.loki` file in the current directory, then in each parent di
 | `asgard TASK ARG...` | Passes positional arguments to the task's method parameters |
 | `asgard TASK --opt VALUE` | Sets an option declared with `option` or `class_option` |
 | `asgard help` | Lists every task with its description, plus the project's header and footer |
-| `asgard help TASK` | Usage, options and `long_desc` for one task |
+| `asgard help TASK` | Usage, options and `long_desc` for one task. `asgard TASK --help` and `asgard TASK -h` show the same help without running the task |
 | `asgard tree` | The tasks as a tree, subcommands expanded |
 | `asgard --version` | Prints the version and exits; works without a `.loki` |
 | `asgard --doctor` | Prints the diagnostic report and exits, with status 1 when it finds problems; works even when the `.loki` is broken |

@@ -69,7 +69,10 @@ module Asgard
         colorize(31, "#{errors} problem(s), #{warns} warning(s).")
       end
 
+      # Coloured only on a terminal with NO_COLOR unset, as the list tables are.
       def colorize(code, text)
+        return text unless $stdout.tty? && !ENV.key?("NO_COLOR")
+
         "\e[#{code}m#{text}\e[0m"
       end
     end

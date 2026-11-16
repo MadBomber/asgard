@@ -2508,6 +2508,10 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   the message no longer suggests <code>3.minutes</code>, which fails without
   ActiveSupport, and now ends with the value given, e.g. <code>got 90.0</code>.
   (<a href="https://github.com/MadBomber/asgard/issues/46">#46</a>)</li>
+<li><strong><code>asgard TASK --help</code> shows the task's help</strong>: <code>TASK --help</code> and
+  <code>TASK -h</code> now work like <code>asgard help TASK</code>, instead of running the task
+  with <code>--help</code> as its argument or failing with "was called with
+  arguments". (<a href="https://github.com/MadBomber/asgard/issues/43">#43</a>)</li>
 </ul>
 <h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
 <ul>

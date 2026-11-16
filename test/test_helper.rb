@@ -38,7 +38,11 @@ module AsgardProcess
         FileUtils.mkdir_p(File.dirname(File.join(dir, name)))
         File.write(File.join(dir, name), body)
       end
-      out, err, status = Open3.capture3(env, Gem.ruby, "-I", LIB, BIN, *argv, chdir: dir, stdin_data: "")
+      # The child must not inherit the developer's ASGARD_TRACE or RUBYOPT=-w
+      # (issue #48): a test that needs either passes it in +env+. A
+      # command-line -W1 wins over RUBYOPT's warning level.
+      out, err, status = Open3.capture3({ "ASGARD_TRACE" => nil }.merge(env), Gem.ruby, "-W1", "-I", LIB, BIN, *argv,
+                                        chdir: dir, stdin_data: "")
       # asgard's messages are UTF-8. With no locale set (launchd, cron) the
       # captured bytes would be tagged US-ASCII and fail to match a UTF-8 string.
       [out.force_encoding(Encoding::UTF_8), err.force_encoding(Encoding::UTF_8), status]

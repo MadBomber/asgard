@@ -243,7 +243,8 @@ No problems found (1 warning(s)).
 
 **Tasks by file** lists every loaded file and, under each, the tasks it defines in line order, as `name file:line`, a form most editors can jump to. A file that defines no tasks says `(no tasks defined — imports only)`. When the project has [subcommand](subcommands.md) classes, the listing repeats once per class under headings such as `Tasks by file (DocCommands):` and `Tasks by file (Tasks):`. Each section still lists every loaded file, so a file whose tasks all belong to another class shows the imports-only note in this one. Two notes can follow a task:
 
-- `hidden (no desc; not shown by help)`: a public method without a `desc`, or one described with `desc "...", hide: true`. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it `private`, put it in `no_commands`, or use `helper`. See [Defining Tasks](tasks.md#hidden-tasks).
+- `hidden (no desc; not shown by help)`: a public method without a `desc`. It runs from the command line and as a dependency, but help leaves it out. If it was meant as a helper, make it `private`, put it in `no_commands`, or use `helper`. See [Defining Tasks](tasks.md#hidden-tasks).
+- `hidden (hide: true; not shown by help)`: a task described with `desc "...", hide: true`. It runs from the command line and as a dependency, but help leaves it out on purpose.
 - `OVERRIDDEN by file:line — never callable` and `active — redefines file:line`: the same task name defined twice. Only the last definition exists; the earlier one is dead. Each overridden task counts as one problem in the summary.
 
 The summary line is `No problems found.`, `No problems found (N warning(s)).` or `N problem(s), M warning(s).`
@@ -290,7 +291,7 @@ Tasks by file (Tasks):
     test_check           ../dev/quality.loki:79   OVERRIDDEN by test_check.loki:20 — never callable
     test_verbose         ../dev/quality.loki:90   OVERRIDDEN by test_check.loki:23 — never callable
     quality              ../dev/quality.loki:103
-    quality_board        ../dev/quality.loki:115   hidden (no desc; not shown by help)
+    quality_board        ../dev/quality.loki:115   hidden (hide: true; not shown by help)
     rubocop_check        ../dev/quality.loki:145
     ...
 

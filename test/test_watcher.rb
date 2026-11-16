@@ -504,6 +504,22 @@ class TestWatchWorker < Minitest::Test
     assert_equal 137, Spawner.wait(Spawner.spawn(description("k", "sh", "-c", "kill -9 $$")))
   end
 
+  # Ruby warns once per process on the first Ractor.new, so this runs in a
+  # fresh process; the -W flags override any warning level in RUBYOPT.
+  def test_issue_44_start_prints_no_experimental_ractor_warning
+    script = <<~RUBY
+      require "asgard"
+      require "asgard/watch"
+      queue = RactorQueue.new(capacity: 4)
+      Asgard::Watch::Mailbox.new(queue, Asgard::Watch::Worker.start(queue, RactorQueue.new(capacity: 4))).push(nil)
+      print Warning[:experimental]
+    RUBY
+    out, err, status = Open3.capture3(Gem.ruby, "-W1", "-W:experimental", "-I", AsgardProcess::LIB, "-e", script)
+    assert status.success?, err
+    assert_equal "", err
+    assert_equal "true", out
+  end
+
   def test_start_runs_real_processes_in_a_ractor
     queue   = RactorQueue.new(capacity: 16)
     reports = RactorQueue.new(capacity: 16)

@@ -2548,6 +2548,10 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   <code>asgard</code> (or <code>asgard --debug</code>) now says <code>asgard: default_task :nope (set
   at .loki:2) is not a task</code> instead of <code>Could not find command "".</code>
   (<a href="https://github.com/MadBomber/asgard/issues/51">#51</a>)</li>
+<li><strong>A mistyped <code>jobs</code> subcommand is named</strong>: <code>asgard jobs stpo api</code> now
+  says <code>Could not find command "stpo".</code> with a "Did you mean?" hint, as
+  <code>schedule</code> and <code>watcher</code> do, instead of reporting arguments to <code>jobs list</code>.
+  (<a href="https://github.com/MadBomber/asgard/issues/52">#52</a>)</li>
 </ul>
 <h2 id="061-2026-11-14"><a href="https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1">0.6.1</a> - 2026-11-14<a class="headerlink" href="#061-2026-11-14" title="Permanent link">&para;</a></h2>
 <p>Two changes can break a script that runs asgard: <code>--doctor</code> exits 1 when
@@ -2568,15 +2572,23 @@ runs that task. See
 <li><strong><code>truncate_log</code> shortens logs in place</strong>: <code>asgard schedule truncate_log
   [NAME]</code>, <code>asgard watcher truncate_log</code> and <code>asgard jobs truncate_log [NAME]</code>
   keep the last <code>--lines M</code> lines (default 1000; <code>0</code> empties the log), rewriting
-  the file in place so a running writer keeps appending to it. <code>--dry-run</code>
-  (<code>-n</code>) reports what would be removed without changing anything.</li>
+  the file in place so a running writer keeps appending to it. A truncate
+  cut short by Ctrl-C, a signal or a failed write still leaves a whole log.
+  <code>--dry-run</code> (<code>-n</code>) reports what would be removed without changing anything.</li>
+<li><strong>Two new guides in the docs</strong>: <a href="https://madbomber.github.io/asgard/dependencies/#a-dependency-with-arguments">A dependency with
+  arguments</a>
+  shows how to give a dependency the arguments it needs, and
+  <a href="https://madbomber.github.io/asgard/examples/#simple_flow"><code>examples/simple_flow</code></a>
+  runs a fan-out and fan-in of steps inside one task with
+  <a href="https://github.com/MadBomber/simple_flow">simple_flow</a>.</li>
 </ul>
 <h3 id="changed_1">Changed<a class="headerlink" href="#changed_1" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>BREAKING: <code>asgard --doctor</code> exits 1 when it reports problems</strong>,
   including overridden task definitions, so scripts and CI can use it as a
   check. Warnings alone still exit 0. A script that ran <code>--doctor</code> and
-  ignored what it reported now fails on those problems.</li>
+  ignored what it reported now fails on those problems
+  (<a href="https://github.com/MadBomber/asgard/issues/13">#13</a>).</li>
 <li><strong>BREAKING: <code>--debug</code> and <code>--verbose</code> before a task name run that task</strong>:
   <code>asgard --verbose build</code> is now <code>asgard build --verbose</code>. It used to print
   the help for <code>build</code>, or, in a project with a <code>default_task</code>, run the
@@ -2589,7 +2601,9 @@ runs that task. See
   <code>test_check.loki</code> replaces two of them with asgard's own test runner.
   <code>xyzzy.loki</code> is gone; those replacements are now the worked example of an
   override in the docs. <code>quality_rails.loki</code> is gone too; conditional imports
-  stay in the docs as an example. The gem itself is unchanged.</li>
+  stay in the docs as an example. Without <code>dev</code> cloned beside asgard, the
+  root <code>.loki</code> aborts with a message naming the repository to clone. The gem
+  itself is unchanged.</li>
 <li><strong>One parent-directory walk</strong>: <code>loki_up</code>, <code>import_up</code> and <code>--doctor</code>'s
   marker search use <code>Pathname#ascend</code> instead of three hand-rolled loops; what
   they find is unchanged (<a href="https://github.com/MadBomber/asgard/issues/19">#19</a>).</li>
@@ -2619,8 +2633,12 @@ runs that task. See
 <li><strong><code>asgard --doctor</code> reports a <code>.loki</code> that calls <code>exit</code> or <code>abort</code></strong> as a
   load failure instead of exiting with no report.</li>
 <li><strong>Dependency errors name the task(s) that declared them</strong>: an undefined
-  dependency (<a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/asgard/issues/14" title="GitHub Issue: madbomber/asgard #14">#14</a>) and a dependency that takes required arguments both end
-  with <code>(needed by ci, release)</code>.</li>
+  dependency (<a href="https://github.com/MadBomber/asgard/issues/14">#14</a>) and a
+  dependency that takes required arguments both end with
+  <code>(needed by ci, release)</code>.</li>
+<li><strong>The test suite passes with no locale set</strong>: output read back from a
+  child <code>asgard</code> is tagged UTF-8, so a shell without <code>LANG</code> or <code>LC_ALL</code> no
+  longer fails the tests that compare it.</li>
 </ul>
 <h2 id="060-2026-10-31"><a href="https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0">0.6.0</a> - 2026-10-31<a class="headerlink" href="#060-2026-10-31" title="Permanent link">&para;</a></h2>
 <p>Upgrading from 0.5.x? Read

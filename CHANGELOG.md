@@ -83,15 +83,23 @@ runs that task. See
 - **`truncate_log` shortens logs in place**: `asgard schedule truncate_log
   [NAME]`, `asgard watcher truncate_log` and `asgard jobs truncate_log [NAME]`
   keep the last `--lines M` lines (default 1000; `0` empties the log), rewriting
-  the file in place so a running writer keeps appending to it. `--dry-run`
-  (`-n`) reports what would be removed without changing anything.
+  the file in place so a running writer keeps appending to it. A truncate
+  cut short by Ctrl-C, a signal or a failed write still leaves a whole log.
+  `--dry-run` (`-n`) reports what would be removed without changing anything.
+- **Two new guides in the docs**: [A dependency with
+  arguments](https://madbomber.github.io/asgard/dependencies/#a-dependency-with-arguments)
+  shows how to give a dependency the arguments it needs, and
+  [`examples/simple_flow`](https://madbomber.github.io/asgard/examples/#simple_flow)
+  runs a fan-out and fan-in of steps inside one task with
+  [simple_flow](https://github.com/MadBomber/simple_flow).
 
 ### Changed
 
 - **BREAKING: `asgard --doctor` exits 1 when it reports problems**,
   including overridden task definitions, so scripts and CI can use it as a
   check. Warnings alone still exit 0. A script that ran `--doctor` and
-  ignored what it reported now fails on those problems.
+  ignored what it reported now fails on those problems
+  ([#13](https://github.com/MadBomber/asgard/issues/13)).
 - **BREAKING: `--debug` and `--verbose` before a task name run that task**:
   `asgard --verbose build` is now `asgard build --verbose`. It used to print
   the help for `build`, or, in a project with a `default_task`, run the
@@ -104,7 +112,9 @@ runs that task. See
   `test_check.loki` replaces two of them with asgard's own test runner.
   `xyzzy.loki` is gone; those replacements are now the worked example of an
   override in the docs. `quality_rails.loki` is gone too; conditional imports
-  stay in the docs as an example. The gem itself is unchanged.
+  stay in the docs as an example. Without `dev` cloned beside asgard, the
+  root `.loki` aborts with a message naming the repository to clone. The gem
+  itself is unchanged.
 - **One parent-directory walk**: `loki_up`, `import_up` and `--doctor`'s
   marker search use `Pathname#ascend` instead of three hand-rolled loops; what
   they find is unchanged ([#19](https://github.com/MadBomber/asgard/issues/19)).
@@ -134,8 +144,12 @@ runs that task. See
 - **`asgard --doctor` reports a `.loki` that calls `exit` or `abort`** as a
   load failure instead of exiting with no report.
 - **Dependency errors name the task(s) that declared them**: an undefined
-  dependency (#14) and a dependency that takes required arguments both end
-  with `(needed by ci, release)`.
+  dependency ([#14](https://github.com/MadBomber/asgard/issues/14)) and a
+  dependency that takes required arguments both end with
+  `(needed by ci, release)`.
+- **The test suite passes with no locale set**: output read back from a
+  child `asgard` is tagged UTF-8, so a shell without `LANG` or `LC_ALL` no
+  longer fails the tests that compare it.
 
 ## [0.6.0] - 2026-10-31
 

@@ -95,10 +95,12 @@ module Asgard
       if every
         raise ArgumentError, "schedule :#{task} on: only applies to at: times; every: runs on every day" if on
 
+        given = every
         every = seconds(every)
         unless every&.positive?
           raise ArgumentError,
-                "schedule :#{task} every: must be a positive number of seconds or a Duration (3.minutes)"
+                "schedule :#{task} every: must be a whole number of seconds (900) or answer in_seconds " \
+                "(ActiveSupport's 15.minutes); got #{given.inspect}"
         end
       else
         on ||= :daily
@@ -263,7 +265,7 @@ module Asgard
     end
 
     def describe_days(days, group)
-      describe_compact(at: group.map { |entry| format("%<hour>02d:%<minute>02d", entry) }, on: day_names(days))
+      describe_compact({ at: group.map { |entry| format("%<hour>02d:%<minute>02d", entry) }, on: day_names(days) })
     end
 
     # The command and schedule columns for a job read back from its files.

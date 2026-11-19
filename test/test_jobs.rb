@@ -937,6 +937,28 @@ class TestJobsCommands < Minitest::Test
     refute Asgard.machine_wide?(%w[jobs stop])
   end
 
+  # Issue #52: a mistyped subcommand is named, not handed to list.
+  def test_issue_52_a_mistyped_subcommand_is_named
+    Tasks._reset_ran!
+    Commands._reset_ran!
+    error = nil
+    _out, err = capture_io { error = assert_raises(SystemExit) { Tasks.start(%w[jobs stpo api]) } }
+    assert_equal 1, error.status
+    assert_match(/\ACould not find command "stpo"\.\nDid you mean\?\s+"stop"/, err)
+    refute_match "jobs list", err
+    Tasks._reset_ran!
+    out, = capture_io { Tasks.start(%w[jobs li]) }
+    assert_match "No jobs recorded for #{@slug}", out
+  end
+
+  def test_leading_global_flags_keep_a_list_machine_wide
+    assert Asgard.machine_wide?(%w[--debug jobs list])
+    assert Asgard.machine_wide?(%w[--verbose --debug watcher list])
+    assert Asgard.machine_wide?(%w[--debug=true jobs list])
+    assert Asgard.machine_wide?(%w[--no-verbose --verbose=false schedule list])
+    refute Asgard.machine_wide?(%w[--debug jobs stop])
+  end
+
   def test_rows_describe_each_record
     state.prepare
     started = Time.new(2026, 10, 24, 9, 30, 0).iso8601

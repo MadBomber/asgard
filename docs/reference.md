@@ -133,6 +133,7 @@ Example: `watch :test, paths: %w[lib test], only: /\.rb\z/`. Guide: [Watched Fil
 | `options` | `options[:name]`, `options.name`, `options.name?` | The task's option values; the predicate form is `true` or `false` | `sh "rake" if options.verbose?` | [Options & Flags](options.md) |
 | `dep_result` | `dep_result(:task)` | The return value of a direct dependency that already ran | `dep_result(:test_check) == :pass` | [Dependencies](dependencies.md#passing-results-between-tasks) |
 | `dep_results` | `dep_results` | A Hash of every direct dependency's return value | `dep_results.values.all?(:pass)` | [Dependencies](dependencies.md#passing-results-between-tasks) |
+| `current_task` | `current_task` | The running task's name as a Symbol, also inside a parallel dependency or a helper it calls; `nil` outside a task | `puts "[#{current_task}] done"` | |
 | `changes` | `changes` | What the watcher saw change; every list is empty when run by hand | `changes.modified.each { \|f\| puts f }` | [Watched Files](watch.md#reading-the-changes) |
 | `env` | `env(:name, default = nil)` | An environment variable, name upcased; raises `KeyError` when unset and no default | `env(:port, "3000")` | [Environment Variables](environment.md#reading-variables-with-env) |
 | `debug?` | `debug?` | `true` after `--debug` | `sh "make V=1" if debug?` | [Options & Flags](options.md#-debug-and-verbose) |

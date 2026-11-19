@@ -1,6 +1,6 @@
 # Asgard
 
-> [!INFO]
+> [!NOTE]
 > See the [CHANGELOG](CHANGELOG.md) for the latest changes. The [examples directory](examples/) contains working `.loki` files demonstrating the full feature set.
 
 > [!WARNING]

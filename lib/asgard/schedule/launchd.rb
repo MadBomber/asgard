@@ -129,7 +129,7 @@ module Asgard
         klass = self.class
         plist = klass.plist(
           label:             label(name),
-          arguments:         Schedule.program_arguments(spec.values_at(:task, :args).flatten, root: @root, asgard:, direnv:),
+          arguments:         Schedule.program_arguments([spec[:task], *spec[:args]], root: @root, asgard:, direnv:),
           working_directory: @root,
           environment:       Schedule.environment(spec),
           log_path:          log_path(name),

@@ -14,12 +14,12 @@ Asgard looks for a `.loki` file in the current directory, then in each parent di
 
 | Command | What it does |
 |---|---|
-| `asgard` | Runs the `default_task` if the project set one, otherwise shows help |
+| `asgard` | Runs the `default_task` if the project set one, otherwise shows help. A `default_task` that names no task stops with `asgard: default_task :name (set at FILE:LINE) is not a task` |
 | `asgard TASK` | Runs `TASK`, its dependencies first |
 | `asgard TASK ARG...` | Passes positional arguments to the task's method parameters |
 | `asgard TASK --opt VALUE` | Sets an option declared with `option` or `class_option` |
 | `asgard help` | Lists every task with its description, plus the project's header and footer |
-| `asgard help TASK` | Usage, options and `long_desc` for one task |
+| `asgard help TASK` | Usage, options and `long_desc` for one task. `asgard TASK --help` and `asgard TASK -h` show the same help without running the task |
 | `asgard tree` | The tasks as a tree, subcommands expanded |
 | `asgard --version` | Prints the version and exits; works without a `.loki` |
 | `asgard --doctor` | Prints the diagnostic report and exits, with status 1 when it finds problems; works even when the `.loki` is broken |
@@ -28,7 +28,7 @@ Asgard looks for a `.loki` file in the current directory, then in each parent di
 
 `--version` and `--doctor` are asgard's own only before the task name. After it they belong to the task: `asgard mytask --version` hands `--version` to `mytask`.
 
-`--debug` and `--verbose` work on either side of a task name: `asgard --verbose TASK` is `asgard TASK --verbose`.
+`--debug` and `--verbose` work on either side of a task name, in any form (`--debug=true`, `--no-verbose`): `asgard --verbose TASK` is `asgard TASK --verbose`.
 
 ### Prefix Matching and Aliases
 

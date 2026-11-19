@@ -170,6 +170,43 @@ class TestAsgardExitOnFailure < Minitest::Test
     end
     assert_match "Could not find command", err
   end
+
+  def test_unknown_leading_option_is_named_as_an_option
+    %w[--nope -x].each do |flag|
+      _, err = capture_io do
+        error = assert_raises(SystemExit) { run_in_loki_dir([flag, "build"]) }
+        refute error.success?
+      end
+      assert_match "asgard: unknown option '#{flag}'", err
+      refute_match "_#{flag.delete("-")}", err
+    end
+  end
+
+  def test_help_with_unknown_option_is_named_as_an_option
+    _, err = capture_io do
+      error = assert_raises(SystemExit) { run_in_loki_dir(%w[help --nope]) }
+      refute error.success?
+    end
+    assert_match "asgard: unknown option '--nope'", err
+  end
+
+  def test_help_flags_still_print_help
+    [["-h"], %w[--verbose -h], %w[help --help]].each do |argv|
+      out, = capture_io { run_in_loki_dir(argv) }
+      assert_match "asgard", out
+    end
+  end
+
+  private
+
+  def run_in_loki_dir(argv)
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, ".loki"), "")
+      Dir.chdir(dir) { Asgard.run!(argv) }
+    end
+  ensure
+    Tasks._reset_ran!
+  end
 end
 
 class TestAsgardTasks < Minitest::Test
@@ -1799,6 +1836,34 @@ class TestAsgardShell < Minitest::Test
 end
 
 class TestAsgardDefaultTask < Minitest::Test
+  include AsgardProcess
+
+  def test_issue_51_a_default_task_naming_no_task_is_named
+    loki = "class Tasks\n  default_task :nope\n  desc \"a\", \"a\"\n  def a = puts(\"A ran\")\nend\n"
+    [[], %w[--debug]].each do |argv|
+      out, err, status = run_asgard(loki, *argv)
+      assert_equal ["", 1], [out, status.exitstatus], argv.inspect
+      assert_match(/\Aasgard: default_task :nope \(set at .*\.loki:2\) is not a task\n\z/, err, argv.inspect)
+    end
+    out, _err, status = run_asgard(loki, "a")
+    assert_equal ["A ran\n", 0], [out, status.exitstatus]
+  end
+
+  def test_issue_51_check_default_task_passes_a_real_default_or_a_named_task
+    Class.new(Asgard::Base) do
+      def hidden_one = nil
+      default_task :hidden_one
+    end.check_default_task!([])
+
+    broken = Class.new(Asgard::Base) do
+      def hidden_one = nil
+      default_task :nope
+    end
+    broken.check_default_task!(%w[hidden_one])
+    broken.check_default_task!(%w[--help])
+    assert_raises(Asgard::Error) { broken.check_default_task!(%w[--debug]) }
+  end
+
   def test_no_warning_on_first_default_task
     _, err = capture_io do
       Class.new(Asgard::Base) do
@@ -1900,6 +1965,20 @@ class TestDoctorExitStatus < Minitest::Test
     assert_equal 1, status.exitstatus
   end
 
+  def test_issue_47_hidden_note_tells_no_desc_from_hide_true
+    out, _err, _status = run_asgard(<<~RUBY, "--doctor")
+      class Tasks
+        def secret_helper; end
+
+        desc "shy", "s", hide: true
+        def shy; end
+      end
+    RUBY
+
+    assert_match(/secret_helper .*hidden \(no desc; not shown by help\)/, out)
+    assert_match(/shy .*hidden \(hide: true; not shown by help\)/, out)
+  end
+
   def test_load_failure_exits_with_failure
     out, _err, status = run_asgard("exit 0", "--doctor")
 
@@ -1924,6 +2003,32 @@ class TestDoctorExitStatus < Minitest::Test
 end
 
 class TestDoctor < Minitest::Test
+  def test_issue_50_colours_only_a_terminal_without_no_color
+    saved = ENV.delete("NO_COLOR")
+    Dir.mktmpdir do |dir|
+      dir = File.realpath(dir)
+      File.write(File.join(dir, ".loki"), "")
+
+      refute_includes capture_io { Asgard::Doctor.new(dir).run }.first, "\e["
+      assert_includes doctor_on_a_terminal(dir), "\e[36m  [INFO]"
+      ENV["NO_COLOR"] = "1"
+      refute_includes doctor_on_a_terminal(dir), "\e["
+    end
+  ensure
+    saved ? ENV["NO_COLOR"] = saved : ENV.delete("NO_COLOR")
+  end
+
+  def doctor_on_a_terminal(dir)
+    terminal = StringIO.new
+    def terminal.tty? = true
+    original = $stdout
+    $stdout  = terminal
+    Asgard::Doctor.new(dir).run
+    terminal.string
+  ensure
+    $stdout = original
+  end
+
   def test_reports_no_loki_found
     Dir.mktmpdir do |dir|
       out, = capture_io { Asgard::Doctor.new(File.realpath(dir)).run }
@@ -2097,7 +2202,7 @@ class TestDoctor < Minitest::Test
       File.write(File.join(dir, ".loki"), 'import "*.loki"')
 
       out, = capture_io { Asgard::Doctor.new(dir).run }
-      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}\e/, out)
+      assert_match(/import "\*\.loki" -> #{Regexp.escape(File.join(dir, 'sub.loki'))}$/, out)
       refute_match "helper_lib.rb", out
       refute_match "thor", out
       assert_match "doctor_test_sub  sub.loki:8", out
@@ -2308,6 +2413,47 @@ class TestAsgardCurrentTask < Minitest::Test
   end
 end
 
+class TestAsgardDepResults < Minitest::Test
+  def setup
+    @seen  = {}
+    seen   = @seen
+    @klass = Class.new(Asgard::Base) do
+      desc "a", "a"
+      define_method(:a) { :a_val }
+
+      desc "b", "b"
+      define_method(:b) { 2 }
+
+      desc "c", "c"
+      define_method(:c) { "c" }
+
+      depends_on :a, %i[b c]
+      desc "top", "top"
+      define_method(:top) { seen[:top] = [dep_results, dep_result(:b), dep_result("c"), dep_result(:nope)] }
+
+      depends_on :a
+      desc "again", "again"
+      define_method(:again) { seen[:again] = dep_results }
+    end
+  end
+
+  def test_a_task_reads_its_sequential_and_parallel_dependencies_results
+    @klass.new([], {}, {}).invoke(:top)
+    assert_equal [{ a: :a_val, b: 2, c: "c" }, 2, "c", nil], @seen[:top]
+  end
+
+  def test_a_dependency_that_already_ran_still_hands_over_its_result
+    runner = @klass.new([], {}, {})
+    runner.invoke(:top)
+    runner.invoke(:again)
+    assert_equal({ a: :a_val }, @seen[:again])
+  end
+
+  def test_outside_a_task_there_are_no_results
+    assert_empty @klass.new([], {}, {}).dep_results
+  end
+end
+
 # C1: a task waiting on a shared dependency that failed must not run.
 class TestRegressionSharedDependencyFailure < Minitest::Test
   include AsgardProcess
@@ -2465,6 +2611,18 @@ class TestRegressionLoadErrors < Minitest::Test
     assert_match(/^\s+from |:in /, err)
   end
 
+  def test_issue_48_run_asgard_ignores_the_parent_trace_and_warning_level
+    loki = "class Tasks\n  desc \"show\", \"s\"\n  def show = print(ENV.key?(\"ASGARD_TRACE\"), \" \", $VERBOSE.inspect)\nend"
+    saved = ENV.to_h.slice("ASGARD_TRACE", "RUBYOPT")
+    ENV["ASGARD_TRACE"] = "1"
+    ENV["RUBYOPT"] = "-w"
+    out, _err, status = run_asgard(loki, "show")
+    assert_equal 0, status.exitstatus
+    assert_equal "false false", out
+  ensure
+    %w[ASGARD_TRACE RUBYOPT].each { |key| ENV[key] = saved[key] }
+  end
+
   def test_regression_c4_abort_while_loading_still_ends_the_run
     _out, err, status = run_asgard('abort "need DOCTOR_TEST_FOO"', "help")
     assert_equal 1, status.exitstatus
@@ -2614,7 +2772,7 @@ class TestRegressionCoreLow < Minitest::Test
       map "t" => :build
     end
     %w[build bun bu t help].each { |word| assert Asgard.task_word?(word, klass), word }
-    %w[prod --build -t _internal _].each { |word| refute Asgard.task_word?(word, klass), word }
+    ["prod", "--build", "-t", "_internal", "_", ""].each { |word| refute Asgard.task_word?(word, klass), word.inspect }
   end
 
   # Issue #27: arguments a task cannot take are refused before its dependencies run.
@@ -2638,6 +2796,102 @@ class TestRegressionCoreLow < Minitest::Test
     assert accepts.call(->(a, *rest) { [a, rest] }, 9)
     refute accepts.call(->(a, *rest) { [a, rest] }, 0)
     assert accepts.call(->(key: 1) { key }, 0)
+  end
+
+  # Issue #38: a leading --debug=VALUE, --no-debug or --skip-verbose is moved
+  # behind the task name like a bare --debug, and is not taken for the
+  # default task's argument.
+  def test_issue_38_a_flag_with_a_value_or_a_negation_runs_the_task
+    { %w[--debug=true build] => "BUILDING debug=true verbose=false\n",
+      %w[--debug=false build] => "BUILDING debug=false verbose=false\n",
+      %w[--verbose=true --debug bu] => "BUILDING debug=true verbose=true\n",
+      %w[--no-debug build] => "BUILDING debug=false verbose=false\n",
+      %w[--skip-verbose build] => "BUILDING debug=false verbose=false\n",
+      %w[--verbose=true prod] => "DEPLOYING to prod verbose=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(FLAG_FIRST, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+  end
+
+  HIDDEN_TASKS = <<~'LOKI'
+    class Tasks
+      def build = puts("BUILDING debug=#{debug?.inspect}")
+      desc "secret", "secret", hide: true
+      def secret = puts("SECRET verbose=#{verbose?.inspect}")
+      def deploy_app = puts("DEPLOYING debug=#{debug?.inspect}")
+    end
+  LOKI
+
+  # Issue #38: a leading flag reaches a task defined without a desc, or
+  # with hide: true, as it does when it follows the task name.
+  def test_issue_38_a_leading_flag_runs_a_hidden_task
+    { %w[--debug build] => "BUILDING debug=true\n",
+      %w[--debug=true build] => "BUILDING debug=true\n",
+      %w[--verbose secret] => "SECRET verbose=true\n",
+      %w[--debug deploy-app] => "DEPLOYING debug=true\n" }.each do |argv, expected|
+      out, _err, status = run_asgard(HIDDEN_TASKS, *argv)
+      assert_equal [expected, 0], [out, status.exitstatus], argv.join(" ")
+    end
+  end
+
+  def test_issue_38_global_flag_matches_every_form_thor_accepts
+    %w[--debug --verbose --debug=true --verbose=false --no-debug --skip-verbose].each do |word|
+      assert Asgard.global_flag?(word), word
+    end
+    %w[--debugger --debug-x --no-verbosity -d --doctor --version build debug].each do |word|
+      refute Asgard.global_flag?(word), word
+    end
+    task_first = ->(argv) { Asgard.task_first(argv) { it == "build" } }
+    assert_equal %w[build --debug=true --no-verbose], task_first.call(%w[--debug=true --no-verbose build])
+    assert_equal %w[--debugger build], task_first.call(%w[--debugger build])
+  end
+
+  def test_issue_38_task_word_takes_a_hidden_or_dashed_task_name_in_full
+    klass = Class.new(Asgard::Base) do
+      def build = nil
+      desc "secret", "secret", hide: true
+      def secret = nil
+      def deploy_app = nil
+      desc "make_all", "make_all"
+      def make_all = nil
+    end
+    %w[build secret deploy_app deploy-app make-all].each { |word| assert Asgard.task_word?(word, klass), word }
+    %w[bu sec deploy deploy-a make-a].each { |word| refute Asgard.task_word?(word, klass), word }
+  end
+
+  TASK_HELP = <<~'LOKI'
+    class Tasks
+      desc "deploy ENV", "Deploy"
+      def deploy(env = "staging") = puts("WOULD DEPLOY #{env}")
+      desc "build", "Build"
+      def build = puts("BUILT")
+    end
+  LOKI
+
+  # Issue #43: TASK --help and TASK -h show the task's help, as `help TASK`
+  # does, instead of running the task with --help as its argument.
+  def test_issue_43_task_help_flag_shows_help_instead_of_running
+    [%w[deploy --help], %w[deploy -h], %w[dep --help], %w[build --help], %w[--debug build -h]].each do |argv|
+      out, err, status = run_asgard(TASK_HELP, *argv)
+      task = argv.include?("build") ? "build" : "deploy ENV"
+      assert_equal [0, ""], [status.exitstatus, err], argv.join(" ")
+      assert_match(/Usage:\n  asgard #{task}\n/, out, argv.join(" "))
+      refute_match(/WOULD|BUILT/, out, argv.join(" "))
+    end
+    out, _err, _status = run_asgard(TASK_HELP, "deploy", "prod")
+    assert_equal "WOULD DEPLOY prod\n", out
+  end
+
+  def test_issue_43_help_first_rewrites_only_a_task_followed_by_help
+    klass = Class.new(Asgard::Base) { def build = nil }
+    help_first = ->(argv) { Asgard.help_first(argv, klass) }
+    assert_equal %w[help build], help_first.call(%w[build --help])
+    assert_equal %w[help build --debug], help_first.call(%w[build --debug -h])
+    assert_equal %w[build prod --help], help_first.call(%w[build prod --help])
+    assert_equal %w[build], help_first.call(%w[build])
+    assert_equal %w[nope --help], help_first.call(%w[nope --help])
+    assert_equal %w[--help], help_first.call(%w[--help])
+    assert_equal [], help_first.call([])
   end
 
   # C6: a directory named .loki is not a task file.

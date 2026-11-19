@@ -33,8 +33,10 @@ module Asgard
 
   # `asgard schedule list`, `asgard watcher list` and `asgard jobs list`
   # report every project's entries, so they work from a directory with no
-  # .loki above it.
-  def self.machine_wide?(argv) = [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.first(2))
+  # .loki above it, with or without leading global flags.
+  def self.machine_wide?(argv)
+    [%w[schedule list], %w[watcher list], %w[jobs list], %w[jobs]].include?(argv.drop_while { global_flag?(it) }.first(2))
+  end
 
   # The root .loki is loaded directly rather than through `import`, so
   # record it the way import would. Otherwise an `import_up` in a child
@@ -108,10 +110,28 @@ module Asgard
   end
 
   # Whether +word+ is what Thor would take as a task name: a task, a mapped
-  # name, or an abbreviation of either. Options and the gem's reserved
-  # `_` names are not.
+  # name, or an abbreviation of either. A task's full name counts with
+  # dashes for underscores (deploy-app) and when the task is hidden, as
+  # Thor runs both; Thor expands no abbreviation to a hidden task. Options,
+  # the gem's reserved `_` names and the empty word (a prefix of every
+  # task) are not.
   def self.task_word?(word, tasks = Tasks)
-    !word.start_with?("-", "_") && tasks.send(:find_command_possibilities, word).any?
+    return false if word.empty? || word.start_with?("-", "_")
+
+    tasks.all_commands.key?(word.tr("-", "_")) || tasks.send(:find_command_possibilities, word).any?
+  end
+
+  HELP_FLAGS = %w[--help -h].freeze
+
+  # `asgard TASK --help` (or -h) as `asgard help TASK`, so the task shows
+  # its help instead of running with --help as its argument. Only when
+  # nothing but global flags comes with the help flag.
+  def self.help_first(argv, tasks = Tasks)
+    word, *rest = argv
+    return argv unless word && rest.intersect?(HELP_FLAGS) && rest.all? { HELP_FLAGS.include?(it) || global_flag?(it) }
+    return argv unless task_word?(word, tasks)
+
+    ["help", word, *(rest - HELP_FLAGS)]
   end
 
   # Main entry point invoked by the asgard executable.
@@ -120,7 +140,9 @@ module Asgard
     boot(argv)
     Tasks._reset_ran!
     pin_project_root(project_root)
-    result = Tasks.start(task_first(argv) { |word| task_word?(word) })
+    argv = help_first(task_first(argv) { |word| task_word?(word) })
+    Tasks.check_default_task!(argv)
+    result = Tasks.start(argv)
     # Quality-gate convention: a task signals failure by returning :fail
     # (see dev/quality.loki's *_check tasks). Surface that as a nonzero
     # exit so callers (CI, cross-repo runners) can rely on $?.

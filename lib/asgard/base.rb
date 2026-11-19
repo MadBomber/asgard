@@ -109,6 +109,12 @@ module Asgard
           (Thor.private_method_defined?(method_name) && !Kernel.respond_to?(method_name))
       end
 
+      # Whether +word+, given to help as a command name, is an option Thor
+      # did not recognise. Thor's own help flags (-h, --help) are not.
+      def unknown_option?(word)
+        word.to_s.start_with?("-") && !Thor::HELP_MAPPINGS.include?(word)
+      end
+
       # The task `asgard help NAME` describes: a built-in group's mapped
       # name ("jobs") is its registered subcommand ("_jobs"); anything else
       # is NAME unchanged.
@@ -200,8 +206,12 @@ module Asgard
       end
     end
 
+    # Thor hands an unknown leading option (`asgard --nope`) to the default
+    # command, help, as a command name; name it as the option it is.
     def help(command = nil, subcommand = false) # rubocop:disable Style/OptionalBooleanParameter
       klass       = self.class
+      raise Asgard::Error, "unknown option '#{command}'; see asgard help" if klass.unknown_option?(command)
+
       top_level   = command.nil?
       header_text = klass.header
       footer_text = klass.footer

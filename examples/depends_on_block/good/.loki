@@ -4,7 +4,8 @@
 # A block behaves exactly like `-> { ... }` — it defers resolution to
 # validate_deps! (once, after every .loki file has loaded) instead of
 # resolving the moment depends_on is evaluated. This is the real pattern
-# from this gem's own quality.loki: gather every task whose name ends in
+# from quality.loki in the MadBomber/dev repository, which this gem's own
+# .loki loads: gather every task whose name ends in
 # `_check`, without having to know their names or load order upfront.
 #
 # The block's return value is validated once it resolves: it must be an

@@ -101,7 +101,7 @@ class Tasks
 end
 ```
 
-An interval that is zero, negative or not a number is rejected: `schedule :sync every: must be a positive number of seconds or a Duration (3.minutes)`.
+An interval that is not a positive whole number of seconds, or something that answers `in_seconds`, is rejected, and the message shows what it got: `schedule :sync every: must be a whole number of seconds (900) or answer in_seconds (ActiveSupport's 15.minutes); got 90.0`. A Float such as `90.0` or `1.5 * 60` is rejected too; write `90`.
 
 An interval entry runs on every day, so `on:` goes with `at:` only. Giving `every:` an `on:` is an error rather than a day filter that is quietly ignored: `schedule :sync on: only applies to at: times; every: runs on every day`.
 

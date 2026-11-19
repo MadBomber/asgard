@@ -43,6 +43,25 @@ module Asgard
 
         # The argv that follows a log the way `tail -f` does, from the top.
         def tail_argv(path) = ["tail", "-n", "+1", "-f", path]
+
+        # Whether +word+ is a typed subcommand that names none: not an
+        # option, a mapped name, a command or an abbreviation of one.
+        def undefined_subcommand?(word)
+          return false if word.nil? || word.start_with?("-")
+
+          !(map.key?(word) || all_commands.key?(word.tr("-", "_")) || find_command_possibilities(word).any?)
+        end
+
+        protected
+
+        # Thor hands a word that names no subcommand to the default command,
+        # list, as its argument; list takes none, so name the word instead,
+        # as `schedule` and `watcher` do.
+        def dispatch(meth, given_args, given_opts, config)
+          word = meth || given_args.first
+          handle_no_command_error(word) if config[:invoked_via_subcommand] && undefined_subcommand?(word)
+          super
+        end
       end
 
       desc "tree", "Print a tree of the jobs subcommands", hide: true

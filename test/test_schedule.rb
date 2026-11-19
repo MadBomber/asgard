@@ -129,6 +129,14 @@ class TestScheduleDeclaration < Minitest::Test
     assert_raises(ArgumentError) { SD.normalize("", every: 60) }
   end
 
+  def test_issue_46_every_error_says_what_is_accepted_and_what_was_given
+    accepted = "must be a whole number of seconds (900) or answer in_seconds (ActiveSupport's 15.minutes)"
+    { 0 => "0", -5 => "-5", 90.0 => "90.0", "3m" => '"3m"', Rational(3) => "(3/1)" }.each do |every, shown|
+      error = assert_raises(ArgumentError) { SD.normalize(:sync, every:) }
+      assert_equal "schedule :sync every: #{accepted}; got #{shown}", error.message
+    end
+  end
+
   def test_seconds_accepts_integers_and_durations
     duration = Struct.new(:in_seconds).new(180.0)
     assert_equal 90, SD.seconds(90)
@@ -158,8 +166,8 @@ class TestScheduleDeclaration < Minitest::Test
   end
 
   def test_describe
-    assert_equal "every 60s", SD.describe(every: 60)
-    assert_equal "17:30 weekdays", SD.describe(at: "17:30", on: :weekdays)
+    assert_equal "every 60s", SD.describe({ every: 60 })
+    assert_equal "17:30 weekdays", SD.describe({ at: "17:30", on: :weekdays })
   end
 
   def test_environment_merges_path_and_env
@@ -1170,9 +1178,9 @@ class TestScheduleTable < Minitest::Test
 
   def test_describe_compact_collapses_hourly_runs
     hours = (10..17).map { |h| format("%02d:00", h) }
-    assert_equal "10:00-17:00 hourly weekdays", SD.describe_compact(at: hours, on: :weekdays)
-    assert_equal "09:00, 13:30 friday", SD.describe_compact(at: %w[09:00 13:30], on: :friday)
-    assert_equal "every 60s", SD.describe_compact(every: 60)
+    assert_equal "10:00-17:00 hourly weekdays", SD.describe_compact({ at: hours, on: :weekdays })
+    assert_equal "09:00, 13:30 friday", SD.describe_compact({ at: %w[09:00 13:30], on: :friday })
+    assert_equal "every 60s", SD.describe_compact({ every: 60 })
   end
 
   def test_table_draws_header_and_one_line_per_row

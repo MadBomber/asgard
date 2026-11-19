@@ -1,3 +1,6 @@
 [default.extend-words]
 # docs/getting-started.md shows an ambiguous task prefix
 hel = "hel"
+# test/test_jobs.rb and the CHANGELOG mistype `stop` on purpose to show the
+# "Did you mean?" hint for an unknown jobs subcommand
+stpo = "stpo"

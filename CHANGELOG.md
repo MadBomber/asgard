@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-18
+
+A patch release of CLI fixes: leading `--debug` and `--verbose` in every
+form, `TASK --help`, and clearer messages for an unknown option, a
+mistyped `jobs` subcommand and a `default_task` that is not a task. No
+`.loki` file needs to change, and nothing that worked in 0.6.1 breaks.
+
 ### Changed
 
 - **An unknown leading option is named as an option**: `asgard --nope`
@@ -35,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   A leading flag also reaches a task defined without a `desc` or with
   `hide: true`, and a task named with dashes (`deploy-app` for
   `deploy_app`). ([#38](https://github.com/MadBomber/asgard/issues/38))
+- **An empty word after a leading flag reaches the default task**:
+  `asgard --verbose ''` runs the default task with `""` as its argument,
+  as it did before 0.6.1, instead of failing as an ambiguous command that
+  listed the gem's internal `_jobs`, `_schedule` and `_watcher` names.
 - **The README's opening callout renders as a note on GitHub**: it used
   `[!INFO]`, which GitHub does not recognise, and now uses `[!NOTE]`.
   ([#45](https://github.com/MadBomber/asgard/issues/45))
@@ -608,7 +619,8 @@ reinstalled after.
 - 100% test coverage enforced via SimpleCov (95% minimum threshold)
 - Quality task in `.loki` runs flog after tests
 
-[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/MadBomber/asgard/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/MadBomber/asgard/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/MadBomber/asgard/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/MadBomber/asgard/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/MadBomber/asgard/compare/v0.4.1...v0.5.1

@@ -2772,7 +2772,7 @@ class TestRegressionCoreLow < Minitest::Test
       map "t" => :build
     end
     %w[build bun bu t help].each { |word| assert Asgard.task_word?(word, klass), word }
-    %w[prod --build -t _internal _].each { |word| refute Asgard.task_word?(word, klass), word }
+    ["prod", "--build", "-t", "_internal", "_", ""].each { |word| refute Asgard.task_word?(word, klass), word.inspect }
   end
 
   # Issue #27: arguments a task cannot take are refused before its dependencies run.
